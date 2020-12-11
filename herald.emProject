@@ -1,0 +1,126 @@
+<!DOCTYPE CrossStudio_Project_File>
+<solution Name="herald" target="8" version="2">
+  <project Name="herald">
+    <configuration
+      CMSIS_CORE="Yes"
+      Name="Common"
+      Placement="Flash"
+      Target="nRF52840_xxAA"
+      arm_architecture="v7EM"
+      arm_compiler_variant="SEGGER"
+      arm_core_type="Cortex-M4"
+      arm_endian="Little"
+      arm_fp_abi="Hard"
+      arm_fpu_type="FPv4-SP-D16"
+      arm_interwork="No"
+      arm_linker_heap_size="16384"
+      arm_linker_stack_size="16384"
+      arm_simulator_memory_simulation_parameter="ROM1;0x00000000;0x00100000;RAM1;0x00800000;0x00040000;RAM2;0x20000000;0x00040000;"
+      arm_target_debug_interface_type="ADIv5"
+      arm_target_device_name="nRF52840_xxAA"
+      arm_target_interface_type="SWD"
+      debug_register_definition_file="$(PackagesDir)/nRF/Device/Registers/nrf52840.svd"
+      debug_start_from_entry_point_symbol="No"
+      debug_target_connection="J-Link"
+      link_linker_script_file="$(PackagesDir)/nRF/Device/Linker/ses_nrf52840_xxaa.icf"
+      linker_memory_map_file="$(PackagesDir)/nRF/Device/MemoryMap/nRF52840_xxAA_MemoryMap.xml"
+      linker_section_placement_file="$(StudioDir)/targets/Cortex_M/flash_placement.xml"
+      macros="NRFHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf.h;DeviceHeaderFile=$(PackagesDir)/nRF/Device/Include/nrf52840.h;DeviceSystemFile=$(PackagesDir)/nRF/Device/Source/system_nrf52840.c;DeviceVectorsFile=$(PackagesDir)/nRF/Device/Startup/ses_startup_nrf52840.s;DeviceLinkerScript=$(PackagesDir)/nRF/Device/Linker/ses_nrf52840_xxaa.icf;DeviceMemoryMap=$(PackagesDir)/nRF/Device/MemoryMap/nRF52840_xxAA_MemoryMap.xml;DeviceLibraryIdentifier=M4lf;DeviceFamily=nRF"
+      package_dependencies="CMSIS-CORE_V5"
+      project_directory="herald"
+      project_type="Library"
+      property_groups_file_path="$(PackagesDir)/nRF/XML/property_groups.xml"
+      target_reset_script="Reset();"
+      target_script_file="$(ProjectDir)/nRF_Target.js"
+      target_trace_initialize_script="EnableTrace(&quot;$(TraceInterfaceType)&quot;)" />
+    <folder Name="include">
+      <file file_name="herald.h" />
+      <file file_name="include/context.h" />
+      <file file_name="include/herald.h" />
+      <file file_name="include/sensor.h" />
+      <file file_name="include/sensor_delegate.h" />
+      <file file_name="include/default_sensor_delegate.h" />
+      <file file_name="include/sensor_array.h" />
+      <folder Name="datatype">
+        <file file_name="include/datatype/base64_string.h" />
+        <file file_name="include/datatype/bluetooth_state.h" />
+        <file file_name="include/datatype/data.h" />
+        <file file_name="include/datatype/date.h" />
+        <file file_name="include/datatype/encounter.h" />
+        <file file_name="include/datatype/error_code.h" />
+        <file file_name="include/datatype/immediate_send_data.h" />
+        <file file_name="include/datatype/location_reference.h" />
+        <file file_name="include/datatype/location.h" />
+        <file file_name="include/datatype/payload_data.h" />
+        <file file_name="include/datatype/payload_sharing_data.h" />
+        <file file_name="include/datatype/payload_timestamp.h" />
+        <file file_name="include/datatype/placename_location_reference.h" />
+        <file file_name="include/datatype/proximity.h" />
+        <file file_name="include/datatype/pseudo_device_address.h" />
+        <file file_name="include/datatype/rssi.h" />
+        <file file_name="include/datatype/sensor_state.h" />
+        <file file_name="include/datatype/sensor_type.h" />
+        <file file_name="include/datatype/signal_characteristic_data.h" />
+        <file file_name="include/datatype/target_identifier.h" />
+        <file file_name="include/datatype/time_interval.h" />
+        <file file_name="include/datatype/uuid.h" />
+        <file file_name="include/datatype/wgs84.h" />
+      </folder>
+      <folder Name="ble">
+        <file file_name="include/ble/ble_concrete.h" />
+        <file file_name="include/ble/ble_database_delegate.h" />
+        <file file_name="include/ble/ble_database.h" />
+        <file file_name="include/ble/ble_device_delegate.h" />
+        <file file_name="include/ble/ble_device.h" />
+        <file file_name="include/ble/ble_receiver.h" />
+        <file file_name="include/ble/ble_sensor_configuration.h" />
+        <file file_name="include/ble/ble_sensor.h" />
+        <file file_name="include/ble/ble_transmitter.h" />
+        <file file_name="include/ble/ble_tx_power.h" />
+        <file file_name="include/ble/bluetooth_state_manager_delegate.h" />
+        <file file_name="include/ble/bluetooth_state_manager.h" />
+      </folder>
+      <folder Name="data">
+        <file file_name="include/data/sendor_logger.h" />
+      </folder>
+      <folder Name="analysis" />
+      <folder Name="payload">
+        <file file_name="include/payload/bluetooth_state_manager.h" />
+      </folder>
+      <folder Name="service" />
+      <file file_name="include/payload/concrete_payload_data_supplier.h" />
+      <file file_name="include/payload/payload_data_supplier.h" />
+    </folder>
+    <folder Name="src">
+      <file file_name="src/default_sensor_delegate.cpp" />
+      <file file_name="src/sensor_array.cpp" />
+      <folder Name="datatype">
+        <file file_name="src/datatype/base64_string.cpp" />
+        <file file_name="src/datatype/data.cpp" />
+        <file file_name="src/datatype/date.cpp" />
+        <file file_name="src/datatype/encounter.cpp" />
+        <file file_name="src/datatype/immediate_send_data.cpp" />
+        <file file_name="src/datatype/location.cpp" />
+        <file file_name="src/datatype/payload_data.cpp" />
+        <file file_name="src/datatype/pseudo_device_address.cpp" />
+        <file file_name="src/datatype/rssi.cpp" />
+        <file file_name="src/datatype/signal_characteristic_data.cpp" />
+        <file file_name="src/datatype/target_identifier.cpp" />
+        <file file_name="src/datatype/time_interval.cpp" />
+        <file file_name="src/datatype/uuid.cpp" />
+      </folder>
+    </folder>
+    <file file_name="README.md" />
+  </project>
+  <configuration
+    Name="Debug"
+    c_preprocessor_definitions="DEBUG"
+    gcc_debugging_level="Level 3"
+    gcc_optimization_level="None" />
+  <configuration
+    Name="Release"
+    c_preprocessor_definitions="NDEBUG"
+    gcc_debugging_level="Level 2"
+    gcc_omit_frame_pointer="Yes"
+    gcc_optimization_level="Level 2 balanced" />
+</solution>
