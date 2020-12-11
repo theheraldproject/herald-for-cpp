@@ -1,0 +1,7 @@
+build
+Output
+*.dll
+*.exe
+*.so
+*.a
+**/.DS_Store
