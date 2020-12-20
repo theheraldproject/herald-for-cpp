@@ -42,6 +42,7 @@ set(HEADERS
   include/datatype/placename_location_reference.h
   include/datatype/proximity.h
   include/datatype/pseudo_device_address.h
+  include/datatype/randomness.h
   include/datatype/rssi.h
   include/datatype/sensor_state.h
   include/datatype/sensor_type.h

@@ -244,3 +244,67 @@ TEST_CASE("datatypes-payloadsharingdata-basics", "[datatypes][payloadsharingdata
 
 
 
+
+
+TEST_CASE("datatypes-placename-basics", "[datatypes][placename][ctor][basics]") {
+  SECTION("datatypes-placename-basics") {
+    herald::datatype::PlacenameLocationReference plr{"Chesterfield"};
+    REQUIRE(plr.description().size() >= 12);
+  }
+}
+
+
+
+
+
+
+TEST_CASE("datatypes-targetidentifier-ctor-default", "[datatypes][targetidentifier][ctor][default]") {
+  SECTION("datatypes-targetidentifier-ctor-default") {
+    herald::datatype::TargetIdentifier t1;
+
+    REQUIRE(t1.toString().size() == 0);
+  }
+}
+
+// TODO Once we have the local BluetoothReference / MAC equivalent, add ctor tests here
+
+
+
+
+
+TEST_CASE("datatypes-timeinterval-basics", "[datatypes][timeinterval][ctor][basics]") {
+  SECTION("datatypes-timeinterval-basics") {
+    herald::datatype::TimeInterval ti{1200};
+
+    REQUIRE(ti.millis() == 1'200'000);
+
+    auto t2 = herald::datatype::TimeInterval::never();
+    REQUIRE(t2.millis() == LONG_MAX);
+    REQUIRE(t2.toString() == std::string("never"));
+
+    auto t3 = herald::datatype::TimeInterval::minutes(20);
+    REQUIRE(t3.millis() == 20 * 60 * 1000);
+
+    auto t4 = herald::datatype::TimeInterval::seconds(20);
+    REQUIRE(t4.millis() == 20 * 1000);
+
+    herald::datatype::Date d1{1000};
+    herald::datatype::Date d2{1200};
+    herald::datatype::TimeInterval t5(d1,d2);
+
+    REQUIRE(t5.millis() == 200 * 1000);
+    REQUIRE(t5.toString() == std::string("200"));
+  }
+}
+
+
+
+
+
+TEST_CASE("datatypes-uuid-basics", "[datatypes][uuid][ctor][basics]") {
+  SECTION("datatypes-uuid-basics") {
+    auto uuid1 = herald::datatype::UUID::random();
+    REQUIRE(uuid1.valid());
+    REQUIRE(uuid1.string().size() == 36); // 4 hyphens, 16 hex bytes = 36 characters
+  }
+}
