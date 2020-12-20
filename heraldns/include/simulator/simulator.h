@@ -63,8 +63,8 @@ private:
   std::vector<uint64_t> casesPerDay; // day 0 = initial values, day 1 = end of first day of simulation
   std::vector<uint64_t> recoveredPerDay;
   
-  std::random_device rd;  //Will be used to obtain a seed for the random number engine
-  std::mt19937 gen; //Standard mersenne_twister_engine seeded with rd()
+  std::random_device rd;  // Will be used to obtain a seed for the random number engine
+  std::mt19937 gen; // Standard mersenne_twister_engine seeded with rd()
   std::uniform_int_distribution<int64_t> distrib;
 };
 

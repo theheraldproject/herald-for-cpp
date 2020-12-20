@@ -3,9 +3,14 @@
 //
 
 #include "datatype/uuid.h"
+#include "datatype/data.h"
+#include "datatype/randomness.h"
 
 #include <string>
 #include <array>
+#include <sstream>
+#include <iosfwd>
+#include <iomanip>
 
 namespace herald {
 namespace datatype {
@@ -46,8 +51,18 @@ UUID::fromString(const std::string& from) noexcept {
 }
 
 UUID
-UUID::random() noexcept {
+UUID::random(RandomnessGenerator& from) noexcept {
   std::array<value_type, 16> data{ {0} };
+  Data randomness;
+  from.nextBytes(16,randomness);
+  for (std::size_t i = 0;i < 16;i++) {
+    data[i] = (value_type)randomness.at(i);
+  }
+  // Now set bits for v4 UUID explicitly
+  constexpr value_type M = 0x40; // 7th byte = 0100 in binary for MSB 0000 for LSB - v4 UUID
+  constexpr value_type N = 0x80; // 9th byte = 1000 in binary for MSB 0000 for LSB - variant 1
+  data[6] = (0x0f & data[6]) | M; // blanks out first 4 bits
+  data[8] = (0x3f & data[8]) | N; // blanks out first 2 bits
   UUID uuid(data,false); // TODO generate random data and tag as v4
   return std::move(uuid);
 }
@@ -97,7 +112,7 @@ UUID::operator>(const UUID& other) const noexcept {
 
 std::string
 UUID::operator=(const UUID& from) const noexcept {
-  return "";
+  return from.string();
 }
 
 std::array<uint8_t, 16>
@@ -107,7 +122,20 @@ UUID::data() const noexcept {
 
 std::string
 UUID::string() const noexcept {
-  return ""; // TODO actual convert to a string
+  // convert bytes to hex string
+  std::stringstream str;
+	str.setf(std::ios_base::hex, std::ios::basefield);
+	str.fill('0');
+  for (std::size_t i=0; i < 16; i++) {
+		str << std::setw(2) << (unsigned short)mImpl->mData[i];
+	}
+	std::string hexString = str.str();
+  // add in hyphens at relevant points
+  std::stringstream fstr;
+  fstr << hexString.substr(0,8) << "-" << hexString.substr(8,4) << "-"
+       << hexString.substr(12,4) << "-" << hexString.substr(16,4) << "-"
+       << hexString.substr(20,12);
+  return fstr.str();
 }
 
 } // end namespace

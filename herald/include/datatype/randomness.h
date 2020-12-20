@@ -8,6 +8,7 @@
 #include "data.h"
 
 #include <string>
+#include <random>
 
 namespace herald {
 namespace datatype {
@@ -32,6 +33,72 @@ public:
   virtual int nextInt() = 0;
   virtual double nextDouble() = 0;
 
+};
+
+/**
+ * A decidedly non random source!!! Used to test the v4 UUID format generation function only.
+ * DO NOT USE IN PRODUCTION.
+ */
+class AllZerosNotRandom : public RandomnessSource {
+public:
+  AllZerosNotRandom() = default;
+  ~AllZerosNotRandom() = default;
+
+  std::string methodName() const override {
+    return "allzeros";
+  }
+
+  void nextBytes(std::size_t count, Data& into) override {
+    std::vector<std::byte> result;
+    for (std::size_t i = 0;i < count;i++) {
+      result.push_back(std::byte(0));
+    }
+    Data final(result);
+    into.append(final);
+  }
+
+  int nextInt() override {
+    return 0;
+  }
+
+  double nextDouble() override {
+    return 0.0;
+  }
+};
+
+class IntegerDistributedRandomSource : public RandomnessSource {
+public:
+  IntegerDistributedRandomSource() 
+    : rd(), gen(rd()), distrib(LONG_MIN,LONG_MAX)
+  {}
+
+  ~IntegerDistributedRandomSource() = default;
+
+  std::string methodName() const override {
+    return "integerdistributed";
+  }
+
+  void nextBytes(std::size_t count, Data& into) override {
+    std::vector<std::byte> result;
+    for (std::size_t i = 0;i < count;i++) {
+      result.push_back(std::byte(distrib(gen))); // a little wasteful...
+    }
+    Data final(result);
+    into.append(final);
+  }
+
+  int nextInt() override {
+    return (int)distrib(gen);
+  }
+
+  double nextDouble() override {
+    return (double)distrib(gen);
+  }
+
+private:
+  std::random_device rd;  // Will be used to obtain a seed for the random number engine
+  std::mt19937 gen; // Standard mersenne_twister_engine seeded with rd()
+  std::uniform_int_distribution<int64_t> distrib;
 };
 
 /**
@@ -100,7 +167,7 @@ public:
     // now add in entropy
     for (std::size_t byteIndex = 0;byteIndex < count;byteIndex++) {
       result.push_back((std::byte)(
-        std::size_t(into.at(byteIndex))
+        std::size_t(sourcedInto.at(byteIndex))
         ^ 
         (m_entropy >> 8 * (byteIndex % shifts))
       ));
