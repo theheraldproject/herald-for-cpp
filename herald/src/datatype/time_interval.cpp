@@ -83,6 +83,9 @@ TimeInterval::operator()() noexcept {
 
 long
 TimeInterval::millis() {
+  if (LONG_MAX == mImpl->seconds) {
+    return LONG_MAX;
+  }
   return mImpl->seconds * 1000;
 }
 

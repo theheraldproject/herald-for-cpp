@@ -4,6 +4,8 @@
 
 #include "datatype/date.h"
 
+#include <ctime>
+
 namespace herald {
 namespace datatype {
 
@@ -54,7 +56,10 @@ Date::~Date() {}
 
 std::string
 Date::iso8601DateTime() const {
-  return ""; // TODO fix this
+  time_t t(mImpl->seconds);
+  char buf[21];
+  strftime(buf, sizeof buf, "%FT%TZ", gmtime(&t));
+  return std::string(buf);
 }
 
 std::string

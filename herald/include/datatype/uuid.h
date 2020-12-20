@@ -6,6 +6,7 @@
 #define UUID_H
 
 #include "error_code.h"
+#include "randomness.h"
 
 #include <string>
 #include <memory>
@@ -19,7 +20,7 @@ public:
   using value_type = uint8_t;
 
   static UUID fromString(const std::string& from) noexcept;
-  static UUID random() noexcept;
+  static UUID random(RandomnessGenerator& from) noexcept;
 
   UUID(UUID& from);
   ~UUID();

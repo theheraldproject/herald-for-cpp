@@ -11,6 +11,9 @@ namespace herald {
 namespace datatype {
 
 struct PlacenameLocationReference : public LocationReference {
+  PlacenameLocationReference(std::string n) : LocationReference(), name(n) { };
+  ~PlacenameLocationReference() = default;
+  
   std::string name;
 
   std::string description() {

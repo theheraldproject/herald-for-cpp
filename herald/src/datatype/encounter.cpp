@@ -70,6 +70,23 @@ Encounter::isValid() const {
   return mImpl->valid;
 }
 
+const Proximity&
+Encounter::proximity() const
+{
+  return mImpl->proximity;
+}
+
+const PayloadData&
+Encounter::payload() const
+{
+  return mImpl->payloadData;
+}
+
+const Date&
+Encounter::timestamp() const
+{
+  return mImpl->date;
+}
 
 } // end namespace
 } // end namespace

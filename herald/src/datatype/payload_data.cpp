@@ -16,16 +16,22 @@ PayloadData::PayloadData() {
   Data::Data();
 }
 
-PayloadData::PayloadData(const Data& from) {
-  Data::Data(from);
+PayloadData::PayloadData(const Data& from)
+  : Data(from)
+{
+  ;
 }
 
-PayloadData::PayloadData(const std::byte* data, std::size_t length) {
-  Data::Data(data,length);
+PayloadData::PayloadData(const std::byte* data, std::size_t length)
+  : Data(data,length)
+{
+  ;
 }
 
-PayloadData::PayloadData(std::byte repeating, std::size_t count) {
-  Data::Data(repeating, count);
+PayloadData::PayloadData(std::byte repeating, std::size_t count)
+  : Data(repeating,count)
+{
+  ;
 }
 
 std::string
