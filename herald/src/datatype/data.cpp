@@ -36,7 +36,7 @@ Data::Data() : mImpl(std::make_unique<Impl>()) {
 Data::Data(const std::byte* value, std::size_t length) : mImpl(std::make_unique<Impl>()) {
   mImpl->data.reserve(length);
   for (std::size_t i = 0;i < length; i++) {
-    mImpl->data[i] = value[i];
+    mImpl->data.push_back(value[i]);
   }
 }
 
@@ -78,16 +78,16 @@ Data::subdata(std::size_t offset) const {
 Data
 Data::subdata(std::size_t offset, std::size_t length) const {
   Data copy;
-  if (offset > mImpl->data.size()) {
+  if (offset + length > mImpl->data.size()) {
     return std::move(copy);
   }
-  std::copy(mImpl->data.begin() + offset, mImpl->data.begin() + length, std::back_inserter(copy.mImpl->data));
+  std::copy(mImpl->data.begin() + offset, mImpl->data.begin() + offset + length, std::back_inserter(copy.mImpl->data));
   return std::move(copy);
 }
 
 std::byte
 Data::at(std::size_t index) const {
-  if (mImpl->data.size() < (index - 1)) {
+  if (index > mImpl->data.size() - 1) {
     return std::byte(0);
   }
   return mImpl->data[index];

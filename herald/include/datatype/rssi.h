@@ -13,11 +13,11 @@ namespace datatype {
 
 class RSSI {
 public:
-  RSSI(int value);
-  RSSI(RSSI&& other);
+  RSSI(int value); // int
+  RSSI(const RSSI& other); // copy
+  RSSI(RSSI&& other); // move
   ~RSSI();
 
-  bool operator==(const RSSI& other);
 
   std::size_t hashCode() const;
 
@@ -29,6 +29,8 @@ private:
   class Impl;
   std::unique_ptr<Impl> mImpl;
 };
+
+bool operator==(const RSSI& first, const RSSI& other);
 
 } // end namespace
 } // end namespace

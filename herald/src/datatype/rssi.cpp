@@ -26,6 +26,12 @@ RSSI::RSSI(int value)
   mImpl->value = value;
 }
 
+RSSI::RSSI(const RSSI& other)
+ : mImpl(std::make_unique<Impl>())
+{
+  mImpl->value = other.mImpl->value;
+}
+
 RSSI::RSSI(RSSI&& other)
  : mImpl(std::make_unique<Impl>())
 {
@@ -33,11 +39,6 @@ RSSI::RSSI(RSSI&& other)
 }
 
 RSSI::~RSSI() {}
-
-bool
-RSSI::operator==(const RSSI& other) {
-  return hashCode() == other.hashCode();
-}
 
 std::size_t
 RSSI::hashCode() const {
@@ -53,6 +54,19 @@ int
 RSSI::intValue() const {
   return mImpl->value;
 }
+
+
+
+
+
+
+
+bool
+operator==(const RSSI& first, const RSSI& other) {
+  return first.hashCode() == other.hashCode();
+}
+
+
 
 } // end namespace
 } // end namespace
