@@ -9,6 +9,7 @@
 
 #include <string>
 #include <random>
+#include <climits>
 
 namespace herald {
 namespace datatype {

@@ -11,6 +11,7 @@
 #include <memory>
 
 #include <cstdint>
+#include <climits>
 
 namespace herald {
 namespace datatype {

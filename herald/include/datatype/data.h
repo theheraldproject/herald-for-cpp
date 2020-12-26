@@ -53,7 +53,7 @@ namespace std {
     {
       std::size_t hv = 0;
       for (auto& vpart : v) {
-        hv = hv ^ (std::to_integer<std::size_t>(vpart) << 1);
+        hv = hv ^ (((char)vpart) << 1);
       }
       return hv;
     }

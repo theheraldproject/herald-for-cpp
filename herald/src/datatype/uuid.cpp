@@ -47,7 +47,7 @@ UUID
 UUID::fromString(const std::string& from) noexcept {
   std::array<value_type, 16> data{ {0} };
   UUID uuid(data,false); // TODO parse string, determine if valid, and tag as v4
-  return std::move(uuid);
+  return uuid; // returns copy
 }
 
 UUID
@@ -64,7 +64,7 @@ UUID::random(RandomnessGenerator& from) noexcept {
   data[6] = (0x0f & data[6]) | M; // blanks out first 4 bits
   data[8] = (0x3f & data[8]) | N; // blanks out first 2 bits
   UUID uuid(data,false); // TODO generate random data and tag as v4
-  return std::move(uuid);
+  return uuid; // returns copy
 }
 
 // Instance functions

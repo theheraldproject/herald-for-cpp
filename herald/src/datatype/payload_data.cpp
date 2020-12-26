@@ -12,8 +12,10 @@
 namespace herald {
 namespace datatype {
 
-PayloadData::PayloadData() {
-  Data::Data();
+PayloadData::PayloadData()
+  : Data()
+{
+  ;
 }
 
 PayloadData::PayloadData(const Data& from)

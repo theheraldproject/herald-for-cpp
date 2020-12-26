@@ -39,7 +39,7 @@ public:
   // Note: C++11 Variadic template parameter pack expansion
   template <typename ... Types>
   void debug(const std::string& message, const Types&... args) {
-    std::string msg =  fmt::format(message,args);
+    std::string msg =  fmt::format(message,args...);
     log(sDebug, msg);
   }
 
@@ -51,12 +51,12 @@ public:
 
   template <typename ... Types>
   void fault(const std::string& message, const Types&... args) {
-    std::string msg =  fmt::format(message,args);
+    std::string msg =  fmt::format(message,args...);
     log(sFault, msg);
   }
 
 private:
-  inline void log(const char* lvl, std::string msg) {
+  inline void log(std::string lvl, std::string msg) {
     // TODO csv string encapsulate msg
     // TODO include timestamp
     mSink << lvl << mSubsystem << sComma << mCategory << sComma << msg << std::endl;
@@ -66,16 +66,16 @@ private:
   std::string mSubsystem;
   std::string mCategory;
 
-  static char* sComma;
-  static char* sDebug;
-  static char* sInfo;
-  static char* sFault;
+  static std::string sComma;
+  static std::string sDebug;
+  static std::string sInfo;
+  static std::string sFault;
 };
 
-char* SensorLogger::sComma = ",";
-char* SensorLogger::sDebug = ",debug,";
-char* SensorLogger::sInfo  = ",info,";
-char* SensorLogger::sFault = ",fault,";
+std::string SensorLogger::sComma = ",";
+std::string SensorLogger::sDebug = ",debug,";
+std::string SensorLogger::sInfo  = ",info,";
+std::string SensorLogger::sFault = ",fault,";
 
 } // end namespace
 } // end namespace
