@@ -5,6 +5,8 @@
 #ifndef PAYLOAD_DATA_SUPPLIER_H
 #define PAYLOAD_DATA_SUPPLIER_H
 
+#include "../device.h"
+
 namespace herald {
 namespace payload {
 
@@ -13,7 +15,9 @@ public:
   PayloadDataSupplier() = default;
   virtual ~PayloadDataSupplier() = default;
 
-  // TODO implement the rest of this class
+  virtual std::optional<PayloadData> legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) = 0;
+  virtual std::optional<PayloadData> payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) = 0;
+  virtual std::vector<PayloadData> payload(const Data& data) = 0;
 };
 
 } // end namespace

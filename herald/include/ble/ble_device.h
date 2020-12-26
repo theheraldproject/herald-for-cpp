@@ -5,6 +5,7 @@
 #ifndef BLE_DEVICE_H
 #define BLE_DEVICE_H
 
+#include "../device.h"
 #include "ble_device_delegate.h"
 
 #include "../datatype/payload_data.h"
@@ -35,7 +36,7 @@ enum class BLEDeviceState : int {
   connecting, connected, disconnected
 };
 
-class BLEDevice {
+class BLEDevice : public Device {
 public:
   BLEDevice(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> delegate);
   //BLEDevice(const BLEDevice& device, const BluetoothDevice& bluetoothDevice);
@@ -46,7 +47,7 @@ public:
   std::string toString() const; // TODO change these to c++ conversion operators
 
   // timing related getters
-  std::optional<TimeInterval> timeIntervalSinceLastUpdate() const;
+  std::optional<TimeInterval> timeIntervalSinceLastUpdate() const override;
   std::optional<TimeInterval> timeIntervalSinceConnected() const;
   std::optional<TimeInterval> timeIntervalSinceLastPayloadDataUpdate() const;
   std::optional<TimeInterval> timeIntervalSinceLastWritePayloadSharing() const;

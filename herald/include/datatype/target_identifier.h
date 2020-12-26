@@ -14,6 +14,7 @@ namespace datatype {
 class TargetIdentifier {
 public:
   TargetIdentifier();
+  TargetIdentifier(const TargetIdentifier& from); // copy ctor
 
 // PLATFORM SPECIFIC CTORS BEGIN
   //TargetIdentifier(BluetoothDevice device);

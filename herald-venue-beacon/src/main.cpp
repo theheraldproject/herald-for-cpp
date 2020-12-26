@@ -6,6 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "../herald/herald.h"
+
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -152,20 +154,57 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.cancel = auth_cancel,
 };
 
+struct basic_venue {
+	uint16_t country;
+	uint16_t state;
+	uint32_t code;
+	std::string name;
+};
+
+static struct basic_venue joesPizza = {
+	.country = 826,
+	.state = 4,
+	.code = 12345,
+	.name = "Joe's Pizza"
+};
+
+static struct basic_venue adamsFishShop = {
+	.country = 826,
+	.state = 3,
+	.code = 22334,
+	.name = "Adam's Fish Shop"
+};
+
+static struct basic_venue maxsFineDining = {
+	.country = 832,
+	.state = 1,
+	.code = 55566,
+	.name = "Max's Fine Dining"
+};
+
+static struct basic_venue erinsStakehouse = {
+	.country = 826,
+	.state = 4,
+	.code = 123123,
+	.name = "Erin's Stakehouse"
+};
+
 void main(void)
 {
-	int err;
-
-	err = bt_enable(NULL);
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
-	bt_ready();
-
-	bt_conn_cb_register(&conn_callbacks);
-	bt_conn_auth_cb_register(&auth_cb_display);
+	using namespace herald;
+	// Create Herald sensor array
+	std::shared_ptr<Context> ctx = std::make_shared<Context>();
+	ConcreteExtendedDataV1 extendedData;
+	extendedData.addSection(ExtendedDataSegmentCodesV1.TextPremises, erinsStakehouse.name);
+	std::shared_ptr<payload::beacon::ConcreteBeaconPayloadDataSupplierV1> pds = std::make_shared<payload::beacon::ConcreteBeaconPayloadDataSupplierV1>(
+		erinsStakehouse.country,
+		erinsStakehouse.state,
+		erinsStakehouse.code,
+		extendedData
+	);
+	SensorArray sa(ctx,pds);
+	// Start array
+	sa.start();
 
 	/* Implement notification. At the moment there is no suitable way
 	 * of starting delayed work so we do it here

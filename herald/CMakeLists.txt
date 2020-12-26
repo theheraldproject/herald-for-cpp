@@ -10,6 +10,7 @@ include(GNUInstallDirs
 set(HEADERS 
 	include/herald.h
 	include/context.h
+	include/device.h
   include/default_sensor_delegate.h
   include/sensor_array.h 
   include/sensor_delegate.h
@@ -51,6 +52,8 @@ set(HEADERS
   include/datatype/time_interval.h
   include/datatype/wgs84.h
   include/payload/payload_data_supplier.h
+  include/payload/beacon/beacon_payload_data_supplier.h
+  include/payload/extended/extended_data.h
 
 )
 
@@ -70,6 +73,8 @@ add_library(herald
 	src/datatype/target_identifier.cpp
 	src/datatype/time_interval.cpp
 	src/datatype/uuid.cpp
+	src/payload/beacon/beacon_payload_data_supplier.cpp
+	src/payload/extended/extended_data.cpp
   src/default_sensor_delegate.cpp
   src/sensor_array.cpp
 )
