@@ -26,8 +26,6 @@ include_directories(${herald_SOURCE_DIR})
 
 target_sources(app PRIVATE
   src/main.cpp
-  src/cts.c
-  src/my.cpp
 )
 
 
