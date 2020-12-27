@@ -6,9 +6,14 @@
 #define PAYLOAD_DATA_SUPPLIER_H
 
 #include "../device.h"
+#include "../datatype/payload_timestamp.h"
+#include "../datatype/payload_data.h"
 
 namespace herald {
 namespace payload {
+
+using namespace herald;
+using namespace herald::datatype;
 
 class PayloadDataSupplier {
 public:

@@ -71,6 +71,11 @@ SensorArray::SensorArray(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDa
   ;
 }
 
+SensorArray::~SensorArray()
+{
+  ;
+}
+
 // SENSOR ARRAY METHODS
 bool
 SensorArray::immediateSend(Data data, const TargetIdentifier& targetIdentifier) {

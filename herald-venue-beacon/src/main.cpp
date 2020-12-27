@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "../herald/herald.h"
+#include "../../herald/herald.h"
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -192,10 +192,14 @@ static struct basic_venue erinsStakehouse = {
 void main(void)
 {
 	using namespace herald;
+	using namespace herald::payload;
+	using namespace herald::payload::beacon;
+	using namespace herald::payload::extended;
+
 	// Create Herald sensor array
-	std::shared_ptr<Context> ctx = std::make_shared<Context>();
+	std::shared_ptr<ZephyrContext> ctx = std::make_shared<ZephyrContext>();
 	ConcreteExtendedDataV1 extendedData;
-	extendedData.addSection(ExtendedDataSegmentCodesV1.TextPremises, erinsStakehouse.name);
+	extendedData.addSection(ExtendedDataSegmentCodesV1::TextPremises, erinsStakehouse.name);
 	std::shared_ptr<payload::beacon::ConcreteBeaconPayloadDataSupplierV1> pds = std::make_shared<payload::beacon::ConcreteBeaconPayloadDataSupplierV1>(
 		erinsStakehouse.country,
 		erinsStakehouse.state,

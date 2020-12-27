@@ -15,11 +15,13 @@ namespace datatype {
 class Data {
 public:
   Data();
+  Data(Data&& other); // move ctor
   Data(const std::byte* value, std::size_t length);
   Data(std::vector<std::byte> value);
   Data(const Data& from); // copy ctor
   Data(std::byte repeating, std::size_t count);
   // Data(Base64String from); // use Base64String.from(std::string).decode() instead
+  Data& operator=(const Data& other);
   ~Data();
 
   // std::string base64EncodedString(); // use Base64String.encode(Data) instead

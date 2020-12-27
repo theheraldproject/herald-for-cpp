@@ -28,7 +28,7 @@ class ConcreteBeaconPayloadDataSupplierV1 : public BeaconPayloadDataSupplier {
 public:
   ConcreteBeaconPayloadDataSupplierV1(uint16_t countryCode, uint16_t stateCode, 
     uint32_t code, std::optional<ConcreteExtendedDataV1> extendedData);
-  ~ConcreteBeaconPayloadDataSupplierV1() = default;
+  ~ConcreteBeaconPayloadDataSupplierV1();
 
   std::optional<PayloadData> legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override;
   std::optional<PayloadData> payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override;

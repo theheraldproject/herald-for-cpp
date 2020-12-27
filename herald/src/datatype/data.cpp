@@ -33,6 +33,12 @@ Data::Data() : mImpl(std::make_unique<Impl>()) {
   ;
 }
 
+Data::Data(Data&& other)
+  : mImpl(std::move(other.mImpl))
+{
+  ;
+}
+
 Data::Data(const std::byte* value, std::size_t length) : mImpl(std::make_unique<Impl>()) {
   mImpl->data.reserve(length);
   for (std::size_t i = 0;i < length; i++) {
@@ -53,6 +59,13 @@ Data::Data(std::byte repeating, std::size_t count) : mImpl(std::make_unique<Impl
   for (std::size_t i = 0;i < count; i++) {
     mImpl->data.push_back(repeating);
   }
+}
+
+Data&
+Data::operator=(const Data& other)
+{
+  mImpl->data = other.mImpl->data;
+  return *this;
 }
 
 Data::~Data() {}

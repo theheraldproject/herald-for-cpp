@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # Zephyr build environment variables set here
 set(ENV{ARCH} arm)
 set(ENV{BOARD} nrf52840dongle_nrf52840)
+#set(ENV{BOARD} nrf52832_mdk)
 
 # Generic Zephyr build command below
 cmake_minimum_required(VERSION 3.13.1)
@@ -20,7 +21,8 @@ project(herald-venue-beacon)
 add_subdirectory(../fmt ../build/fmt)
 add_subdirectory(../herald ../build/herald)
 
-#target_compile_features(herald-venue-beacon cxx_std_17)
+# The below is not supported by gcc-arm-eabi
+#target_compile_features(app cxx_std_17)
 
 include_directories(${herald_SOURCE_DIR})
 

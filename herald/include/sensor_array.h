@@ -24,7 +24,7 @@ class SensorArray : public Sensor {
 public:
   /// Takes ownership of payloadDataSupplier (std::move)
   SensorArray(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
-  ~SensorArray() = default;
+  ~SensorArray();
 
   // SENSOR ARRAY METHODS
   bool immediateSend(Data data, const TargetIdentifier& targetIdentifier);

@@ -9,19 +9,20 @@
 
 namespace herald {
 namespace datatype {
-namespace SignalCharacteristicData {
 
 using namespace herald::ble;
 
 // PRIVATE METHODS
-std::byte signalDataActionCode(const Data& signalData) {
+std::byte
+signalDataActionCode(const Data& signalData) {
   if (signalData.size() == 0) {
     return std::byte(0);
   }
   return signalData.at(0);
 }
 
-int int16(const Data& data, std::size_t index, bool& success) {
+int
+int16(const Data& data, std::size_t index, bool& success) {
   if (index < data.size() - 1) { // TODO TEST size() boundary limits - as it's two bytes, little endian
     int v = (((int)data.at(index)) << 8) | (int)data.at(index + 1);
     success = true;
@@ -35,7 +36,7 @@ int int16(const Data& data, std::size_t index, bool& success) {
 // HEADER PUBLIC METHODS
 
 std::optional<Data>
-encodeWriteRssi(const RSSI& rssi) noexcept {
+SignalCharacteristicData::encodeWriteRssi(const RSSI& rssi) noexcept {
   int r = rssi.intValue();
   std::vector<std::byte> vec(3);
   vec.push_back(BLESensorConfiguration::signalCharacteristicActionWriteRSSI);
@@ -45,7 +46,7 @@ encodeWriteRssi(const RSSI& rssi) noexcept {
 }
 
 std::optional<RSSI>
-decodeWriteRSSI(const Data& data) noexcept {
+SignalCharacteristicData::decodeWriteRSSI(const Data& data) noexcept {
   if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWriteRSSI) {
     return {};
   }
@@ -61,7 +62,7 @@ decodeWriteRSSI(const Data& data) noexcept {
 }
 
 std::optional<Data>
-encodeWritePayload(const PayloadData& payloadData) noexcept {
+SignalCharacteristicData::encodeWritePayload(const PayloadData& payloadData) noexcept {
   int r = (int)payloadData.size();
   std::vector<std::byte> vec(3 + r);
   vec.push_back(BLESensorConfiguration::signalCharacteristicActionWritePayload);
@@ -73,7 +74,7 @@ encodeWritePayload(const PayloadData& payloadData) noexcept {
 }
 
 std::optional<PayloadData>
-decodeWritePayload(const Data& data) noexcept {
+SignalCharacteristicData::decodeWritePayload(const Data& data) noexcept {
   if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWritePayload) {
     return {};
   }
@@ -92,7 +93,7 @@ decodeWritePayload(const Data& data) noexcept {
 }
 
 std::optional<Data>
-encodeWritePayloadSharing(const PayloadSharingData& payloadSharingData) noexcept {
+SignalCharacteristicData::encodeWritePayloadSharing(const PayloadSharingData& payloadSharingData) noexcept {
   int r = payloadSharingData.rssi.intValue();
   int r2 = (int)payloadSharingData.data.size();
   std::vector<std::byte> vec(5 + r2);
@@ -107,7 +108,7 @@ encodeWritePayloadSharing(const PayloadSharingData& payloadSharingData) noexcept
 }
 
 std::optional<PayloadSharingData>
-decodeWritePayloadSharing(const Data& data) noexcept {
+SignalCharacteristicData::decodeWritePayloadSharing(const Data& data) noexcept {
   if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWritePayloadSharing) {
     return {};
   }
@@ -133,7 +134,7 @@ decodeWritePayloadSharing(const Data& data) noexcept {
 }
 
 std::optional<Data>
-encodeImmediateSend(const ImmediateSendData& immediateSendData) noexcept {
+SignalCharacteristicData::encodeImmediateSend(const ImmediateSendData& immediateSendData) noexcept {
   int r = (int)immediateSendData.size();
   std::vector<std::byte> vec(3 + r);
   vec.push_back(BLESensorConfiguration::signalCharacteristicActionWriteImmediate);
@@ -145,7 +146,7 @@ encodeImmediateSend(const ImmediateSendData& immediateSendData) noexcept {
 }
 
 std::optional<ImmediateSendData>
-decodeImmediateSend(const Data& data) noexcept {
+SignalCharacteristicData::decodeImmediateSend(const Data& data) noexcept {
   if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWriteImmediate) {
     return {};
   }
@@ -164,7 +165,7 @@ decodeImmediateSend(const Data& data) noexcept {
 }
 
 SignalCharacteristicDataType
-detect(const Data& data) noexcept {
+SignalCharacteristicData::detect(const Data& data) noexcept {
   switch (signalDataActionCode(data)) {
     case BLESensorConfiguration::signalCharacteristicActionWriteRSSI:
       return SignalCharacteristicDataType::rssi;
@@ -179,6 +180,5 @@ detect(const Data& data) noexcept {
   }
 }
 
-} // end namespace
 } // end namespace
 } // end namespace

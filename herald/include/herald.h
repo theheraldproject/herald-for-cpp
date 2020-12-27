@@ -6,20 +6,24 @@
 // Convenience include file
 
 // Root namespace
-#include "sensor.h"
+#include "context.h"
+#include "default_sensor_delegate.h"
+#include "device.h"
 #include "sensor_array.h"
 #include "sensor_delegate.h"
-#include "default_sensor_delegate.h"
+#include "sensor.h"
+#include "zephyr_context.h"
 
 // Datatype namespace
 #include "datatype/base64_string.h"
 #include "datatype/bluetooth_state.h"
 #include "datatype/data.h"
+#include "datatype/date.h"
 #include "datatype/encounter.h"
 #include "datatype/error_code.h"
 #include "datatype/immediate_send_data.h"
-#include "datatype/location.h"
 #include "datatype/location_reference.h"
+#include "datatype/location.h"
 #include "datatype/payload_data.h"
 #include "datatype/payload_sharing_data.h"
 #include "datatype/payload_timestamp.h"
@@ -33,9 +37,11 @@
 #include "datatype/signal_characteristic_data.h"
 #include "datatype/target_identifier.h"
 #include "datatype/time_interval.h"
+#include "datatype/uuid.h"
 #include "datatype/wgs84.h"
 
 // data namespace
+#include "data/sensor_logger.h"
 
 // ble namespace
 #include "ble/ble_database_delegate.h"
@@ -57,5 +63,8 @@
 // payload namespace
 #include "payload/payload_data_supplier.h"
 #include "payload/concrete_payload_data_supplier.h"
+
+#include "payload/beacon/beacon_payload_data_supplier.h"
+#include "payload/extended/extended_data.h"
 
 // service namespace

@@ -15,6 +15,7 @@ set(HEADERS
   include/sensor_array.h 
   include/sensor_delegate.h
   include/sensor.h
+  include/zephyr_context.h
   include/ble/ble_concrete.h
   include/ble/ble_database_delegate.h
   include/ble/ble_database.h
@@ -76,6 +77,8 @@ add_library(herald
 	src/payload/beacon/beacon_payload_data_supplier.cpp
 	src/payload/extended/extended_data.cpp
   src/default_sensor_delegate.cpp
+  src/context.cpp
+  src/zephyr_context.cpp
   src/sensor_array.cpp
 )
 set_target_properties(herald PROPERTIES PUBLIC_HEADER "${HEADERS}")
