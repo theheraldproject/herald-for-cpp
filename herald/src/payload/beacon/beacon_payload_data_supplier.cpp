@@ -31,16 +31,24 @@ ConcreteBeaconPayloadDataSupplierV1::Impl::Impl(uint16_t countryCode, uint16_t s
     MYUINT32 code, ConcreteExtendedDataV1 ed)
   : country(countryCode), state(stateCode), code(code), extendedData(ed), payload()
 {
-  ;
-  // TODO append to payload immediately and cache
+  payload.append(uint8_t(0x30)); // Venue Beacon payload V1
+  payload.append(countryCode);
+  payload.append(stateCode);
+  payload.append(std::uint32_t(code));
+  auto edpl = ed.payload();
+  if (edpl) {
+    payload.append(*edpl);
+  }
 }
 
 ConcreteBeaconPayloadDataSupplierV1::Impl::Impl(uint16_t countryCode, uint16_t stateCode, 
     MYUINT32 code)
   : country(countryCode), state(stateCode), code(code), extendedData(), payload()
 {
-  ;
-  // TODO append to payload immediately and cache
+  payload.append(uint8_t(0x30)); // Venue Beacon payload V1
+  payload.append(countryCode);
+  payload.append(stateCode);
+  payload.append(std::uint32_t(code));
 }
 
 ConcreteBeaconPayloadDataSupplierV1::Impl::~Impl()
@@ -87,7 +95,7 @@ ConcreteBeaconPayloadDataSupplierV1::legacyPayload(const PayloadTimestamp timest
 }
 
 std::optional<PayloadData>
-ConcreteBeaconPayloadDataSupplierV1::payload(const PayloadTimestamp timestmap, const std::shared_ptr<Device> device)
+ConcreteBeaconPayloadDataSupplierV1::payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device)
 {
   return mImpl->payload;
 }

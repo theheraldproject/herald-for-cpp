@@ -32,6 +32,11 @@ public:
   Data subdata(std::size_t offset, std::size_t length) const;
   std::byte at(std::size_t index) const;
   void append(const Data& data);
+  void append(uint8_t data);
+  void append(uint16_t data);
+  void append(uint32_t data);
+  void append(uint64_t data);
+  void append(const std::string& data);
   bool operator==(const Data& other) const noexcept;
 
   std::size_t hashCode() const;

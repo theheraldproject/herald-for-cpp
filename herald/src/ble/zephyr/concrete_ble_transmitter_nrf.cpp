@@ -12,6 +12,7 @@
 #include "ble/bluetooth_state_manager.h"
 
 // nRF Connect SDK includes
+#include <settings/settings.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
@@ -21,11 +22,28 @@
 // C++17 includes
 #include <memory>
 #include <vector>
+#include <cstring>
 
 namespace herald {
 namespace ble {
 
 using namespace herald::datatype;
+
+static PayloadDataSupplier* latestPds = NULL;
+
+class ConcreteBLETransmitter::Impl {
+public:
+  Impl(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
+  ~Impl();
+
+  std::shared_ptr<ZephyrContext> m_context;
+  std::shared_ptr<BluetoothStateManager> m_stateManager;
+  std::shared_ptr<PayloadDataSupplier> m_pds;
+  std::shared_ptr<BLEDatabase> m_db;
+
+  std::vector<std::shared_ptr<SensorDelegate>> delegates;
+};
 
 /* Herald Service Variables */
 static struct bt_uuid_128 herald_uuid = BT_UUID_INIT_128(
@@ -66,17 +84,68 @@ static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-/* Herald primary service declaration */
+// static uint8_t payloadData[100]; // TODO ensure this doesn't overflow
+// static uint8_t payloadSize = 0;
+
+static ssize_t read_payload(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			void *buf, uint16_t len, uint16_t offset)
+{
+  const char *value = (const char*)attr->user_data;
+  if (NULL != latestPds) {
+    PayloadTimestamp pts; // now
+    auto payload = latestPds->payload(pts,nullptr);
+    if (payload.has_value()) {
+      char* newvalue = new char[payload->size()];
+      std::size_t i;
+      for (i = 0;i < payload->size();i++) {
+        newvalue[i] = (char)payload->at(i);
+      }
+      newvalue[i] = '\0'; // termination string
+      newvalue[0] = 'w';
+      newvalue[1] = 't';
+      newvalue[2] = 'a';
+      newvalue[3] = 'f';
+      newvalue[4] = '\0';
+      // std::strcpy(value, newvalue);
+      // value = (const char*)newvalue;
+      value = newvalue;
+      // value = "venue value";
+      return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+        strlen(value));
+    // } else {
+    //   value = "venue value"; // TODO replace with the use of PDS
+    }
+  }
+  return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+    strlen(value));
+}
+
+static ssize_t write_payload(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 const void *buf, uint16_t len, uint16_t offset,
+			 uint8_t flags)
+{
+	uint8_t *value = (uint8_t*)attr->user_data;
+
+	if (offset + len > sizeof(vnd_value)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	memcpy(value + offset, buf, len);
+
+	return len;
+}
+
+// Define kernel memory statically so we definitely have it
 BT_GATT_SERVICE_DEFINE(herald_svc,
-	BT_GATT_PRIMARY_SERVICE(&herald_uuid),
-	BT_GATT_CHARACTERISTIC(&herald_char_signal_uuid.uuid,
-			       BT_GATT_CHRC_WRITE,
-			       BT_GATT_PERM_WRITE,
-			       read_vnd,write_vnd, nullptr),
-	BT_GATT_CHARACTERISTIC(&herald_char_payload_uuid.uuid,
-			       BT_GATT_CHRC_READ,
-			       BT_GATT_PERM_READ,
-			       read_vnd, write_vnd, nullptr),
+  BT_GATT_PRIMARY_SERVICE(&herald_uuid),
+  BT_GATT_CHARACTERISTIC(&herald_char_signal_uuid.uuid,
+            BT_GATT_CHRC_WRITE,
+            BT_GATT_PERM_WRITE,
+            read_vnd,write_vnd, nullptr),
+  BT_GATT_CHARACTERISTIC(&herald_char_payload_uuid.uuid,
+            BT_GATT_CHRC_READ,
+            BT_GATT_PERM_READ,
+            read_payload, write_payload, nullptr)
 );
 static auto bp = BT_LE_ADV_CONN_NAME;
 static const struct bt_data ad[] = {
@@ -92,19 +161,6 @@ static const struct bt_data ad[] = {
 	),
 };
 
-class ConcreteBLETransmitter::Impl {
-public:
-  Impl(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
-  ~Impl();
-
-  std::shared_ptr<ZephyrContext> m_context;
-  std::shared_ptr<BluetoothStateManager> m_stateManager;
-  std::shared_ptr<PayloadDataSupplier> m_pds;
-  std::shared_ptr<BLEDatabase> m_db;
-
-  std::vector<std::shared_ptr<SensorDelegate>> delegates;
-};
 
 ConcreteBLETransmitter::Impl::Impl(
   std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
@@ -115,13 +171,41 @@ ConcreteBLETransmitter::Impl::Impl(
     m_db(bleDatabase),
     delegates()
 {
-  ;
+  latestPds = m_pds.get();
 }
 
 ConcreteBLETransmitter::Impl::~Impl()
 {
-  ;
+  latestPds = NULL;
 }
+
+// ssize_t ConcreteBLETransmitter::Impl::read_payload(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+// 			void *buf, uint16_t len, uint16_t offset)
+// {
+// 	const char *value = (const char*)attr->user_data;
+
+//   value = "venue value";
+
+// 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+// 				 strlen(value));
+// }
+
+// ssize_t ConcreteBLETransmitter::Impl::write_payload(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+// 			 const void *buf, uint16_t len, uint16_t offset,
+// 			 uint8_t flags)
+// {
+// 	uint8_t *value = (uint8_t*)attr->user_data;
+
+// 	if (offset + len > sizeof(vnd_value)) {
+// 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+// 	}
+
+// 	memcpy(value + offset, buf, len);
+
+// 	return len;
+// }
+
+
 
 
 
@@ -138,7 +222,7 @@ ConcreteBLETransmitter::ConcreteBLETransmitter(
 
 ConcreteBLETransmitter::~ConcreteBLETransmitter()
 {
-  stop(); // stops using m_addr
+  // stop(); // stops using m_addr
 }
 
 void
@@ -150,8 +234,13 @@ ConcreteBLETransmitter::add(std::shared_ptr<SensorDelegate> delegate)
 void
 ConcreteBLETransmitter::start()
 {
+
   // Ensure our zephyr context has bluetooth ready
   mImpl->m_context->startBluetooth();
+
+	if (IS_ENABLED(CONFIG_SETTINGS)) {
+		settings_load();
+	}
 
   // Now start advertising
   // See https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/reference/bluetooth/gap.html#group__bt__gap_1gac45d16bfe21c3c38e834c293e5ebc42b
