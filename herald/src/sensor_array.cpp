@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <optional>
 
 namespace herald {
 
@@ -30,10 +31,16 @@ public:
   std::shared_ptr<PayloadDataSupplier> mPayloadDataSupplier;
   std::vector<std::shared_ptr<Sensor>> mSensorArray;
   SensorLogger mLogger;
-  std::shared_ptr<ConcreteBLESensor> mConcreteBleSensor;
+
+  // Bluetooth state master variables
+  std::shared_ptr<BLEDatabase> database;
+
+
+  // std::shared_ptr<ConcreteBLESensor> mConcreteBleSensor;
+  std::shared_ptr<ConcreteBLETransmitter> transmitter;
 
   // initialised in IMPL constructor:-
-  std::shared_ptr<PayloadData> mPayloadData;
+  // std::shared_ptr<PayloadData> mPayloadData;
   //std::shared_ptr<BatteryLog> mBatteryLog;
 
 
@@ -46,7 +53,9 @@ SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDat
     mPayloadDataSupplier(payloadDataSupplier),
     mSensorArray(),
     mLogger(mContext, "Sensor", "SensorArray"),
-    mConcreteBleSensor(std::make_shared<ConcreteBLESensor>(mContext, mPayloadDataSupplier))
+    database(),
+    transmitter(std::make_shared<ConcreteBLETransmitter>(mContext, mContext->getBluetoothStateManager(),
+      mPayloadDataSupplier, database))
 {
   PayloadTimestamp pts; // now
   // mPayloadData = mPayloadDataSupplier->payload(pts);
@@ -56,9 +65,11 @@ SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDat
   // add(std::make_shared<DetectionLog>(mContext,"detection.csv", payloadData));
   // mBatteryLog = std::make_shared<BatteryLog>(mContext, "battery.csv");
 
+  mSensorArray.push_back(transmitter); // add in transmitter
+
   deviceDescription = ""; // TODO get the real device description
 
-  mLogger.info("DEVICE (payload={},description={})", mPayloadData->shortName(), deviceDescription);
+  mLogger.info("DEVICE (payload={},description={})", "nil", deviceDescription);
 }
 
 
@@ -78,12 +89,12 @@ SensorArray::~SensorArray()
 // SENSOR ARRAY METHODS
 bool
 SensorArray::immediateSend(Data data, const TargetIdentifier& targetIdentifier) {
-  return mImpl->mConcreteBleSensor->immediateSend(data,targetIdentifier);
+  return false; // TODO implement once receiver created mImpl->mConcreteBleSensor->immediateSend(data,targetIdentifier);
 }
 
-std::shared_ptr<PayloadData>
+std::optional<PayloadData>
 SensorArray::payloadData() {
-  return mImpl->mPayloadData;
+  return mImpl->mPayloadDataSupplier->payload(PayloadTimestamp(),nullptr);
 }
 
 // SENSOR OVERRIDES 

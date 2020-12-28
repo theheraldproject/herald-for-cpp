@@ -1,0 +1,182 @@
+//  Copyright 2020 VMware, Inc.
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#include "zephyr_context.h"
+#include "ble/ble_concrete_zephyr.h"
+#include "ble/ble_concrete.h"
+#include "ble/ble_database.h"
+#include "ble/ble_receiver.h"
+#include "ble/ble_sensor.h"
+#include "ble/ble_transmitter.h"
+#include "ble/bluetooth_state_manager.h"
+
+// nRF Connect SDK includes
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
+#include <bluetooth/conn.h>
+#include <bluetooth/uuid.h>
+#include <bluetooth/gatt.h>
+
+// C++17 includes
+#include <memory>
+#include <vector>
+
+namespace herald {
+namespace ble {
+
+using namespace herald::datatype;
+
+/* Herald Service Variables */
+static struct bt_uuid_128 herald_uuid = BT_UUID_INIT_128(
+	0x9b, 0xfd, 0x5b, 0xd6, 0x72, 0x45, 0x1e, 0x80, 0xd3, 0x42, 0x46, 0x47, 0xaf, 0x32, 0x81, 0x42
+);
+static struct bt_uuid_128 herald_char_signal_uuid = BT_UUID_INIT_128(
+	0x11, 0x1a, 0x82, 0x80, 0x9a, 0xe0, 0x24, 0x83, 0x7a, 0x43, 0x2e, 0x09, 0x13, 0xb8, 0x17, 0xf6
+);
+static struct bt_uuid_128 herald_char_payload_uuid = BT_UUID_INIT_128(
+	0xe7, 0x33, 0x89, 0x8f, 0xe3, 0x43, 0x21, 0xa1, 0x29, 0x48, 0x05, 0x8f, 0xf8, 0xc0, 0x98, 0x3e
+);
+
+// TODO bind the below to a class and control their values
+
+static uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
+
+static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			void *buf, uint16_t len, uint16_t offset)
+{
+	const char *value = (const char*)attr->user_data;
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+				 strlen(value));
+}
+
+static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			 const void *buf, uint16_t len, uint16_t offset,
+			 uint8_t flags)
+{
+	uint8_t *value = (uint8_t*)attr->user_data;
+
+	if (offset + len > sizeof(vnd_value)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	memcpy(value + offset, buf, len);
+
+	return len;
+}
+
+/* Herald primary service declaration */
+BT_GATT_SERVICE_DEFINE(herald_svc,
+	BT_GATT_PRIMARY_SERVICE(&herald_uuid),
+	BT_GATT_CHARACTERISTIC(&herald_char_signal_uuid.uuid,
+			       BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_WRITE,
+			       read_vnd,write_vnd, nullptr),
+	BT_GATT_CHARACTERISTIC(&herald_char_payload_uuid.uuid,
+			       BT_GATT_CHRC_READ,
+			       BT_GATT_PERM_READ,
+			       read_vnd, write_vnd, nullptr),
+);
+static auto bp = BT_LE_ADV_CONN_NAME;
+static const struct bt_data ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 
+					BT_UUID_16_ENCODE(BT_UUID_DIS_VAL),
+					BT_UUID_16_ENCODE(BT_UUID_GATT_VAL),
+					BT_UUID_16_ENCODE(BT_UUID_GAP_VAL)
+	),
+	BT_DATA_BYTES(BT_DATA_UUID128_ALL,
+		      0x9b, 0xfd, 0x5b, 0xd6, 0x72, 0x45, 0x1e, 0x80, 
+					0xd3, 0x42, 0x46, 0x47, 0xaf, 0x32, 0x81, 0x42
+	),
+};
+
+class ConcreteBLETransmitter::Impl {
+public:
+  Impl(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
+  ~Impl();
+
+  std::shared_ptr<ZephyrContext> m_context;
+  std::shared_ptr<BluetoothStateManager> m_stateManager;
+  std::shared_ptr<PayloadDataSupplier> m_pds;
+  std::shared_ptr<BLEDatabase> m_db;
+
+  std::vector<std::shared_ptr<SensorDelegate>> delegates;
+};
+
+ConcreteBLETransmitter::Impl::Impl(
+  std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase)
+  : m_context(std::static_pointer_cast<ZephyrContext>(ctx)), // Herald API guarantees this to be safe
+    m_stateManager(bluetoothStateManager),
+    m_pds(payloadDataSupplier),
+    m_db(bleDatabase),
+    delegates()
+{
+  ;
+}
+
+ConcreteBLETransmitter::Impl::~Impl()
+{
+  ;
+}
+
+
+
+
+
+ConcreteBLETransmitter::ConcreteBLETransmitter(
+  std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase)
+  : mImpl(std::make_unique<Impl>(ctx,bluetoothStateManager,
+      payloadDataSupplier,bleDatabase))
+{
+  ;
+}
+
+ConcreteBLETransmitter::~ConcreteBLETransmitter()
+{
+  stop(); // stops using m_addr
+}
+
+void
+ConcreteBLETransmitter::add(std::shared_ptr<SensorDelegate> delegate)
+{
+  mImpl->delegates.push_back(delegate);
+}
+
+void
+ConcreteBLETransmitter::start()
+{
+  // Ensure our zephyr context has bluetooth ready
+  mImpl->m_context->startBluetooth();
+
+  // Now start advertising
+  // See https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/reference/bluetooth/gap.html#group__bt__gap_1gac45d16bfe21c3c38e834c293e5ebc42b
+  // bt_le_adv_param param{}; // TODO initialise parameters
+  // bt_data ad{};
+  // size_t ad_len;
+  // bt_data sd{}; // service definition
+  // size_t sd_len; // service definition length
+  int success = bt_le_adv_start(herald::ble::bp, herald::ble::ad, ARRAY_SIZE(herald::ble::ad), NULL, 0);
+  if (!success) {
+    // TODO log
+    return;
+  }
+}
+
+void
+ConcreteBLETransmitter::stop()
+{
+  int success = bt_le_adv_stop();
+  if (!success) {
+    // TODO log
+    return;
+  }
+  // Don't stop Bluetooth altogether - this is done by the ZephyrContext->stopBluetooth() function only
+}
+
+}
+}

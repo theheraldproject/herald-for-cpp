@@ -14,6 +14,7 @@
 #include "datatype/payload_data.h"
 
 #include <memory>
+#include <optional>
 
 namespace herald {
   
@@ -29,7 +30,7 @@ public:
   // SENSOR ARRAY METHODS
   bool immediateSend(Data data, const TargetIdentifier& targetIdentifier);
 
-  std::shared_ptr<PayloadData> payloadData();
+  std::optional<PayloadData> payloadData();
 
   // SENSOR OVERRIDES 
   void add(std::shared_ptr<SensorDelegate> delegate) override;

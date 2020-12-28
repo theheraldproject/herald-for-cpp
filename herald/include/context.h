@@ -5,10 +5,15 @@
 #ifndef CONTEXT_H
 #define CONTEXT_H
 
+#include "ble/bluetooth_state_manager.h"
+
 #include <iosfwd>
 #include <string>
+#include <memory>
 
 namespace herald {
+
+using namespace herald::ble;
 
 /**
  * Some platforms require global configuration or static configuration that
@@ -21,6 +26,7 @@ public:
   virtual ~Context() = default;
 
   virtual std::ostream& getLoggingSink(const std::string& requestedFor) = 0;
+  virtual std::shared_ptr<BluetoothStateManager> getBluetoothStateManager() = 0;
 };
 
 /**

@@ -37,14 +37,44 @@ private:
   std::unique_ptr<Impl> mImpl;
 };
 
-class ConcreteBLESensor : public BLESensor {
+// class ConcreteBLESensor : public BLESensor {
+// public:
+//   ConcreteBLESensor(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
+//   ~ConcreteBLESensor();
+
+//   bool immediateSend(Data data, const TargetIdentifier& targetIdentifier);
+
+//   // overrides
+//   void add(std::shared_ptr<SensorDelegate> delegate) override;
+//   void start() override;
+//   void stop() override;
+
+// private:
+//   class Impl;
+//   std::unique_ptr<Impl> mImpl;
+// };
+
+// class ConcreteBLEReceiver : public BLEReceiver {
+// public:
+//   ConcreteBLEReceiver(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+//     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase,
+//     std::shared_ptr<BLETransmitter> bleTransmitter);
+//   ~ConcreteBLEReceiver();
+
+//   bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) override;
+
+// private:
+//   class Impl;
+//   std::unique_ptr<Impl> mImpl;
+// };
+
+class ConcreteBLETransmitter : public BLETransmitter {
 public:
-  ConcreteBLESensor(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
-  ~ConcreteBLESensor();
+  ConcreteBLETransmitter(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
+  ~ConcreteBLETransmitter();
 
-  bool immediateSend(Data data, const TargetIdentifier& targetIdentifier);
-
-  // overrides
+  // Sensor overrides
   void add(std::shared_ptr<SensorDelegate> delegate) override;
   void start() override;
   void stop() override;
@@ -54,40 +84,15 @@ private:
   std::unique_ptr<Impl> mImpl;
 };
 
-class ConcreteBLEReceiver : public BLEReceiver {
-public:
-  ConcreteBLEReceiver(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase,
-    std::shared_ptr<BLETransmitter> bleTransmitter);
-  ~ConcreteBLEReceiver();
+// class ConcreteBluetoothStateManager : public BluetoothStateManager {
+// public:
+//   ConcreteBluetoothStateManager(std::shared_ptr<Context> ctx);
+//   ~ConcreteBluetoothStateManager();
 
-  bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) override;
-
-private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
-};
-
-class ConcreteBLETransmitter : public BLETransmitter {
-public:
-  ConcreteBLETransmitter(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
-  ~ConcreteBLETransmitter();
-
-private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
-};
-
-class ConcreteBluetoothStateManager : public BluetoothStateManager {
-public:
-  ConcreteBluetoothStateManager(std::shared_ptr<Context> ctx);
-  ~ConcreteBluetoothStateManager();
-
-private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
-};
+// private:
+//   class Impl;
+//   std::unique_ptr<Impl> mImpl;
+// };
 
 } // end namespace
 } // end namespace

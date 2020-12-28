@@ -8,6 +8,7 @@
 // #ifdef __ZEPHYR__
 
 #include "context.h"
+#include "ble/bluetooth_state_manager.h"
 
 #include <memory>
 #include <iosfwd>
@@ -15,15 +16,28 @@
 
 namespace herald {
 
+using namespace herald::ble;
+
 /*
  * Zephyr context class - holds state generic across our application for a particular device.
  */
-class ZephyrContext : public Context {
+class ZephyrContext : public Context, public BluetoothStateManager {
 public:
   ZephyrContext();
   ~ZephyrContext();
 
+  // Context override methods
   std::ostream& getLoggingSink(const std::string& requestedFor) override;
+  std::shared_ptr<BluetoothStateManager> getBluetoothStateManager() override;
+
+  // Bluetooth State Manager override methods
+  BluetoothState state() override;
+
+  // Zephyr OS specific methods
+  int enableBluetooth();
+
+  int startBluetooth();
+  int stopBluetooth();
 
 private:
   class Impl;

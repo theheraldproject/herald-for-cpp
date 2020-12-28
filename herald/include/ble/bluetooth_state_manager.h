@@ -18,7 +18,7 @@ public:
   BluetoothStateManager() = default;
   virtual ~BluetoothStateManager() = default;
 
-  virtual BluetoothState state() = 0;;
+  virtual BluetoothState state() = 0;
 };
 
 } // end namespace
