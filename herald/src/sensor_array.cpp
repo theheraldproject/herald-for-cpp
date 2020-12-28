@@ -24,7 +24,7 @@ using namespace payload;
 class SensorArray::Impl {
 public:
   Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
-  ~Impl() = default;
+  ~Impl();
 
   // Initialised on entry to Impl constructor:-
   std::shared_ptr<Context> mContext;
@@ -35,14 +35,7 @@ public:
   // Bluetooth state master variables
   std::shared_ptr<BLEDatabase> database;
 
-
-  // std::shared_ptr<ConcreteBLESensor> mConcreteBleSensor;
   std::shared_ptr<ConcreteBLETransmitter> transmitter;
-
-  // initialised in IMPL constructor:-
-  // std::shared_ptr<PayloadData> mPayloadData;
-  //std::shared_ptr<BatteryLog> mBatteryLog;
-
 
   // Not initialised (and thus optional):-
   std::string deviceDescription;
@@ -55,9 +48,10 @@ SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDat
     mLogger(mContext, "Sensor", "SensorArray"),
     database(),
     transmitter(std::make_shared<ConcreteBLETransmitter>(mContext, mContext->getBluetoothStateManager(),
-      mPayloadDataSupplier, database))
+      mPayloadDataSupplier, database)),
+    deviceDescription("")
 {
-  PayloadTimestamp pts; // now
+  // PayloadTimestamp pts; // now
   // mPayloadData = mPayloadDataSupplier->payload(pts);
   // add(std::make_shared<ContactLog>(mContext, "contacts.csv"));
   // add(std::make_shared<StatisticsLog>(mContext, "statistics.csv", payloadData));
@@ -67,10 +61,19 @@ SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDat
 
   mSensorArray.push_back(transmitter); // add in transmitter
 
-  deviceDescription = ""; // TODO get the real device description
+  // deviceDescription = ""; // TODO get the real device description
 
-  mLogger.info("DEVICE (payload={},description={})", "nil", deviceDescription);
+  // NOTE THE FOLLOWING LINE CAUSES ZEPHYR APPS TO NOT EXECUTE - COUT ISSUE?
+  //mLogger.info("DEVICE (payload={},description={})", "nil", deviceDescription);
 }
+
+SensorArray::Impl::~Impl()
+{
+  ;
+}
+
+
+
 
 
 

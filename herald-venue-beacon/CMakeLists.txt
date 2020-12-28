@@ -14,8 +14,8 @@ set(ENV{BOARD} nrf52840dongle_nrf52840)
 # Generic Zephyr build command below
 cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(herald-venue-beacon C CXX)
-
+project(herald-venue-beacon CXX)
+# NOTE: Don't include C library as it bloats the binary beyond DFU max load size (i.e. beyond half of the available flash)
 
 set(HERALD_TARGET zephyr)
 
@@ -124,8 +124,10 @@ include_directories(../fmt/include)
 target_sources(app PRIVATE
   ${HERALD_HEADERS}
   ${HERALD_HEADERS_ZEPHYR}
+#  src/cts.h
   ${HERALD_SOURCES}
   ${HERALD_SOURCES_ZEPHYR}
+#  src/cts.c
   src/main.cpp
 )
 
