@@ -2,6 +2,9 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
+// FORCE CORRECT UINT32_t TYPES
+#include <cstdint>
+
 /// Main Herald library include for C++ Native platforms
 // Convenience include file
 
@@ -62,7 +65,6 @@
 
 // payload namespace
 #include "payload/payload_data_supplier.h"
-#include "payload/concrete_payload_data_supplier.h"
 
 #include "payload/beacon/beacon_payload_data_supplier.h"
 #include "payload/extended/extended_data.h"

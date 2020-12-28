@@ -8,7 +8,7 @@
 #include "../datatype/bluetooth_state.h"
 #include "../context.h"
 
-#include "../../fmt/include/fmt/format.h"
+#include "fmt/format.h"
 
 #include <string>
 #include <memory>
@@ -71,11 +71,6 @@ private:
   static std::string sInfo;
   static std::string sFault;
 };
-
-std::string SensorLogger::sComma = ",";
-std::string SensorLogger::sDebug = ",debug,";
-std::string SensorLogger::sInfo  = ",info,";
-std::string SensorLogger::sFault = ",fault,";
 
 } // end namespace
 } // end namespace

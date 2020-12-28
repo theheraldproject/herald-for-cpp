@@ -14,20 +14,30 @@ namespace beacon {
 class ConcreteBeaconPayloadDataSupplierV1::Impl {
 public:
   Impl(uint16_t countryCode, uint16_t stateCode, 
-    uint32_t code, const std::optional<ConcreteExtendedDataV1>& extendedData);
+    MYUINT32 code, ConcreteExtendedDataV1 extendedData);
+  Impl(uint16_t countryCode, uint16_t stateCode, 
+    MYUINT32 code);
   ~Impl();
 
   uint16_t country;
   uint16_t state;
-  uint32_t code;
+  MYUINT32 code;
   std::optional<ConcreteExtendedDataV1> extendedData;
 
   PayloadData payload;
 };
 
 ConcreteBeaconPayloadDataSupplierV1::Impl::Impl(uint16_t countryCode, uint16_t stateCode, 
-    uint32_t code, const std::optional<ConcreteExtendedDataV1>& ed)
+    MYUINT32 code, ConcreteExtendedDataV1 ed)
   : country(countryCode), state(stateCode), code(code), extendedData(ed), payload()
+{
+  ;
+  // TODO append to payload immediately and cache
+}
+
+ConcreteBeaconPayloadDataSupplierV1::Impl::Impl(uint16_t countryCode, uint16_t stateCode, 
+    MYUINT32 code)
+  : country(countryCode), state(stateCode), code(code), extendedData(), payload()
 {
   ;
   // TODO append to payload immediately and cache
@@ -44,8 +54,23 @@ ConcreteBeaconPayloadDataSupplierV1::Impl::~Impl()
 
 
 ConcreteBeaconPayloadDataSupplierV1::ConcreteBeaconPayloadDataSupplierV1(uint16_t countryCode, uint16_t stateCode, 
-    uint32_t code, std::optional<ConcreteExtendedDataV1> extendedData)
-  : mImpl(std::make_unique<Impl>(countryCode,stateCode,code,extendedData))
+    MYUINT32 code, ConcreteExtendedDataV1 extendedData)
+  : BeaconPayloadDataSupplier(),
+    mImpl(std::make_unique<Impl>(countryCode,stateCode,code,extendedData))
+{
+  ;
+}
+// ConcreteBeaconPayloadDataSupplierV1::ConcreteBeaconPayloadDataSupplierV1(uint16_t countryCode, uint16_t stateCode, 
+//     unsigned int code, ConcreteExtendedDataV1 extendedData)
+//   : BeaconPayloadDataSupplier(),
+//     mImpl(std::make_unique<Impl>(countryCode,stateCode,(uint32_t)code,extendedData))
+// {
+//   ;
+// }
+ConcreteBeaconPayloadDataSupplierV1::ConcreteBeaconPayloadDataSupplierV1(uint16_t countryCode, uint16_t stateCode, 
+    MYUINT32 code)
+  : BeaconPayloadDataSupplier(),
+    mImpl(std::make_unique<Impl>(countryCode,stateCode,code))
 {
   ;
 }
@@ -56,7 +81,7 @@ ConcreteBeaconPayloadDataSupplierV1::~ConcreteBeaconPayloadDataSupplierV1()
 }
 
 std::optional<PayloadData>
-ConcreteBeaconPayloadDataSupplierV1::legacyPayload(const PayloadTimestamp timestmap, const std::shared_ptr<Device> device)
+ConcreteBeaconPayloadDataSupplierV1::legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device)
 {
   return std::optional<PayloadData>();
 }

@@ -61,6 +61,7 @@ set(HEADERS
 add_library(herald 
 	${HEADERS}
   src/ble/windows/concrete_ble_sensor.cpp
+  src/data/sensor_logger.cpp
 	src/datatype/base64_string.cpp
 	src/datatype/data.cpp
 	src/datatype/date.cpp
@@ -83,7 +84,7 @@ add_library(herald
 )
 set_target_properties(herald PROPERTIES PUBLIC_HEADER "${HEADERS}")
 
-include_directories(${herald_SOURCE_DIR}/fmt/include)
+include_directories(../fmt/include)
 
 target_include_directories(herald 
 	PUBLIC 

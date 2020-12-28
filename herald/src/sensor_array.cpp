@@ -7,7 +7,6 @@
 #include "data/sensor_logger.h"
 #include "datatype/payload_timestamp.h"
 #include "payload/payload_data_supplier.h"
-#include "payload/concrete_payload_data_supplier.h"
 #include "ble/ble_concrete.h"
 
 #include <memory>

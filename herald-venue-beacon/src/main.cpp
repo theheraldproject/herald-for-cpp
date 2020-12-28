@@ -8,6 +8,9 @@
 
 #include "../../herald/herald.h"
 
+// CORRECT C++ DEFINITIONS OF uint32_t
+#include <cstdint>
+
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -154,10 +157,12 @@ static struct bt_conn_auth_cb auth_cb_display = {
 	.cancel = auth_cancel,
 };
 
+using MYUINT32 = unsigned long;
+
 struct basic_venue {
-	uint16_t country;
-	uint16_t state;
-	uint32_t code;
+	std::uint16_t country;
+	std::uint16_t state;
+	MYUINT32 code; // C++ linker may balk, confusing unsigned int with unsigned long
 	std::string name;
 };
 
@@ -200,6 +205,12 @@ void main(void)
 	std::shared_ptr<ZephyrContext> ctx = std::make_shared<ZephyrContext>();
 	ConcreteExtendedDataV1 extendedData;
 	extendedData.addSection(ExtendedDataSegmentCodesV1::TextPremises, erinsStakehouse.name);
+	
+	payload::beacon::ConcreteBeaconPayloadDataSupplierV1 mypds(erinsStakehouse.country,
+		erinsStakehouse.state,
+		erinsStakehouse.code,
+		extendedData);
+
 	std::shared_ptr<payload::beacon::ConcreteBeaconPayloadDataSupplierV1> pds = std::make_shared<payload::beacon::ConcreteBeaconPayloadDataSupplierV1>(
 		erinsStakehouse.country,
 		erinsStakehouse.state,
