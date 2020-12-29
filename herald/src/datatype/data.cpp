@@ -122,7 +122,7 @@ Data::uint16(std::size_t fromIndex, uint16_t& into) const noexcept
   if (fromIndex > mImpl->data.size() - 2) {
     return false;
   }
-  into = (std::uint16_t(mImpl->data[fromIndex]) << 8) | std::uint16_t(mImpl->data[fromIndex + 1]);
+  into = (std::uint16_t(mImpl->data[fromIndex + 1]) << 8) | std::uint16_t(mImpl->data[fromIndex]);
   return true;
 }
 
@@ -132,8 +132,8 @@ Data::uint32(std::size_t fromIndex, uint32_t& into) const noexcept
   if (fromIndex > mImpl->data.size() - 4) {
     return false;
   }
-  into = (std::uint32_t(mImpl->data[fromIndex])     << 24) | (std::uint32_t(mImpl->data[fromIndex + 1]) << 16) |
-         (std::uint32_t(mImpl->data[fromIndex + 2]) << 8)  |  std::uint32_t(mImpl->data[fromIndex + 3]);
+  into =  std::uint32_t(mImpl->data[fromIndex])            | (std::uint32_t(mImpl->data[fromIndex + 1]) << 8) |
+         (std::uint32_t(mImpl->data[fromIndex + 2]) << 16) | (std::uint32_t(mImpl->data[fromIndex + 3]) << 24);
   return true;
 }
 
@@ -143,10 +143,10 @@ Data::uint64(std::size_t fromIndex, uint64_t& into) const noexcept
   if (fromIndex > mImpl->data.size() - 8) {
     return false;
   }
-  into = (std::uint64_t(mImpl->data[fromIndex])     << 56) | (std::uint64_t(mImpl->data[fromIndex + 1]) << 48) |
-         (std::uint64_t(mImpl->data[fromIndex + 2]) << 40) | (std::uint64_t(mImpl->data[fromIndex + 3]) << 32) |
-         (std::uint64_t(mImpl->data[fromIndex + 4]) << 24) | (std::uint64_t(mImpl->data[fromIndex + 5]) << 16) |
-         (std::uint64_t(mImpl->data[fromIndex + 6]) << 8)  |  std::uint64_t(mImpl->data[fromIndex + 7]);
+  into = (std::uint64_t(mImpl->data[fromIndex + 7])     << 56) | (std::uint64_t(mImpl->data[fromIndex + 6]) << 48) |
+         (std::uint64_t(mImpl->data[fromIndex + 5]) << 40) | (std::uint64_t(mImpl->data[fromIndex + 4]) << 32) |
+         (std::uint64_t(mImpl->data[fromIndex + 3]) << 24) | (std::uint64_t(mImpl->data[fromIndex + 2]) << 16) |
+         (std::uint64_t(mImpl->data[fromIndex + 1]) << 8)  |  std::uint64_t(mImpl->data[fromIndex]);
   return true;
 }
 
@@ -170,8 +170,8 @@ Data::append(uint16_t data)
 {
   std::size_t curSize = mImpl->data.size();
   mImpl->data.reserve(curSize + 2); // C++ ensures types are AT LEAST x bits
-  mImpl->data.push_back(std::byte(data >> 8));
   mImpl->data.push_back(std::byte(data & 0xff));
+  mImpl->data.push_back(std::byte(data >> 8));
 }
 
 void
@@ -179,10 +179,10 @@ Data::append(uint32_t data)
 {
   std::size_t curSize = mImpl->data.size();
   mImpl->data.reserve(curSize + 4); // C++ ensures types are AT LEAST x bits
-  mImpl->data.push_back(std::byte(data >> 24));
-  mImpl->data.push_back(std::byte(data >> 16));
-  mImpl->data.push_back(std::byte(data >> 8));
   mImpl->data.push_back(std::byte(data & 0xff));
+  mImpl->data.push_back(std::byte(data >> 8));
+  mImpl->data.push_back(std::byte(data >> 16));
+  mImpl->data.push_back(std::byte(data >> 24));
 }
 
 void
@@ -190,14 +190,14 @@ Data::append(uint64_t data)
 {
   std::size_t curSize = mImpl->data.size();
   mImpl->data.reserve(curSize + 8); // C++ ensures types are AT LEAST x bits
-  mImpl->data.push_back(std::byte(data >> 56));
-  mImpl->data.push_back(std::byte(data >> 48));
-  mImpl->data.push_back(std::byte(data >> 40));
-  mImpl->data.push_back(std::byte(data >> 32));
-  mImpl->data.push_back(std::byte(data >> 24));
-  mImpl->data.push_back(std::byte(data >> 16));
-  mImpl->data.push_back(std::byte(data >> 8));
   mImpl->data.push_back(std::byte(data & 0xff));
+  mImpl->data.push_back(std::byte(data >> 8));
+  mImpl->data.push_back(std::byte(data >> 16));
+  mImpl->data.push_back(std::byte(data >> 24));
+  mImpl->data.push_back(std::byte(data >> 32));
+  mImpl->data.push_back(std::byte(data >> 40));
+  mImpl->data.push_back(std::byte(data >> 48));
+  mImpl->data.push_back(std::byte(data >> 56));
 }
 
 void

@@ -35,13 +35,6 @@ ConcreteExtendedDataV1::Impl::~Impl()
 
 
 
-constexpr const ExtendedDataSegmentCodesV1 
-ExtendedDataSegmentCodesV1::TextPremises(0x10),
-ExtendedDataSegmentCodesV1::TextLocation(0x11),
-ExtendedDataSegmentCodesV1::TextArea(0x12),
-ExtendedDataSegmentCodesV1::LocationUrl(0x13)
-;
-
 
 ConcreteExtendedDataV1::ConcreteExtendedDataV1()
   : mImpl(std::make_unique<Impl>())

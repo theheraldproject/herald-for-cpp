@@ -113,19 +113,19 @@ TEST_CASE("datatypes-data-append", "[datatypes][data][append]") {
     REQUIRE(r64ok);
     REQUIRE(r8 == u8);
     REQUIRE(r16 == u16);
-    REQUIRE(d.at(9) == std::byte(0x00));
-    REQUIRE(d.at(10) == std::byte(0x01));
-    REQUIRE(d.at(11) == std::byte(0xdd));
-    REQUIRE(d.at(12) == std::byte(0xe9));
+    REQUIRE(d.at(9) == std::byte(0xe9));
+    REQUIRE(d.at(10) == std::byte(0xdd));
+    REQUIRE(d.at(11) == std::byte(0x01));
+    REQUIRE(d.at(12) == std::byte(0x00));
     REQUIRE(r32 == u32);
-    REQUIRE(d.at(13) == std::byte(0x00));
-    REQUIRE(d.at(14) == std::byte(0x00));
-    REQUIRE(d.at(15) == std::byte(0x00));
-    REQUIRE(d.at(16) == std::byte(0x01));
-    REQUIRE(d.at(17) == std::byte(0x00));
-    REQUIRE(d.at(18) == std::byte(0x0f));
-    REQUIRE(d.at(19) == std::byte(0x42));
-    REQUIRE(d.at(20) == std::byte(0x40));
+    REQUIRE(d.at(20) == std::byte(0x00));
+    REQUIRE(d.at(19) == std::byte(0x00));
+    REQUIRE(d.at(18) == std::byte(0x00));
+    REQUIRE(d.at(17) == std::byte(0x01));
+    REQUIRE(d.at(16) == std::byte(0x00));
+    REQUIRE(d.at(15) == std::byte(0x0f));
+    REQUIRE(d.at(14) == std::byte(0x42));
+    REQUIRE(d.at(13) == std::byte(0x40));
     REQUIRE(r64 == u64);
   }
 }
