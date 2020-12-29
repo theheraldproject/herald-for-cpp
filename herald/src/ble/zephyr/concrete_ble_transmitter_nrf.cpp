@@ -100,18 +100,18 @@ static ssize_t read_payload(struct bt_conn *conn, const struct bt_gatt_attr *att
       for (i = 0;i < payload->size();i++) {
         newvalue[i] = (char)payload->at(i);
       }
-      newvalue[i] = '\0'; // termination string
-      newvalue[0] = 'w';
-      newvalue[1] = 't';
-      newvalue[2] = 'a';
-      newvalue[3] = 'f';
-      newvalue[4] = '\0';
+      // newvalue[i] = '\0'; // termination string
+      // newvalue[0] = 'w';
+      // newvalue[1] = 't';
+      // newvalue[2] = 'a';
+      // newvalue[3] = 'f';
+      // newvalue[4] = '\0';
       // std::strcpy(value, newvalue);
       // value = (const char*)newvalue;
       value = newvalue;
       // value = "venue value";
       return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-        strlen(value));
+        payload->size());
     // } else {
     //   value = "venue value"; // TODO replace with the use of PDS
     }

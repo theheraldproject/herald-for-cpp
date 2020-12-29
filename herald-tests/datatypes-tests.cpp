@@ -78,6 +78,58 @@ TEST_CASE("datatypes-data-ctor-repeat", "[datatypes][data][ctor][repeat]") {
   }
 }
 
+TEST_CASE("datatypes-data-append", "[datatypes][data][append]") {
+  SECTION("datatypes-data-append") {
+    herald::datatype::Data d{std::byte('a'),6}; // 6
+    const uint8_t u8 = 23; // 1
+    const uint16_t u16 = 65530; // 2
+    const uint32_t u32 = 122345; // 4
+    const uint64_t u64 = 4295967296; // 8
+    const std::string s = "lorem ipsum dolar Sit Amet Consecutor"; // 37
+    d.append(u8);
+    d.append(u16);
+    d.append(u32);
+    d.append(u64);
+    d.append(s);
+
+    REQUIRE(d.size() == 58);
+    REQUIRE(d.at(0) == std::byte('a'));
+    REQUIRE(d.at(5) == std::byte('a'));
+    REQUIRE(d.at(6) == std::byte(uint8_t(23)));
+    REQUIRE(d.at(57) == std::byte('r'));
+
+    // now ensure that byte order is correct
+    uint8_t r8 = 0;
+    uint16_t r16 = 0;
+    uint32_t r32 = 0;
+    uint64_t r64 = 0;
+    bool r8ok = d.uint8(6,r8);
+    bool r16ok = d.uint16(7,r16);
+    bool r32ok = d.uint32(9,r32);
+    bool r64ok = d.uint64(13,r64);
+    REQUIRE(r8ok);
+    REQUIRE(r16ok);
+    REQUIRE(r32ok);
+    REQUIRE(r64ok);
+    REQUIRE(r8 == u8);
+    REQUIRE(r16 == u16);
+    REQUIRE(d.at(9) == std::byte(0x00));
+    REQUIRE(d.at(10) == std::byte(0x01));
+    REQUIRE(d.at(11) == std::byte(0xdd));
+    REQUIRE(d.at(12) == std::byte(0xe9));
+    REQUIRE(r32 == u32);
+    REQUIRE(d.at(13) == std::byte(0x00));
+    REQUIRE(d.at(14) == std::byte(0x00));
+    REQUIRE(d.at(15) == std::byte(0x00));
+    REQUIRE(d.at(16) == std::byte(0x01));
+    REQUIRE(d.at(17) == std::byte(0x00));
+    REQUIRE(d.at(18) == std::byte(0x0f));
+    REQUIRE(d.at(19) == std::byte(0x42));
+    REQUIRE(d.at(20) == std::byte(0x40));
+    REQUIRE(r64 == u64);
+  }
+}
+
 TEST_CASE("datatypes-date-basics", "[datatypes][date][basics]") {
   SECTION("datatypes-date-basics") {
     herald::datatype::Date d(1608483600); // long ctor

@@ -37,6 +37,10 @@ public:
   void append(uint32_t data);
   void append(uint64_t data);
   void append(const std::string& data);
+  bool uint8(std::size_t fromIndex, uint8_t& into) const noexcept;
+  bool uint16(std::size_t fromIndex, uint16_t& into) const noexcept;
+  bool uint32(std::size_t fromIndex, uint32_t& into) const noexcept;
+  bool uint64(std::size_t fromIndex, uint64_t& into) const noexcept;
   bool operator==(const Data& other) const noexcept;
 
   std::size_t hashCode() const;

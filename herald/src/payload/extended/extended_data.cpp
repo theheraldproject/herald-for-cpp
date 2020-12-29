@@ -35,6 +35,13 @@ ConcreteExtendedDataV1::Impl::~Impl()
 
 
 
+constexpr const ExtendedDataSegmentCodesV1 
+ExtendedDataSegmentCodesV1::TextPremises(0x10),
+ExtendedDataSegmentCodesV1::TextLocation(0x11),
+ExtendedDataSegmentCodesV1::TextArea(0x12),
+ExtendedDataSegmentCodesV1::LocationUrl(0x13)
+;
+
 
 ConcreteExtendedDataV1::ConcreteExtendedDataV1()
   : mImpl(std::make_unique<Impl>())
@@ -92,6 +99,7 @@ ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, uint8_t value)
   std::vector<std::byte> d;
   d.push_back(std::byte(value));
   mImpl->sections.emplace_back(code, 1, std::move(d));
+  mImpl->hasData = true;
 }
 
 void
@@ -101,6 +109,7 @@ ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, uint16_t value)
   d.push_back(std::byte(value >> 8));
   d.push_back(std::byte(value & 0xff));
   mImpl->sections.emplace_back(code, 1, std::move(d));
+  mImpl->hasData = true;
 }
 
 void
@@ -111,6 +120,7 @@ ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, float value)
     d.push_back(std::byte(((std::size_t)value) >> (8 * (i - 1))));
   }
   mImpl->sections.emplace_back(code,sizeof(float), std::move(d));
+  mImpl->hasData = true;
 }
 
 void
@@ -121,12 +131,14 @@ ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, const std::stri
     d.push_back(std::byte(c));
   }
   mImpl->sections.emplace_back(code, value.size(), std::move(d));
+  mImpl->hasData = true;
 }
 
 void
 ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, const Data& value)
 {
   mImpl->sections.emplace_back(code, value.size(), value);
+  mImpl->hasData = true;
 }
 
 const std::vector<ConcreteExtendedDataSectionV1>&
@@ -139,8 +151,13 @@ std::optional<PayloadData>
 ConcreteExtendedDataV1::payload()
 {
   if (mImpl->hasData) {
-    // TODO generate data sections
-    return PayloadData(); // empty data package
+    PayloadData result;
+    for (auto s : mImpl->sections) {
+      result.append(s.code);
+      result.append(s.length);
+      result.append(s.data);
+    }
+    return result;
   }
   return std::optional<PayloadData>(); // empty optional
 }

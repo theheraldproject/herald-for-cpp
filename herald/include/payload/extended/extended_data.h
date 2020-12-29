@@ -56,13 +56,6 @@ struct ExtendedDataSegmentCodesV1 {
   static const ExtendedDataSegmentCodesV1 TextPremises, TextLocation, TextArea, LocationUrl;
 };
 
-constexpr const ExtendedDataSegmentCodesV1 
-ExtendedDataSegmentCodesV1::TextPremises(0x10),
-ExtendedDataSegmentCodesV1::TextLocation(0x11),
-ExtendedDataSegmentCodesV1::TextArea(0x12),
-ExtendedDataSegmentCodesV1::LocationUrl(0x13)
-;
-
 struct ConcreteExtendedDataSectionV1 {
   uint8_t code;
   uint8_t length;
