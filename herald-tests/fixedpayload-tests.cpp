@@ -28,7 +28,7 @@ TEST_CASE("payload-fixed-basic", "[payload][fixed][basic]") {
     REQUIRE(pd->uint16(1,rc));
     REQUIRE(pd->uint16(3,rs));
     REQUIRE(pd->uint64(5,rcid));
-    REQUIRE(rpidversion == std::uint8_t(0x00));
+    REQUIRE(rpidversion == std::uint8_t(0x08));
     REQUIRE(rc == country);
     REQUIRE(rs == state);
     REQUIRE(rcid == clientId);

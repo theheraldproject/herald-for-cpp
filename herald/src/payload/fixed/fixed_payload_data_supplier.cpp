@@ -29,7 +29,7 @@ ConcreteFixedPayloadDataSupplierV1::Impl::Impl(std::uint16_t countryCode, std::u
     std::uint64_t clientId)
   : country(countryCode), state(stateCode), clientIdentifier(clientId), payload()
 {
-  payload.append(std::uint8_t(0x00)); // Fixed testing payload V1 (custom rangx 0x00-0x0f)
+  payload.append(std::uint8_t(0x08)); // Fixed testing payload V1 (custom range with country/state codes are in 0x08-0x0f)
   payload.append(countryCode);
   payload.append(stateCode);
   payload.append(clientId);
