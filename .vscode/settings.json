@@ -80,6 +80,7 @@
     "xutility": "cpp",
     "format": "cpp",
     "filesystem": "cpp",
-    "strstream": "cpp"
+    "strstream": "cpp",
+    "resumable": "cpp"
   }
 }

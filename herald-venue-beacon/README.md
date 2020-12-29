@@ -136,6 +136,7 @@ For Nordic Semiconductor boards we use the below methods in development.
 
 We use the nRF Connect Desktop programmer app.
 
+1. Be sure to flash [openbootloader with DFU support](https://github.com/makerdiary/nrf52840-mdk-usb-dongle/tree/master/firmware/open_bootloader#change-to-open-bootloader-from-uf2-bootloader) [External] to your board - the UF2 bootloader doesn't support nRF Connect's programmer
 1. Launch nRF Connect Desktop
 1. Select and install, then open the Programmer app
 1. Whilst holding down the reset button, plug in the dongle - this enters programming mode (note: you can plug it in and hit reset - prevents wear and tear of the usb contacts)

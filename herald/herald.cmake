@@ -45,6 +45,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/datatype/wgs84.h
   ${HERALD_BASE}/include/payload/payload_data_supplier.h
   ${HERALD_BASE}/include/payload/beacon/beacon_payload_data_supplier.h
+  ${HERALD_BASE}/include/payload/fixed/fixed_payload_data_supplier.h
   ${HERALD_BASE}/include/payload/extended/extended_data.h
 
 )
@@ -68,6 +69,7 @@ set(HERALD_SOURCES
 	${HERALD_BASE}/src/datatype/time_interval.cpp
 	${HERALD_BASE}/src/datatype/uuid.cpp
 	${HERALD_BASE}/src/payload/beacon/beacon_payload_data_supplier.cpp
+	${HERALD_BASE}/src/payload/fixed/fixed_payload_data_supplier.cpp
 	${HERALD_BASE}/src/payload/extended/extended_data.cpp
   ${HERALD_BASE}/src/default_sensor_delegate.cpp
   ${HERALD_BASE}/src/context.cpp

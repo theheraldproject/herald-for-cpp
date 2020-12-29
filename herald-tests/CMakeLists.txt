@@ -4,6 +4,7 @@ add_executable(herald-tests
 	datatypes-tests.cpp
 	beaconpayload-tests.cpp
 	extendeddata-tests.cpp
+	fixedpayload-tests.cpp
 )
 
 include_directories(${herald_SOURCE_DIR} ../fmt/include)

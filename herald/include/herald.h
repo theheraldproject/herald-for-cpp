@@ -67,6 +67,7 @@
 #include "payload/payload_data_supplier.h"
 
 #include "payload/beacon/beacon_payload_data_supplier.h"
+#include "payload/fixed/fixed_payload_data_supplier.h"
 #include "payload/extended/extended_data.h"
 
 // service namespace

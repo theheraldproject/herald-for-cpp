@@ -58,6 +58,44 @@ static struct basic_venue erinsStakehouse = {
 	.name = "Erin's Stakehouse"
 };
 
+// TODO replace the below with sub-venue extended data, with same venue code
+static struct basic_venue adamsKitchen = {
+  .country = 826,
+	.state = 4,
+	.code = 1234,
+	.name = "Adam's Kitchen"
+};
+static struct basic_venue adamsOffice = {
+  .country = 826,
+	.state = 4,
+	.code = 2345,
+	.name = "Adam's Office"
+};
+static struct basic_venue adamsBedroom = {
+  .country = 826,
+	.state = 4,
+	.code = 3456,
+	.name = "Adam's Bedroom"
+};
+static struct basic_venue adamsLanding = {
+  .country = 826,
+	.state = 4,
+	.code = 5678,
+	.name = "Adam's Landing"
+};
+static struct basic_venue adamsPond = {
+  .country = 826,
+	.state = 4,
+	.code = 6789,
+	.name = "Adam's Pond"
+};
+static struct basic_venue adamsLounge = {
+  .country = 826,
+	.state = 4,
+	.code = 7890,
+	.name = "Adam's Lounge"
+};
+
 void main(void)
 {
 	using namespace herald;
