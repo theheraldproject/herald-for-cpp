@@ -1,7 +1,4 @@
 {
-  "C_Cpp.default.includePath": [
-    "D:\\devtools\\ncs\\v1.4.0\\zephyr\\include"
-  ],
   "files.associations": {
     "memory": "cpp",
     "atomic": "cpp",

@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 
 # Zephyr build environment variables set here
+# TODO detect if these have already been set externally as overrides
 set(ENV{ARCH} arm)
 set(ENV{BOARD} nrf52840dongle_nrf52840) # nRF52840 USB dongle
 #set(ENV{BOARD} nrf52dk_nrf52832) # nRF52832 USB dongle
@@ -20,6 +21,8 @@ project(herald-venue-beacon CXX)
 set(HERALD_TARGET zephyr)
 
 
+# WARNING DO NOT USE THE ZEPHYR DEFAULT EXTERNAL PROJECT INCLUDE METHOD
+# IT DOES NOT PROVIDE ZEPHYR BUILD SETTINGS CORRECTLY WHEN CROSS COMPILING ON WINDOWS
 
 
 # The external static library that we are linking with does not know
@@ -124,10 +127,8 @@ include_directories(../fmt/include)
 target_sources(app PRIVATE
   ${HERALD_HEADERS}
   ${HERALD_HEADERS_ZEPHYR}
-#  src/cts.h
   ${HERALD_SOURCES}
   ${HERALD_SOURCES_ZEPHYR}
-#  src/cts.c
   src/main.cpp
 )
 

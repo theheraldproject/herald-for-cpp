@@ -17,8 +17,6 @@
 #include <memory>
 #include <iostream>
 
-// #ifdef __ZEPHYR__
-
 namespace herald {
 
 class ZephyrContext::Impl {
@@ -26,7 +24,7 @@ public:
   Impl();
   ~Impl();
 
-  // TODO Any Zephyr RTOS specific global handles go here
+  // Any Zephyr RTOS specific global handles go here
   bt_addr_le_t m_addr;
   bool enabled;
 };
@@ -130,5 +128,3 @@ ZephyrContext::stopBluetooth()
 
 
 } // end namespace
-
-// #endif

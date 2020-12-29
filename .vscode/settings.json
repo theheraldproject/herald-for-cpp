@@ -1,6 +1,4 @@
 {
-  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
-  "C_Cpp.default.includePath": ["D:\\devtools\\ncs\\v1.4.0\\zephyr\\include","$default"],
   "files.associations": {
     "memory": "cpp",
     "algorithm": "cpp",
