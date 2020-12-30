@@ -2,9 +2,9 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/location.h"
-#include "datatype/location_reference.h"
-#include "datatype/date.h"
+#include "herald/datatype/location.h"
+#include "herald/datatype/location_reference.h"
+#include "herald/datatype/date.h"
 
 #include <string>
 

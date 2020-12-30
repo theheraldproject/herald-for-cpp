@@ -2,7 +2,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/rssi.h"
+#include "herald/datatype/rssi.h"
 
 #include <string>
 

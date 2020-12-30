@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "payload/fixed/fixed_payload_data_supplier.h"
-#include "datatype/data.h"
+#include "herald/payload/fixed/fixed_payload_data_supplier.h"
+#include "herald/datatype/data.h"
 
 #include <optional>
 #include <cstdint>

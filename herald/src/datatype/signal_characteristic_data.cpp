@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/signal_characteristic_data.h"
-#include "ble/ble_sensor_configuration.h"
+#include "herald/datatype/signal_characteristic_data.h"
+#include "herald/ble/ble_sensor_configuration.h"
 
 #include <vector>
 

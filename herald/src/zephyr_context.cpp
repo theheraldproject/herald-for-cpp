@@ -2,20 +2,18 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "zephyr_context.h"
-
-
-#include <zephyr.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/hci.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/uuid.h>
-#include <bluetooth/gatt.h>
-#include <bluetooth/services/bas.h>
-#include <bluetooth/services/hrs.h>
+#include "herald/zephyr_context.h"
 
 #include <memory>
 #include <iostream>
+
+#include <bluetooth/bluetooth.h>
+
+// NOTE: Link Herald to the Zephyr logging system
+// Set CONFIG_HERALD_LOG_LEVEL=4 for debug in CMake using add_definitions(-DCONFIG_HERALD_LOG_LEVEL=4 )
+//   Defaults to 0 (OFF) - see zephyr_context.h
+#include <logging/log.h>
+LOG_MODULE_REGISTER(herald, CONFIG_HERALD_LOG_LEVEL);
 
 namespace herald {
 
@@ -80,7 +78,7 @@ ZephyrContext::state()
 }
 
 int 
-ZephyrContext::enableBluetooth()
+ZephyrContext::enableBluetooth() noexcept
 {
   int success;
   // rotate mac address using onboard crypto
@@ -111,7 +109,7 @@ ZephyrContext::enableBluetooth()
 }
 
 int 
-ZephyrContext::startBluetooth()
+ZephyrContext::startBluetooth() noexcept
 {
   if (!mImpl->enabled) {
     return enableBluetooth();
@@ -120,11 +118,17 @@ ZephyrContext::startBluetooth()
 }
 
 int 
-ZephyrContext::stopBluetooth()
+ZephyrContext::stopBluetooth() noexcept
 {
   return 0;
 }
 
-
+void
+ZephyrContext::periodicActions() noexcept
+{
+  // TODO periodic bluetooth actions
+  // E.g. determine if we should rotate mac address (if not done for us?)
+  // Check if ble receiver needs to go talk to anyone (new device, payload, rssi reading)
+}
 
 } // end namespace

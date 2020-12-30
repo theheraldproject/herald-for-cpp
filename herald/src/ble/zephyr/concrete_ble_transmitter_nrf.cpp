@@ -2,14 +2,14 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "zephyr_context.h"
-#include "ble/ble_concrete_zephyr.h"
-#include "ble/ble_concrete.h"
-#include "ble/ble_database.h"
-#include "ble/ble_receiver.h"
-#include "ble/ble_sensor.h"
-#include "ble/ble_transmitter.h"
-#include "ble/bluetooth_state_manager.h"
+#include "herald/zephyr_context.h"
+#include "herald/ble/ble_concrete_zephyr.h"
+#include "herald/ble/ble_concrete.h"
+#include "herald/ble/ble_database.h"
+#include "herald/ble/ble_receiver.h"
+#include "herald/ble/ble_sensor.h"
+#include "herald/ble/ble_transmitter.h"
+#include "herald/ble/bluetooth_state_manager.h"
 
 // nRF Connect SDK includes
 #include <settings/settings.h>

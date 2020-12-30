@@ -35,8 +35,10 @@ include(../herald/herald.cmake) # include sources and headers
 
 message("HERALD HEADERS: ${HERALD_HEADERS}")
 
-include_directories(../herald/include)
+include_directories(../herald/include) # including this causes uart.h to fail complaining about incomplete type const struct device in zephyr
 include_directories(../fmt/include)
+
+add_definitions(-DCONFIG_HERALD_LOG_LEVEL=4 -DCONFIG_APP_LOG_LEVEL=4)
 
 target_sources(app PRIVATE
   ${HERALD_HEADERS}

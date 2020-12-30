@@ -2,9 +2,9 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/uuid.h"
-#include "datatype/data.h"
-#include "datatype/randomness.h"
+#include "herald/datatype/uuid.h"
+#include "herald/datatype/data.h"
+#include "herald/datatype/randomness.h"
 
 #include <string>
 #include <array>

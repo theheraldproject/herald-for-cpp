@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/base64_string.h"
-#include "datatype/data.h"
+#include "herald/datatype/base64_string.h"
+#include "herald/datatype/data.h"
 
 #include <string>
 #include <iostream>

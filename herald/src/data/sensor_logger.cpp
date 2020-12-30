@@ -2,7 +2,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "data/sensor_logger.h"
+#include "herald/data/sensor_logger.h"
 
 #include <string>
 

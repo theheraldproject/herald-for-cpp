@@ -2,9 +2,9 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/pseudo_device_address.h"
-#include "datatype/data.h"
-#include "datatype/base64_string.h"
+#include "herald/datatype/pseudo_device_address.h"
+#include "herald/datatype/data.h"
+#include "herald/datatype/base64_string.h"
 
 #include <vector>
 #include <string>

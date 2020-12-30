@@ -2,7 +2,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/encounter.h"
+#include "herald/datatype/encounter.h"
 
 #include <string>
 

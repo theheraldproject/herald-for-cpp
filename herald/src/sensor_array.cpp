@@ -2,12 +2,12 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "sensor_array.h"
-#include "context.h"
-#include "data/sensor_logger.h"
-#include "datatype/payload_timestamp.h"
-#include "payload/payload_data_supplier.h"
-#include "ble/ble_concrete.h"
+#include "herald/sensor_array.h"
+#include "herald/context.h"
+#include "herald/data/sensor_logger.h"
+#include "herald/datatype/payload_timestamp.h"
+#include "herald/payload/payload_data_supplier.h"
+#include "herald/ble/ble_concrete.h"
 
 #include <memory>
 #include <string>

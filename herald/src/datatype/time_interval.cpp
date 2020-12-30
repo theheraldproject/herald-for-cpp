@@ -2,7 +2,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/time_interval.h"
+#include "herald/datatype/time_interval.h"
 
 namespace herald {
 namespace datatype {
