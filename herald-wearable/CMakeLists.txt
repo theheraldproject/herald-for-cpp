@@ -11,6 +11,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(ENV{ARCH} arm)
 set(ENV{BOARD} nrf52840dongle_nrf52840) # nRF52840 USB dongle
 #set(ENV{BOARD} nrf52dk_nrf52832) # nRF52832 USB dongle
+#set(ENV{BOARD} qemu_cortex_m3 ) # emulator for testing app load issues
 
 # Generic Zephyr build command below
 cmake_minimum_required(VERSION 3.13.1)
@@ -27,7 +28,7 @@ set(HERALD_TARGET zephyr)
 
 
 # Include Herald core library
-add_subdirectory(../fmt ./build/fmt)
+#add_subdirectory(../fmt ./build/fmt)
 #add_subdirectory(../herald ./build/herald)
 
 set(HERALD_BASE ${CMAKE_CURRENT_SOURCE_DIR}/../herald)
@@ -40,12 +41,16 @@ include_directories(../fmt/include)
 
 add_definitions(-DCONFIG_HERALD_LOG_LEVEL=4 -DCONFIG_APP_LOG_LEVEL=4)
 
+# gcc arm does not warn about missing defs until runtime
+add_compile_options(-Wl,-z,defs,--strict,--strict_symbols,--no-undefined)
+
 target_sources(app PRIVATE
-  ${HERALD_HEADERS}
-  ${HERALD_HEADERS_ZEPHYR}
+#  ${HERALD_HEADERS}
+#  ${HERALD_HEADERS_ZEPHYR}
+  ../fmt/src/format.cc
   ${HERALD_SOURCES}
   ${HERALD_SOURCES_ZEPHYR}
   src/main.cpp
 )
 
-target_link_libraries(app PUBLIC fmt)
+#target_link_libraries(app PUBLIC fmt)

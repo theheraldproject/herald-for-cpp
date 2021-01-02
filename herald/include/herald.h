@@ -5,6 +5,9 @@
 // FORCE CORRECT UINT32_t TYPES
 #include <cstdint>
 
+// Now include STDLIB extensions
+#include "herald/datatype/stdlib.h"
+
 /// Main Herald library include for C++ Native platforms
 // Convenience include file
 
@@ -15,7 +18,10 @@
 #include "herald/sensor_array.h"
 #include "herald/sensor_delegate.h"
 #include "herald/sensor.h"
+
+#ifdef __ZEPHYR__
 #include "herald/zephyr_context.h"
+#endif
 
 // Datatype namespace
 #include "herald/datatype/base64_string.h"
@@ -58,6 +64,9 @@
 #include "herald/ble/ble_tx_power.h"
 #include "herald/ble/bluetooth_state_manager.h"
 #include "herald/ble/bluetooth_state_manager_delegate.h"
+
+#include "herald/ble/filter/ble_advert_types.h"
+#include "herald/ble/filter/ble_advert_parser.h"
 
 #include "herald/ble/ble_concrete.h"
 

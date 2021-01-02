@@ -28,10 +28,6 @@ public:
 
   virtual void add(const std::shared_ptr<BLEDatabaseDelegate>& delegate) = 0;
 
-  //virtual std::shared_ptr<BLEDevice> device(const ScanResult& scanResult) = 0;
-
-  //virtual std::shared_ptr<BLEDevice> device(const BluetoothDevice& bluetoothDevice) = 0;
-
   virtual std::shared_ptr<BLEDevice> device(const PayloadData& payloadData) = 0;
 
   virtual std::shared_ptr<BLEDevice> device(const TargetIdentifier& targetIdentifier) = 0;
@@ -41,6 +37,7 @@ public:
   /// Cannot name a function delete in C++. remove is common.
   virtual void remove(const TargetIdentifier& targetIdentifier) = 0;
 
+  // TODO consider replacing the optional below with a simple empty payload data instance
   virtual std::optional<PayloadSharingData> payloadSharingData(const std::shared_ptr<BLEDevice>& peer) = 0;
 };
 

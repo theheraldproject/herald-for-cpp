@@ -23,7 +23,7 @@ public:
 
   virtual void bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device) = 0;
   
-  virtual void bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, const std::shared_ptr<BLEDeviceAttribute>& attribute) = 0;
+  virtual void bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, const BLEDeviceAttribute attribute) = 0;
   
   virtual void bleDatabaseDidDelete(const std::shared_ptr<BLEDevice>& device) = 0;
 };

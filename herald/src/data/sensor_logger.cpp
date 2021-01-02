@@ -8,11 +8,6 @@
 
 namespace herald {
 namespace data {
-  
-std::string SensorLogger::sComma = ",";
-std::string SensorLogger::sDebug = ",debug,";
-std::string SensorLogger::sInfo  = ",info,";
-std::string SensorLogger::sFault = ",fault,";
 
 }
 }

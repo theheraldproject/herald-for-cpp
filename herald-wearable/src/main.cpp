@@ -32,36 +32,21 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 #include <nrf_cc3xx_platform.h>
 #include <nrf_cc3xx_platform_entropy.h>
 
-void main(void)
-{
+#include <utility>
 
-	const struct device *dev = device_get_binding(
-		CONFIG_UART_CONSOLE_ON_DEV_NAME);
-	uint32_t dtr = 0;
+#include <kernel_structs.h>
+#include <sys/thread_stack.h>
 
-	if (usb_enable(NULL)) {
-		return;
-	}
+struct k_thread herald_thread;
+K_THREAD_STACK_DEFINE(herald_stack, 1024);
 
-	/* Poll if the DTR flag was set, optional */
-	while (!dtr) {
-		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
-	}
+using namespace herald;
+using namespace herald::payload;
+using namespace herald::payload::fixed;
 
-	if (strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME) !=
-	    strlen("CDC_ACM_0") ||
-	    strncmp(CONFIG_UART_CONSOLE_ON_DEV_NAME, "CDC_ACM_0",
-		    strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME))) {
-		printk("Error: Console device name is not USB ACM\n");
+std::shared_ptr<SensorArray> sa;
 
-		return;
-	}
-
-	LOG_INF("USB logging test");
-	using namespace herald;
-	using namespace herald::payload;
-	using namespace herald::payload::fixed;
-
+void cc3xx_init() {
   // START IMPLEMENTORS GUIDANCE - EXAMPLE CODE NOT NEEDED TO COPY IN TO IN YOUR DEMO APP
   // NOTE TO IMPLEMENTORS: Please remember to use a hardware security module where present.
 	//   This is especially important for Herald Secured payload use as it requires a secure TRNG.
@@ -93,6 +78,9 @@ void main(void)
 		}
 	}
 	// END IMPLEMENTORS GUIDANCE
+}
+
+void herald_entry() {
 	
 	// IMPLEMENTORS GUIDANCE - USING HERALD
 	// First initialise the Zephyr Context - this links Herald to any Zephyr OS specific constructs or callbacks
@@ -105,25 +93,91 @@ void main(void)
   std::uint16_t countryCode = 826; // UK ISO 3166-1 numeric
 	std::uint16_t stateCode = 0; // National default
 	std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
+
+
+  // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
+
+
 	std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
 		countryCode,
 		stateCode,
 		clientId
 	);
+	auto sink = ctx->getLoggingSink("mySub","myCat");
+	sink->log(SensorLoggerLevel::info,"Here's some info for you");
+	auto payload = pds->payload(PayloadTimestamp(),nullptr);
+	sink->log(SensorLoggerLevel::info,"I've got some payload data");
+	sink->log(SensorLoggerLevel::info,payload->hexEncodedString());
+	
+	auto sink2 = ctx->getLoggingSink("mySub","mySecondCat");
+	sink2->log(SensorLoggerLevel::info,"Here's some more info for you");
+
+	// auto bles = std::make_shared<ConcreteBLESensor>(ctx, ctx->getBluetoothStateManager(),
+  //     pds);
+
+	// sink->log(SensorLoggerLevel::debug,"Got concrete ble sensor");
+	
 	
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
-	SensorArray sa(ctx,pds);
+	sa = std::make_shared<SensorArray>(ctx,pds);
+	// THIS IS CAUSING THE FAILURE TO LAUNCH - 'exit'
+	// Caused by use of shared_from_this() use in a constructor of concrete ble sensor? - SEEMS SO THUS FAR...
 
 	// Note: You will likely want to register a SensorDelegate implementation of your own to the sensor array to get callbacks on nearby devices
 
+	// 3. Create and add a Logging sensor delegate to enable testing of discovery
+
 	// Start array (and thus start advertising)
-	sa.start(); // There's a corresponding stop() call too
+	sa->start(); // There's a corresponding stop() call too
+
+	while (1) {
+		k_sleep(K_SECONDS(5)); 
+		LOG_INF("herald thread still running");
+	}
+}
+
+void main(void)
+{
+
+	const struct device *dev = device_get_binding(
+		CONFIG_UART_CONSOLE_ON_DEV_NAME);
+	uint32_t dtr = 0;
+
+	if (usb_enable(NULL)) {
+		return;
+	}
+
+	/* Poll if the DTR flag was set, optional */
+	while (!dtr) {
+		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
+	}
+
+	if (strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME) !=
+	    strlen("CDC_ACM_0") ||
+	    strncmp(CONFIG_UART_CONSOLE_ON_DEV_NAME, "CDC_ACM_0",
+		    strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME))) {
+		printk("Error: Console device name is not USB ACM\n");
+
+		return;
+	}
+
+	LOG_INF("USB logging test");
+
+	cc3xx_init();
+
+	// Start herald entry on a new thread in case of errors
+	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 1024,
+			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
+			-1, K_USER,
+			K_NO_WAIT);
+
 
 	/* Implement notification. At the moment there is no suitable way
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_sleep(K_SECONDS(1)); // TODO reduce this, or use separate threads for certain activities
+		k_sleep(K_SECONDS(10)); // TODO reduce this, or use separate threads for certain activities
+		LOG_INF("main thread still running");
 
 		// Periodic Herald tasks here
 		// ctx->periodicActions();

@@ -32,10 +32,7 @@ public:
   std::vector<std::shared_ptr<Sensor>> mSensorArray;
   SensorLogger mLogger;
 
-  // Bluetooth state master variables
-  std::shared_ptr<BLEDatabase> database;
-
-  std::shared_ptr<ConcreteBLETransmitter> transmitter;
+  std::shared_ptr<ConcreteBLESensor> concrete;
 
   // Not initialised (and thus optional):-
   std::string deviceDescription;
@@ -46,9 +43,8 @@ SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDat
     mPayloadDataSupplier(payloadDataSupplier),
     mSensorArray(),
     mLogger(mContext, "Sensor", "SensorArray"),
-    database(),
-    transmitter(std::make_shared<ConcreteBLETransmitter>(mContext, mContext->getBluetoothStateManager(),
-      mPayloadDataSupplier, database)),
+    concrete(std::make_shared<ConcreteBLESensor>(mContext, mContext->getBluetoothStateManager(),
+      mPayloadDataSupplier)),
     deviceDescription("")
 {
   // PayloadTimestamp pts; // now
@@ -59,7 +55,7 @@ SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDat
   // add(std::make_shared<DetectionLog>(mContext,"detection.csv", payloadData));
   // mBatteryLog = std::make_shared<BatteryLog>(mContext, "battery.csv");
 
-  mSensorArray.push_back(transmitter); // add in transmitter
+  mSensorArray.push_back(concrete); // add in BLE transmitter, receiver, et al
 
   // deviceDescription = ""; // TODO get the real device description
 

@@ -6,7 +6,6 @@
 #define BLE_DEVICE_H
 
 #include "../device.h"
-#include "ble_device_delegate.h"
 
 #include "../datatype/payload_data.h"
 #include "../datatype/payload_sharing_data.h"
@@ -23,6 +22,8 @@ namespace herald {
 namespace ble {
 
 using namespace herald::datatype;
+
+class BLEDeviceDelegate; // fwd decl
 
 enum class BLEDeviceAttribute : int {
   peripheral, state, operatingSystem, payloadData, rssi, txPower

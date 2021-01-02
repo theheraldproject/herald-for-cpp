@@ -24,15 +24,25 @@ enum class SensorLoggerLevel : int {
 
 // NOTE: HEADER ONLY CLASS AS IT USES VARIABLE TEMPLATE ARGS FOR LOGGING
 
+class SensorLoggingSink {
+public:
+  SensorLoggingSink() = default;
+  virtual ~SensorLoggingSink() = default;
+
+  virtual void log(SensorLoggerLevel level, std::string message) = 0;
+};
+
 class SensorLogger {
 public:
   SensorLogger(const std::shared_ptr<Context>& ctx, std::string subsystem, std::string category) 
-    : mSink(ctx->getLoggingSink("SensorLogger")), mSubsystem(subsystem), mCategory(category)
+    : mSink(ctx->getLoggingSink(subsystem, category)), mSubsystem(subsystem), mCategory(category)
   {
     ;
   }
+  
+  // TODO consider supporting multiple sinks in the context - E.g. USB UART and log file
 
-  virtual ~SensorLogger() = default; //  TODO is this valid to close mSink?
+  ~SensorLogger() {}; // define this ourselves, but blank and not default
 
   // use std::format to generate the string
   // std::format in C++20, fmt::format library before that
@@ -40,36 +50,29 @@ public:
   template <typename ... Types>
   void debug(const std::string& message, const Types&... args) {
     std::string msg =  fmt::format(message,args...);
-    log(sDebug, msg);
+    log(SensorLoggerLevel::debug, msg);
   }
 
   template <typename ... Types>
   void info(const std::string& message, const Types&... args) {
     std::string msg =  fmt::format(message,args...);
-    log(sInfo, msg);
+    log(SensorLoggerLevel::info, msg);
   }
 
   template <typename ... Types>
   void fault(const std::string& message, const Types&... args) {
     std::string msg =  fmt::format(message,args...);
-    log(sFault, msg);
+    log(SensorLoggerLevel::fault, msg);
   }
 
 private:
-  inline void log(std::string lvl, std::string msg) {
-    // TODO csv string encapsulate msg
-    // TODO include timestamp
-    mSink << lvl << mSubsystem << sComma << mCategory << sComma << msg << std::endl;
+  inline void log(SensorLoggerLevel lvl, std::string msg) {
+    mSink->log(lvl, msg);
   }
 
-  std::ostream& mSink;
+  std::shared_ptr<SensorLoggingSink> mSink;
   std::string mSubsystem;
   std::string mCategory;
-
-  static std::string sComma;
-  static std::string sDebug;
-  static std::string sInfo;
-  static std::string sFault;
 };
 
 } // end namespace

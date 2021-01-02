@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.12)
 
 add_executable(herald-tests
 	datatypes-tests.cpp
+	
+	advertparser-tests.cpp
 	beaconpayload-tests.cpp
 	extendeddata-tests.cpp
 	fixedpayload-tests.cpp

@@ -20,7 +20,8 @@ public:
 
   // BLEReceiver specific methods
   virtual bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) = 0;
-
+  virtual bool immediateSendAll(Data data) = 0;
+  
   // Remaining methods inherited as pure virtual from Sensor class
 };
 

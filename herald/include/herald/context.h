@@ -15,6 +15,12 @@ namespace herald {
 
 using namespace herald::ble;
 
+namespace data {
+class SensorLoggingSink; // fwd decl
+}
+
+using namespace herald::data;
+
 /**
  * Some platforms require global configuration or static configuration that
  * doesn't map well on to C++ idioms. This class provides an extension capability
@@ -25,7 +31,7 @@ public:
   Context() = default;
   virtual ~Context() = default;
 
-  virtual std::ostream& getLoggingSink(const std::string& requestedFor) = 0;
+  virtual std::shared_ptr<SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor) = 0;
   virtual std::shared_ptr<BluetoothStateManager> getBluetoothStateManager() = 0;
 };
 
@@ -37,7 +43,7 @@ public:
   DefaultContext() = default;
   ~DefaultContext() = default;
 
-  std::ostream& getLoggingSink(const std::string& requestedFor) override;
+  std::shared_ptr<SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor) override;
 };
 
 } // end namespace

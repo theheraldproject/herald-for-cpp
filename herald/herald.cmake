@@ -1,6 +1,8 @@
 
 set(HERALD_HEADERS 
 	${HERALD_BASE}/include/herald.h
+	${HERALD_BASE}/include/herald/datatype/stdlib.h
+
 	${HERALD_BASE}/include/herald/context.h
 	${HERALD_BASE}/include/herald/device.h
   ${HERALD_BASE}/include/herald/default_sensor_delegate.h
@@ -19,6 +21,8 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/ble/ble_tx_power.h
   ${HERALD_BASE}/include/herald/ble/bluetooth_state_manager.h
   ${HERALD_BASE}/include/herald/ble/bluetooth_state_manager_delegate.h
+  ${HERALD_BASE}/include/herald/ble/filter/ble_advert_parser.h
+  ${HERALD_BASE}/include/herald/ble/filter/ble_advert_types.h
   ${HERALD_BASE}/include/herald/data/sensor_logger.h
   ${HERALD_BASE}/include/herald/datatype/base64_string.h 
   ${HERALD_BASE}/include/herald/datatype/bluetooth_state.h
@@ -51,9 +55,12 @@ set(HERALD_HEADERS
 )
 set(HERALD_HEADERS_ZEPHYR 
   ${HERALD_BASE}/include/herald/zephyr_context.h
-  ${HERALD_BASE}/include/herald/ble/ble_concrete_zephyr.h
 )
 set(HERALD_SOURCES
+  ${HERALD_BASE}/src/ble/concrete_ble_sensor.cpp
+  ${HERALD_BASE}/src/ble/concrete_ble_database.cpp
+  ${HERALD_BASE}/src/ble/filter/ble_advert_parser.cpp
+  ${HERALD_BASE}/src/ble/filter/ble_advert_types.cpp
   ${HERALD_BASE}/src/data/sensor_logger.cpp
 	${HERALD_BASE}/src/datatype/base64_string.cpp
 	${HERALD_BASE}/src/datatype/data.cpp
@@ -77,5 +84,6 @@ set(HERALD_SOURCES
 )
 set(HERALD_SOURCES_ZEPHYR
   ${HERALD_BASE}/src/ble/zephyr/concrete_ble_transmitter_nrf.cpp
+  ${HERALD_BASE}/src/ble/zephyr/concrete_ble_receiver_nrf.cpp
   ${HERALD_BASE}/src/zephyr_context.cpp
 )

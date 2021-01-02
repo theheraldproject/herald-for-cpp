@@ -29,6 +29,11 @@ Data::Impl::Impl() : data() { }
 
 
 // DATA CLASS DECLARATIONS
+const char Data::hexChars[] = {
+  '0','1','2','3','4','5','6','7',
+  '8','9','a','b','c','d','e','f'
+};
+
 Data::Data() : mImpl(std::make_unique<Impl>()) {
   ;
 }
@@ -43,6 +48,15 @@ Data::Data(const std::byte* value, std::size_t length) : mImpl(std::make_unique<
   mImpl->data.reserve(length);
   for (std::size_t i = 0;i < length; i++) {
     mImpl->data.push_back(value[i]);
+  }
+}
+
+Data::Data(const std::uint8_t* value, std::size_t length) : 
+  mImpl(std::make_unique<Impl>()) {
+  
+  mImpl->data.reserve(length);
+  for (std::size_t i = 0;i < length; i++) {
+    mImpl->data.push_back(std::byte(value[i]));
   }
 }
 
@@ -70,18 +84,56 @@ Data::operator=(const Data& other)
 
 Data::~Data() {}
 
+Data
+Data::fromHexEncodedString(const std::string& hex)
+{
+  Data d;
+  // parse string
+  const std::size_t length = hex.size();
+  std::string hexInput;
+  // Input size check - two characters per single byte
+  if (1 == length % 2) {
+    // invalid format - not an even number of characters
+    // Prepend input with a 0. (Note '8' and '08' in hex are the same)
+    hexInput += "0";
+  }
+  hexInput += hex;
+  for (std::size_t i = 0; i < length; i += 2) {
+    d.append((std::uint8_t)( // forcing for the compiler to a single std::uint8_t
+       std::uint8_t(hexChars[std::size_t(hex[i    ] % 16)] << 4)   | 
+      (std::uint8_t(hexChars[std::size_t(hex[i + 1] % 16)] & 0x0f)
+    )));
+  }
+  return d;
+}
 
-
+std::string
+Data::hexEncodedString() const
+{
+  if (0 == mImpl->data.size()) {
+    return "";
+  }
+  std::string result;
+  std::size_t size = mImpl->data.size();
+  result.reserve(size * 2);
+  std::size_t v;
+  for (std::size_t i = 0; i < size; i++) {
+    v = std::size_t(mImpl->data.at(i));
+    result += hexChars[0x0F & (v >> 4)]; // MSB
+    result += hexChars[0x0F &  v      ]; // LSB
+  }
+  return result;
+}
 
 std::string
 Data::description() const {
-  return ""; // TODO make this a real description
+  return hexEncodedString();
 }
 
 Data
 Data::subdata(std::size_t offset) const {
   Data copy;
-  if (offset > mImpl->data.size()) {
+  if (offset >= mImpl->data.size()) {
     return std::move(copy);
   }
   std::copy(mImpl->data.begin() + offset, mImpl->data.end(), std::back_inserter(copy.mImpl->data));
@@ -91,7 +143,8 @@ Data::subdata(std::size_t offset) const {
 Data
 Data::subdata(std::size_t offset, std::size_t length) const {
   Data copy;
-  if (offset + length > mImpl->data.size()) {
+  // Note: offset if passed as -1 could be MAX_LONG_LONG, so check it on its own too
+  if (offset >= mImpl->data.size() || offset + length > mImpl->data.size()) {
     return std::move(copy);
   }
   std::copy(mImpl->data.begin() + offset, mImpl->data.begin() + offset + length, std::back_inserter(copy.mImpl->data));
@@ -143,11 +196,31 @@ Data::uint64(std::size_t fromIndex, uint64_t& into) const noexcept
   if (fromIndex > mImpl->data.size() - 8) {
     return false;
   }
-  into = (std::uint64_t(mImpl->data[fromIndex + 7])     << 56) | (std::uint64_t(mImpl->data[fromIndex + 6]) << 48) |
+  into = (std::uint64_t(mImpl->data[fromIndex + 7]) << 56) | (std::uint64_t(mImpl->data[fromIndex + 6]) << 48) |
          (std::uint64_t(mImpl->data[fromIndex + 5]) << 40) | (std::uint64_t(mImpl->data[fromIndex + 4]) << 32) |
          (std::uint64_t(mImpl->data[fromIndex + 3]) << 24) | (std::uint64_t(mImpl->data[fromIndex + 2]) << 16) |
          (std::uint64_t(mImpl->data[fromIndex + 1]) << 8)  |  std::uint64_t(mImpl->data[fromIndex]);
   return true;
+}
+
+void
+Data::append(const Data& data, std::size_t offset, std::size_t length)
+{
+  mImpl->data.reserve(mImpl->data.size() + length);
+  std::copy(data.mImpl->data.begin() + offset, 
+            data.mImpl->data.begin() + offset + length, 
+            std::back_inserter(mImpl->data)
+  );
+}
+
+void
+Data::appendReversed(const Data& data, std::size_t offset, std::size_t length)
+{
+  mImpl->data.reserve(mImpl->data.size() + length);
+  std::reverse_copy(data.mImpl->data.begin() + offset, 
+                    data.mImpl->data.begin() + offset + length, 
+                    std::back_inserter(mImpl->data)
+  );
 }
 
 void
@@ -212,6 +285,9 @@ Data::append(const std::string& data)
 
 bool
 Data::operator==(const Data& other) const noexcept {
+  if (size() != other.size()) {
+    return false;
+  }
   //if (hashCode() != other.hashCode()) {
   //  return false;
   //}
@@ -224,6 +300,7 @@ Data::operator==(const Data& other) const noexcept {
 
 std::size_t
 Data::hashCode() const {
+  // TODO consider a faster (E.g. SIMD) algorithm or one with less hotspots (see hashdos attacks)
   return std::hash<std::vector<std::byte>>{}(mImpl->data);
 }
 

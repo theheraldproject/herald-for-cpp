@@ -10,6 +10,7 @@
 #include "ble_sensor.h"
 #include "ble_transmitter.h"
 #include "bluetooth_state_manager.h"
+#include "ble_device_delegate.h"
 #include "../payload/payload_data_supplier.h"
 #include "../context.h"
 
@@ -28,50 +29,93 @@ using namespace herald::payload;
 class ConcreteBLEDatabase : public BLEDatabase, public BLEDeviceDelegate {
 public:
   ConcreteBLEDatabase();
+  ConcreteBLEDatabase(const ConcreteBLEDatabase& from) = delete;
+  ConcreteBLEDatabase(ConcreteBLEDatabase&& from) = delete;
   ~ConcreteBLEDatabase();
 
-  // TODO add solid (non virtual) methods to be implemented by this class
+  // BLE Database overrides
+
+  void add(const std::shared_ptr<BLEDatabaseDelegate>& delegate) override;
+
+  std::shared_ptr<BLEDevice> device(const PayloadData& payloadData) override;
+
+  std::shared_ptr<BLEDevice> device(const TargetIdentifier& targetIdentifier) override;
+
+  std::vector<std::shared_ptr<BLEDevice>> devices() const override;
+
+  /// Cannot name a function delete in C++. remove is common.
+  void remove(const TargetIdentifier& targetIdentifier) override;
+
+  std::optional<PayloadSharingData> payloadSharingData(const std::shared_ptr<BLEDevice>& peer) override;
+
+  // BLE Device Delegate overrides
+  void device(std::shared_ptr<BLEDevice> device, BLEDeviceAttribute didUpdate) override;
 
 private:
   class Impl;
-  std::unique_ptr<Impl> mImpl;
+  std::unique_ptr<Impl> mImpl; // unique as this is handled internally for all platforms by Herald
 };
 
-// class ConcreteBLESensor : public BLESensor {
-// public:
-//   ConcreteBLESensor(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
-//   ~ConcreteBLESensor();
+/**
+ * Acts as the main object to control the receiver, transmitter, and database instances
+ */
+class ConcreteBLESensor : public BLESensor, public BLEDatabaseDelegate, 
+  public BluetoothStateManagerDelegate, public std::enable_shared_from_this<ConcreteBLESensor>  {
+public:
+  ConcreteBLESensor(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
+  ConcreteBLESensor(const ConcreteBLESensor& from) = delete;
+  ConcreteBLESensor(ConcreteBLESensor&& from) = delete;
+  ~ConcreteBLESensor();
 
-//   bool immediateSend(Data data, const TargetIdentifier& targetIdentifier);
+  bool immediateSend(Data data, const TargetIdentifier& targetIdentifier);
+  bool immediateSendAll(Data data);
 
-//   // overrides
-//   void add(std::shared_ptr<SensorDelegate> delegate) override;
-//   void start() override;
-//   void stop() override;
+  // Sensor overrides
+  void add(std::shared_ptr<SensorDelegate> delegate) override;
+  void start() override;
+  void stop() override;
 
-// private:
-//   class Impl;
-//   std::unique_ptr<Impl> mImpl;
-// };
+  // Database overrides
+  void bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device) override;
+  void bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, const BLEDeviceAttribute attribute) override;
+  void bleDatabaseDidDelete(const std::shared_ptr<BLEDevice>& device) override;
 
-// class ConcreteBLEReceiver : public BLEReceiver {
-// public:
-//   ConcreteBLEReceiver(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
-//     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase,
-//     std::shared_ptr<BLETransmitter> bleTransmitter);
-//   ~ConcreteBLEReceiver();
+  // Bluetooth state manager delegate overrides
+  void bluetoothStateManager(BluetoothState didUpdateState) override;
 
-//   bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) override;
+private:
+  class Impl;
+  std::unique_ptr<Impl> mImpl; // unique as this is handled internally for all platforms by Herald
+};
 
-// private:
-//   class Impl;
-//   std::unique_ptr<Impl> mImpl;
-// };
+class ConcreteBLEReceiver : public BLEReceiver, public std::enable_shared_from_this<ConcreteBLEReceiver> {
+public:
+  ConcreteBLEReceiver(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
+  ConcreteBLEReceiver(const ConcreteBLEReceiver& from) = delete;
+  ConcreteBLEReceiver(ConcreteBLEReceiver&& from) = delete;
+  ~ConcreteBLEReceiver();
 
-class ConcreteBLETransmitter : public BLETransmitter {
+  bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) override;
+  bool immediateSendAll(Data data) override;
+
+  // Sensor overrides
+  void add(std::shared_ptr<SensorDelegate> delegate) override;
+  void start() override;
+  void stop() override;
+
+private:
+  class Impl;
+  std::shared_ptr<Impl> mImpl; // shared to allow static callbacks to be bound
+};
+
+class ConcreteBLETransmitter : public BLETransmitter, public std::enable_shared_from_this<ConcreteBLETransmitter> {
 public:
   ConcreteBLETransmitter(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
+  ConcreteBLETransmitter(const ConcreteBLETransmitter& from) = delete;
+  ConcreteBLETransmitter(ConcreteBLETransmitter&& from) = delete;
   ~ConcreteBLETransmitter();
 
   // Sensor overrides
@@ -81,18 +125,8 @@ public:
 
 private:
   class Impl;
-  std::unique_ptr<Impl> mImpl;
+  std::shared_ptr<Impl> mImpl; // shared to allow static callbacks to be bound
 };
-
-// class ConcreteBluetoothStateManager : public BluetoothStateManager {
-// public:
-//   ConcreteBluetoothStateManager(std::shared_ptr<Context> ctx);
-//   ~ConcreteBluetoothStateManager();
-
-// private:
-//   class Impl;
-//   std::unique_ptr<Impl> mImpl;
-// };
 
 } // end namespace
 } // end namespace

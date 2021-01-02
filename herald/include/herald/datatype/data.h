@@ -16,6 +16,7 @@ class Data {
 public:
   Data();
   Data(Data&& other); // move ctor
+  Data(const std::uint8_t* value, std::size_t length);
   Data(const std::byte* value, std::size_t length);
   Data(std::vector<std::byte> value);
   Data(const Data& from); // copy ctor
@@ -25,12 +26,15 @@ public:
   ~Data();
 
   // std::string base64EncodedString(); // use Base64String.encode(Data) instead
+  static Data fromHexEncodedString(const std::string& hex);
 
   std::string description() const;
 
   Data subdata(std::size_t offset) const;
   Data subdata(std::size_t offset, std::size_t length) const;
   std::byte at(std::size_t index) const;
+  void append(const Data& data, std::size_t offset, std::size_t length);
+  void appendReversed(const Data& data, std::size_t offset, std::size_t length);
   void append(const Data& data);
   void append(uint8_t data);
   void append(uint16_t data);
@@ -41,13 +45,18 @@ public:
   bool uint16(std::size_t fromIndex, uint16_t& into) const noexcept;
   bool uint32(std::size_t fromIndex, uint32_t& into) const noexcept;
   bool uint64(std::size_t fromIndex, uint64_t& into) const noexcept;
+  // TODO signed versions of the above functions too
   bool operator==(const Data& other) const noexcept;
 
-  std::size_t hashCode() const;
+  std::string hexEncodedString() const noexcept;
 
-  std::size_t size() const;
+  std::size_t hashCode() const noexcept;
+
+  std::size_t size() const noexcept;
+  // TODO support other C++ STD container type functions to allow iteration over data elements (uint8)
 
 protected:
+  static const char hexChars[];
   class Impl;
   std::unique_ptr<Impl> mImpl; // PIMPL IDIOM
 };

@@ -3,7 +3,6 @@
 //
 
 #include "herald/zephyr_context.h"
-#include "herald/ble/ble_concrete_zephyr.h"
 #include "herald/ble/ble_concrete.h"
 #include "herald/ble/ble_database.h"
 #include "herald/ble/ble_receiver.h"
@@ -12,7 +11,6 @@
 #include "herald/ble/bluetooth_state_manager.h"
 
 // nRF Connect SDK includes
-#include <settings/settings.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 #include <bluetooth/conn.h>
@@ -214,7 +212,7 @@ ConcreteBLETransmitter::Impl::~Impl()
 ConcreteBLETransmitter::ConcreteBLETransmitter(
   std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase)
-  : mImpl(std::make_unique<Impl>(ctx,bluetoothStateManager,
+  : mImpl(std::make_shared<Impl>(ctx,bluetoothStateManager,
       payloadDataSupplier,bleDatabase))
 {
   ;
@@ -231,16 +229,14 @@ ConcreteBLETransmitter::add(std::shared_ptr<SensorDelegate> delegate)
   mImpl->delegates.push_back(delegate);
 }
 
+// 6. Implement any additional transmitter functionality, as required
+
 void
 ConcreteBLETransmitter::start()
 {
 
   // Ensure our zephyr context has bluetooth ready
   mImpl->m_context->startBluetooth();
-
-	if (IS_ENABLED(CONFIG_SETTINGS)) {
-		settings_load();
-	}
 
   // Now start advertising
   // See https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/reference/bluetooth/gap.html#group__bt__gap_1gac45d16bfe21c3c38e834c293e5ebc42b

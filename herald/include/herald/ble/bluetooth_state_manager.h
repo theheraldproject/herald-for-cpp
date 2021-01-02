@@ -6,6 +6,9 @@
 #define BLUETOOTH_STATE_MANAGER_H
 
 #include "../datatype/bluetooth_state.h"
+#include "bluetooth_state_manager_delegate.h"
+
+#include <memory>
 
 namespace herald {
 namespace ble {
@@ -18,6 +21,7 @@ public:
   BluetoothStateManager() = default;
   virtual ~BluetoothStateManager() = default;
 
+  virtual void add(std::shared_ptr<BluetoothStateManagerDelegate> delegate) = 0;
   virtual BluetoothState state() = 0;
 };
 
