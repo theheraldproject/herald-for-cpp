@@ -29,6 +29,7 @@ public:
 
   // SENSOR ARRAY METHODS
   bool immediateSend(Data data, const TargetIdentifier& targetIdentifier);
+  bool immediateSendAll(Data data);
 
   std::optional<PayloadData> payloadData();
 

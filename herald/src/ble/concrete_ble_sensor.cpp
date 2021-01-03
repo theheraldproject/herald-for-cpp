@@ -27,23 +27,28 @@ public:
   // Data members hidden by PIMPL
 
   std::shared_ptr<ConcreteBLEDatabase> database;
+  std::shared_ptr<BluetoothStateManager> stateManager;
   std::shared_ptr<ConcreteBLETransmitter> transmitter;
   std::shared_ptr<ConcreteBLEReceiver> receiver;
 
   std::vector<std::shared_ptr<SensorDelegate>> delegates;
+
+  bool addedSelfAsDelegate;
 };
 
 ConcreteBLESensor::Impl::Impl(std::shared_ptr<Context> ctx, 
     std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
   : database(std::make_shared<ConcreteBLEDatabase>()), 
+    stateManager(bluetoothStateManager),
     transmitter(std::make_shared<ConcreteBLETransmitter>(
       ctx, bluetoothStateManager, payloadDataSupplier, database)
     ),
     receiver(std::make_shared<ConcreteBLEReceiver>(
       ctx, bluetoothStateManager, payloadDataSupplier, database)
     ),
-    delegates()
+    delegates(),
+    addedSelfAsDelegate(false)
 {
   ;
 }
@@ -65,7 +70,7 @@ ConcreteBLESensor::ConcreteBLESensor(std::shared_ptr<Context> ctx,
 {
   // Note: Use of shared_from_this is safe as we known SensorArray 
   //       creates a shared_ptr of this class during instantiation
-  // bluetoothStateManager->add(shared_from_this()); // TEST FOR FAILURE IF USED HERE IN THE CTOR
+  // bluetoothStateManager->add(shared_from_this()); // TEST FOR FAILURE IF USED HERE IN THE CTOR - YES IT FAILS, DO NOT DO THIS FROM CTOR
   // mImpl->database->add(shared_from_this());
 }
 
@@ -91,11 +96,20 @@ void
 ConcreteBLESensor::add(std::shared_ptr<SensorDelegate> delegate)
 {
   mImpl->delegates.push_back(delegate);
+  // add all delegates to receiver and transmitter too?
+  mImpl->receiver->add(delegate);
+  mImpl->transmitter->add(delegate);
+  // TODO what about duplicates?
 }
 
 void
 ConcreteBLESensor::start()
 {
+  if (!mImpl->addedSelfAsDelegate) {
+    mImpl->stateManager->add(shared_from_this()); // FAILS IF USED IN THE CTOR - DO NOT DO THIS FROM CTOR
+    mImpl->database->add(shared_from_this());
+    mImpl->addedSelfAsDelegate = true;
+  }
   mImpl->transmitter->start();
   mImpl->receiver->start();
   for (auto delegate : mImpl->delegates) {
@@ -118,7 +132,7 @@ void
 ConcreteBLESensor::bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device)
 {
   for (auto delegate : mImpl->delegates) {
-    delegate->sensor(SensorType::BLE, device->identifier());
+    delegate->sensor(SensorType::BLE, device->identifier()); // didDetect
   }
 }
 
@@ -128,9 +142,53 @@ ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device
 {
   switch (attribute) {
     case BLEDeviceAttribute::rssi: {
+      auto rssi = device->rssi();
+      if (rssi.has_value()) {
+        double rssiValue = (double)rssi->intValue();
+        auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
+        for (auto delegate: mImpl->delegates) {
+          delegate->sensor(SensorType::BLE,
+            prox,
+            device->identifier()
+          ); // didMeasure
+        }
+        // also payload with rssi
+        auto payload = device->payloadData();
+        if (payload.has_value()) {
+          for (auto delegate: mImpl->delegates) {
+            delegate->sensor(SensorType::BLE,
+              prox,
+              device->identifier(),
+              *payload
+            ); // didReadPayloadAndMeasure
+          }
+        }
+      }
       break;
     }
     case BLEDeviceAttribute::payloadData: {
+      auto payload = device->payloadData();
+      if (payload.has_value()) {
+        for (auto delegate: mImpl->delegates) {
+          delegate->sensor(SensorType::BLE,
+            *payload,
+            device->identifier()
+          ); // didReadPayload
+        }
+        // also payload with rssi
+        auto rssi = device->rssi();
+        if (rssi.has_value()) {
+          double rssiValue = (double)rssi->intValue();
+          auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
+          for (auto delegate: mImpl->delegates) {
+            delegate->sensor(SensorType::BLE,
+              prox,
+              device->identifier(),
+              *payload
+            ); // didReadPayloadAndMeasure
+          }
+        }
+      }
       break;
     }
     default: {

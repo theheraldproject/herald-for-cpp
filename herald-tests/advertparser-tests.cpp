@@ -46,7 +46,7 @@ TEST_CASE("advert-parser-subdatabigendianoverflow", "[advert][parser][subdatabig
     herald::datatype::Data original(data, 5);
     herald::datatype::Data result = 
       herald::ble::filter::BLEAdvertParser::subDataBigEndian(original,2,4);
-    REQUIRE(0 == result.size());
+    REQUIRE(3 == result.size());
   }
 }
 
@@ -56,7 +56,7 @@ TEST_CASE("advert-parser-subdatalittleendianoverflow", "[advert][parser][subdata
     herald::datatype::Data original(data, 5);
     herald::datatype::Data result = 
       herald::ble::filter::BLEAdvertParser::subDataLittleEndian(original,2,4);
-    REQUIRE(0 == result.size());
+    REQUIRE(3 == result.size());
   }
 }
 
@@ -106,7 +106,7 @@ TEST_CASE("advert-parser-subdatabigendianlargelength", "[advert][parser][subdata
     herald::datatype::Data original(data, 5);
     herald::datatype::Data result = 
       herald::ble::filter::BLEAdvertParser::subDataBigEndian(original,2,4);
-    REQUIRE(0 == result.size());
+    REQUIRE(3 == result.size());
   }
 }
 
@@ -116,7 +116,7 @@ TEST_CASE("advert-parser-subdatalittleendianlargelength", "[advert][parser][subd
     herald::datatype::Data original(data, 5);
     herald::datatype::Data result = 
       herald::ble::filter::BLEAdvertParser::subDataLittleEndian(original,2,4);
-    REQUIRE(0 == result.size());
+    REQUIRE(3 == result.size());
   }
 }
 

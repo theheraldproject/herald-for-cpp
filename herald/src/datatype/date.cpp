@@ -4,6 +4,7 @@
 
 #include "herald/datatype/date.h"
 
+#include <chrono>
 #include <ctime>
 
 namespace herald {
@@ -21,7 +22,8 @@ public:
 
 // PIMPL DECLARATIONS
 Date::Impl::Impl()
- : seconds(0) // TODO FIX THIS FOR EACH PLATFORM WE ARE ON
+ : seconds(std::chrono::duration_cast<std::chrono::seconds>(
+    std::chrono::system_clock::now().time_since_epoch()).count())
 {
   ;
 }
@@ -69,6 +71,48 @@ Date::toString() const {
 
 long
 Date::secondsSinceUnixEpoch() const {
+  return mImpl->seconds;
+}
+
+bool
+Date::operator==(const Date& other) const noexcept
+{
+  return mImpl->seconds == other.mImpl->seconds;
+}
+
+bool
+Date::operator!=(const Date& other) const noexcept
+{
+  return mImpl->seconds != other.mImpl->seconds;
+}
+
+bool
+Date::operator<(const Date& other) const noexcept
+{
+  return mImpl->seconds < other.mImpl->seconds;
+}
+
+bool
+Date::operator>(const Date& other) const noexcept
+{
+  return mImpl->seconds > other.mImpl->seconds;
+}
+
+bool
+Date::operator<=(const Date& other) const noexcept
+{
+  return mImpl->seconds <= other.mImpl->seconds;
+}
+
+bool
+Date::operator>=(const Date& other) const noexcept
+{
+  return mImpl->seconds >= other.mImpl->seconds;
+}
+
+
+Date::operator long() const noexcept
+{
   return mImpl->seconds;
 }
 

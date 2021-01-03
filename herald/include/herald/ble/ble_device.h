@@ -40,12 +40,13 @@ enum class BLEDeviceState : int {
 class BLEDevice : public Device {
 public:
   BLEDevice(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> delegate);
-  //BLEDevice(const BLEDevice& device, const BluetoothDevice& bluetoothDevice);
-  ~BLEDevice() = default;
+  ~BLEDevice();
+
+  const TargetIdentifier& identifier() const override;
 
   // basic descriptors
   std::string description() const;
-  std::string toString() const; // TODO change these to c++ conversion operators
+  operator std::string() const;
 
   // timing related getters
   std::optional<TimeInterval> timeIntervalSinceLastUpdate() const override;

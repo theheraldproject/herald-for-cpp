@@ -49,6 +49,8 @@ endif()
 
 #target_compile_features(herald PRIVATE cxx_std_17)
 
+add_compile_options(-Wl,-Wno-unused-function)
+
 # NB: This is here to ensure binaries that link us also link stdc++fs for non-Apple targets
 # https://github.com/OpenRCT2/OpenRCT2/pull/10522
 if(NOT (APPLE OR MSVC) )

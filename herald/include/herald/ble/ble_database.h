@@ -14,7 +14,7 @@
 
 #include <memory>
 #include <vector>
-#include <optional>
+#include <functional>
 
 namespace herald {
 namespace ble {
@@ -32,13 +32,17 @@ public:
 
   virtual std::shared_ptr<BLEDevice> device(const TargetIdentifier& targetIdentifier) = 0;
 
-  virtual std::vector<std::shared_ptr<BLEDevice>> devices() const = 0;
+  // virtual std::vector<std::shared_ptr<BLEDevice>> devices() const = 0;
+
+  virtual std::size_t size() const = 0;
+
+  virtual std::vector<std::shared_ptr<BLEDevice>> matches(
+    const std::function<bool(std::shared_ptr<BLEDevice>)>& matcher) const = 0;
 
   /// Cannot name a function delete in C++. remove is common.
   virtual void remove(const TargetIdentifier& targetIdentifier) = 0;
 
-  // TODO consider replacing the optional below with a simple empty payload data instance
-  virtual std::optional<PayloadSharingData> payloadSharingData(const std::shared_ptr<BLEDevice>& peer) = 0;
+  // virtual PayloadSharingData payloadSharingData(const std::shared_ptr<BLEDevice>& peer) = 0;
 };
 
 } // end namespace

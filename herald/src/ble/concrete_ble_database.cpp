@@ -12,6 +12,7 @@
 // C++17 includes
 #include <memory>
 #include <vector>
+#include <algorithm>
 
 namespace herald {
 namespace ble {
@@ -77,34 +78,69 @@ ConcreteBLEDatabase::add(const std::shared_ptr<BLEDatabaseDelegate>& delegate)
 std::shared_ptr<BLEDevice>
 ConcreteBLEDatabase::device(const PayloadData& payloadData)
 {
-  // TODO proper implementation
-  return mImpl->devices.front();
+  auto results = matches([&payloadData](const std::shared_ptr<BLEDevice>& d) {
+    auto payload = d->payloadData();
+    if (!payload.has_value()) {
+      return false;
+    }
+    return (*payload)==payloadData;
+  });
+  if (results.size() != 0) {
+    return results.front(); // TODO ensure we send back the latest, not just the first match
+  }
+  std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
+    TargetIdentifier(payloadData), shared_from_this());
+  mImpl->devices.push_back(newDevice);
+  return newDevice;
 }
 
 std::shared_ptr<BLEDevice>
 ConcreteBLEDatabase::device(const TargetIdentifier& targetIdentifier)
 {
-  // TODO proper implementation
-  return mImpl->devices.front();
+  auto results = matches([&targetIdentifier](const std::shared_ptr<BLEDevice>& d) {
+    return d->identifier() == targetIdentifier;
+  });
+  if (results.size() != 0) {
+    return results.front(); // TODO ensure we send back the latest, not just the first match
+  }
+  std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
+    targetIdentifier, shared_from_this());
+  mImpl->devices.push_back(newDevice);
+  return newDevice;
+}
+
+std::size_t
+ConcreteBLEDatabase::size() const
+{
+  return mImpl->devices.size();
 }
 
 std::vector<std::shared_ptr<BLEDevice>>
-ConcreteBLEDatabase::devices() const
+ConcreteBLEDatabase::matches(
+  const std::function<bool(std::shared_ptr<BLEDevice>)>& matcher) const
 {
-  return mImpl->devices;
+  std::vector<std::shared_ptr<BLEDevice>> results;
+  // in the absence of copy if in C++20... Just copies the pointers not the objects
+  for (auto d : mImpl->devices) {
+    if (matcher(d)) {
+      results.push_back(d);
+    }
+  }
+  return results;
 }
 
 /// Cannot name a function delete in C++. remove is common.
 void
 ConcreteBLEDatabase::remove(const TargetIdentifier& targetIdentifier)
 {
-  // TODO fill out this function
-}
-
-std::optional<PayloadSharingData>
-ConcreteBLEDatabase::payloadSharingData(const std::shared_ptr<BLEDevice>& peer)
-{
-  return std::optional<PayloadSharingData>(); // TODO look this up
+  auto found = std::find_if(mImpl->devices.begin(),mImpl->devices.end(),
+    [&targetIdentifier](std::shared_ptr<BLEDevice> d) -> bool {
+      return d->identifier() == targetIdentifier;
+    }
+  );
+  if (found != mImpl->devices.end()) {
+    mImpl->devices.erase(found);
+  }
 }
 
 // BLE Device Delegate overrides

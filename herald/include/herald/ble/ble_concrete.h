@@ -26,7 +26,7 @@ using namespace herald::payload;
 //      SPECIFIC PLATFORM DEFINITIONS ARE WITHIN SEVERAL C++ FILES
 //      UNDER WINDOWS AND ZEPHYR SUB DIRECTORIES
 
-class ConcreteBLEDatabase : public BLEDatabase, public BLEDeviceDelegate {
+class ConcreteBLEDatabase : public BLEDatabase, public BLEDeviceDelegate, public std::enable_shared_from_this<ConcreteBLEDatabase>  {
 public:
   ConcreteBLEDatabase();
   ConcreteBLEDatabase(const ConcreteBLEDatabase& from) = delete;
@@ -37,16 +37,23 @@ public:
 
   void add(const std::shared_ptr<BLEDatabaseDelegate>& delegate) override;
 
+  // Creation overrides
   std::shared_ptr<BLEDevice> device(const PayloadData& payloadData) override;
 
   std::shared_ptr<BLEDevice> device(const TargetIdentifier& targetIdentifier) override;
+  
+  // Introspection overrides
+  std::size_t size() const override;
 
-  std::vector<std::shared_ptr<BLEDevice>> devices() const override;
+  std::vector<std::shared_ptr<BLEDevice>> matches(
+    const std::function<bool(std::shared_ptr<BLEDevice>)>& matcher) const override;
+
+  // std::vector<std::shared_ptr<BLEDevice>> devices() const override;
 
   /// Cannot name a function delete in C++. remove is common.
   void remove(const TargetIdentifier& targetIdentifier) override;
 
-  std::optional<PayloadSharingData> payloadSharingData(const std::shared_ptr<BLEDevice>& peer) override;
+  // std::optional<PayloadSharingData> payloadSharingData(const std::shared_ptr<BLEDevice>& peer) override;
 
   // BLE Device Delegate overrides
   void device(std::shared_ptr<BLEDevice> device, BLEDeviceAttribute didUpdate) override;

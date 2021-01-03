@@ -33,120 +33,6 @@ TEST_CASE("datatypes-base64string-reversible", "[datatypes][base64string][revers
   }
 }
 
-TEST_CASE("datatypes-data-from-vector", "[datatypes][data][from-vector]") {
-  SECTION("datatypes-data-from-vector") {
-    herald::datatype::Base64String str;
-    bool encodeOk = herald::datatype::Base64String::from("d290Y2hh",str);
-    herald::datatype::Data data = str.decode();
-    REQUIRE(encodeOk);
-    const char* result = "wotcha";
-    REQUIRE(data.size() == 6);
-    REQUIRE(data.at(0) == std::byte('w'));
-    REQUIRE(data.at(1) == std::byte('o'));
-    REQUIRE(data.at(5) == std::byte('a'));
-
-    data.append(data);
-    REQUIRE(data.size() == 12);
-    REQUIRE(data.at(0) == std::byte('w'));
-    REQUIRE(data.at(5) == std::byte('a'));
-    REQUIRE(data.at(6) == std::byte('w'));
-    REQUIRE(data.at(11) == std::byte('a'));
-
-    auto d2 = data.subdata(3,6);
-    herald::datatype::Base64String expStr;
-    bool d2EncodeOk = herald::datatype::Base64String::from("Y2hhd290",expStr); // chawot
-    herald::datatype::Data expData = expStr.decode();
-    REQUIRE(d2.size() == 6);
-    REQUIRE(d2 == expData);
-    REQUIRE(d2.at(0) == std::byte('c'));
-    REQUIRE(d2.at(5) == std::byte('t'));
-
-    auto d3 = d2.subdata(3);
-    REQUIRE(d3.size() == 3);
-    REQUIRE(d3.at(0) == std::byte('w'));
-    REQUIRE(d3.at(2) == std::byte('t'));
-  }
-}
-
-TEST_CASE("datatypes-data-ctor-repeat", "[datatypes][data][ctor][repeat]") {
-  SECTION("datatypes-data-ctor-repeat") {
-    herald::datatype::Data d{std::byte('a'),6};
-
-    REQUIRE(d.size() == 6);
-    REQUIRE(d.at(0) == std::byte('a'));
-    REQUIRE(d.at(5) == std::byte('a'));
-  }
-}
-
-TEST_CASE("datatypes-data-append", "[datatypes][data][append]") {
-  SECTION("datatypes-data-append") {
-    herald::datatype::Data d{std::byte('a'),6}; // 6
-    const uint8_t u8 = 23; // 1
-    const uint16_t u16 = 65530; // 2
-    const uint32_t u32 = 122345; // 4
-    const uint64_t u64 = 4295967296; // 8
-    const std::string s = "lorem ipsum dolar Sit Amet Consecutor"; // 37
-    d.append(u8);
-    d.append(u16);
-    d.append(u32);
-    d.append(u64);
-    d.append(s);
-
-    REQUIRE(d.size() == 58);
-    REQUIRE(d.at(0) == std::byte('a'));
-    REQUIRE(d.at(5) == std::byte('a'));
-    REQUIRE(d.at(6) == std::byte(uint8_t(23)));
-    REQUIRE(d.at(57) == std::byte('r'));
-
-    // now ensure that byte order is correct
-    uint8_t r8 = 0;
-    uint16_t r16 = 0;
-    uint32_t r32 = 0;
-    uint64_t r64 = 0;
-    bool r8ok = d.uint8(6,r8);
-    bool r16ok = d.uint16(7,r16);
-    bool r32ok = d.uint32(9,r32);
-    bool r64ok = d.uint64(13,r64);
-    REQUIRE(r8ok);
-    REQUIRE(r16ok);
-    REQUIRE(r32ok);
-    REQUIRE(r64ok);
-    REQUIRE(r8 == u8);
-    REQUIRE(r16 == u16);
-    REQUIRE(d.at(9) == std::byte(0xe9));
-    REQUIRE(d.at(10) == std::byte(0xdd));
-    REQUIRE(d.at(11) == std::byte(0x01));
-    REQUIRE(d.at(12) == std::byte(0x00));
-    REQUIRE(r32 == u32);
-    REQUIRE(d.at(20) == std::byte(0x00));
-    REQUIRE(d.at(19) == std::byte(0x00));
-    REQUIRE(d.at(18) == std::byte(0x00));
-    REQUIRE(d.at(17) == std::byte(0x01));
-    REQUIRE(d.at(16) == std::byte(0x00));
-    REQUIRE(d.at(15) == std::byte(0x0f));
-    REQUIRE(d.at(14) == std::byte(0x42));
-    REQUIRE(d.at(13) == std::byte(0x40));
-    REQUIRE(r64 == u64);
-  }
-}
-
-TEST_CASE("datatypes-date-basics", "[datatypes][date][basics]") {
-  SECTION("datatypes-date-basics") {
-    herald::datatype::Date d(1608483600); // long ctor
-
-    REQUIRE(d.secondsSinceUnixEpoch() == 1608483600);
-    REQUIRE(d.iso8601DateTime() == std::string("2020-12-20T17:00:00Z"));
-    REQUIRE(d.toString() == std::string("2020-12-20T17:00:00Z"));
-
-    herald::datatype::Date d2(d); // copy ctor
-    REQUIRE(d2.secondsSinceUnixEpoch() == 1608483600);
-    REQUIRE(d2.iso8601DateTime() == std::string("2020-12-20T17:00:00Z"));
-    REQUIRE(d2.toString() == std::string("2020-12-20T17:00:00Z"));
-
-    // TODO Default constructor producing 'now'
-  }
-}
-
 TEST_CASE("datatypes-proximity-basics", "[datatypes][proximity][basics]") {
   SECTION("datatypes-proximity-basics") {
     herald::datatype::Proximity p{herald::datatype::ProximityMeasurementUnit::RSSI, 11.0};
@@ -221,6 +107,23 @@ TEST_CASE("datatypes-immediatesenddata-basics", "[datatypes][immediatesenddata][
   }
 }
 
+
+TEST_CASE("datatypes-date-basics", "[datatypes][date][basics]") {
+  SECTION("datatypes-date-basics") {
+    herald::datatype::Date d(1608483600); // long ctor
+
+    REQUIRE(d.secondsSinceUnixEpoch() == 1608483600);
+    REQUIRE(d.iso8601DateTime() == std::string("2020-12-20T17:00:00Z"));
+    REQUIRE(d.toString() == std::string("2020-12-20T17:00:00Z"));
+
+    herald::datatype::Date d2(d); // copy ctor
+    REQUIRE(d2.secondsSinceUnixEpoch() == 1608483600);
+    REQUIRE(d2.iso8601DateTime() == std::string("2020-12-20T17:00:00Z"));
+    REQUIRE(d2.toString() == std::string("2020-12-20T17:00:00Z"));
+
+    // TODO Default constructor producing 'now'
+  }
+}
 
 
 
@@ -307,19 +210,6 @@ TEST_CASE("datatypes-placename-basics", "[datatypes][placename][ctor][basics]") 
 }
 
 
-
-
-
-
-TEST_CASE("datatypes-targetidentifier-ctor-default", "[datatypes][targetidentifier][ctor][default]") {
-  SECTION("datatypes-targetidentifier-ctor-default") {
-    herald::datatype::TargetIdentifier t1;
-
-    REQUIRE(t1.toString().size() == 0);
-  }
-}
-
-// TODO Once we have the local BluetoothReference / MAC equivalent, add ctor tests here
 
 
 

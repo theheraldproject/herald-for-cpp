@@ -24,6 +24,15 @@ public:
   std::string toString() const;
   long secondsSinceUnixEpoch() const;
 
+  bool operator==(const Date& other) const noexcept;
+  bool operator!=(const Date& other) const noexcept;
+  bool operator<(const Date& other) const noexcept;
+  bool operator>(const Date& other) const noexcept;
+  bool operator<=(const Date& other) const noexcept;
+  bool operator>=(const Date& other) const noexcept;
+
+  operator long() const noexcept;
+
 private:
   class Impl;
   std::unique_ptr<Impl> mImpl;

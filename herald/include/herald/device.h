@@ -14,16 +14,17 @@ namespace herald {
 
 using namespace herald::datatype;
 
+/**
+ * Only implemented in final version to allow TimeInterval and other
+ * potentially platform specific implementation details to be overridden
+ */
 class Device {
 public:
-  Device(TargetIdentifier identifier) : m_identifier(identifier) { };
+  Device() = default;
   virtual ~Device() = default;
 
   virtual std::optional<TimeInterval> timeIntervalSinceLastUpdate() const = 0;
-  virtual const TargetIdentifier& identifier() const { return m_identifier; };
-
-private:
-  TargetIdentifier m_identifier;
+  virtual const TargetIdentifier& identifier() const = 0;
 };
 
 }

@@ -55,11 +55,12 @@ SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDat
   // add(std::make_shared<DetectionLog>(mContext,"detection.csv", payloadData));
   // mBatteryLog = std::make_shared<BatteryLog>(mContext, "battery.csv");
 
-  mSensorArray.push_back(concrete); // add in BLE transmitter, receiver, et al
+  mSensorArray.push_back(concrete); // adds in links to BLE transmitter, receiver
 
   // deviceDescription = ""; // TODO get the real device description
 
   // NOTE THE FOLLOWING LINE CAUSES ZEPHYR APPS TO NOT EXECUTE - COUT ISSUE?
+  // TODO test this now logging on zephyr is reliable
   //mLogger.info("DEVICE (payload={},description={})", "nil", deviceDescription);
 }
 
@@ -88,7 +89,12 @@ SensorArray::~SensorArray()
 // SENSOR ARRAY METHODS
 bool
 SensorArray::immediateSend(Data data, const TargetIdentifier& targetIdentifier) {
-  return false; // TODO implement once receiver created mImpl->mConcreteBleSensor->immediateSend(data,targetIdentifier);
+  return mImpl->concrete->immediateSend(data, targetIdentifier);
+}
+
+bool
+SensorArray::immediateSendAll(Data data) {
+  return mImpl->concrete->immediateSendAll(data);
 }
 
 std::optional<PayloadData>

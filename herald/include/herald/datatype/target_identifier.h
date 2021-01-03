@@ -5,6 +5,8 @@
 #ifndef TARGET_IDENTIFIER_H
 #define TARGET_IDENTIFIER_H
 
+#include "data.h"
+
 #include <string>
 #include <memory>
 
@@ -14,20 +16,20 @@ namespace datatype {
 class TargetIdentifier {
 public:
   TargetIdentifier();
+  TargetIdentifier(const Data& data);
   TargetIdentifier(const TargetIdentifier& from); // copy ctor
-
-// PLATFORM SPECIFIC CTORS BEGIN
-  //TargetIdentifier(BluetoothDevice device);
-// PLATFORM SPECIFIC CTORS END
-
   ~TargetIdentifier();
 
   bool operator==(const TargetIdentifier& other) const noexcept;
-  bool operator==(const std::string& other) const noexcept;
+  bool operator==(const Data& other) const noexcept;
+  bool operator!=(const TargetIdentifier& other) const noexcept;
+  bool operator!=(const Data& other) const noexcept;
 
   std::size_t hashCode() const;
 
-  std::string toString() const;
+  operator std::string() const;
+
+  operator Data() const;
 
 private:
   class Impl;
@@ -36,6 +38,19 @@ private:
 };
 
 } // end namespace
+} // end namespace
+
+
+
+namespace std {
+  template<>
+  struct hash<herald::datatype::TargetIdentifier>
+  {
+    size_t operator()(const herald::datatype::TargetIdentifier& v) const
+    {
+      return v.hashCode();
+    }
+  };
 } // end namespace
 
 #endif

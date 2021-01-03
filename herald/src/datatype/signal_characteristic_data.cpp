@@ -6,9 +6,11 @@
 #include "herald/ble/ble_sensor_configuration.h"
 
 #include <vector>
+#include <optional>
 
 namespace herald {
 namespace datatype {
+namespace SignalCharacteristicData {
 
 using namespace herald::ble;
 
@@ -36,17 +38,17 @@ int16(const Data& data, std::size_t index, bool& success) {
 // HEADER PUBLIC METHODS
 
 std::optional<Data>
-SignalCharacteristicData::encodeWriteRssi(const RSSI& rssi) noexcept {
+encodeWriteRssi(const RSSI& rssi) noexcept {
   int r = rssi.intValue();
   std::vector<std::byte> vec(3);
   vec.push_back(BLESensorConfiguration::signalCharacteristicActionWriteRSSI);
   vec.push_back(std::byte(r)); // force least significant bit
   vec.push_back(std::byte(r >> 8)); // msb
-  return std::move(Data(std::move(vec))); // constructs the optional with a value
+  return std::optional<Data>(Data(std::move(vec))); // constructs the optional with a value
 }
 
 std::optional<RSSI>
-SignalCharacteristicData::decodeWriteRSSI(const Data& data) noexcept {
+decodeWriteRSSI(const Data& data) noexcept {
   if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWriteRSSI) {
     return {};
   }
@@ -58,11 +60,11 @@ SignalCharacteristicData::decodeWriteRSSI(const Data& data) noexcept {
   if (!success) {
     return {};
   }
-  return std::optional(rssi); // constructs the optional with a value
+  return std::optional<RSSI>(RSSI{rssi}); // constructs the optional with a value
 }
 
 std::optional<Data>
-SignalCharacteristicData::encodeWritePayload(const PayloadData& payloadData) noexcept {
+encodeWritePayload(const PayloadData& payloadData) noexcept {
   int r = (int)payloadData.size();
   std::vector<std::byte> vec(3 + r);
   vec.push_back(BLESensorConfiguration::signalCharacteristicActionWritePayload);
@@ -70,11 +72,11 @@ SignalCharacteristicData::encodeWritePayload(const PayloadData& payloadData) noe
   vec.push_back(std::byte(r >> 8)); // msb
   Data d(std::move(vec));
   d.append(payloadData);
-  return std::move(d); // constructs the optional with a value
+  return std::optional<Data>(d); // constructs the optional with a value
 }
 
 std::optional<PayloadData>
-SignalCharacteristicData::decodeWritePayload(const Data& data) noexcept {
+decodeWritePayload(const Data& data) noexcept {
   if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWritePayload) {
     return {};
   }
@@ -89,11 +91,11 @@ SignalCharacteristicData::decodeWritePayload(const Data& data) noexcept {
   if (data.size() != (3 + payloadDataCount)) {
     return {};
   }
-  return std::move(PayloadData(data.subdata(3))); // constructs the optional with a value
+  return std::optional<PayloadData>(PayloadData(data.subdata(3))); // constructs the optional with a value
 }
 
 std::optional<Data>
-SignalCharacteristicData::encodeWritePayloadSharing(const PayloadSharingData& payloadSharingData) noexcept {
+encodeWritePayloadSharing(const PayloadSharingData& payloadSharingData) noexcept {
   int r = payloadSharingData.rssi.intValue();
   int r2 = (int)payloadSharingData.data.size();
   std::vector<std::byte> vec(5 + r2);
@@ -104,11 +106,11 @@ SignalCharacteristicData::encodeWritePayloadSharing(const PayloadSharingData& pa
   vec.push_back(std::byte(r2 >> 8)); // msb
   Data d(std::move(vec));
   d.append(payloadSharingData.data);
-  return std::move(d); // constructs the optional with a value
+  return std::optional<Data>(d); // constructs the optional with a value
 }
 
 std::optional<PayloadSharingData>
-SignalCharacteristicData::decodeWritePayloadSharing(const Data& data) noexcept {
+decodeWritePayloadSharing(const Data& data) noexcept {
   if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWritePayloadSharing) {
     return {};
   }
@@ -130,11 +132,11 @@ SignalCharacteristicData::decodeWritePayloadSharing(const Data& data) noexcept {
   Data d = data.subdata(5);
   RSSI rssi(rssiValue);
   PayloadSharingData pd{std::move(rssi), std::move(data)};
-  return std::move(pd); // constructs the optional with a value
+  return std::optional<PayloadSharingData>(pd); // constructs the optional with a value
 }
 
 std::optional<Data>
-SignalCharacteristicData::encodeImmediateSend(const ImmediateSendData& immediateSendData) noexcept {
+encodeImmediateSend(const ImmediateSendData& immediateSendData) noexcept {
   int r = (int)immediateSendData.size();
   std::vector<std::byte> vec(3 + r);
   vec.push_back(BLESensorConfiguration::signalCharacteristicActionWriteImmediate);
@@ -142,11 +144,11 @@ SignalCharacteristicData::encodeImmediateSend(const ImmediateSendData& immediate
   vec.push_back(static_cast<std::byte>(r >> 8)); // msb
   Data d(std::move(vec));
   d.append(immediateSendData);
-  return std::move(d); // constructs the optional with a value
+  return std::optional<Data>(d); // constructs the optional with a value
 }
 
 std::optional<ImmediateSendData>
-SignalCharacteristicData::decodeImmediateSend(const Data& data) noexcept {
+decodeImmediateSend(const Data& data) noexcept {
   if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWriteImmediate) {
     return {};
   }
@@ -161,11 +163,11 @@ SignalCharacteristicData::decodeImmediateSend(const Data& data) noexcept {
   if (data.size() != (3 + payloadDataCount)) {
     return {};
   }
-  return std::move(ImmediateSendData(data.subdata(3))); // constructs the optional with a value
+  return std::optional<ImmediateSendData>(ImmediateSendData(data.subdata(3))); // constructs the optional with a value
 }
 
 SignalCharacteristicDataType
-SignalCharacteristicData::detect(const Data& data) noexcept {
+detect(const Data& data) noexcept {
   switch (signalDataActionCode(data)) {
     case BLESensorConfiguration::signalCharacteristicActionWriteRSSI:
       return SignalCharacteristicDataType::rssi;
@@ -180,5 +182,6 @@ SignalCharacteristicData::detect(const Data& data) noexcept {
   }
 }
 
+} // end namespace
 } // end namespace
 } // end namespace

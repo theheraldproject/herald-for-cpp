@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <iterator>
 #include <vector>
+#include <cstdlib>
 
 namespace herald {
 namespace datatype {
@@ -39,10 +40,12 @@ Data::Data() : mImpl(std::make_unique<Impl>()) {
 }
 
 Data::Data(Data&& other)
-  : mImpl(std::move(other.mImpl))
+  : mImpl(std::make_unique<Impl>())
 {
-  ;
+  std::swap(mImpl->data,other.mImpl->data);
 }
+
+// TODO consider adding offset versions of the below two constructors
 
 Data::Data(const std::byte* value, std::size_t length) : mImpl(std::make_unique<Impl>()) {
   mImpl->data.reserve(length);
@@ -85,7 +88,7 @@ Data::operator=(const Data& other)
 Data::~Data() {}
 
 Data
-Data::fromHexEncodedString(const std::string& hex)
+Data::fromHexEncodedString(const std::string& hex) 
 {
   Data d;
   // parse string
@@ -98,17 +101,46 @@ Data::fromHexEncodedString(const std::string& hex)
     hexInput += "0";
   }
   hexInput += hex;
-  for (std::size_t i = 0; i < length; i += 2) {
-    d.append((std::uint8_t)( // forcing for the compiler to a single std::uint8_t
-       std::uint8_t(hexChars[std::size_t(hex[i    ] % 16)] << 4)   | 
-      (std::uint8_t(hexChars[std::size_t(hex[i + 1] % 16)] & 0x0f)
-    )));
+  // char u, l;
+  // uint8_t vu, vl;
+  // for (std::size_t i = 0; i < hex.size(); i += 2) {
+  //   u = hex.at(i);
+  //   l = hex.at(i + 1);
+  //   vu = 0;
+  //   vl = 0;
+  //   if (u >= '0' | u <= '9') {
+  //     vu = uint8_t(u - '0');
+  //   } else if (u >= 'a' | u <= 'z') {
+  //     vu = uint8_t(u - 'a') + 10;
+  //   } else if (u >= 'A' | u <= 'Z') {
+  //     vu = uint8_t(u - 'A') + 10;
+  //   }
+  //   if (l >= '0' | l <= '9') {
+  //     vl = uint8_t(l - '0');
+  //   } else if (l >= 'a' | l <= 'z') {
+  //     vl = uint8_t(l - 'a') + 10;
+  //   } else if (l >= 'A' | l <= 'Z') {
+  //     vl = uint8_t(l - 'A') + 10;
+  //   }
+  //   d.append( std::uint8_t( (vu << 4 ) | vl ));
+  //   // d.append((std::uint8_t)( // forcing for the compiler to a single std::uint8_t
+  //   //   (std::uint8_t(hexChars[std::size_t(u % 16)] << 4) & 0xf0)  | 
+  //   //   (std::uint8_t(hexChars[std::size_t(l % 16)])      & 0x0f)
+  //   // ));
+  // }
+
+  
+  for (std::size_t i = 0; i < hexInput.size(); i += 2) {
+    std::string byteString = hexInput.substr(i, 2);
+    std::byte byte = std::byte(strtol(byteString.c_str(), NULL, 16));
+    d.mImpl->data.push_back(byte);
   }
+
   return d;
 }
 
 std::string
-Data::hexEncodedString() const
+Data::hexEncodedString() const noexcept
 {
   if (0 == mImpl->data.size()) {
     return "";
@@ -134,26 +166,31 @@ Data
 Data::subdata(std::size_t offset) const {
   Data copy;
   if (offset >= mImpl->data.size()) {
-    return std::move(copy);
+    return copy;
   }
   std::copy(mImpl->data.begin() + offset, mImpl->data.end(), std::back_inserter(copy.mImpl->data));
-  return std::move(copy);
+  return copy;
 }
 
 Data
 Data::subdata(std::size_t offset, std::size_t length) const {
   Data copy;
   // Note: offset if passed as -1 could be MAX_LONG_LONG, so check it on its own too
-  if (offset >= mImpl->data.size() || offset + length > mImpl->data.size()) {
-    return std::move(copy);
+  if (offset >= mImpl->data.size()) {
+    return copy;
   }
-  std::copy(mImpl->data.begin() + offset, mImpl->data.begin() + offset + length, std::back_inserter(copy.mImpl->data));
-  return std::move(copy);
+  // Note the below is necessary as calling with (4,-1), the second condition IS valid!
+  if (length > mImpl->data.size() || offset + length > mImpl->data.size()) {
+    std::copy(mImpl->data.begin() + offset, mImpl->data.end(), std::back_inserter(copy.mImpl->data));
+  } else {
+    std::copy(mImpl->data.begin() + offset, mImpl->data.begin() + offset + length, std::back_inserter(copy.mImpl->data));
+  }
+  return copy;
 }
 
 std::byte
 Data::at(std::size_t index) const {
-  if (index > mImpl->data.size() - 1) {
+  if (index > (mImpl->data.size() - 1)) {
     return std::byte(0);
   }
   return mImpl->data[index];
@@ -204,6 +241,15 @@ Data::uint64(std::size_t fromIndex, uint64_t& into) const noexcept
 }
 
 void
+Data::append(const std::uint8_t* data, std::size_t offset, std::size_t length)
+{
+  mImpl->data.reserve(length);
+  for (std::size_t i = 0;i < length;i++) {
+    mImpl->data.push_back(std::byte(data[offset + i]));
+  }
+}
+
+void
 Data::append(const Data& data, std::size_t offset, std::size_t length)
 {
   mImpl->data.reserve(mImpl->data.size() + length);
@@ -216,11 +262,29 @@ Data::append(const Data& data, std::size_t offset, std::size_t length)
 void
 Data::appendReversed(const Data& data, std::size_t offset, std::size_t length)
 {
-  mImpl->data.reserve(mImpl->data.size() + length);
+  if (offset > data.size()) {
+    return; // append nothing - out of range
+  }
+  std::size_t checkedLength = length;
+  if (length > (data.size() - offset)) {
+    checkedLength = data.size() - offset;
+  }
+  mImpl->data.reserve(mImpl->data.size() + checkedLength);
   std::reverse_copy(data.mImpl->data.begin() + offset, 
-                    data.mImpl->data.begin() + offset + length, 
+                    data.mImpl->data.begin() + offset + checkedLength, 
                     std::back_inserter(mImpl->data)
   );
+}
+
+Data
+Data::reversed() const
+{
+  Data result;
+  result.mImpl->data.reserve(mImpl->data.size());
+  std::reverse_copy(mImpl->data.begin(),mImpl->data.end(),
+    std::back_inserter(result.mImpl->data)
+  );
+  return result;
 }
 
 void
@@ -295,6 +359,14 @@ Data::operator==(const Data& other) const noexcept {
 
   // alternatively, cheat...
   return hashCode() == other.hashCode(); // Somewhat naughty
+}
+
+bool
+Data::operator!=(const Data& other) const noexcept {
+  if (size() != other.size()) {
+    return true;
+  }
+  return hashCode() != other.hashCode();
 }
 
 

@@ -162,7 +162,6 @@ subDataBigEndian(const Data& data, std::size_t offset, std::size_t length) noexc
   return data.subdata(offset, length);
 }
 
-// TODO consider moving the below logic in to something like Data::subdataReversed()
 Data 
 subDataLittleEndian(const Data& data, std::size_t offset, std::size_t length) noexcept
 {
@@ -171,14 +170,10 @@ subDataLittleEndian(const Data& data, std::size_t offset, std::size_t length) no
     return d;
   }
   // If offset passed as -1 it will be MAX_LONG_LONG by itself, so test on its own first
-  if (offset > data.size() || length + offset > data.size()) {
+  if (offset > data.size()) {
     return d;
   }
-  // std::size_t position = offset + length - 1;
   d.appendReversed(data, offset, length);
-  // for (std::size_t c = 0;c < length;c++) {
-  //   d.append(data.at(position--));
-  // }
   return d;
 }
 

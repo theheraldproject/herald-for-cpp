@@ -8,23 +8,17 @@
 #include "herald/ble/ble_database.h"
 #include "herald/ble/ble_receiver.h"
 #include "herald/ble/ble_sensor.h"
-// #include "herald/ble/ble_transmitter.h"
 #include "herald/ble/bluetooth_state_manager.h"
 #include "herald/datatype/data.h"
+#include "herald/ble/ble_mac_address.h"
 
 // nRF Connect SDK includes
-// #include <settings/settings.h>
 #include <bluetooth/bluetooth.h>
-// #include <bluetooth/hci.h>
-// #include <bluetooth/conn.h>
-// #include <bluetooth/uuid.h>
-// #include <bluetooth/gatt.h>
 
 // C++17 includes
 #include <memory>
 #include <vector>
 #include <cstring>
-#include <functional>
 
 namespace herald {
 namespace ble {
@@ -80,12 +74,11 @@ void
 ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
   struct net_buf_simple *buf)
 {
-  // logger.debug("Some random text");
-  Data advert;
-  // Convert advert scan data to Herald format
-  for (std::uint16_t p = 0;p < buf->len;p++) {
-    advert.append(std::uint8_t(buf->data[p]));
-  }
+  // Data advert;
+  // // Convert advert scan data to Herald format
+  // for (std::uint16_t p = 0;p < buf->len;p++) {
+  //   advert.append(std::uint8_t(buf->data[p]));
+  // }
   
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
@@ -93,7 +86,8 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
 
 
   logger.debug("taskConnectScanResults, didDiscover (device={})", addrStr);
-  // BLEMacAddress bleMacAddress(???);
+  BLEMacAddress bleMacAddress(addr->a.val);
+  logger.debug("taskConnectScanResults, didDiscover (deviceMAC={})", (std::string)bleMacAddress);
 
   // // The below is now generic Herald
 

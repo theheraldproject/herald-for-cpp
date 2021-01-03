@@ -14,6 +14,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/ble/ble_database.h
   ${HERALD_BASE}/include/herald/ble/ble_device_delegate.h
   ${HERALD_BASE}/include/herald/ble/ble_device.h
+  ${HERALD_BASE}/include/herald/ble/ble_mac_address.h
   ${HERALD_BASE}/include/herald/ble/ble_receiver.h
   ${HERALD_BASE}/include/herald/ble/ble_sensor.h
   ${HERALD_BASE}/include/herald/ble/ble_sensor_configuration.h
@@ -57,6 +58,8 @@ set(HERALD_HEADERS_ZEPHYR
   ${HERALD_BASE}/include/herald/zephyr_context.h
 )
 set(HERALD_SOURCES
+  ${HERALD_BASE}/src/ble/ble_mac_address.cpp
+  ${HERALD_BASE}/src/ble/ble_device.cpp
   ${HERALD_BASE}/src/ble/concrete_ble_sensor.cpp
   ${HERALD_BASE}/src/ble/concrete_ble_database.cpp
   ${HERALD_BASE}/src/ble/filter/ble_advert_parser.cpp
