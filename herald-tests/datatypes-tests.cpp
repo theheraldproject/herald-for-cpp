@@ -223,7 +223,7 @@ TEST_CASE("datatypes-timeinterval-basics", "[datatypes][timeinterval][ctor][basi
 
     auto t2 = herald::datatype::TimeInterval::never();
     REQUIRE(t2.millis() == LONG_MAX);
-    REQUIRE(t2.toString() == std::string("never"));
+    REQUIRE(((std::string)t2) == std::string("never"));
 
     auto t3 = herald::datatype::TimeInterval::minutes(20);
     REQUIRE(t3.millis() == 20 * 60 * 1000);
@@ -236,7 +236,7 @@ TEST_CASE("datatypes-timeinterval-basics", "[datatypes][timeinterval][ctor][basi
     herald::datatype::TimeInterval t5(d1,d2);
 
     REQUIRE(t5.millis() == 200 * 1000);
-    REQUIRE(t5.toString() == std::string("200"));
+    REQUIRE(((std::string)t5) == std::string("200"));
   }
 }
 

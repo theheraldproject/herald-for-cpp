@@ -23,6 +23,7 @@ public:
   Device() = default;
   virtual ~Device() = default;
 
+  virtual Date created() const = 0;
   virtual std::optional<TimeInterval> timeIntervalSinceLastUpdate() const = 0;
   virtual const TargetIdentifier& identifier() const = 0;
 };

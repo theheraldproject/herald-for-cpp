@@ -76,22 +76,57 @@ TimeInterval::operator-(const TimeInterval& other) noexcept {
   return TimeInterval(mImpl->seconds - other.mImpl->seconds);
 }
 
-long
-TimeInterval::operator()() noexcept {
+TimeInterval::operator long() const noexcept {
   return millis();
 }
 
+  
+bool
+TimeInterval::operator>(const TimeInterval& other) const noexcept
+{
+  return mImpl->seconds > other.mImpl->seconds;
+}
+
+bool
+TimeInterval::operator>=(const TimeInterval& other) const noexcept
+{
+  return mImpl->seconds >= other.mImpl->seconds;
+}
+
+bool
+TimeInterval::operator<(const TimeInterval& other) const noexcept
+{
+  return mImpl->seconds < other.mImpl->seconds;
+}
+
+bool
+TimeInterval::operator<=(const TimeInterval& other) const noexcept
+{
+  return mImpl->seconds <= other.mImpl->seconds;
+}
+
+bool
+TimeInterval::operator==(const TimeInterval& other) const noexcept
+{
+  return mImpl->seconds == other.mImpl->seconds;
+}
+
+bool
+TimeInterval::operator!=(const TimeInterval& other) const noexcept
+{
+  return mImpl->seconds != other.mImpl->seconds;
+}
+
 long
-TimeInterval::millis() {
+TimeInterval::millis() const noexcept {
   if (LONG_MAX == mImpl->seconds) {
     return LONG_MAX;
   }
   return mImpl->seconds * 1000;
 }
 
-std::string
-TimeInterval::toString() {
-  if (mImpl->seconds == never().mImpl->seconds) {
+TimeInterval::operator std::string() const noexcept {
+  if (mImpl->seconds == LONG_MAX) {
     return "never";
   }
   return std::to_string(mImpl->seconds);

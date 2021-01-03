@@ -9,7 +9,7 @@
 
 #include "herald/herald.h"
 
-TEST_CASE("ble-database-empty", "[ble][database][ctor][empty") {
+TEST_CASE("ble-database-empty", "[ble][database][ctor][empty]") {
   SECTION("ble-database-empty") {
     herald::ble::ConcreteBLEDatabase db;
 

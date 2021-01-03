@@ -39,10 +39,11 @@ enum class BLEDeviceState : int {
 
 class BLEDevice : public Device {
 public:
-  BLEDevice(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> delegate);
+  BLEDevice(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> delegate, const Date& created = Date());
   ~BLEDevice();
 
   const TargetIdentifier& identifier() const override;
+  Date created() const override;
 
   // basic descriptors
   std::string description() const;

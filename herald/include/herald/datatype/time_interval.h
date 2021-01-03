@@ -31,11 +31,18 @@ public:
   TimeInterval operator*(const TimeInterval& other) noexcept;
   TimeInterval operator+(const TimeInterval& other) noexcept;
   TimeInterval operator-(const TimeInterval& other) noexcept;
-  long operator()() noexcept;
+  
+  bool operator>(const TimeInterval& other) const noexcept;
+  bool operator>=(const TimeInterval& other) const noexcept;
+  bool operator<(const TimeInterval& other) const noexcept;
+  bool operator<=(const TimeInterval& other) const noexcept;
+  bool operator==(const TimeInterval& other) const noexcept;
+  bool operator!=(const TimeInterval& other) const noexcept;
 
-  long millis();
+  long millis() const noexcept;
 
-  std::string toString();
+  operator std::string() const noexcept;
+  operator long() const noexcept;
 
 private:
   class Impl;

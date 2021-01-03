@@ -15,7 +15,7 @@ namespace ble {
 
 class BLEDevice::Impl {
 public:
-  Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> del);
+  Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> del, const Date& createdAt);
   ~Impl();
 
   TargetIdentifier id;
@@ -26,10 +26,10 @@ public:
   std::optional<Date> lastUpdated;
 };
 
-BLEDevice::Impl::Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> del)
+BLEDevice::Impl::Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> del, const Date& createdAt)
   : id(identifier),
     delegate(del),
-    created(Date()),
+    created(createdAt),
     lastUpdated(std::optional<Date>())
 {
   ;
@@ -45,9 +45,10 @@ BLEDevice::Impl::~Impl()
 
 
 
-BLEDevice::BLEDevice(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> delegate)
+BLEDevice::BLEDevice(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> delegate,
+  const Date& createdAt)
   : Device(),
-    mImpl(std::make_unique<Impl>(identifier,delegate))
+    mImpl(std::make_unique<Impl>(identifier,delegate,createdAt))
 {
   ;
 }
@@ -64,17 +65,22 @@ BLEDevice::identifier() const
   return mImpl->id;
 }
 
+Date
+BLEDevice::created() const
+{
+  return mImpl->created;
+}
 
 // basic descriptors
 std::string
 BLEDevice::description() const
 {
-  return "";
+  return (std::string)mImpl->id;
 }
 
 BLEDevice::operator std::string() const
 {
-  return "";
+  return (std::string)mImpl->id;
 }
 
 // timing related getters
@@ -121,7 +127,7 @@ BLEDevice::timeIntervalSinceLastWriteRssi() const
 std::optional<BLEDeviceState>
 BLEDevice::state() const
 {
-  return BLEDeviceState::disconnected;
+  return std::optional<BLEDeviceState>();
 }
 
 void
@@ -133,7 +139,7 @@ BLEDevice::state(BLEDeviceState newState)
 std::optional<BLEDeviceOperatingSystem>
 BLEDevice::operatingSystem() const
 {
-  return std::optional<BLEDeviceOperatingSystem>(BLEDeviceOperatingSystem::unknown);
+  return std::optional<BLEDeviceOperatingSystem>();
 }
 
 void
