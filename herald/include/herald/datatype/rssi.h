@@ -19,11 +19,11 @@ public:
   ~RSSI();
 
 
-  std::size_t hashCode() const;
+  std::size_t hashCode() const noexcept;
 
-  std::string toString() const;
+  operator std::string() const noexcept;
 
-  int intValue() const;
+  int intValue() const noexcept;
 
 private:
   class Impl;

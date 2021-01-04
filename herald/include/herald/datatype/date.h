@@ -20,9 +20,9 @@ public:
   Date(const Date& from);
   ~Date();
 
-  std::string iso8601DateTime() const;
-  std::string toString() const;
-  long secondsSinceUnixEpoch() const;
+  std::string iso8601DateTime() const noexcept;
+  operator std::string() const noexcept;
+  long secondsSinceUnixEpoch() const noexcept;
 
   bool operator==(const Date& other) const noexcept;
   bool operator!=(const Date& other) const noexcept;

@@ -42,12 +42,12 @@ include_directories(../fmt/include)
 add_definitions(-DCONFIG_HERALD_LOG_LEVEL=4 -DCONFIG_APP_LOG_LEVEL=4)
 
 # gcc arm does not warn about missing defs until runtime
-add_compile_options(-Wl,-z,defs,--strict,--strict_symbols,--no-undefined)
+add_compile_options(--no-undefined -ffunction-sections -fdata-sections -Wl,-z,defs,--strict,--strict_symbols,-gc-sections)
 
 target_sources(app PRIVATE
 #  ${HERALD_HEADERS}
 #  ${HERALD_HEADERS_ZEPHYR}
-  ../fmt/src/format.cc
+#  ../fmt/src/format.cc
   ${HERALD_SOURCES}
   ${HERALD_SOURCES_ZEPHYR}
   src/main.cpp

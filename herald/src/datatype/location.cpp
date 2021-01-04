@@ -46,7 +46,7 @@ Location::Location(std::shared_ptr<LocationReference> value, Date start, Date en
 
 std::string
 Location::description() const {
-  return mImpl->mValue->description() + ":[from=" + mImpl->mStart.toString() + ",to=" + mImpl->mEnd.toString() + "]";
+  return mImpl->mValue->description() + ":[from=" + ((std::string)mImpl->mStart) + ",to=" + ((std::string)mImpl->mEnd) + "]";
 }
 
 Location::~Location() {}

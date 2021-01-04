@@ -57,20 +57,19 @@ Date::Date(const Date& from)
 Date::~Date() {}
 
 std::string
-Date::iso8601DateTime() const {
+Date::iso8601DateTime() const noexcept {
   time_t t(mImpl->seconds);
   char buf[21];
   strftime(buf, sizeof buf, "%FT%TZ", gmtime(&t));
   return std::string(buf);
 }
 
-std::string
-Date::toString() const {
+Date::operator std::string() const noexcept {
   return iso8601DateTime();
 }
 
 long
-Date::secondsSinceUnixEpoch() const {
+Date::secondsSinceUnixEpoch() const noexcept {
   return mImpl->seconds;
 }
 

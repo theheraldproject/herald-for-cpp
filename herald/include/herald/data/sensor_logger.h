@@ -8,7 +8,7 @@
 #include "../datatype/bluetooth_state.h"
 #include "../context.h"
 
-#include "fmt/format.h"
+// #include "fmt/format.h"
 
 #include <string>
 #include <memory>
@@ -49,19 +49,28 @@ public:
   // Note: C++11 Variadic template parameter pack expansion
   template <typename ... Types>
   void debug(const std::string& message, const Types&... args) {
-    std::string msg =  fmt::format(message,args...);
+    // std::string msg =  fmt::format(message,args...);
+    char buffer[256];
+    int len = snprintf(buffer, 256, message.c_str(), args...);
+    std::string msg(buffer,len);
     log(SensorLoggerLevel::debug, msg);
   }
 
   template <typename ... Types>
   void info(const std::string& message, const Types&... args) {
-    std::string msg =  fmt::format(message,args...);
+    // std::string msg =  fmt::format(message,args...);
+    char buffer[256];
+    int len = snprintf(buffer, 256, message.c_str(), args...);
+    std::string msg(buffer,len);
     log(SensorLoggerLevel::info, msg);
   }
 
   template <typename ... Types>
   void fault(const std::string& message, const Types&... args) {
-    std::string msg =  fmt::format(message,args...);
+    // std::string msg =  fmt::format(message,args...);
+    char buffer[256];
+    int len = snprintf(buffer, 256, message.c_str(), args...);
+    std::string msg(buffer,len);
     log(SensorLoggerLevel::fault, msg);
   }
 
