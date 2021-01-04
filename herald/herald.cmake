@@ -39,7 +39,6 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/payload_timestamp.h
   ${HERALD_BASE}/include/herald/datatype/placename_location_reference.h
   ${HERALD_BASE}/include/herald/datatype/proximity.h
-  ${HERALD_BASE}/include/herald/datatype/pseudo_device_address.h
   ${HERALD_BASE}/include/herald/datatype/randomness.h
   ${HERALD_BASE}/include/herald/datatype/rssi.h
   ${HERALD_BASE}/include/herald/datatype/sensor_state.h
@@ -72,7 +71,6 @@ set(HERALD_SOURCES
 	${HERALD_BASE}/src/datatype/immediate_send_data.cpp
 	${HERALD_BASE}/src/datatype/location.cpp
 	${HERALD_BASE}/src/datatype/payload_data.cpp
-	${HERALD_BASE}/src/datatype/pseudo_device_address.cpp
 	${HERALD_BASE}/src/datatype/rssi.cpp
 	${HERALD_BASE}/src/datatype/signal_characteristic_data.cpp
 	${HERALD_BASE}/src/datatype/target_identifier.cpp

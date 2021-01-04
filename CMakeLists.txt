@@ -8,7 +8,6 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 include(GNUInstallDirs)
 
-add_subdirectory(fmt)
 add_subdirectory(heraldns) 
 add_subdirectory(heraldns-tests) 
 add_subdirectory(heraldns-cli) 

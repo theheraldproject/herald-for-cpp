@@ -7,7 +7,6 @@
 
 #include <vector>
 #include <string>
-#include <cstddef>
 
 namespace herald {
 namespace payload {

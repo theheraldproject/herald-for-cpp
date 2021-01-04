@@ -20,7 +20,7 @@ add_executable(herald-tests
 	bledatabase-tests.cpp
 )
 
-include_directories(${herald_SOURCE_DIR} ../fmt/include)
+include_directories(${herald_SOURCE_DIR})
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)

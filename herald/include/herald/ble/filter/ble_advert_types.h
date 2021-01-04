@@ -8,8 +8,8 @@
 #include "../../datatype/data.h"
 
 #include <vector>
-#include <string>
-#include <cstdint>
+// #include <string>
+// #include <cstdint>
 
 namespace herald {
 namespace ble {

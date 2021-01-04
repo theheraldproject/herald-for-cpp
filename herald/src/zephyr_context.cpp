@@ -12,7 +12,7 @@
 
 
 #include <memory>
-#include <iostream>
+#include <iosfwd>
 #include <vector>
 #include <map>
 #include <utility>

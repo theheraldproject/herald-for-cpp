@@ -6,7 +6,7 @@
 #include "herald/datatype/data.h"
 
 #include <string>
-#include <iostream>
+#include <iosfwd>
 
 namespace herald {
 namespace datatype {

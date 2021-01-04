@@ -17,8 +17,6 @@ add_library(herald
 
 set_target_properties(herald PROPERTIES PUBLIC_HEADER "${HERALD_HEADERS}")
 
-include_directories(../fmt/include ) # see CXXFLAGS above too
-
 target_include_directories(herald 
 	PUBLIC 
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>

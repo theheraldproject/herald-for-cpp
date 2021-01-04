@@ -22,7 +22,7 @@ public:
   uint16_t country;
   uint16_t state;
   MYUINT32 code;
-  std::optional<ConcreteExtendedDataV1> extendedData;
+  ConcreteExtendedDataV1 extendedData;
 
   PayloadData payload;
 };

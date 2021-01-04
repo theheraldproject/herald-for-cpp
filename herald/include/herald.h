@@ -38,7 +38,6 @@
 #include "herald/datatype/payload_timestamp.h"
 #include "herald/datatype/placename_location_reference.h"
 #include "herald/datatype/proximity.h"
-#include "herald/datatype/pseudo_device_address.h"
 #include "herald/datatype/randomness.h"
 #include "herald/datatype/rssi.h"
 #include "herald/datatype/sensor_state.h"

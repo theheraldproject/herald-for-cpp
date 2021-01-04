@@ -13,11 +13,15 @@ enum class SensorType : short {
   /// Bluetooth Low Energy (BLE)
   BLE,
   /// GPS location sensor
-  GPS
-  ///// Physical beacon, e.g. iBeacon
-  //BEACON,
-  ///// Ultrasound audio beacon.
-  //ULTRASOUND
+  GPS,
+  /// Physical beacon, e.g. iBeacon
+  BEACON,
+  /// Accelerometer
+  ACCELEROMETER,
+  /// Ultrasound audio beacon.
+  ULTRASOUND,
+  /// Future / other
+  OTHER
 };
 
 } // end namespace

@@ -6,7 +6,6 @@
 #include "herald/datatype/data.h"
 
 #include <optional>
-#include <cstdint>
 
 namespace herald {
 namespace payload {
