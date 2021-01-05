@@ -67,13 +67,13 @@ ZephyrLoggingSink::log(SensorLoggerLevel level, std::string message)
   std::string finalMessage = m_subsystem + "," + m_category + "," + message;
   switch (level) {
     case SensorLoggerLevel::debug:
-      LOG_DBG("%s",log_strdup(finalMessage.c_str()));
+      LOG_DBG("%s\n",log_strdup(finalMessage.c_str()));
       break;
     case SensorLoggerLevel::fault:
-      LOG_ERR("%s",log_strdup(finalMessage.c_str()));
+      LOG_ERR("%s\n",log_strdup(finalMessage.c_str()));
       break;
     default:
-      LOG_INF("%s",log_strdup(finalMessage.c_str()));
+      LOG_INF("%s\n",log_strdup(finalMessage.c_str()));
       break;
   }
 }
@@ -172,6 +172,7 @@ ZephyrContext::state()
 int 
 ZephyrContext::enableBluetooth() noexcept
 {
+  LOG_INF("ZephyrContext::enableBluetooth");
   int success;
   // rotate mac address using onboard crypto
   // auto success = bt_rand(&mImpl->m_addr, 1);
@@ -196,14 +197,14 @@ ZephyrContext::enableBluetooth() noexcept
   //   return success;
   // }
   success = bt_enable(NULL); // NULL means synchronously enabled
-  
-
-  // This should only called once
-	if (IS_ENABLED(CONFIG_SETTINGS)) {
-		settings_load();
-	}
 
   if (success) {
+    // This should only called once
+    if (IS_ENABLED(CONFIG_SETTINGS)) {
+      settings_load();
+    }
+    mImpl->enabled = true;
+
     for (auto delegate : mImpl->stateDelegates) {
       delegate->bluetoothStateManager(BluetoothState::poweredOn);
     }

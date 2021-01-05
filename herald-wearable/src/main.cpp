@@ -130,8 +130,10 @@ void herald_entry() {
 	// Start array (and thus start advertising)
 	sa->start(); // There's a corresponding stop() call too
 
+	//int count = 0;
 	while (1) {
 		k_sleep(K_SECONDS(5)); 
+		//count++;
 		LOG_INF("herald thread still running");
 	}
 }
@@ -162,6 +164,12 @@ void main(void)
 	}
 
 	LOG_INF("USB logging test");
+	LOG_INF("Const char* param test: %s","some string param");
+	LOG_INF("int param test: %d",1234);
+	// std::string myString("my string string");
+	// LOG_INF("Const char* from string param test: %s",myString.c_str());
+	//k_sleep(K_SECONDS(20));
+	//LOG_INF("string from string param test: %s",myString); - ZEPHYR DOESN'T SUPPORT THIS
 
 	cc3xx_init();
 

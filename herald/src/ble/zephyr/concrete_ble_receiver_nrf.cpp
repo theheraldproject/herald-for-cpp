@@ -74,6 +74,7 @@ void
 ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
   struct net_buf_simple *buf)
 {
+  // logger.debug("Callback");
   // Data advert;
   // // Convert advert scan data to Herald format
   // for (std::uint16_t p = 0;p < buf->len;p++) {
@@ -83,11 +84,12 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
   std::string addrStr(addr_str);
-
-
-  logger.debug("taskConnectScanResults, didDiscover (device={})", addrStr);
+  
+  logger.debug(addrStr);
+  //logger.debug("taskConnectScanResults, didDiscover (device=%s)", (char*)addr_str);
   BLEMacAddress bleMacAddress(addr->a.val);
-  logger.debug("taskConnectScanResults, didDiscover (deviceMAC={})", (std::string)bleMacAddress);
+  logger.debug((std::string)bleMacAddress);
+  // logger.debug("taskConnectScanResults, didDiscover (deviceMAC={})", (std::string)bleMacAddress);
 
   // // The below is now generic Herald
 
@@ -164,6 +166,7 @@ ConcreteBLEReceiver::add(std::shared_ptr<SensorDelegate> delegate)
 void
 ConcreteBLEReceiver::start()
 {
+  mImpl->logger.debug("ConcreteBLEReceiver::start");
   herald::ble::zephyrinternal::concreteReceiverInstance = mImpl;
 
   // Ensure our zephyr context has bluetooth ready
@@ -194,15 +197,18 @@ ConcreteBLEReceiver::start()
 
     &zephyrinternal::scan_cb
   );
-	if (err) {
-		mImpl->logger.info("Starting scanning failed (err {:d})", err);
-		return;
-	}
+	// if (err) {
+	// 	mImpl->logger.info("Starting scanning failed (err %s)", err);
+	// 	return;
+	// }
+  mImpl->logger.debug("ConcreteBLEReceiver::start completed successfully");
 }
 
 void
 ConcreteBLEReceiver::stop()
 {
+  mImpl->logger.debug("ConcreteBLEReceiver::stop");
+  
   herald::ble::zephyrinternal::concreteReceiverInstance.reset(); // destroys the shared_ptr not necessarily the underlying value
 
   // TODO now stop scanning
@@ -212,6 +218,8 @@ ConcreteBLEReceiver::stop()
   }
 
   // Don't stop Bluetooth altogether - this is done by the ZephyrContext->stopBluetooth() function only
+  
+  mImpl->logger.debug("ConcreteBLEReceiver::stop completed successfully");
 }
 
 

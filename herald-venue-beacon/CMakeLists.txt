@@ -15,7 +15,7 @@ set(ENV{BOARD} nrf52840dongle_nrf52840) # nRF52840 USB dongle
 # Generic Zephyr build command below
 cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(herald-venue-beacon CXX)
+project(herald-venue-beacon VERSION 1.2.0 LANGUAGES CXX)
 # NOTE: Don't include C library as it bloats the binary beyond DFU max load size (i.e. beyond half of the available flash)
 
 set(HERALD_TARGET zephyr)
@@ -110,7 +110,7 @@ zephyr_get_compile_options_for_lang_as_string(           CXX options_cxx)
 
 
 # Include Herald core library
-add_subdirectory(../fmt ./build/fmt)
+#add_subdirectory(../fmt ./build/fmt)
 #add_subdirectory(../herald ./build/herald)
 
 set(HERALD_BASE ${CMAKE_CURRENT_SOURCE_DIR}/../herald)
@@ -122,7 +122,7 @@ message("HERALD HEADERS: ${HERALD_HEADERS}")
 #target_compile_features(app cxx_std_17)
 
 include_directories(../herald/include)
-include_directories(../fmt/include)
+#include_directories(../fmt/include)
 
 target_sources(app PRIVATE
   ${HERALD_HEADERS}
@@ -132,6 +132,6 @@ target_sources(app PRIVATE
   src/main.cpp
 )
 
-target_link_libraries(app PUBLIC fmt)
+#target_link_libraries(app PUBLIC fmt)
 
 #target_link_libraries(app PUBLIC mylib_lib fmt)

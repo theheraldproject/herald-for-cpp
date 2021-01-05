@@ -11,12 +11,11 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(ENV{ARCH} arm)
 set(ENV{BOARD} nrf52840dongle_nrf52840) # nRF52840 USB dongle
 #set(ENV{BOARD} nrf52dk_nrf52832) # nRF52832 USB dongle
-#set(ENV{BOARD} qemu_cortex_m3 ) # emulator for testing app load issues
 
 # Generic Zephyr build command below
 cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(herald-wearable CXX)
+project(herald-wearable VERSION 1.2.0 LANGUAGES CXX)
 # NOTE: Don't include C library as it bloats the binary beyond DFU max load size (i.e. beyond half of the available flash)
 
 set(HERALD_TARGET zephyr)

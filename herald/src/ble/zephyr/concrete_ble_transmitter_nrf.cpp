@@ -9,6 +9,7 @@
 #include "herald/ble/ble_sensor.h"
 #include "herald/ble/ble_transmitter.h"
 #include "herald/ble/bluetooth_state_manager.h"
+#include "herald/data/sensor_logger.h"
 
 // nRF Connect SDK includes
 #include <bluetooth/bluetooth.h>
@@ -26,6 +27,7 @@ namespace herald {
 namespace ble {
 
 using namespace herald::datatype;
+using namespace herald::data;
 
 static PayloadDataSupplier* latestPds = NULL;
 
@@ -41,6 +43,8 @@ public:
   std::shared_ptr<BLEDatabase> m_db;
 
   std::vector<std::shared_ptr<SensorDelegate>> delegates;
+
+  SensorLogger logger;
 };
 
 /* Herald Service Variables */
@@ -167,7 +171,8 @@ ConcreteBLETransmitter::Impl::Impl(
     m_stateManager(bluetoothStateManager),
     m_pds(payloadDataSupplier),
     m_db(bleDatabase),
-    delegates()
+    delegates(),
+    logger(ctx,"Sensor","BLE.ConcreteBLETransmitter")
 {
   latestPds = m_pds.get();
 }
@@ -234,6 +239,7 @@ ConcreteBLETransmitter::add(std::shared_ptr<SensorDelegate> delegate)
 void
 ConcreteBLETransmitter::start()
 {
+  mImpl->logger.debug("ConcreteBLETransmitter::start");
 
   // Ensure our zephyr context has bluetooth ready
   mImpl->m_context->startBluetooth();
@@ -250,17 +256,20 @@ ConcreteBLETransmitter::start()
     // TODO log
     return;
   }
+  mImpl->logger.debug("ConcreteBLETransmitter::start completed successfully");
 }
 
 void
 ConcreteBLETransmitter::stop()
 {
+  mImpl->logger.debug("ConcreteBLETransmitter::stop");
   int success = bt_le_adv_stop();
   if (!success) {
     // TODO log
     return;
   }
   // Don't stop Bluetooth altogether - this is done by the ZephyrContext->stopBluetooth() function only
+  mImpl->logger.debug("ConcreteBLETransmitter::stop completed successfully");
 }
 
 }

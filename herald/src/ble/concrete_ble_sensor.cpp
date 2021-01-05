@@ -208,10 +208,10 @@ void
 ConcreteBLESensor::bluetoothStateManager(BluetoothState didUpdateState)
 {
   if (BluetoothState::poweredOff == didUpdateState) {
-    stop();
+    // stop();
   }
   if (BluetoothState::poweredOn == didUpdateState) {
-    start();
+    // start();
   }
   if (BluetoothState::unsupported == didUpdateState) {
     for (auto delegate : mImpl->delegates) {

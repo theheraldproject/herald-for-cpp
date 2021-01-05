@@ -50,28 +50,28 @@ public:
   template <typename ... Types>
   void debug(const std::string& message, const Types&... args) {
     // std::string msg =  fmt::format(message,args...);
-    char buffer[256];
-    int len = snprintf(buffer, 256, message.c_str(), args...);
-    std::string msg(buffer,len);
-    log(SensorLoggerLevel::debug, msg);
+    // char buffer[256];
+    // int len = snprintf(buffer, 256, message.c_str(), args...);
+    // std::string msg(buffer,len);
+    log(SensorLoggerLevel::debug, message);
   }
 
   template <typename ... Types>
   void info(const std::string& message, const Types&... args) {
     // std::string msg =  fmt::format(message,args...);
-    char buffer[256];
-    int len = snprintf(buffer, 256, message.c_str(), args...);
-    std::string msg(buffer,len);
-    log(SensorLoggerLevel::info, msg);
+    // char buffer[256];
+    // int len = snprintf(buffer, 256, message.c_str(), args...);
+    // std::string msg(buffer,len);
+    log(SensorLoggerLevel::info, message);
   }
 
   template <typename ... Types>
   void fault(const std::string& message, const Types&... args) {
     // std::string msg =  fmt::format(message,args...);
-    char buffer[256];
-    int len = snprintf(buffer, 256, message.c_str(), args...);
-    std::string msg(buffer,len);
-    log(SensorLoggerLevel::fault, msg);
+    // char buffer[256];
+    // int len = snprintf(buffer, 256, message.c_str(), args...);
+    // std::string msg(buffer,len);
+    log(SensorLoggerLevel::fault, message);
   }
 
 private:
