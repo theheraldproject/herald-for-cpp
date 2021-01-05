@@ -37,12 +37,12 @@ include(../herald/herald.cmake) # include sources and headers
 message("HERALD HEADERS: ${HERALD_HEADERS}")
 
 include_directories(../herald/include) # including this causes uart.h to fail complaining about incomplete type const struct device in zephyr
-include_directories(../fmt/include)
+#include_directories(../fmt/include)
 
 add_definitions(-DCONFIG_HERALD_LOG_LEVEL=4 -DCONFIG_APP_LOG_LEVEL=4)
 
 # gcc arm does not warn about missing defs until runtime
-add_compile_options(--no-undefined -ffunction-sections -fdata-sections -Wl,-z,defs,--strict,--strict_symbols,-gc-sections)
+add_compile_options(--no-undefined -ffunction-sections -fdata-sections -s -fno-exception -fno-rtti -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
 
 target_sources(app PRIVATE
 #  ${HERALD_HEADERS}

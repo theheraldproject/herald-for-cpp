@@ -39,7 +39,6 @@ UUID::Impl::~Impl() {
 
 
 
-
 // Implementation Class
 
 // Static functions
@@ -69,7 +68,13 @@ UUID::random(RandomnessGenerator& from) noexcept {
 
 // Instance functions
 
-UUID::UUID(UUID& from) 
+UUID::UUID(UUID&& from) 
+ : mImpl(std::make_unique<Impl>(from.mImpl->mData,from.mImpl->mValid))
+{
+  ;
+}
+
+UUID::UUID(const UUID& from) 
  : mImpl(std::make_unique<Impl>(from.mImpl->mData,from.mImpl->mValid))
 {
   ;
@@ -84,6 +89,14 @@ UUID::UUID(std::array<value_type, 16> data, bool isValid) noexcept
 
 UUID::~UUID() {
   ;
+}
+
+
+UUID&
+UUID::operator=(const UUID& other) noexcept
+{
+  mImpl->mData = other.mImpl->mData;
+  mImpl->mValid = other.mImpl->mValid;
 }
 
 bool
@@ -108,11 +121,6 @@ UUID::operator<(const UUID& other) const noexcept {
 bool
 UUID::operator>(const UUID& other) const noexcept {
   return mImpl->mData > other.mImpl->mData;
-}
-
-std::string
-UUID::operator=(const UUID& from) const noexcept {
-  return from.string();
 }
 
 std::array<uint8_t, 16>

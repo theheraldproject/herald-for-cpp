@@ -18,6 +18,12 @@ public:
   RSSI(RSSI&& other); // move
   ~RSSI();
 
+  bool operator==(const RSSI& other) const noexcept;
+  bool operator!=(const RSSI& other) const noexcept;
+  bool operator<(const RSSI& other) const noexcept;
+  bool operator<=(const RSSI& other) const noexcept;
+  bool operator>(const RSSI& other) const noexcept;
+  bool operator>=(const RSSI& other) const noexcept;
 
   std::size_t hashCode() const noexcept;
 
@@ -29,8 +35,6 @@ private:
   class Impl;
   std::unique_ptr<Impl> mImpl;
 };
-
-bool operator==(const RSSI& first, const RSSI& other);
 
 } // end namespace
 } // end namespace

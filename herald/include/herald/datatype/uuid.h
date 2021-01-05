@@ -22,16 +22,21 @@ public:
   static UUID fromString(const std::string& from) noexcept;
   static UUID random(RandomnessGenerator& from) noexcept;
 
-  UUID(UUID& from);
+  UUID(UUID&& from);
+  UUID(const UUID& from);
   ~UUID();
+
+  UUID& operator=(const UUID& other) noexcept; // copy assign
 
   bool valid() const noexcept;
 
   bool operator==(const UUID& other) const noexcept;
   bool operator!=(const UUID& other) const noexcept;
   bool operator<(const UUID& other) const noexcept;
+  bool operator<=(const UUID& other) const noexcept;
   bool operator>(const UUID& other) const noexcept;
-  std::string operator=(const UUID& from) const noexcept; // TODO verify this syntax/location
+  bool operator>=(const UUID& other) const noexcept;
+  // std::string operator=(const UUID& from) const noexcept; // TODO verify this syntax/location
 
   std::array<value_type, 16> data() const noexcept;
   std::string string() const noexcept;

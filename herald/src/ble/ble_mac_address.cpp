@@ -93,6 +93,13 @@ BLEMacAddress::~BLEMacAddress()
 
 
 
+BLEMacAddress&
+BLEMacAddress::operator=(const BLEMacAddress& other) noexcept
+{
+  mImpl->data = other.mImpl->data;
+  return *this;
+}
+
 BLEMacAddress::operator Data() const
 {
   return mImpl->data;

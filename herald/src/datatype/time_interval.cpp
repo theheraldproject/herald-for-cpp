@@ -58,8 +58,21 @@ TimeInterval::TimeInterval(const Date& from, const Date& to)
   mImpl->seconds = to.secondsSinceUnixEpoch() - from.secondsSinceUnixEpoch();
 }
 
+TimeInterval::TimeInterval(const TimeInterval& other)
+  : mImpl(std::make_unique<Impl>())
+{
+  mImpl->seconds = other.mImpl->seconds;
+}
+
 TimeInterval::~TimeInterval() {}
 
+
+TimeInterval&
+TimeInterval::operator=(const TimeInterval& other) noexcept
+{
+  mImpl->seconds = other.mImpl->seconds;
+  return *this;
+}
 
 TimeInterval
 TimeInterval::operator*(const TimeInterval& other) noexcept {

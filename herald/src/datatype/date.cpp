@@ -56,6 +56,13 @@ Date::Date(const Date& from)
 
 Date::~Date() {}
 
+Date&
+Date::operator=(const Date& other) noexcept
+{
+  mImpl->seconds = other.mImpl->seconds;
+  return *this;
+}
+
 std::string
 Date::iso8601DateTime() const noexcept {
   time_t t(mImpl->seconds);

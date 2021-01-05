@@ -57,13 +57,43 @@ RSSI::intValue() const noexcept {
 
 
 
-
-
+bool
+RSSI::operator==(const RSSI& other) const noexcept
+{
+  return mImpl->value == other.mImpl->value;
+}
 
 bool
-operator==(const RSSI& first, const RSSI& other) {
-  return first.hashCode() == other.hashCode();
+RSSI::operator!=(const RSSI& other) const noexcept
+{
+  return mImpl->value != other.mImpl->value;
 }
+
+bool
+RSSI::operator<(const RSSI& other) const noexcept
+{
+  return mImpl->value < other.mImpl->value;
+}
+
+bool
+RSSI::operator<=(const RSSI& other) const noexcept
+{
+  return mImpl->value <= other.mImpl->value;
+}
+
+bool
+RSSI::operator>(const RSSI& other) const noexcept
+{
+  return mImpl->value > other.mImpl->value;
+}
+
+bool
+RSSI::operator>=(const RSSI& other) const noexcept
+{
+  return mImpl->value >= other.mImpl->value;
+}
+
+
 
 
 

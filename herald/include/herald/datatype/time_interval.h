@@ -25,8 +25,11 @@ public:
   TimeInterval(long seconds);
   TimeInterval(const Date& date);
   TimeInterval(const Date& from, const Date& to);
+  TimeInterval(const TimeInterval& other); // copy ctor
 
   ~TimeInterval();
+
+  TimeInterval& operator=(const TimeInterval& other) noexcept; // copy assign
 
   TimeInterval operator*(const TimeInterval& other) noexcept;
   TimeInterval operator+(const TimeInterval& other) noexcept;

@@ -20,6 +20,8 @@ public:
   Date(const Date& from);
   ~Date();
 
+  Date& operator=(const Date& other) noexcept;
+
   std::string iso8601DateTime() const noexcept;
   operator std::string() const noexcept;
   long secondsSinceUnixEpoch() const noexcept;

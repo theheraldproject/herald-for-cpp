@@ -25,10 +25,13 @@ public:
   // TODO add constructor that uses a const randomness source reference
   ~BLEMacAddress();
 
+  BLEMacAddress& operator=(const BLEMacAddress& other) noexcept;
+
   operator Data() const;
   /** Print mac address format with colon separators, little endian **/
   operator std::string() const;
   bool operator==(const BLEMacAddress& other) const;
+  bool operator!=(const BLEMacAddress& other) const;
 
 private:
   class Impl;

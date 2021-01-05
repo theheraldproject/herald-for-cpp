@@ -5,6 +5,9 @@
 #ifndef BLE_DEVICE_H
 #define BLE_DEVICE_H
 
+#include "ble_tx_power.h"
+#include "ble_mac_address.h"
+
 #include "../device.h"
 
 #include "../datatype/payload_data.h"
@@ -13,6 +16,7 @@
 #include "../datatype/target_identifier.h"
 #include "../datatype/time_interval.h"
 #include "../datatype/date.h"
+#include "../datatype/uuid.h"
 
 #include <memory>
 #include <vector>
@@ -26,7 +30,7 @@ using namespace herald::datatype;
 class BLEDeviceDelegate; // fwd decl
 
 enum class BLEDeviceAttribute : int {
-  peripheral, state, operatingSystem, payloadData, rssi, txPower
+  peripheral, state, operatingSystem, payloadData, rssi, txPower, immediateSendData
 };
 
 enum class BLEDeviceOperatingSystem : int {
@@ -37,7 +41,7 @@ enum class BLEDeviceState : int {
   connecting, connected, disconnected
 };
 
-class BLEDevice : public Device {
+class BLEDevice : public Device, public std::enable_shared_from_this<BLEDevice> {
 public:
   BLEDevice(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> delegate, const Date& created = Date());
   ~BLEDevice();
@@ -50,18 +54,23 @@ public:
   operator std::string() const;
 
   // timing related getters
-  std::optional<TimeInterval> timeIntervalSinceLastUpdate() const override;
-  std::optional<TimeInterval> timeIntervalSinceConnected() const;
-  std::optional<TimeInterval> timeIntervalSinceLastPayloadDataUpdate() const;
-  std::optional<TimeInterval> timeIntervalSinceLastWritePayloadSharing() const;
-  std::optional<TimeInterval> timeIntervalSinceLastWritePayload() const;
-  std::optional<TimeInterval> timeIntervalSinceLastWriteRssi() const;
+  TimeInterval timeIntervalSinceLastUpdate() const override;
+  TimeInterval timeIntervalSinceConnected() const;
+  TimeInterval timeIntervalSinceLastPayloadDataUpdate() const;
+  TimeInterval timeIntervalSinceLastWritePayloadSharing() const;
+  TimeInterval timeIntervalSinceLastWritePayload() const;
+  TimeInterval timeIntervalSinceLastWriteRssi() const;
 
   // property getters and setters
-  //std::optional<PseudoDeviceAddress> pseudoDeviceAddress() const;
-  //void pseudoDeviceAddress(PseudoDeviceAddress newAddress);
-  //std::optional<BluetothDevice> peripheral() const;
-  //void peripheral(BluetoothDevice newPeripheral);
+  std::optional<UUID> signalCharacteristic() const;
+  void signalCharacteristic(UUID newChar);
+
+  std::optional<UUID> payloadCharacteristic() const;
+  void payloadCharacteristic(UUID newChar);
+
+  std::optional<BLEMacAddress> pseudoDeviceAddress() const;
+  void pseudoDeviceAddress(BLEMacAddress newAddress);
+
   std::optional<BLEDeviceState> state() const;
   void state(BLEDeviceState newState);
   std::optional<BLEDeviceOperatingSystem> operatingSystem() const;
@@ -76,20 +85,15 @@ public:
   std::optional<RSSI> rssi() const;
   void rssi(RSSI newRSSI);
 
-  //std::optional<BLETxPower> txPower() const;
-  //void txPower(BLETxPower newPower);
+  std::optional<BLETxPower> txPower() const;
+  void txPower(BLETxPower newPower);
 
   bool receiveOnly() const;
   void receiveOnly(bool newReceiveOnly);
 
-  //std::optional<BluetoothGattCharacteristic> signalCharacteristic() const; // TODO local OS alternative
-  //void signalCharacteristic(BluetoothGattCharacteristic newChar);
-  
-  //std::optional<BluetoothGattCharacteristic> payloadCharacteristic() const; // TODO local OS alternative
-  //void payloadCharacteristic(BluetoothGattCharacteristic newChar);
-
   // State engine methods
   bool ignore() const;
+  void ignore(bool newIgnore);
   void invalidateCharacteristics();
   void registerDiscovery(Date& at); // ALWAYS externalise time (now())
   void registerWritePayload(Date& at); // ALWAYS externalise time (now())
