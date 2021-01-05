@@ -2,8 +2,9 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/date.h"
+#include "herald/datatype/date.h"
 
+#include <chrono>
 #include <ctime>
 
 namespace herald {
@@ -21,7 +22,8 @@ public:
 
 // PIMPL DECLARATIONS
 Date::Impl::Impl()
- : seconds(0) // TODO FIX THIS FOR EACH PLATFORM WE ARE ON
+ : seconds(std::chrono::duration_cast<std::chrono::seconds>(
+    std::chrono::system_clock::now().time_since_epoch()).count())
 {
   ;
 }
@@ -54,21 +56,69 @@ Date::Date(const Date& from)
 
 Date::~Date() {}
 
+Date&
+Date::operator=(const Date& other) noexcept
+{
+  mImpl->seconds = other.mImpl->seconds;
+  return *this;
+}
+
 std::string
-Date::iso8601DateTime() const {
+Date::iso8601DateTime() const noexcept {
   time_t t(mImpl->seconds);
   char buf[21];
   strftime(buf, sizeof buf, "%FT%TZ", gmtime(&t));
   return std::string(buf);
 }
 
-std::string
-Date::toString() const {
+Date::operator std::string() const noexcept {
   return iso8601DateTime();
 }
 
 long
-Date::secondsSinceUnixEpoch() const {
+Date::secondsSinceUnixEpoch() const noexcept {
+  return mImpl->seconds;
+}
+
+bool
+Date::operator==(const Date& other) const noexcept
+{
+  return mImpl->seconds == other.mImpl->seconds;
+}
+
+bool
+Date::operator!=(const Date& other) const noexcept
+{
+  return mImpl->seconds != other.mImpl->seconds;
+}
+
+bool
+Date::operator<(const Date& other) const noexcept
+{
+  return mImpl->seconds < other.mImpl->seconds;
+}
+
+bool
+Date::operator>(const Date& other) const noexcept
+{
+  return mImpl->seconds > other.mImpl->seconds;
+}
+
+bool
+Date::operator<=(const Date& other) const noexcept
+{
+  return mImpl->seconds <= other.mImpl->seconds;
+}
+
+bool
+Date::operator>=(const Date& other) const noexcept
+{
+  return mImpl->seconds >= other.mImpl->seconds;
+}
+
+
+Date::operator long() const noexcept
+{
   return mImpl->seconds;
 }
 

@@ -2,7 +2,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/immediate_send_data.h"
+#include "herald/datatype/immediate_send_data.h"
 
 namespace herald {
 namespace datatype {

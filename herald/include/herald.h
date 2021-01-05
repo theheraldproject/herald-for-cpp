@@ -2,60 +2,81 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
+// FORCE CORRECT UINT32_t TYPES
+#include <cstdint>
+
+// Now include STDLIB extensions
+#include "herald/datatype/stdlib.h"
+
 /// Main Herald library include for C++ Native platforms
 // Convenience include file
 
 // Root namespace
-#include "sensor.h"
-#include "sensor_array.h"
-#include "sensor_delegate.h"
-#include "default_sensor_delegate.h"
+#include "herald/context.h"
+#include "herald/default_sensor_delegate.h"
+#include "herald/device.h"
+#include "herald/sensor_array.h"
+#include "herald/sensor_delegate.h"
+#include "herald/sensor.h"
+
+#ifdef __ZEPHYR__
+#include "herald/zephyr_context.h"
+#endif
 
 // Datatype namespace
-#include "datatype/base64_string.h"
-#include "datatype/bluetooth_state.h"
-#include "datatype/data.h"
-#include "datatype/encounter.h"
-#include "datatype/error_code.h"
-#include "datatype/immediate_send_data.h"
-#include "datatype/location.h"
-#include "datatype/location_reference.h"
-#include "datatype/payload_data.h"
-#include "datatype/payload_sharing_data.h"
-#include "datatype/payload_timestamp.h"
-#include "datatype/placename_location_reference.h"
-#include "datatype/proximity.h"
-#include "datatype/pseudo_device_address.h"
-#include "datatype/randomness.h"
-#include "datatype/rssi.h"
-#include "datatype/sensor_state.h"
-#include "datatype/sensor_type.h"
-#include "datatype/signal_characteristic_data.h"
-#include "datatype/target_identifier.h"
-#include "datatype/time_interval.h"
-#include "datatype/wgs84.h"
+#include "herald/datatype/base64_string.h"
+#include "herald/datatype/bluetooth_state.h"
+#include "herald/datatype/data.h"
+#include "herald/datatype/date.h"
+#include "herald/datatype/encounter.h"
+#include "herald/datatype/error_code.h"
+#include "herald/datatype/immediate_send_data.h"
+#include "herald/datatype/location_reference.h"
+#include "herald/datatype/location.h"
+#include "herald/datatype/payload_data.h"
+#include "herald/datatype/payload_sharing_data.h"
+#include "herald/datatype/payload_timestamp.h"
+#include "herald/datatype/placename_location_reference.h"
+#include "herald/datatype/proximity.h"
+#include "herald/datatype/randomness.h"
+#include "herald/datatype/rssi.h"
+#include "herald/datatype/sensor_state.h"
+#include "herald/datatype/sensor_type.h"
+#include "herald/datatype/signal_characteristic_data.h"
+#include "herald/datatype/target_identifier.h"
+#include "herald/datatype/time_interval.h"
+#include "herald/datatype/uuid.h"
+#include "herald/datatype/wgs84.h"
 
 // data namespace
+#include "herald/data/sensor_logger.h"
 
 // ble namespace
-#include "ble/ble_database_delegate.h"
-#include "ble/ble_database.h"
-#include "ble/ble_device_delegate.h"
-#include "ble/ble_device.h"
-#include "ble/ble_receiver.h"
-#include "ble/ble_sensor.h"
-#include "ble/ble_sensor_configuration.h"
-#include "ble/ble_transmitter.h"
-#include "ble/ble_tx_power.h"
-#include "ble/bluetooth_state_manager.h"
-#include "ble/bluetooth_state_manager_delegate.h"
+#include "herald/ble/ble_database_delegate.h"
+#include "herald/ble/ble_database.h"
+#include "herald/ble/ble_device_delegate.h"
+#include "herald/ble/ble_device.h"
+#include "herald/ble/ble_mac_address.h"
+#include "herald/ble/ble_receiver.h"
+#include "herald/ble/ble_sensor.h"
+#include "herald/ble/ble_sensor_configuration.h"
+#include "herald/ble/ble_transmitter.h"
+#include "herald/ble/ble_tx_power.h"
+#include "herald/ble/bluetooth_state_manager.h"
+#include "herald/ble/bluetooth_state_manager_delegate.h"
 
-#include "ble/ble_concrete.h"
+#include "herald/ble/filter/ble_advert_types.h"
+#include "herald/ble/filter/ble_advert_parser.h"
+
+#include "herald/ble/ble_concrete.h"
 
 // analysis namespace
 
 // payload namespace
-#include "payload/payload_data_supplier.h"
-#include "payload/concrete_payload_data_supplier.h"
+#include "herald/payload/payload_data_supplier.h"
+
+#include "herald/payload/beacon/beacon_payload_data_supplier.h"
+#include "herald/payload/fixed/fixed_payload_data_supplier.h"
+#include "herald/payload/extended/extended_data.h"
 
 // service namespace

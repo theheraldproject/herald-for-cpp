@@ -1,7 +1,23 @@
 cmake_minimum_required(VERSION 3.12)
 
 add_executable(herald-tests
+  # root with main
 	datatypes-tests.cpp
+	
+	# Low level
+	data-tests.cpp
+	blemacaddress-tests.cpp
+	targetidentifier-tests.cpp
+
+  # mid level
+	beaconpayload-tests.cpp
+	extendeddata-tests.cpp
+	fixedpayload-tests.cpp
+	bledevice-tests.cpp
+
+  # high level
+	advertparser-tests.cpp
+	bledatabase-tests.cpp
 )
 
 include_directories(${herald_SOURCE_DIR})

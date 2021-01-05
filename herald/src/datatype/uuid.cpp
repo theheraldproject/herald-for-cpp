@@ -2,9 +2,9 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/uuid.h"
-#include "datatype/data.h"
-#include "datatype/randomness.h"
+#include "herald/datatype/uuid.h"
+#include "herald/datatype/data.h"
+#include "herald/datatype/randomness.h"
 
 #include <string>
 #include <array>
@@ -39,7 +39,6 @@ UUID::Impl::~Impl() {
 
 
 
-
 // Implementation Class
 
 // Static functions
@@ -47,7 +46,7 @@ UUID
 UUID::fromString(const std::string& from) noexcept {
   std::array<value_type, 16> data{ {0} };
   UUID uuid(data,false); // TODO parse string, determine if valid, and tag as v4
-  return std::move(uuid);
+  return uuid; // returns copy
 }
 
 UUID
@@ -64,12 +63,18 @@ UUID::random(RandomnessGenerator& from) noexcept {
   data[6] = (0x0f & data[6]) | M; // blanks out first 4 bits
   data[8] = (0x3f & data[8]) | N; // blanks out first 2 bits
   UUID uuid(data,false); // TODO generate random data and tag as v4
-  return std::move(uuid);
+  return uuid; // returns copy
 }
 
 // Instance functions
 
-UUID::UUID(UUID& from) 
+UUID::UUID(UUID&& from) 
+ : mImpl(std::make_unique<Impl>(from.mImpl->mData,from.mImpl->mValid))
+{
+  ;
+}
+
+UUID::UUID(const UUID& from) 
  : mImpl(std::make_unique<Impl>(from.mImpl->mData,from.mImpl->mValid))
 {
   ;
@@ -84,6 +89,14 @@ UUID::UUID(std::array<value_type, 16> data, bool isValid) noexcept
 
 UUID::~UUID() {
   ;
+}
+
+
+UUID&
+UUID::operator=(const UUID& other) noexcept
+{
+  mImpl->mData = other.mImpl->mData;
+  mImpl->mValid = other.mImpl->mValid;
 }
 
 bool
@@ -108,11 +121,6 @@ UUID::operator<(const UUID& other) const noexcept {
 bool
 UUID::operator>(const UUID& other) const noexcept {
   return mImpl->mData > other.mImpl->mData;
-}
-
-std::string
-UUID::operator=(const UUID& from) const noexcept {
-  return from.string();
 }
 
 std::array<uint8_t, 16>

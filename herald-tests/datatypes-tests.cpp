@@ -33,68 +33,6 @@ TEST_CASE("datatypes-base64string-reversible", "[datatypes][base64string][revers
   }
 }
 
-TEST_CASE("datatypes-data-from-vector", "[datatypes][data][from-vector]") {
-  SECTION("datatypes-data-from-vector") {
-    herald::datatype::Base64String str;
-    bool encodeOk = herald::datatype::Base64String::from("d290Y2hh",str);
-    herald::datatype::Data data = str.decode();
-    REQUIRE(encodeOk);
-    const char* result = "wotcha";
-    REQUIRE(data.size() == 6);
-    REQUIRE(data.at(0) == std::byte('w'));
-    REQUIRE(data.at(1) == std::byte('o'));
-    REQUIRE(data.at(5) == std::byte('a'));
-
-    data.append(data);
-    REQUIRE(data.size() == 12);
-    REQUIRE(data.at(0) == std::byte('w'));
-    REQUIRE(data.at(5) == std::byte('a'));
-    REQUIRE(data.at(6) == std::byte('w'));
-    REQUIRE(data.at(11) == std::byte('a'));
-
-    auto d2 = data.subdata(3,6);
-    herald::datatype::Base64String expStr;
-    bool d2EncodeOk = herald::datatype::Base64String::from("Y2hhd290",expStr); // chawot
-    herald::datatype::Data expData = expStr.decode();
-    REQUIRE(d2.size() == 6);
-    REQUIRE(d2 == expData);
-    REQUIRE(d2.at(0) == std::byte('c'));
-    REQUIRE(d2.at(5) == std::byte('t'));
-
-    auto d3 = d2.subdata(3);
-    REQUIRE(d3.size() == 3);
-    REQUIRE(d3.at(0) == std::byte('w'));
-    REQUIRE(d3.at(2) == std::byte('t'));
-  }
-}
-
-TEST_CASE("datatypes-data-ctor-repeat", "[datatypes][data][ctor][repeat]") {
-  SECTION("datatypes-data-ctor-repeat") {
-    herald::datatype::Data d{std::byte('a'),6};
-
-    REQUIRE(d.size() == 6);
-    REQUIRE(d.at(0) == std::byte('a'));
-    REQUIRE(d.at(5) == std::byte('a'));
-  }
-}
-
-TEST_CASE("datatypes-date-basics", "[datatypes][date][basics]") {
-  SECTION("datatypes-date-basics") {
-    herald::datatype::Date d(1608483600); // long ctor
-
-    REQUIRE(d.secondsSinceUnixEpoch() == 1608483600);
-    REQUIRE(d.iso8601DateTime() == std::string("2020-12-20T17:00:00Z"));
-    REQUIRE(d.toString() == std::string("2020-12-20T17:00:00Z"));
-
-    herald::datatype::Date d2(d); // copy ctor
-    REQUIRE(d2.secondsSinceUnixEpoch() == 1608483600);
-    REQUIRE(d2.iso8601DateTime() == std::string("2020-12-20T17:00:00Z"));
-    REQUIRE(d2.toString() == std::string("2020-12-20T17:00:00Z"));
-
-    // TODO Default constructor producing 'now'
-  }
-}
-
 TEST_CASE("datatypes-proximity-basics", "[datatypes][proximity][basics]") {
   SECTION("datatypes-proximity-basics") {
     herald::datatype::Proximity p{herald::datatype::ProximityMeasurementUnit::RSSI, 11.0};
@@ -169,6 +107,23 @@ TEST_CASE("datatypes-immediatesenddata-basics", "[datatypes][immediatesenddata][
   }
 }
 
+
+TEST_CASE("datatypes-date-basics", "[datatypes][date][basics]") {
+  SECTION("datatypes-date-basics") {
+    herald::datatype::Date d(1608483600); // long ctor
+
+    REQUIRE(d.secondsSinceUnixEpoch() == 1608483600);
+    REQUIRE(d.iso8601DateTime() == std::string("2020-12-20T17:00:00Z"));
+    REQUIRE(((std::string)d) == std::string("2020-12-20T17:00:00Z"));
+
+    herald::datatype::Date d2(d); // copy ctor
+    REQUIRE(d2.secondsSinceUnixEpoch() == 1608483600);
+    REQUIRE(d2.iso8601DateTime() == std::string("2020-12-20T17:00:00Z"));
+    REQUIRE(((std::string)d2) == std::string("2020-12-20T17:00:00Z"));
+
+    // TODO Default constructor producing 'now'
+  }
+}
 
 
 
@@ -259,19 +214,6 @@ TEST_CASE("datatypes-placename-basics", "[datatypes][placename][ctor][basics]") 
 
 
 
-TEST_CASE("datatypes-targetidentifier-ctor-default", "[datatypes][targetidentifier][ctor][default]") {
-  SECTION("datatypes-targetidentifier-ctor-default") {
-    herald::datatype::TargetIdentifier t1;
-
-    REQUIRE(t1.toString().size() == 0);
-  }
-}
-
-// TODO Once we have the local BluetoothReference / MAC equivalent, add ctor tests here
-
-
-
-
 
 TEST_CASE("datatypes-timeinterval-basics", "[datatypes][timeinterval][ctor][basics]") {
   SECTION("datatypes-timeinterval-basics") {
@@ -281,7 +223,7 @@ TEST_CASE("datatypes-timeinterval-basics", "[datatypes][timeinterval][ctor][basi
 
     auto t2 = herald::datatype::TimeInterval::never();
     REQUIRE(t2.millis() == LONG_MAX);
-    REQUIRE(t2.toString() == std::string("never"));
+    REQUIRE(((std::string)t2) == std::string("never"));
 
     auto t3 = herald::datatype::TimeInterval::minutes(20);
     REQUIRE(t3.millis() == 20 * 60 * 1000);
@@ -294,7 +236,7 @@ TEST_CASE("datatypes-timeinterval-basics", "[datatypes][timeinterval][ctor][basi
     herald::datatype::TimeInterval t5(d1,d2);
 
     REQUIRE(t5.millis() == 200 * 1000);
-    REQUIRE(t5.toString() == std::string("200"));
+    REQUIRE(((std::string)t5) == std::string("200"));
   }
 }
 

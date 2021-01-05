@@ -8,12 +8,10 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
 include(GNUInstallDirs)
 
-add_subdirectory(fmt)
 add_subdirectory(heraldns) 
 add_subdirectory(heraldns-tests) 
 add_subdirectory(heraldns-cli) 
 add_subdirectory(herald)
 add_subdirectory(herald-tests)
-add_subdirectory(herald-wearable)
 add_subdirectory(herald-programmer)
-add_subdirectory(herald-mesh-proxy) 
+add_subdirectory(herald-mesh-proxy)

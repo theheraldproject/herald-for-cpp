@@ -2,7 +2,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/rssi.h"
+#include "herald/datatype/rssi.h"
 
 #include <string>
 
@@ -41,30 +41,59 @@ RSSI::RSSI(RSSI&& other)
 RSSI::~RSSI() {}
 
 std::size_t
-RSSI::hashCode() const {
+RSSI::hashCode() const noexcept {
   return std::hash<int>{}(mImpl->value);
 }
 
-std::string
-RSSI::toString() const {
+RSSI::operator std::string() const noexcept {
   return "RSSI{value=" + std::to_string(mImpl->value) + "}";
 }
 
 int
-RSSI::intValue() const {
+RSSI::intValue() const noexcept {
   return mImpl->value;
 }
 
 
 
 
-
-
+bool
+RSSI::operator==(const RSSI& other) const noexcept
+{
+  return mImpl->value == other.mImpl->value;
+}
 
 bool
-operator==(const RSSI& first, const RSSI& other) {
-  return first.hashCode() == other.hashCode();
+RSSI::operator!=(const RSSI& other) const noexcept
+{
+  return mImpl->value != other.mImpl->value;
 }
+
+bool
+RSSI::operator<(const RSSI& other) const noexcept
+{
+  return mImpl->value < other.mImpl->value;
+}
+
+bool
+RSSI::operator<=(const RSSI& other) const noexcept
+{
+  return mImpl->value <= other.mImpl->value;
+}
+
+bool
+RSSI::operator>(const RSSI& other) const noexcept
+{
+  return mImpl->value > other.mImpl->value;
+}
+
+bool
+RSSI::operator>=(const RSSI& other) const noexcept
+{
+  return mImpl->value >= other.mImpl->value;
+}
+
+
 
 
 

@@ -2,7 +2,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/encounter.h"
+#include "herald/datatype/encounter.h"
 
 #include <string>
 
@@ -45,7 +45,7 @@ Encounter::Encounter(Proximity didMeasure, PayloadData withPayload, Date timesta
 }
 
 Encounter::Encounter(Proximity didMeasure, PayloadData withPayload)
-  : mImpl(std::make_unique<Impl>(didMeasure,withPayload,std::move(Date())))
+  : mImpl(std::make_unique<Impl>(didMeasure,withPayload,Date()))
 {
   ;
 }

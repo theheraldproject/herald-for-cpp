@@ -7,75 +7,15 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 include(GNUInstallDirs
 )
 
-set(HEADERS 
-	include/herald.h
-	include/context.h
-  include/default_sensor_delegate.h
-  include/sensor_array.h 
-  include/sensor_delegate.h
-  include/sensor.h
-  include/ble/ble_concrete.h
-  include/ble/ble_database_delegate.h
-  include/ble/ble_database.h
-  include/ble/ble_device_delegate.h
-  include/ble/ble_device.h
-  include/ble/ble_receiver.h
-  include/ble/ble_sensor.h
-  include/ble/ble_sensor_configuration.h
-  include/ble/ble_transmitter.h
-  include/ble/ble_tx_power.h
-  include/ble/bluetooth_state_manager.h
-  include/ble/bluetooth_state_manager_delegate.h
-  include/data/sensor_logger.h
-  include/datatype/base64_string.h 
-  include/datatype/bluetooth_state.h
-  include/datatype/data.h
-  include/datatype/date.h
-  include/datatype/encounter.h
-  include/datatype/error_code.h
-  include/datatype/immediate_send_data.h
-  include/datatype/location_reference.h
-  include/datatype/location.h
-  include/datatype/payload_data.h
-  include/datatype/payload_sharing_data.h
-  include/datatype/payload_timestamp.h
-  include/datatype/placename_location_reference.h
-  include/datatype/proximity.h
-  include/datatype/pseudo_device_address.h
-  include/datatype/randomness.h
-  include/datatype/rssi.h
-  include/datatype/sensor_state.h
-  include/datatype/sensor_type.h
-  include/datatype/signal_characteristic_data.h
-  include/datatype/target_identifier.h
-  include/datatype/time_interval.h
-  include/datatype/wgs84.h
-  include/payload/payload_data_supplier.h
-
-)
+set(HERALD_BASE .)
+include(herald.cmake)
 
 add_library(herald 
-	${HEADERS}
-  src/ble/windows/concrete_ble_sensor.cpp
-	src/datatype/base64_string.cpp
-	src/datatype/data.cpp
-	src/datatype/date.cpp
-	src/datatype/encounter.cpp
-	src/datatype/immediate_send_data.cpp
-	src/datatype/location.cpp
-	src/datatype/payload_data.cpp
-	src/datatype/pseudo_device_address.cpp
-	src/datatype/rssi.cpp
-	src/datatype/signal_characteristic_data.cpp
-	src/datatype/target_identifier.cpp
-	src/datatype/time_interval.cpp
-	src/datatype/uuid.cpp
-  src/default_sensor_delegate.cpp
-  src/sensor_array.cpp
+	${HERALD_HEADERS}
+  ${HERALD_SOURCES}
 )
-set_target_properties(herald PROPERTIES PUBLIC_HEADER "${HEADERS}")
 
-include_directories(${herald_SOURCE_DIR}/fmt/include)
+set_target_properties(herald PROPERTIES PUBLIC_HEADER "${HERALD_HEADERS}")
 
 target_include_directories(herald 
 	PUBLIC 
@@ -83,12 +23,36 @@ target_include_directories(herald
 	$<INSTALL_INTERFACE:include>
 )
 
-target_compile_features(herald PRIVATE cxx_std_17)
+if(HERALD_TARGET STREQUAL zephyr)  
+  message("HERALD TARGET is ZEPHYR RTOS ${HERALD_TARGET}")
+  message("CXX INCLUDES WITHIN: ${includes_cxx}")
+  message("Is CXX compiler stuff defined?" ${includex_cxx})
+
+  #set(CXXFLAGS
+  #  ${includes_cxx} ${system_includes_cxx}
+  #)
+
+  #target_include_directories(herald SYSTEM PRIVATE
+  #  $ENV{ZEPHYR_BASE}/include
+  #)
+#  target_include_directories(herald PRIVATE 
+#    ${cxxincludes}
+#    ${cxxsystem_includes}
+#  )
+
+  # Zephyr CMakeLists.txt should define the include folders and CXX settings we need by default 
+  #set(CMAKE_CXX_FLAGS ${Z_CFLAGS} ${CXXFLAGS})
+endif()
+
+
+#target_compile_features(herald PRIVATE cxx_std_17)
+
+add_compile_options(-Wl,-Wno-unused-function)
 
 # NB: This is here to ensure binaries that link us also link stdc++fs for non-Apple targets
 # https://github.com/OpenRCT2/OpenRCT2/pull/10522
 if(NOT (APPLE OR MSVC) )
-target_link_libraries(herald PRIVATE stdc++fs fmt::fmt-header-only)
+#target_link_libraries(herald PRIVATE stdc++fs)
 endif(NOT (APPLE OR MSVC) )
 
 install(TARGETS herald 

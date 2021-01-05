@@ -2,7 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "datatype/target_identifier.h"
+#include "herald/datatype/target_identifier.h"
+#include "herald/datatype/data.h"
 
 namespace herald {
 namespace datatype {
@@ -10,20 +11,27 @@ namespace datatype {
 class TargetIdentifier::Impl {
 public:
   Impl();
-  Impl(std::string v);
+  Impl(const Data& mac);
+  Impl(const TargetIdentifier& from);
   ~Impl() = default;
 
-  std::string value;
+  Data value;
 };
 
 TargetIdentifier::Impl::Impl()
- : value("")
+ : value()
 {
   ;
 }
 
-TargetIdentifier::Impl::Impl(std::string v)
- : value(std::move(v))
+TargetIdentifier::Impl::Impl(const Data& v)
+ : value(v)
+{
+  ;
+}
+
+TargetIdentifier::Impl::Impl(const TargetIdentifier& v)
+ : value((Data)v) // conversion operator
 {
   ;
 }
@@ -40,12 +48,17 @@ TargetIdentifier::TargetIdentifier()
   ; // TODO set value to random v4 UUID string
 }
 
-// PLATFORM SPECIFIC CTORS BEGIN
+TargetIdentifier::TargetIdentifier(const Data& data)
+  : mImpl(std::make_unique<Impl>(data))
+{
+  ;
+}
 
-//TargetIdentifier::TargetIdentifier(BluetoothDevice device) {
-//  // TODO do something specific to each platform here
-//}
-// PLATFORM SPECIFIC CTORS END
+TargetIdentifier::TargetIdentifier(const TargetIdentifier& from)
+  : mImpl(std::make_unique<Impl>(from))
+{
+  ;
+}
 
 TargetIdentifier::~TargetIdentifier() {}
 
@@ -55,20 +68,32 @@ TargetIdentifier::operator==(const TargetIdentifier& other) const noexcept {
 }
 
 bool
-TargetIdentifier::operator==(const std::string& other) const noexcept {
-  return hashCode() == std::hash<std::string>{}(other);
+TargetIdentifier::operator==(const Data& other) const noexcept {
+  return mImpl->value == other;
+}
+
+bool
+TargetIdentifier::operator!=(const TargetIdentifier& other) const noexcept {
+  return hashCode() != other.hashCode();
+}
+
+bool
+TargetIdentifier::operator!=(const Data& other) const noexcept {
+  return mImpl->value != other;
 }
 
 std::size_t
 TargetIdentifier::hashCode() const {
-  return std::hash<std::string>{}(mImpl->value);
+  return std::hash<Data>{}(mImpl->value);
 }
 
-std::string
-TargetIdentifier::toString() const {
-  return mImpl->value; // copy ctor
+TargetIdentifier::operator std::string() const {
+  return mImpl->value.description();
 }
 
+TargetIdentifier::operator Data() const {
+  return mImpl->value;
+}
 
 } // end namespace
 } // end namespace

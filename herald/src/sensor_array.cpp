@@ -2,17 +2,17 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "sensor_array.h"
-#include "context.h"
-#include "data/sensor_logger.h"
-#include "datatype/payload_timestamp.h"
-#include "payload/payload_data_supplier.h"
-#include "payload/concrete_payload_data_supplier.h"
-#include "ble/ble_concrete.h"
+#include "herald/sensor_array.h"
+#include "herald/context.h"
+#include "herald/data/sensor_logger.h"
+#include "herald/datatype/payload_timestamp.h"
+#include "herald/payload/payload_data_supplier.h"
+#include "herald/ble/ble_concrete.h"
 
 #include <memory>
 #include <string>
 #include <vector>
+#include <optional>
 
 namespace herald {
 
@@ -24,19 +24,15 @@ using namespace payload;
 class SensorArray::Impl {
 public:
   Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
-  ~Impl() = default;
+  ~Impl();
 
   // Initialised on entry to Impl constructor:-
   std::shared_ptr<Context> mContext;
   std::shared_ptr<PayloadDataSupplier> mPayloadDataSupplier;
   std::vector<std::shared_ptr<Sensor>> mSensorArray;
   SensorLogger mLogger;
-  std::shared_ptr<ConcreteBLESensor> mConcreteBleSensor;
 
-  // initialised in IMPL constructor:-
-  std::shared_ptr<PayloadData> mPayloadData;
-  //std::shared_ptr<BatteryLog> mBatteryLog;
-
+  std::shared_ptr<ConcreteBLESensor> concrete;
 
   // Not initialised (and thus optional):-
   std::string deviceDescription;
@@ -47,9 +43,11 @@ SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDat
     mPayloadDataSupplier(payloadDataSupplier),
     mSensorArray(),
     mLogger(mContext, "Sensor", "SensorArray"),
-    mConcreteBleSensor(std::make_shared<ConcreteBLESensor>(mContext, mPayloadDataSupplier))
+    concrete(std::make_shared<ConcreteBLESensor>(mContext, mContext->getBluetoothStateManager(),
+      mPayloadDataSupplier)),
+    deviceDescription("")
 {
-  PayloadTimestamp pts; // now
+  // PayloadTimestamp pts; // now
   // mPayloadData = mPayloadDataSupplier->payload(pts);
   // add(std::make_shared<ContactLog>(mContext, "contacts.csv"));
   // add(std::make_shared<StatisticsLog>(mContext, "statistics.csv", payloadData));
@@ -57,10 +55,22 @@ SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDat
   // add(std::make_shared<DetectionLog>(mContext,"detection.csv", payloadData));
   // mBatteryLog = std::make_shared<BatteryLog>(mContext, "battery.csv");
 
-  deviceDescription = ""; // TODO get the real device description
+  mSensorArray.push_back(concrete); // adds in links to BLE transmitter, receiver
 
-  mLogger.info("DEVICE (payload={},description={})", mPayloadData->shortName(), deviceDescription);
+  // deviceDescription = ""; // TODO get the real device description
+
+  // NOTE THE FOLLOWING LINE CAUSES ZEPHYR APPS TO NOT EXECUTE - COUT ISSUE?
+  // TODO test this now logging on zephyr is reliable
+  //mLogger.info("DEVICE (payload={},description={})", "nil", deviceDescription);
 }
+
+SensorArray::Impl::~Impl()
+{
+  ;
+}
+
+
+
 
 
 
@@ -71,15 +81,25 @@ SensorArray::SensorArray(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDa
   ;
 }
 
+SensorArray::~SensorArray()
+{
+  ;
+}
+
 // SENSOR ARRAY METHODS
 bool
 SensorArray::immediateSend(Data data, const TargetIdentifier& targetIdentifier) {
-  return mImpl->mConcreteBleSensor->immediateSend(data,targetIdentifier);
+  return mImpl->concrete->immediateSend(data, targetIdentifier);
 }
 
-std::shared_ptr<PayloadData>
+bool
+SensorArray::immediateSendAll(Data data) {
+  return mImpl->concrete->immediateSendAll(data);
+}
+
+std::optional<PayloadData>
 SensorArray::payloadData() {
-  return mImpl->mPayloadData;
+  return mImpl->mPayloadDataSupplier->payload(PayloadTimestamp(),nullptr);
 }
 
 // SENSOR OVERRIDES 

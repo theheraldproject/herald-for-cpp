@@ -2,7 +2,7 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "default_sensor_delegate.h"
+#include "herald/default_sensor_delegate.h"
 
 namespace herald {
 
