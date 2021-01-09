@@ -129,7 +129,7 @@ ConcreteBLESensor::stop()
 
 // Database overrides
 void
-ConcreteBLESensor::bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device)
+ConcreteBLESensor::bleDatabaseDidCreate(const std::shared_ptr<BLEDevice> device)
 {
   for (auto delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, device->identifier()); // didDetect
@@ -137,7 +137,7 @@ ConcreteBLESensor::bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device
 }
 
 void
-ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, 
+ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device, 
   const BLEDeviceAttribute attribute)
 {
   switch (attribute) {
@@ -198,7 +198,7 @@ ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device
 }
 
 void
-ConcreteBLESensor::bleDatabaseDidDelete(const std::shared_ptr<BLEDevice>& device)
+ConcreteBLESensor::bleDatabaseDidDelete(const std::shared_ptr<BLEDevice> device)
 {
   ; // TODO just log this // TODO determine if to pass this on too
 }

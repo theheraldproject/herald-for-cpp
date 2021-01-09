@@ -1,0 +1,69 @@
+//  Copyright 2021 Herald Project Contributors
+//  SPDX-License-Identifier: Apache-2.0
+//
+
+#ifndef ACTIVITIES_H
+#define ACTIVITIES_H
+
+#include "../context.h"
+#include "../datatype/data.h"
+
+#include <memory>
+#include <functional>
+#include <optional>
+
+namespace herald {
+namespace engine {
+
+// Types used in coordination of Herald sensor activities
+
+using FeatureTag = herald::datatype::Data;
+
+using Priority = std::uint8_t;
+
+namespace Priorities {
+  constexpr Priority Critical(200);
+  constexpr Priority High(150);
+  constexpr Priority Default(100);
+  constexpr Priority Low(50);
+}
+
+struct Activity; // fwd decl
+
+/** Callback function or lambda provided by the Coordinator to be called once the action completes **/
+using CompletionCallback = std::function<void(const Activity&,std::optional<Activity>)>&;
+
+/** Activity execution function or lambda **/
+using ActivityFunction = std::function<void(const Activity&,CompletionCallback&)>&;
+
+struct Activity {
+  Priority priority;
+  std::string name;
+  std::vector<FeatureTag> prerequisities;
+  ActivityFunction executor;
+};
+
+/**
+ * Some sensors may have dependencies on others, or system features.
+ * This class provides a way of Sensors to let the Herald system know
+ * of their requirements and capabilities at any given moment.
+ */
+class CoordinationProvider {
+public:
+  CoordinationProvider() = default;
+  virtual ~CoordinationProvider() = default;
+  
+  // Coordination methods - Since v1.2-beta3
+  /** What connections does this Sensor type provide for Coordination **/
+  virtual std::vector<FeatureTag> connectionsProvided() = 0;
+
+  // Runtime coordination callbacks
+  /** Get a list of what connections are required to which devices now (may start, maintain, end (if not included)) **/
+  virtual std::vector<std::pair<FeatureTag,Priority>> requiredConnections() = 0;
+  virtual std::vector<Activity> requiredActivities() = 0;
+};
+
+}
+}
+
+#endif

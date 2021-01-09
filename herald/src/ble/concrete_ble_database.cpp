@@ -91,6 +91,9 @@ ConcreteBLEDatabase::device(const PayloadData& payloadData)
   std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
     TargetIdentifier(payloadData), shared_from_this());
   mImpl->devices.push_back(newDevice);
+  for (auto delegate : mImpl->delegates) {
+    delegate->bleDatabaseDidCreate(newDevice);
+  }
   return newDevice;
 }
 
@@ -106,6 +109,9 @@ ConcreteBLEDatabase::device(const TargetIdentifier& targetIdentifier)
   std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
     targetIdentifier, shared_from_this());
   mImpl->devices.push_back(newDevice);
+  for (auto delegate : mImpl->delegates) {
+    delegate->bleDatabaseDidCreate(newDevice);
+  }
   return newDevice;
 }
 
@@ -139,7 +145,11 @@ ConcreteBLEDatabase::remove(const TargetIdentifier& targetIdentifier)
     }
   );
   if (found != mImpl->devices.end()) {
+    std::shared_ptr<BLEDevice> toRemove = *found;
     mImpl->devices.erase(found);
+    for (auto delegate : mImpl->delegates) {
+      delegate->bleDatabaseDidDelete(toRemove);
+    }
   }
 }
 

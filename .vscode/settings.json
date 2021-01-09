@@ -81,6 +81,7 @@
     "format": "cpp",
     "filesystem": "cpp",
     "strstream": "cpp",
-    "resumable": "cpp"
+    "resumable": "cpp",
+    "codecvt": "cpp"
   }
 }
