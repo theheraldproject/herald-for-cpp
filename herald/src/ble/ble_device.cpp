@@ -55,7 +55,7 @@ BLEDevice::Impl::Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDele
     created(createdAt),
     lastUpdated(std::optional<Date>()),
     state(),
-    os(),
+    os(std::optional<BLEDeviceOperatingSystem>(BLEDeviceOperatingSystem::unknown)),
     payload(),
     immediateSendData(),
     rssi(),

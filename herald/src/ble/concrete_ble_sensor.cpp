@@ -5,10 +5,12 @@
 #include "herald/ble/ble_concrete.h"
 #include "herald/ble/bluetooth_state_manager.h"
 #include "herald/datatype/bluetooth_state.h"
+#include "herald/ble/ble_coordinator.h"
 
 // C++17 includes
 #include <memory>
 #include <vector>
+#include <optional>
 
 namespace herald {
 namespace ble {
@@ -32,6 +34,8 @@ public:
   std::shared_ptr<ConcreteBLEReceiver> receiver;
 
   std::vector<std::shared_ptr<SensorDelegate>> delegates;
+  
+  std::shared_ptr<HeraldProtocolBLECoordinationProvider> coordinator;
 
   bool addedSelfAsDelegate;
 };
@@ -48,6 +52,7 @@ ConcreteBLESensor::Impl::Impl(std::shared_ptr<Context> ctx,
       ctx, bluetoothStateManager, payloadDataSupplier, database)
     ),
     delegates(),
+    coordinator(),
     addedSelfAsDelegate(false)
 {
   ;
@@ -77,6 +82,12 @@ ConcreteBLESensor::ConcreteBLESensor(std::shared_ptr<Context> ctx,
 ConcreteBLESensor::~ConcreteBLESensor()
 {
   ;
+}
+
+std::optional<std::shared_ptr<CoordinationProvider>>
+ConcreteBLESensor::coordinationProvider()
+{
+  return std::optional<std::shared_ptr<CoordinationProvider>>(mImpl->coordinator);
 }
 
 bool

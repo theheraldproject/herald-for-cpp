@@ -156,6 +156,11 @@ ConcreteBLEReceiver::~ConcreteBLEReceiver()
   ;
 }
 
+std::optional<std::shared_ptr<CoordinationProvider>>
+ConcreteBLEReceiver::coordinationProvider()
+{
+  return {};
+}
 
 void
 ConcreteBLEReceiver::add(std::shared_ptr<SensorDelegate> delegate)

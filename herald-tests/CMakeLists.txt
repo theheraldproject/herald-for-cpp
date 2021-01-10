@@ -18,6 +18,7 @@ add_executable(herald-tests
   # high level
 	advertparser-tests.cpp
 	bledatabase-tests.cpp
+	blecoordinator-tests.cpp
 )
 
 include_directories(${herald_SOURCE_DIR})

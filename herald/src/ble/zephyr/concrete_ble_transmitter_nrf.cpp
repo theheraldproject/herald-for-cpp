@@ -228,6 +228,12 @@ ConcreteBLETransmitter::~ConcreteBLETransmitter()
   // stop(); // stops using m_addr
 }
 
+std::optional<std::shared_ptr<CoordinationProvider>>
+ConcreteBLETransmitter::coordinationProvider()
+{
+  return {};
+}
+
 void
 ConcreteBLETransmitter::add(std::shared_ptr<SensorDelegate> delegate)
 {

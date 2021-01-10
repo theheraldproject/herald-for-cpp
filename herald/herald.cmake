@@ -80,6 +80,7 @@ set(HERALD_SOURCES
 	${HERALD_BASE}/src/datatype/target_identifier.cpp
 	${HERALD_BASE}/src/datatype/time_interval.cpp
 	${HERALD_BASE}/src/datatype/uuid.cpp
+	${HERALD_BASE}/src/engine/activities.cpp
 	${HERALD_BASE}/src/engine/coordinator.cpp
 	${HERALD_BASE}/src/payload/beacon/beacon_payload_data_supplier.cpp
 	${HERALD_BASE}/src/payload/fixed/fixed_payload_data_supplier.cpp

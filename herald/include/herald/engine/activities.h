@@ -7,17 +7,25 @@
 
 #include "../context.h"
 #include "../datatype/data.h"
+#include "../datatype/target_identifier.h"
 
 #include <memory>
 #include <functional>
 #include <optional>
+#include <tuple>
 
 namespace herald {
 namespace engine {
 
+using namespace herald::datatype;
+
 // Types used in coordination of Herald sensor activities
 
 using FeatureTag = herald::datatype::Data;
+
+namespace Features {
+  static FeatureTag HeraldBluetoothProtocolConnection = herald::datatype::Data(std::byte(0x01),1);
+}
 
 using Priority = std::uint8_t;
 
@@ -31,15 +39,15 @@ namespace Priorities {
 struct Activity; // fwd decl
 
 /** Callback function or lambda provided by the Coordinator to be called once the action completes **/
-using CompletionCallback = std::function<void(const Activity&,std::optional<Activity>)>&;
+using CompletionCallback = std::function<void(const Activity,std::optional<Activity>)>; // function by value
 
 /** Activity execution function or lambda **/
-using ActivityFunction = std::function<void(const Activity&,CompletionCallback&)>&;
+using ActivityFunction = std::function<void(const Activity,CompletionCallback)>; // function by value
 
 struct Activity {
   Priority priority;
   std::string name;
-  std::vector<FeatureTag> prerequisities;
+  std::vector<std::tuple<FeatureTag,std::optional<TargetIdentifier>>> prerequisites; // no target id means all that are connected
   ActivityFunction executor;
 };
 
@@ -59,7 +67,7 @@ public:
 
   // Runtime coordination callbacks
   /** Get a list of what connections are required to which devices now (may start, maintain, end (if not included)) **/
-  virtual std::vector<std::pair<FeatureTag,Priority>> requiredConnections() = 0;
+  virtual std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>> requiredConnections() = 0;
   virtual std::vector<Activity> requiredActivities() = 0;
 };
 

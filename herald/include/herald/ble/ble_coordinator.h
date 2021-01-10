@@ -7,17 +7,19 @@
 
 #include "../context.h"
 #include "../sensor.h"
+#include "ble_database.h"
 
 #include <memory>
 #include <functional>
 #include <optional>
+#include <tuple>
 
 namespace herald {
 namespace ble {
 
 class HeraldProtocolBLECoordinationProvider : public CoordinationProvider {
 public:
-  HeraldProtocolBLECoordinationProvider();
+  HeraldProtocolBLECoordinationProvider(std::shared_ptr<BLEDatabase> db);
   ~HeraldProtocolBLECoordinationProvider();
 
   // Overrides
@@ -27,8 +29,12 @@ public:
 
   // Runtime coordination callbacks
   /** Get a list of what connections are required to which devices now (may start, maintain, end (if not included)) **/
-  std::vector<std::pair<FeatureTag,Priority>> requiredConnections() override;
+  std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>> requiredConnections() override;
   std::vector<Activity> requiredActivities() override;
+
+  // Callbacks for std::bind
+  void determineOSActivity(const Activity& activity, CompletionCallback& callback);
+  void readPayloadActivity(const Activity& activity, CompletionCallback& callback);
 
 private:
   class Impl;

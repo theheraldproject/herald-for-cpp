@@ -45,7 +45,8 @@ TEST_CASE("ble-device-ctor", "[ble][device][ctor]") {
     REQUIRE(device.timeIntervalSinceLastWriteRssi() == herald::datatype::TimeInterval::never());
     
     REQUIRE(!device.state().has_value());
-    REQUIRE(!device.operatingSystem().has_value());
+    REQUIRE(device.operatingSystem().has_value());
+    REQUIRE(device.operatingSystem().value() == herald::ble::BLEDeviceOperatingSystem::unknown);
     REQUIRE(!device.payloadData().has_value());
     REQUIRE(!device.immediateSendData().has_value());
     REQUIRE(!device.rssi().has_value());
