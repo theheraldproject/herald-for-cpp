@@ -22,13 +22,13 @@ public:
   }
   
   void bleDatabaseDidUpdate(const std::shared_ptr<herald::ble::BLEDevice> device, 
-    const herald::ble::BLEDeviceAttribute attribute) {
+    const herald::ble::BLEDeviceAttribute attribute) override {
     updateCallbackCalled = true;
     dev = device;
     attr = attribute;
   }
   
-  void bleDatabaseDidDelete(const std::shared_ptr<herald::ble::BLEDevice> device) {
+  void bleDatabaseDidDelete(const std::shared_ptr<herald::ble::BLEDevice> device) override {
     deleteCallbackCalled = true;
     dev = device;
   }

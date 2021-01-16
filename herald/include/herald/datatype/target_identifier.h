@@ -18,6 +18,7 @@ public:
   TargetIdentifier();
   TargetIdentifier(const Data& data);
   TargetIdentifier(const TargetIdentifier& from); // copy ctor
+  TargetIdentifier& operator=(const TargetIdentifier& from); // copy assign
   ~TargetIdentifier();
 
   bool operator==(const TargetIdentifier& other) const noexcept;

@@ -47,6 +47,8 @@ private:
   std::unique_ptr<Impl> mImpl;
 };
 
+/** Comparator for less than (use in maps) **/
+bool operator<(const std::shared_ptr<CoordinationProvider>& first, const std::shared_ptr<CoordinationProvider>& second);
 
 }
 }

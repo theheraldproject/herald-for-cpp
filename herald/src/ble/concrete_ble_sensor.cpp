@@ -52,7 +52,7 @@ ConcreteBLESensor::Impl::Impl(std::shared_ptr<Context> ctx,
       ctx, bluetoothStateManager, payloadDataSupplier, database)
     ),
     delegates(),
-    coordinator(),
+    coordinator(std::make_shared<HeraldProtocolBLECoordinationProvider>(ctx, database, receiver)),
     addedSelfAsDelegate(false)
 {
   ;

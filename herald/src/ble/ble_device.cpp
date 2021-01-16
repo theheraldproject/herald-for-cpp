@@ -259,6 +259,12 @@ BLEDevice::immediateSendData(ImmediateSendData toSend)
   }
 }
 
+void
+BLEDevice::clearImmediateSendData()
+{
+  mImpl->immediateSendData.reset();
+}
+
 std::optional<RSSI>
 BLEDevice::rssi() const
 {

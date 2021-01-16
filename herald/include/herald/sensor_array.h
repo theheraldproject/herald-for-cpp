@@ -37,6 +37,7 @@ public:
   void add(std::shared_ptr<SensorDelegate> delegate) override;
   void start() override;
   void stop() override;
+  std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() override;
 
   // Scheduling activities from external OS thread wakes - Since v1.2-beta3
   void iteration(const TimeInterval sinceLastCompleted);

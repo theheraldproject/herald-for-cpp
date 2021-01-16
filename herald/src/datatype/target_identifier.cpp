@@ -62,6 +62,13 @@ TargetIdentifier::TargetIdentifier(const TargetIdentifier& from)
 
 TargetIdentifier::~TargetIdentifier() {}
 
+TargetIdentifier&
+TargetIdentifier::operator=(const TargetIdentifier& from)
+{
+  mImpl->value = from.mImpl->value;
+  return *this;
+}
+
 bool
 TargetIdentifier::operator==(const TargetIdentifier& other) const noexcept {
   return hashCode() == other.hashCode();

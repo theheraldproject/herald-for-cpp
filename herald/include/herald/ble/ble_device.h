@@ -81,6 +81,7 @@ public:
 
   std::optional<ImmediateSendData> immediateSendData() const;
   void immediateSendData(ImmediateSendData toSend);
+  void clearImmediateSendData();
 
   std::optional<RSSI> rssi() const;
   void rssi(RSSI newRSSI);

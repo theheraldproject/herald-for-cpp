@@ -4,6 +4,8 @@
 
 #include "herald/ble/ble_coordinator.h"
 #include "herald/engine/activities.h"
+#include "herald/ble/ble_protocols.h"
+#include "herald/data/sensor_logger.h"
 
 #include <memory>
 
@@ -14,14 +16,21 @@ using namespace herald::engine;
 
 class HeraldProtocolBLECoordinationProvider::Impl {
 public:
-  Impl(std::shared_ptr<BLEDatabase> bledb);
+  Impl(std::shared_ptr<Context> ctx, std::shared_ptr<BLEDatabase> bledb,std::shared_ptr<HeraldProtocolV1Provider> provider);
   ~Impl();
 
+  std::shared_ptr<Context> context; 
   std::shared_ptr<BLEDatabase> db;
+  std::shared_ptr<HeraldProtocolV1Provider> pp;
+
+  HLOGGER;
 };
 
-HeraldProtocolBLECoordinationProvider::Impl::Impl(std::shared_ptr<BLEDatabase> bledb)
-  : db(bledb)
+HeraldProtocolBLECoordinationProvider::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<BLEDatabase> bledb,std::shared_ptr<HeraldProtocolV1Provider> provider)
+  : context(ctx),
+    db(bledb),
+    pp(provider)
+    HLOGGERINIT(ctx,"heraldble","coordinationprovider")
 {
   ;
 }
@@ -33,8 +42,9 @@ HeraldProtocolBLECoordinationProvider::Impl::~Impl()
 
 
 
-HeraldProtocolBLECoordinationProvider::HeraldProtocolBLECoordinationProvider(std::shared_ptr<BLEDatabase> db)
-  : mImpl(std::make_unique<Impl>(db))
+HeraldProtocolBLECoordinationProvider::HeraldProtocolBLECoordinationProvider(std::shared_ptr<Context> ctx, 
+  std::shared_ptr<BLEDatabase> db, std::shared_ptr<HeraldProtocolV1Provider> provider)
+  : mImpl(std::make_unique<Impl>(ctx,db,provider))
 {
   ;
 }
@@ -52,7 +62,45 @@ HeraldProtocolBLECoordinationProvider::connectionsProvided()
   return std::vector<FeatureTag>(1,herald::engine::Features::HeraldBluetoothProtocolConnection);
 }
 
+std::vector<PrioritisedPrerequisite>
+HeraldProtocolBLECoordinationProvider::provision(std::vector<PrioritisedPrerequisite> requested)
+{
+  HDBG("Entered provision");
+  std::vector<PrioritisedPrerequisite> provisioned;
+  // For this provider, a prerequisite is a connection to a remote target identifier over Bluetooth
+  auto requestIter = requested.cbegin();
+  bool lastConnectionSuccessful = true;
+  while (lastConnectionSuccessful && requestIter != requested.cend()) {
+    HDBG(" - Satisfying prereq");
+    auto& req = *requestIter;
+    // See if we're already connected
+    // If so, add to provisioned list
+    // If not, try to connect
+    auto& optTarget = std::get<2>(req);
+    if (optTarget.has_value()) {
+      HDBG(" - Have defined target");
+      lastConnectionSuccessful = mImpl->pp->openConnection(optTarget.value());
+      // If successful, add to provisioned list
+      if (lastConnectionSuccessful) {
+        HDBG(" - Opening new connection successful");
+        provisioned.push_back(req);
+      } else {
+        HDBG(" - Opening new connection UNSUCCESSFUL");
+      }
+    } else {
+      HDBG(" - No defined target, returning satisfied - always true for Herald BLE");
+      // if target not specified then it just means any open connection, so return OK
+      provisioned.push_back(req);
+      // TODO determine what to do here if sensor stopped, bluetooth disabled, or no connections open
+    }
+    // move forward in iterator
+    requestIter++;
+  }
+  // TODO prioritise disconnection from not required items (E.g. after minimum connection time)
 
+  HDBG("Returning from provision");
+  return provisioned;
+}
 
 
 
@@ -110,10 +158,11 @@ HeraldProtocolBLECoordinationProvider::requiredActivities()
             device->identifier()
           }
         },
-        .executor = [](const Activity activity, CompletionCallback callback) -> void {
-          // TODO fill this out
+        .executor = [this](const Activity activity, CompletionCallback callback) -> void {
+          // fill this out
+          mImpl->pp->identifyOS(activity,callback);
           // call callback
-          callback(activity, {});
+          //callback(activity, {});
         }
       });
     }
@@ -128,10 +177,11 @@ HeraldProtocolBLECoordinationProvider::requiredActivities()
             device->identifier()
           }
         },
-        .executor = [](const Activity activity, CompletionCallback callback) -> void {
-          // TODO fill this out
+        .executor = [this](const Activity activity, CompletionCallback callback) -> void {
+          // fill this out
+          mImpl->pp->readPayload(activity,callback);
           // call callback
-          callback(activity, {});
+          //callback(activity, {});
         }
       });
     }
@@ -149,13 +199,15 @@ HeraldProtocolBLECoordinationProvider::requiredActivities()
             device->identifier()
           }
         },
-        .executor = [](const Activity activity, CompletionCallback callback) -> void {
-          // TODO fill this out
+        .executor = [this](const Activity activity, CompletionCallback callback) -> void {
+          // fill this out
+          mImpl->pp->immediateSend(activity,callback);
           // call callback
-          callback(activity, {});
+          //callback(activity, {});
         }
       });
     }
+    // TODO add immediate send all support
     // TODO add read of nearby payload data from remotes
   }
   return results;

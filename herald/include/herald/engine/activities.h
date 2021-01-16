@@ -44,10 +44,13 @@ using CompletionCallback = std::function<void(const Activity,std::optional<Activ
 /** Activity execution function or lambda **/
 using ActivityFunction = std::function<void(const Activity,CompletionCallback)>; // function by value
 
+using Prerequisite = std::tuple<FeatureTag,std::optional<TargetIdentifier>>;
+using PrioritisedPrerequisite = std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>;
+
 struct Activity {
   Priority priority;
   std::string name;
-  std::vector<std::tuple<FeatureTag,std::optional<TargetIdentifier>>> prerequisites; // no target id means all that are connected
+  std::vector<Prerequisite> prerequisites; // no target id means all that are connected
   ActivityFunction executor;
 };
 
@@ -64,10 +67,11 @@ public:
   // Coordination methods - Since v1.2-beta3
   /** What connections does this Sensor type provide for Coordination **/
   virtual std::vector<FeatureTag> connectionsProvided() = 0;
+  virtual std::vector<PrioritisedPrerequisite> provision(std::vector<PrioritisedPrerequisite> requested) = 0;
 
   // Runtime coordination callbacks
   /** Get a list of what connections are required to which devices now (may start, maintain, end (if not included)) **/
-  virtual std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>> requiredConnections() = 0;
+  virtual std::vector<PrioritisedPrerequisite> requiredConnections() = 0;
   virtual std::vector<Activity> requiredActivities() = 0;
 };
 

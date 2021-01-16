@@ -9,6 +9,7 @@
 #include "ble_receiver.h"
 #include "ble_sensor.h"
 #include "ble_transmitter.h"
+#include "ble_protocols.h"
 #include "bluetooth_state_manager.h"
 #include "ble_device_delegate.h"
 #include "../payload/payload_data_supplier.h"
@@ -25,6 +26,18 @@ using namespace herald::payload;
 // NOTE THIS HEADER IS FOR ALL PLATFORMS. 
 //      SPECIFIC PLATFORM DEFINITIONS ARE WITHIN SEVERAL C++ FILES
 //      UNDER WINDOWS AND ZEPHYR SUB DIRECTORIES
+
+class ConcreteBluetoothStateManager : public BluetoothStateManager, public std::enable_shared_from_this<BluetoothStateManager>  {
+public:
+  ConcreteBluetoothStateManager();
+  ConcreteBluetoothStateManager(const ConcreteBluetoothStateManager& from) = delete;
+  ConcreteBluetoothStateManager(ConcreteBluetoothStateManager&& from) = delete;
+  ~ConcreteBluetoothStateManager();
+
+  // Bluetooth State Manager overrides
+  void add(std::shared_ptr<BluetoothStateManagerDelegate> delegate) override;
+  BluetoothState state() override;
+};
 
 class ConcreteBLEDatabase : public BLEDatabase, public BLEDeviceDelegate, public std::enable_shared_from_this<ConcreteBLEDatabase>  {
 public:
@@ -99,7 +112,7 @@ private:
   std::unique_ptr<Impl> mImpl; // unique as this is handled internally for all platforms by Herald
 };
 
-class ConcreteBLEReceiver : public BLEReceiver, public std::enable_shared_from_this<ConcreteBLEReceiver> {
+class ConcreteBLEReceiver : public BLEReceiver, public HeraldProtocolV1Provider, public std::enable_shared_from_this<ConcreteBLEReceiver> {
 public:
   ConcreteBLEReceiver(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
@@ -117,6 +130,14 @@ public:
   void add(std::shared_ptr<SensorDelegate> delegate) override;
   void start() override;
   void stop() override;
+
+  // Herald V1 protocol provider overrides
+  bool openConnection(const TargetIdentifier& toTarget) override;
+  bool closeConnection(const TargetIdentifier& toTarget) override;
+  void identifyOS(Activity, CompletionCallback) override;
+  void readPayload(Activity, CompletionCallback) override;
+  void immediateSend(Activity, CompletionCallback) override;
+  void immediateSendAll(Activity, CompletionCallback) override;
 
 private:
   class Impl;

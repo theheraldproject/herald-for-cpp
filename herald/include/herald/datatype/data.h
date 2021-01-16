@@ -49,6 +49,8 @@ public:
   // TODO signed versions of the above functions too
   bool operator==(const Data& other) const noexcept;
   bool operator!=(const Data& other) const noexcept;
+  bool operator<(const Data& other) const noexcept; // required for std::less
+  bool operator>(const Data& other) const noexcept; // required for std::less
 
   Data reversed() const;
 

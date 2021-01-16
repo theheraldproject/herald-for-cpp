@@ -124,6 +124,11 @@ SensorArray::stop() {
   }
 }
 
+std::optional<std::shared_ptr<CoordinationProvider>>
+SensorArray::coordinationProvider()
+{
+  return {};
+}
 
 
 

@@ -10,12 +10,79 @@
 
 #include "herald/herald.h"
 
+class NoOpHeraldV1ProtocolProvider : public herald::ble::HeraldProtocolV1Provider {
+public:
+  NoOpHeraldV1ProtocolProvider(std::shared_ptr<herald::Context> context,std::shared_ptr<herald::ble::BLEDatabase> bledb)
+    : ctx(context) 
+      HLOGGERINIT(ctx,"TESTS","NoOpProvider")
+  {}
+  ~NoOpHeraldV1ProtocolProvider() = default;
+  
+  bool openConnection(const herald::datatype::TargetIdentifier& toTarget) override {return true;}
+  bool closeConnection(const herald::datatype::TargetIdentifier& toTarget) override {return true;}
+
+  void identifyOS(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+    HTDBG("identifyOS called");
+    cb(act,{});
+  }
+
+  void readPayload(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+    HTDBG("readPayload called");
+    cb(act,{});
+  }
+
+  void immediateSend(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+    HTDBG("immediateSend called");
+    cb(act,{});
+  }
+
+  void immediateSendAll(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+    HTDBG("immediateSendAll called");
+    cb(act,{});
+  }
+
+  std::shared_ptr<herald::Context> ctx;
+  HLOGGER
+};
+
+/*
+class MockHeraldV1ProtocolProvider : public herald::ble::HeraldProtocolV1Provider {
+public:
+  MockHeraldV1ProtocolProvider(std::shared_ptr<herald::ble::BLEDatabase> bledb)
+    : db(bledb), hasIdentifiedOs(false), lastDeviceOS(), hasReadPayload(false), lastDevicePayload()
+  {}
+  ~MockHeraldV1ProtocolProvider() = default;
+  
+  void identifyOS(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+    auto device = db->device(std::get<1>(act.prerequisites.front()).value());
+    device->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
+    cb(act,{});
+  }
+
+  void readPayload(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+    auto device = db->device(std::get<1>(act.prerequisites.front()).value());
+    device->payloadData(herald::datatype::Data(std::byte(0x02),2));
+    cb(act,{});
+  }
+
+  std::shared_ptr<herald::ble::BLEDatabase> db;
+  bool hasIdentifiedOs;
+  std::optional<herald::datatype::TargetIdentifier> lastDeviceOS;
+  bool hasReadPayload;
+  std::optional<herald::datatype::TargetIdentifier> lastDevicePayload;
+};
+*/
+
 TEST_CASE("blecoordinator-ctor", "[coordinator][ctor][basic]") {
   SECTION("blecoordinator-ctor") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
       std::make_shared<herald::ble::ConcreteBLEDatabase>();
+    std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
+      std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
-      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(db);
+      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(ctx,db,pp);
 
     std::vector<herald::engine::FeatureTag> provided = coord->connectionsProvided();
     REQUIRE(provided.size() == 1); // Herald BLE protocol
@@ -35,10 +102,14 @@ TEST_CASE("blecoordinator-ctor", "[coordinator][ctor][basic]") {
 
 TEST_CASE("blecoordinator-unseen-device", "[coordinator][unseen-device][basic]") {
   SECTION("blecoordinator-unseen-device") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
       std::make_shared<herald::ble::ConcreteBLEDatabase>();
+    std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
+      std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
-      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(db);
+      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(ctx,db,pp);
 
     herald::datatype::Data devMac1(std::byte(0x1d),6);
     herald::datatype::TargetIdentifier device1(devMac1);
@@ -64,10 +135,14 @@ TEST_CASE("blecoordinator-unseen-device", "[coordinator][unseen-device][basic]")
 
 TEST_CASE("blecoordinator-android-no-id", "[coordinator][android-no-id][basic]") {
   SECTION("blecoordinator-android-no-id") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
       std::make_shared<herald::ble::ConcreteBLEDatabase>();
+    std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
+      std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
-      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(db);
+      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(ctx,db,pp);
 
     herald::datatype::Data devMac1(std::byte(0x1d),6);
     herald::datatype::TargetIdentifier device1(devMac1);
@@ -95,10 +170,14 @@ TEST_CASE("blecoordinator-android-no-id", "[coordinator][android-no-id][basic]")
 
 TEST_CASE("blecoordinator-two-mixed-no-id", "[coordinator][two-mixed-no-id][basic]") {
   SECTION("blecoordinator-two-mixed-no-id") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
       std::make_shared<herald::ble::ConcreteBLEDatabase>();
+    std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
+      std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
-      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(db);
+      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(ctx,db,pp);
 
     herald::datatype::Data devMac1(std::byte(0x1d),6);
     herald::datatype::TargetIdentifier device1(devMac1);
@@ -131,10 +210,14 @@ TEST_CASE("blecoordinator-two-mixed-no-id", "[coordinator][two-mixed-no-id][basi
 
 TEST_CASE("blecoordinator-got-os-and-id", "[coordinator][got-os-and-id][basic]") {
   SECTION("blecoordinator-got-os-and-id") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
       std::make_shared<herald::ble::ConcreteBLEDatabase>();
+    std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
+      std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
-      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(db);
+      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(ctx,db,pp);
 
     herald::datatype::Data devMac1(std::byte(0x1d),6);
     herald::datatype::TargetIdentifier device1(devMac1);
@@ -156,10 +239,14 @@ TEST_CASE("blecoordinator-got-os-and-id", "[coordinator][got-os-and-id][basic]")
 
 TEST_CASE("blecoordinator-got-two-at-different-states", "[coordinator][got-two-at-different-states][basic]") {
   SECTION("blecoordinator-got-two-at-different-states") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
       std::make_shared<herald::ble::ConcreteBLEDatabase>();
+    std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
+      std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
-      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(db);
+      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(ctx,db,pp);
 
     herald::datatype::Data devMac1(std::byte(0x1d),6);
     herald::datatype::TargetIdentifier device1(devMac1);
@@ -194,10 +281,14 @@ TEST_CASE("blecoordinator-got-two-at-different-states", "[coordinator][got-two-a
 
 TEST_CASE("blecoordinator-got-immediate-send-targeted", "[coordinator][got-immediate-send-targeted][basic]") {
   SECTION("blecoordinator-got-immediate-send-targeted") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
       std::make_shared<herald::ble::ConcreteBLEDatabase>();
+    std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
+      std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
-      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(db);
+      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(ctx,db,pp);
 
     herald::datatype::Data devMac1(std::byte(0x1d),6);
     herald::datatype::TargetIdentifier device1(devMac1);
@@ -221,10 +312,14 @@ TEST_CASE("blecoordinator-got-immediate-send-targeted", "[coordinator][got-immed
 
 TEST_CASE("blecoordinator-got-three-at-different-states", "[coordinator][got-three-at-different-states][basic]") {
   SECTION("blecoordinator-got-three-at-different-states") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
       std::make_shared<herald::ble::ConcreteBLEDatabase>();
+    std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
+      std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
-      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(db);
+      std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(ctx,db,pp);
 
     herald::datatype::Data devMac1(std::byte(0x1d),6);
     herald::datatype::TargetIdentifier device1(devMac1);

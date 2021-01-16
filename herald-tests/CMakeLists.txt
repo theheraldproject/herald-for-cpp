@@ -19,6 +19,7 @@ add_executable(herald-tests
 	advertparser-tests.cpp
 	bledatabase-tests.cpp
 	blecoordinator-tests.cpp
+	coordinator-tests.cpp
 )
 
 include_directories(${herald_SOURCE_DIR})

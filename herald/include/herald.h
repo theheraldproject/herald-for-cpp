@@ -62,6 +62,7 @@
 #include "herald/ble/ble_device_delegate.h"
 #include "herald/ble/ble_device.h"
 #include "herald/ble/ble_mac_address.h"
+#include "herald/ble/ble_protocols.h"
 #include "herald/ble/ble_receiver.h"
 #include "herald/ble/ble_sensor.h"
 #include "herald/ble/ble_sensor_configuration.h"

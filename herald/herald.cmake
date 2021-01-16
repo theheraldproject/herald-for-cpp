@@ -16,6 +16,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/ble/ble_device_delegate.h
   ${HERALD_BASE}/include/herald/ble/ble_device.h
   ${HERALD_BASE}/include/herald/ble/ble_mac_address.h
+  ${HERALD_BASE}/include/herald/ble/ble_protocols.h
   ${HERALD_BASE}/include/herald/ble/ble_receiver.h
   ${HERALD_BASE}/include/herald/ble/ble_sensor.h
   ${HERALD_BASE}/include/herald/ble/ble_sensor_configuration.h

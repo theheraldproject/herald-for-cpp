@@ -14,6 +14,20 @@
 #include <memory>
 #include <ostream>
 
+// Defines for within Impl class definitions
+#define HLOGGER herald::data::SensorLogger logger;
+#define HLOGGERINIT(_ctx,_subsystem,_category) ,logger(_ctx,_subsystem,_category)
+
+// Defines for within main class (more common)
+#define HDBG(...) mImpl->logger.debug(__VA_ARGS__);
+#define HERR(...) mImpl->logger.fault(__VA_ARGS__);
+#define HLOG(...) mImpl->logger.info(__VA_ARGS__);
+
+// Defines for within Impl class
+#define HTDBG(...) logger.debug(__VA_ARGS__);
+#define HTERR(...) logger.fault(__VA_ARGS__);
+#define HTLOG(...) logger.info(__VA_ARGS__);
+
 namespace herald {
 namespace data {
 
