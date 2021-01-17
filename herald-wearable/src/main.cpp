@@ -131,10 +131,20 @@ void herald_entry() {
 	sa->start(); // There's a corresponding stop() call too
 
 	//int count = 0;
+	int iter = 0;
+	int maxIter = (10 * 1000) / (5000); // 50
+	Date last;
 	while (1) {
-		k_sleep(K_SECONDS(5)); 
+		k_sleep(K_MSEC(5000)); 
+		//k_sleep(K_MSEC(50)); 
+		Date now;
+		sa->iteration(now - last);
+		last = now;
 		//count++;
-		LOG_INF("herald thread still running");
+		iter = (iter + 1) % maxIter;
+		if (0 == maxIter) {
+			LOG_INF("herald thread still running");
+		}
 	}
 }
 
@@ -184,8 +194,8 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_sleep(K_SECONDS(10)); // TODO reduce this, or use separate threads for certain activities
-		LOG_INF("main thread still running");
+		k_sleep(K_SECONDS(1));
+		//LOG_INF("main thread still running");
 
 		// Periodic Herald tasks here
 		// ctx->periodicActions();

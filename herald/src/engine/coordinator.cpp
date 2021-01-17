@@ -28,12 +28,15 @@ public:
   std::vector<std::shared_ptr<CoordinationProvider>> providers;
   std::map<FeatureTag,std::shared_ptr<CoordinationProvider>> featureProviders;
 
+  bool running;
+
   HLOGGER;
 };
 
 Coordinator::Impl::Impl(std::shared_ptr<Context> ctx)
   : context(ctx),
-    providers()
+    providers(),
+    running(false)
     HLOGGERINIT(ctx,"engine","coordinator")
 {
   ;
@@ -92,6 +95,7 @@ Coordinator::start()
       mImpl->featureProviders.emplace(feature,prov);
     }
   }
+  mImpl->running = true;
   HDBG("Start returning");
 }
 
@@ -99,14 +103,18 @@ Coordinator::start()
 void
 Coordinator::iteration()
 {
-  HDBG("Entered iteration");
+  if (!mImpl->running) {
+    HDBG("Coordinator not running. Returning from iteration having done nothing.");
+    return;
+  }
+  // HDBG("Entered iteration");
   // Create empty list of required prereqs per provider
   std::map<std::shared_ptr<CoordinationProvider>,std::vector<PrioritisedPrerequisite>> assignPrereqs;
   for (auto& prov : mImpl->providers) {
     assignPrereqs.emplace(prov,std::vector<PrioritisedPrerequisite>());
   }
-  HDBG("Completed initialisation of provider prerequisities containers");
-  HDBG(" - Provider count: %d", mImpl->providers.size());
+  // HDBG("Completed initialisation of provider prerequisities containers");
+  // HDBG(" - Provider count: {}", mImpl->providers.size());
   
   std::vector<PrioritisedPrerequisite> connsRequired;
   // Loop over providers and ask for feature pre-requisites
@@ -115,7 +123,8 @@ Coordinator::iteration()
     std::copy(myConns.begin(),myConns.end(),
       std::back_insert_iterator<std::vector<PrioritisedPrerequisite>>(connsRequired));
   }
-  HDBG("Retrieved providers' current prerequisites");
+  // HDBG(std::to_string(connsRequired.size()));
+  // HDBG("Retrieved providers' current prerequisites");
   // TODO de-duplicate pre-reqs
   // Now link required prereqs to each provider
   for (auto& p : connsRequired) {
@@ -124,7 +133,14 @@ Coordinator::iteration()
       assignPrereqs[el->second].push_back(p);
     }
   }
-  HDBG("Linked pre-reqs to their providers");
+  // HDBG("Linked pre-reqs to their providers");
+
+  // Some debug checks here
+  int cnt = 0;
+  for (auto& ass : assignPrereqs) {
+    // HDBG("assign prereqs number {} has this many prereqs to fill {}", cnt, ass.second.size());
+    cnt++;
+  }
   
   // Communicate with relevant feature providers and request features for targets (in descending priority order)
   //  - Includes removal of previous features no longer needed
@@ -135,7 +151,7 @@ Coordinator::iteration()
     std::copy(myProvisioned.begin(),myProvisioned.end(),
       std::back_insert_iterator<std::vector<PrioritisedPrerequisite>>(provisioned));
   }
-  HDBG("All pre-requisities requests sent and responses received");
+  // HDBG("All pre-requisities requests sent and responses received");
   // TODO do the above asynchronously and await callback or timeout for all
 
   // For each which are now present, ask for activities (in descending priority order)
@@ -143,7 +159,7 @@ Coordinator::iteration()
     auto maxActs = prov->requiredActivities();
     // TODO sort by descending priority before actioning
     for (auto& act : maxActs) {
-      HDBG("Checking next desired activity for prereqs being satisfied");
+      // HDBG("Checking next desired activity for prereqs being satisfied");
       // Filter requested by provisioned
       bool allFound = true;
       for (auto& pre : act.prerequisites) {
@@ -173,13 +189,14 @@ Coordinator::iteration()
       }
     }
   }
-  HDBG("Leaving iteration");
+  // HDBG("Leaving iteration");
 }
 
 /** Closes out any existing connections/activities **/
 void
 Coordinator::stop()
 {
+  mImpl->running = false;
   // No-op - done in other methods (for now)
 }
 

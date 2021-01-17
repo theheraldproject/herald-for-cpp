@@ -43,7 +43,7 @@ public:
 ConcreteBLESensor::Impl::Impl(std::shared_ptr<Context> ctx, 
     std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
-  : database(std::make_shared<ConcreteBLEDatabase>()), 
+  : database(std::make_shared<ConcreteBLEDatabase>(ctx)), 
     stateManager(bluetoothStateManager),
     transmitter(std::make_shared<ConcreteBLETransmitter>(
       ctx, bluetoothStateManager, payloadDataSupplier, database)
@@ -121,7 +121,7 @@ ConcreteBLESensor::start()
     mImpl->database->add(shared_from_this());
     mImpl->addedSelfAsDelegate = true;
   }
-  mImpl->transmitter->start();
+  //mImpl->transmitter->start();
   mImpl->receiver->start();
   for (auto delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, SensorState::on);
@@ -131,7 +131,7 @@ ConcreteBLESensor::start()
 void
 ConcreteBLESensor::stop()
 {
-  mImpl->transmitter->stop();
+  //mImpl->transmitter->stop();
   mImpl->receiver->stop();
   for (auto delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, SensorState::off);

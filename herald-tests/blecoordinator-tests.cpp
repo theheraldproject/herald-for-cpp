@@ -78,7 +78,7 @@ TEST_CASE("blecoordinator-ctor", "[coordinator][ctor][basic]") {
     std::shared_ptr<herald::DefaultContext> ctx = 
       std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
-      std::make_shared<herald::ble::ConcreteBLEDatabase>();
+      std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx);
     std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
       std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
@@ -105,7 +105,7 @@ TEST_CASE("blecoordinator-unseen-device", "[coordinator][unseen-device][basic]")
     std::shared_ptr<herald::DefaultContext> ctx = 
       std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
-      std::make_shared<herald::ble::ConcreteBLEDatabase>();
+      std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx);
     std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
       std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
@@ -138,7 +138,7 @@ TEST_CASE("blecoordinator-android-no-id", "[coordinator][android-no-id][basic]")
     std::shared_ptr<herald::DefaultContext> ctx = 
       std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
-      std::make_shared<herald::ble::ConcreteBLEDatabase>();
+      std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx);
     std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
       std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
@@ -173,7 +173,7 @@ TEST_CASE("blecoordinator-two-mixed-no-id", "[coordinator][two-mixed-no-id][basi
     std::shared_ptr<herald::DefaultContext> ctx = 
       std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
-      std::make_shared<herald::ble::ConcreteBLEDatabase>();
+      std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx);
     std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
       std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
@@ -213,7 +213,7 @@ TEST_CASE("blecoordinator-got-os-and-id", "[coordinator][got-os-and-id][basic]")
     std::shared_ptr<herald::DefaultContext> ctx = 
       std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
-      std::make_shared<herald::ble::ConcreteBLEDatabase>();
+      std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx);
     std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
       std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
@@ -242,7 +242,7 @@ TEST_CASE("blecoordinator-got-two-at-different-states", "[coordinator][got-two-a
     std::shared_ptr<herald::DefaultContext> ctx = 
       std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
-      std::make_shared<herald::ble::ConcreteBLEDatabase>();
+      std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx);
     std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
       std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
@@ -284,7 +284,7 @@ TEST_CASE("blecoordinator-got-immediate-send-targeted", "[coordinator][got-immed
     std::shared_ptr<herald::DefaultContext> ctx = 
       std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
-      std::make_shared<herald::ble::ConcreteBLEDatabase>();
+      std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx);
     std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
       std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
@@ -315,7 +315,7 @@ TEST_CASE("blecoordinator-got-three-at-different-states", "[coordinator][got-thr
     std::shared_ptr<herald::DefaultContext> ctx = 
       std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
-      std::make_shared<herald::ble::ConcreteBLEDatabase>();
+      std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx);
     std::shared_ptr<NoOpHeraldV1ProtocolProvider> pp = 
       std::make_shared<NoOpHeraldV1ProtocolProvider>(ctx,db);
     std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =

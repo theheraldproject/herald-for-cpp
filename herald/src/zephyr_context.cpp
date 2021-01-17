@@ -67,13 +67,13 @@ ZephyrLoggingSink::log(SensorLoggerLevel level, std::string message)
   std::string finalMessage = m_subsystem + "," + m_category + "," + message;
   switch (level) {
     case SensorLoggerLevel::debug:
-      LOG_DBG("%s\n",log_strdup(finalMessage.c_str()));
+      LOG_DBG("%s",log_strdup(finalMessage.c_str()));
       break;
     case SensorLoggerLevel::fault:
-      LOG_ERR("%s\n",log_strdup(finalMessage.c_str()));
+      LOG_ERR("%s",log_strdup(finalMessage.c_str()));
       break;
     default:
-      LOG_INF("%s\n",log_strdup(finalMessage.c_str()));
+      LOG_INF("%s",log_strdup(finalMessage.c_str()));
       break;
   }
 }
@@ -204,12 +204,14 @@ ZephyrContext::enableBluetooth() noexcept
   if (IS_ENABLED(CONFIG_SETTINGS)) {
     settings_load();
   }
-  if (success) {
+  if (0 == success) {
     mImpl->enabled = true;
 
     for (auto delegate : mImpl->stateDelegates) {
       delegate->bluetoothStateManager(BluetoothState::poweredOn);
     }
+  } else {
+    LOG_INF("Error enabling Zephyr Bluetooth: %d", success);
   }
 
   return success;

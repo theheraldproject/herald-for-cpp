@@ -13,20 +13,21 @@
 #include <string>
 #include <memory>
 #include <ostream>
+#include <sstream>
 
 // Defines for within Impl class definitions
 #define HLOGGER herald::data::SensorLogger logger;
 #define HLOGGERINIT(_ctx,_subsystem,_category) ,logger(_ctx,_subsystem,_category)
 
 // Defines for within main class (more common)
-#define HDBG(...) mImpl->logger.debug(__VA_ARGS__);
-#define HERR(...) mImpl->logger.fault(__VA_ARGS__);
-#define HLOG(...) mImpl->logger.info(__VA_ARGS__);
+#define HDBG(_msg, ...) mImpl->logger.debug(_msg, ##__VA_ARGS__);
+#define HERR(_msg, ...) mImpl->logger.fault(_msg, ##__VA_ARGS__);
+#define HLOG(_msg, ...) mImpl->logger.info(_msg, ##__VA_ARGS__);
 
 // Defines for within Impl class
-#define HTDBG(...) logger.debug(__VA_ARGS__);
-#define HTERR(...) logger.fault(__VA_ARGS__);
-#define HTLOG(...) logger.info(__VA_ARGS__);
+#define HTDBG(_msg, ...) logger.debug(_msg, ##__VA_ARGS__);
+#define HTERR(_msg, ...) logger.fault(_msg, ##__VA_ARGS__);
+#define HTLOG(_msg, ...) logger.info(_msg, ##__VA_ARGS__);
 
 namespace herald {
 namespace data {
@@ -46,6 +47,112 @@ public:
   virtual void log(SensorLoggerLevel level, std::string message) = 0;
 };
 
+namespace {
+  
+  void tprintf(std::stringstream& os, const std::string& format) // base function
+  {
+    std::size_t pos = 0;
+    for ( auto c : format ) {
+      if ( c == '{' ) {
+        if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
+          tprintf(os, format.substr(pos + 2)); // recursive call
+        } else {
+          tprintf(os, format.substr(pos + 1)); // recursive call
+        }
+        return;
+      }
+      os << c;
+      pos++;
+    }
+  }
+ 
+  template<typename... Targs>
+  void tprintf(std::stringstream& os, const std::string& format, std::uint8_t value, Targs... Fargs) // recursive variadic function
+  {
+    std::size_t pos = 0;
+    for ( auto c : format ) {
+      if ( c == '{' ) {
+        os << std::uint16_t(value);
+        if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
+          tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
+        } else {
+          tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
+        }
+        return;
+      }
+      os << c;
+      pos++;
+    }
+  }
+ 
+  template<typename... Targs>
+  void tprintf(std::stringstream& os, const std::string& format, std::int8_t value, Targs... Fargs) // recursive variadic function
+  {
+    std::size_t pos = 0;
+    for ( auto c : format ) {
+      if ( c == '{' ) {
+        os << std::int16_t(value);
+        if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
+          tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
+        } else {
+          tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
+        }
+        return;
+      }
+      os << c;
+      pos++;
+    }
+  }
+ 
+  template<typename... Targs>
+  void tprintf(std::stringstream& os, const std::string& format, const std::string& value, Targs... Fargs) // recursive variadic function
+  {
+    std::size_t pos = 0;
+    for ( auto c : format ) {
+      if ( c == '{' ) {
+        os << value;
+        if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
+          tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
+        } else {
+          tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
+        }
+        return;
+      }
+      os << c;
+      pos++;
+    }
+  }
+ 
+  // typename std::enable_if_t<std::is_convertible<T, std::string>::value, std::string>
+
+  template<typename T, typename... Targs>
+  void tprintf(std::stringstream& os, const std::string& format, T value, Targs... Fargs) // recursive variadic function
+  {
+    std::size_t pos = 0;
+    for ( auto c : format ) {
+      if ( c == '{' ) {
+        os << value;
+        if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
+          tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
+        } else {
+          tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
+        }
+        return;
+      }
+      os << c;
+      pos++;
+    }
+  }
+
+  // G++ deduction guide workaround - https://gcc.gnu.org/bugzilla/show_bug.cgi?id=80438
+  template<typename T, typename... Targs>
+  void tprintf(std::stringstream& os, const std::string& format, Targs... Fargs)
+  {
+    tprintf(os, format, Fargs...);
+  }
+  
+}
+
 class SensorLogger {
 public:
   SensorLogger(const std::shared_ptr<Context>& ctx, std::string subsystem, std::string category) 
@@ -63,29 +170,41 @@ public:
   // Note: C++11 Variadic template parameter pack expansion
   template <typename ... Types>
   void debug(const std::string& message, const Types&... args) {
-    // std::string msg =  fmt::format(message,args...);
-    // char buffer[256];
-    // int len = snprintf(buffer, 256, message.c_str(), args...);
-    // std::string msg(buffer,len);
-    log(SensorLoggerLevel::debug, message);
+    const int size = sizeof...(args);
+    if (0 == size) {
+      log(SensorLoggerLevel::debug,message);
+    } else {
+      std::stringstream os;
+      tprintf(os,message,args...);
+      os << std::ends;
+      log(SensorLoggerLevel::debug, os.str());
+    }
   }
 
   template <typename ... Types>
   void info(const std::string& message, const Types&... args) {
-    // std::string msg =  fmt::format(message,args...);
-    // char buffer[256];
-    // int len = snprintf(buffer, 256, message.c_str(), args...);
-    // std::string msg(buffer,len);
-    log(SensorLoggerLevel::info, message);
+    const int size = sizeof...(args);
+    if (0 == size) {
+      log(SensorLoggerLevel::debug,message);
+    } else {
+      std::stringstream os;
+      tprintf(os,message,args...);
+      os << std::ends;
+      log(SensorLoggerLevel::info, os.str());
+    }
   }
 
   template <typename ... Types>
   void fault(const std::string& message, const Types&... args) {
-    // std::string msg =  fmt::format(message,args...);
-    // char buffer[256];
-    // int len = snprintf(buffer, 256, message.c_str(), args...);
-    // std::string msg(buffer,len);
-    log(SensorLoggerLevel::fault, message);
+    const int size = sizeof...(args);
+    if (0 == size) {
+      log(SensorLoggerLevel::debug,message);
+    } else {
+      std::stringstream os;
+      tprintf(os,message,args...);
+      os << std::ends;
+      log(SensorLoggerLevel::fault, os.str());
+    }
   }
 
 private:

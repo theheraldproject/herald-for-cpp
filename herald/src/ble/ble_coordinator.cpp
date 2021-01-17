@@ -95,6 +95,8 @@ HeraldProtocolBLECoordinationProvider::provision(std::vector<PrioritisedPrerequi
     }
     // move forward in iterator
     requestIter++;
+    // TODO change the below to check for upper connection limit being reached
+    lastConnectionSuccessful = true;
   }
   // TODO prioritise disconnection from not required items (E.g. after minimum connection time)
 
@@ -111,11 +113,14 @@ HeraldProtocolBLECoordinationProvider::requiredConnections()
 
   // Add all targets in database that are not known
   auto newConns = mImpl->db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
-    return device->operatingSystem() == BLEDeviceOperatingSystem::unknown // not yet determined OS
-      ||
-      !device->payloadData().has_value() // Know the OS, but not the payload (ID)
-      ||
-      device->immediateSendData().has_value()
+    return !device->ignore() &&
+      (
+        device->operatingSystem() == BLEDeviceOperatingSystem::unknown // not yet determined OS
+        ||
+        !device->payloadData().has_value() // Know the OS, but not the payload (ID)
+        ||
+        device->immediateSendData().has_value()
+      )
       ;
   });
   for (auto device : newConns) {

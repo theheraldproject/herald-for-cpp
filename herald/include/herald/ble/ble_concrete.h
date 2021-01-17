@@ -41,7 +41,7 @@ public:
 
 class ConcreteBLEDatabase : public BLEDatabase, public BLEDeviceDelegate, public std::enable_shared_from_this<ConcreteBLEDatabase>  {
 public:
-  ConcreteBLEDatabase();
+  ConcreteBLEDatabase(std::shared_ptr<Context> context);
   ConcreteBLEDatabase(const ConcreteBLEDatabase& from) = delete;
   ConcreteBLEDatabase(ConcreteBLEDatabase&& from) = delete;
   ~ConcreteBLEDatabase();

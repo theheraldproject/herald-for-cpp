@@ -88,6 +88,15 @@ bool
 TargetIdentifier::operator!=(const Data& other) const noexcept {
   return mImpl->value != other;
 }
+bool
+TargetIdentifier::operator<(const TargetIdentifier& other) const noexcept {
+  return mImpl->value < other.mImpl->value;
+}
+
+bool
+TargetIdentifier::operator>(const TargetIdentifier& other) const noexcept {
+  return mImpl->value > other.mImpl->value;
+}
 
 std::size_t
 TargetIdentifier::hashCode() const {

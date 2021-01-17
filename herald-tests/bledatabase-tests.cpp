@@ -42,8 +42,10 @@ public:
 
 TEST_CASE("ble-database-empty", "[ble][database][ctor][empty]") {
   SECTION("ble-database-empty") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db =
-      std::make_shared<herald::ble::ConcreteBLEDatabase>(); // enables shared_from_this
+      std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx); // enables shared_from_this
 
     REQUIRE(db->size() == 0);
   }
@@ -51,8 +53,10 @@ TEST_CASE("ble-database-empty", "[ble][database][ctor][empty]") {
 
 TEST_CASE("ble-database-callback-verify", "[ble][database][callback][verify]") {
   SECTION("ble-callback-verify") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
     std::shared_ptr<herald::ble::ConcreteBLEDatabase> db =
-      std::make_shared<herald::ble::ConcreteBLEDatabase>(); // enables shared_from_this
+      std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx); // enables shared_from_this
     std::shared_ptr<DummyBLEDBDelegate> delegate = 
       std::make_shared<DummyBLEDBDelegate>();
     db->add(delegate);

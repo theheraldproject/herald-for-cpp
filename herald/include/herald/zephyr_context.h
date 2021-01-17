@@ -13,6 +13,8 @@
 #include <string>
 
 #include <bluetooth/bluetooth.h>
+#include <bluetooth/gatt.h>
+#include <bluetooth/gatt_dm.h>
 
 // Herald logging to zephyr - see zephyr_context.cpp for details
 #ifndef CONFIG_HERALD_LOG_LEVEL
@@ -53,7 +55,7 @@ private:
 };
 
 
-// Other zephyr public API base classes
+// Other zephyr internal-but-public API base classes
 namespace zephyrinternal {
 
 class Callbacks {
@@ -61,8 +63,18 @@ public:
   Callbacks() = default;
   virtual ~Callbacks() = default;
 
+  // Scanning
   virtual void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
       struct net_buf_simple *buf) = 0;
+  
+  // GATT Discovery
+  virtual void discovery_completed_cb(struct bt_gatt_dm *dm, void *context) = 0;
+  virtual void discovery_service_not_found_cb(struct bt_conn *conn, void *context) = 0;
+  virtual void discovery_error_found_cb(struct bt_conn *conn, int err, void *context) = 0;
+
+  // Connection management
+  virtual void connected(struct bt_conn *conn, uint8_t err) = 0;
+  virtual void disconnected(struct bt_conn *conn, uint8_t reason) = 0;
 };
 
 }

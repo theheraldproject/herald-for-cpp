@@ -143,7 +143,7 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
   std::shared_ptr<herald::DefaultContext> ctx = 
     std::make_shared<herald::DefaultContext>();
   std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
-    std::make_shared<herald::ble::ConcreteBLEDatabase>();
+    std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx);
   std::shared_ptr<MockHeraldV1ProtocolProvider> pp = 
     std::make_shared<MockHeraldV1ProtocolProvider>(ctx,db);
   std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =

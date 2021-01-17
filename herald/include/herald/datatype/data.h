@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <iosfwd>
 
 namespace herald {
 namespace datatype {
@@ -71,6 +72,11 @@ protected:
 } // end namespace
 
 namespace std {
+  inline std::ostream& operator<<(std::ostream &os, const herald::datatype::Data& d)
+  {
+    return os << d.hexEncodedString();
+  }
+
   inline void hash_combine_impl(std::size_t& seed, std::size_t value)
   {
     seed ^= value + 0x9e3779b9 + (seed<<6) + (seed>>2);
