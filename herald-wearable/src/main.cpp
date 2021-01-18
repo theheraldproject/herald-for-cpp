@@ -8,8 +8,8 @@
 #include <sys/printk.h>
 #include <sys/util.h>
 #include <string.h>
-#include <usb/usb_device.h>
-#include <drivers/uart.h>
+// #include <usb/usb_device.h>
+// #include <drivers/uart.h>
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -25,8 +25,6 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/services/bas.h>
 
-#include <logging/log.h>
-LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 
 // Cryptocell - nRF52840/nRF9160/nRF53x only. See prj.conf too to enable this Hardware
 #include <nrf_cc3xx_platform.h>
@@ -36,6 +34,28 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 
 #include <kernel_structs.h>
 #include <sys/thread_stack.h>
+#include <drivers/gpio.h>
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
+
+/* 1000 msec = 1 sec */
+#define SLEEP_TIME_MS   1000
+
+/* The devicetree node identifier for the "led0" alias. */
+#define LED0_NODE DT_ALIAS(led0)
+
+#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+#define LED0	DT_GPIO_LABEL(LED0_NODE, gpios)
+#define PIN	DT_GPIO_PIN(LED0_NODE, gpios)
+#define FLAGS	DT_GPIO_FLAGS(LED0_NODE, gpios)
+#else
+/* A build error here means your board isn't set up to blink an LED. */
+#error "Unsupported board: led0 devicetree alias is not defined"
+#define LED0	""
+#define PIN	0
+#define FLAGS	0
+#endif
 
 struct k_thread herald_thread;
 K_THREAD_STACK_DEFINE(herald_stack, 1024);
@@ -132,48 +152,71 @@ void herald_entry() {
 
 	//int count = 0;
 	int iter = 0;
-	int maxIter = (10 * 1000) / (5000); // 50
+	int maxIter = (10 * 1000) / (5000); // every numerator multiplier seconds
 	Date last;
+	bool done = false;
 	while (1) {
 		k_sleep(K_MSEC(5000)); 
 		//k_sleep(K_MSEC(50)); 
 		Date now;
-		sa->iteration(now - last);
+		// if (!done) {
+			if (iter > 3 && iter < 9) { // some delay to allow us to see advertising output
+				// Only do first x iterations so we can see the older log messages without continually scrolling
+				sa->iteration(now - last); // DISABLED TO SEE SCANNING OUTPUT
+			// } else {
+			// 	done = true;
+			}
+		// }
+		
+		LOG_INF("herald thread still running");
+
 		last = now;
-		//count++;
-		iter = (iter + 1) % maxIter;
-		if (0 == maxIter) {
-			LOG_INF("herald thread still running");
-		}
+		iter++;
+		// iter = (iter + 1) % maxIter;
+		// if (0 == maxIter) {
+		// }
 	}
 }
 
 void main(void)
 {
+	const struct device *dev;
+	bool led_is_on = true;
+	int ret;
 
-	const struct device *dev = device_get_binding(
-		CONFIG_UART_CONSOLE_ON_DEV_NAME);
-	uint32_t dtr = 0;
-
-	if (usb_enable(NULL)) {
+	dev = device_get_binding(LED0);
+	if (dev == NULL) {
 		return;
 	}
 
-	/* Poll if the DTR flag was set, optional */
-	while (!dtr) {
-		uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
-	}
-
-	if (strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME) !=
-	    strlen("CDC_ACM_0") ||
-	    strncmp(CONFIG_UART_CONSOLE_ON_DEV_NAME, "CDC_ACM_0",
-		    strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME))) {
-		printk("Error: Console device name is not USB ACM\n");
-
+	ret = gpio_pin_configure(dev, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
+	if (ret < 0) {
 		return;
 	}
 
-	LOG_INF("USB logging test");
+	// const struct device *dev = device_get_binding(
+	// 	CONFIG_UART_CONSOLE_ON_DEV_NAME);
+	// uint32_t dtr = 0;
+
+	// if (usb_enable(NULL)) {
+	// 	//return;
+	// }
+
+	// /* Poll if the DTR flag was set, optional */
+	// while (!dtr) {
+	// 	uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
+	// }
+
+	// if (strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME) !=
+	//     strlen("CDC_ACM_0") ||
+	//     strncmp(CONFIG_UART_CONSOLE_ON_DEV_NAME, "CDC_ACM_0",
+	// 	    strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME))) {
+	// 	printk("Error: Console device name is not USB ACM\n");
+
+	// 	return;
+	// }
+
+	LOG_INF("Logging test");
 	LOG_INF("Const char* param test: %s","some string param");
 	LOG_INF("int param test: %d",1234);
 	// std::string myString("my string string");
@@ -194,8 +237,11 @@ void main(void)
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_sleep(K_SECONDS(1));
-		//LOG_INF("main thread still running");
+		k_sleep(K_SECONDS(2));
+		gpio_pin_set(dev, PIN, (int)led_is_on);
+		led_is_on = !led_is_on;
+
+		LOG_INF("main thread still running");
 
 		// Periodic Herald tasks here
 		// ctx->periodicActions();

@@ -73,6 +73,8 @@ public:
   virtual void discovery_error_found_cb(struct bt_conn *conn, int err, void *context) = 0;
 
   // Connection management
+  virtual void le_param_updated(struct bt_conn *conn, uint16_t interval,
+            uint16_t latency, uint16_t timeout) = 0;
   virtual void connected(struct bt_conn *conn, uint8_t err) = 0;
   virtual void disconnected(struct bt_conn *conn, uint8_t reason) = 0;
 };

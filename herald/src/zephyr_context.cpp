@@ -197,12 +197,15 @@ ZephyrContext::enableBluetooth() noexcept
   //   return success;
   // }
   success = bt_enable(NULL); // NULL means synchronously enabled
+  LOG_INF("bt enable returned");
   
   // ^^ Note: Check what value success is (0 or 1), and how that relates to default if logic
 
   // This should only called once
   if (IS_ENABLED(CONFIG_SETTINGS)) {
+    LOG_INF("Calling settings load");
     settings_load();
+    LOG_INF("settings load returned");
   }
   if (0 == success) {
     mImpl->enabled = true;

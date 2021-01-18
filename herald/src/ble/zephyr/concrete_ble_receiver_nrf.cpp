@@ -20,6 +20,7 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/gatt_dm.h>
 #include <bluetooth/addr.h>
+#include <bluetooth/scan.h>
 
 // C++17 includes
 #include <memory>
@@ -61,8 +62,21 @@ namespace zephyrinternal {
     BT_CONN_LE_OPT_NONE, BT_GAP_SCAN_FAST_INTERVAL, BT_GAP_SCAN_FAST_INTERVAL
   );
   static struct bt_le_conn_param defaultConnParam = BT_LE_CONN_PARAM_INIT(
-    BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MAX, 0, 400
+    //BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MAX, 0, 400
+    //12, 12 // aka 15ms, default from apple documentation
+    0x50, 0x50, // aka 80ms, from nRF SDK LLPM sample
+    0, 400
   );
+  // Note for apple see: https://developer.apple.com/library/archive/qa/qa1931/_index.html
+  // And https://developer.apple.com/accessories/Accessory-Design-Guidelines.pdf (BLE section)
+
+  static struct bt_le_scan_param defaultScanParam = {
+		.type       = BT_LE_SCAN_TYPE_PASSIVE, // passive scan
+		.options    = BT_LE_SCAN_OPT_NONE, // Scans for EVERYTHING
+		.interval   = 0x0010, // V.FAST, NOT BT_GAP_SCAN_FAST_INTERVAL - gap.h
+		.window     = 0x0010, // V.FAST, NOT BT_GAP_SCAN_FAST_INTERVAL - gap.h
+	};
+
   /**
    * Why is this necessary? Traditional pointer-to-function cannot easily
    * and reliably be wrapped with std::function/bind/mem_fn. We also need
@@ -74,33 +88,33 @@ namespace zephyrinternal {
     concreteReceiverInstance;
   
   
-  void scan_init(void)
-  {
-    // int err;
+  // void scan_init(void)
+  // {
+  //   // int err;
 
-    // struct bt_scan_init_param scan_init = {
-    //   .connect_if_match = 0, // no auto connect (handled by herald protocol coordinator)
-    //   .scan_param = NULL,
-    //   .conn_param = BT_LE_CONN_PARAM_DEFAULT
-    // };
+  //   // struct bt_scan_init_param scan_init = {
+  //   //   .connect_if_match = 0, // no auto connect (handled by herald protocol coordinator)
+  //   //   .scan_param = NULL,
+  //   //   .conn_param = BT_LE_CONN_PARAM_DEFAULT
+  //   // };
 
-    // bt_scan_init(&scan_init);
-    // bt_scan_cb_register(&scan_cb);
+  //   // bt_scan_init(&scan_init);
+  //   // bt_scan_cb_register(&scan_cb);
 
-    /*
-    err = bt_scan_filter_add(BT_SCAN_FILTER_TYPE_UUID, herald_uuid);
-    if (err) {
-      printk("Scanning filters cannot be set (err %d)\n", err);
+  //   /*
+  //   err = bt_scan_filter_add(BT_SCAN_FILTER_TYPE_UUID, herald_uuid);
+  //   if (err) {
+  //     printk("Scanning filters cannot be set (err %d)\n", err);
 
-      return;
-    }
+  //     return;
+  //   }
 
-    err = bt_scan_filter_enable(BT_SCAN_UUID_FILTER, false);
-    if (err) {
-      printk("Filters cannot be turned on (err %d)\n", err);
-    }
-    */
-  }
+  //   err = bt_scan_filter_enable(BT_SCAN_UUID_FILTER, false);
+  //   if (err) {
+  //     printk("Filters cannot be turned on (err %d)\n", err);
+  //   }
+  //   */
+  // }
 
   
   static void connected(struct bt_conn *conn, uint8_t err)
@@ -116,11 +130,20 @@ namespace zephyrinternal {
       concreteReceiverInstance.value()->disconnected(conn,reason);
     }
   }
+
+  static void le_param_updated(struct bt_conn *conn, uint16_t interval,
+            uint16_t latency, uint16_t timeout)
+  {
+    if (concreteReceiverInstance.has_value()) {
+      concreteReceiverInstance.value()->le_param_updated(conn,interval,latency,timeout);
+    }
+  }
   
-  static struct bt_conn_cb conn_callbacks = {
-    .connected        = connected,
-    .disconnected     = disconnected
-  };
+	static struct bt_conn_cb conn_callbacks = {
+		.connected = connected,
+		.disconnected = disconnected,
+		.le_param_updated = le_param_updated,
+	};
 
   void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
   struct net_buf_simple *buf) {
@@ -128,6 +151,14 @@ namespace zephyrinternal {
       concreteReceiverInstance.value()->scan_cb(addr,rssi,adv_type,buf);
     }
   }
+
+  // BT_SCAN_CB_INIT(scan_cbs, scan_filter_match, );
+  
+	static struct bt_scan_init_param scan_init = {
+		.scan_param = &defaultScanParam,
+		.connect_if_match = false,
+		.conn_param = &defaultConnParam
+	};
 
   // void scan_filter_match(struct bt_scan_device_info *device_info,
   //             struct bt_scan_filter_match *filter_match,
@@ -228,6 +259,8 @@ public:
   void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
       struct net_buf_simple *buf) override;
 
+  void le_param_updated(struct bt_conn *conn, uint16_t interval,
+            uint16_t latency, uint16_t timeout) override;
   void connected(struct bt_conn *conn, uint8_t err) override;
   void disconnected(struct bt_conn *conn, uint8_t reason) override;
   
@@ -312,6 +345,7 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
     if (0 != heraldDataSegments.size()) {
       HTDBG("Found Herald Android pseudo device address");
       device->pseudoDeviceAddress(BLEMacAddress(heraldDataSegments.front())); // For devices with unnatural (very fast) ble mac rotation, we need to use this rotating data area (some Android devices)
+      device->operatingSystem(BLEDeviceOperatingSystem::android);
     } else {
       // If it's an apple device, check to see if its on our ignore list
       auto appleDataSegments = BLEAdvertParser::extractAppleManufacturerSegments(manuData);
@@ -369,9 +403,9 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
         }
       } else {
         // Not a Herald android or any iOS - so Ignore
-        HTDBG("Unknown non Herald device - ignoring");
+        HTDBG("Unknown non Herald device - inspecting");
         HTDBG((std::string)bleMacAddress);
-        device->ignore(true);
+        // device->ignore(true);
       }
     }
   }
@@ -392,11 +426,17 @@ ConcreteBLEReceiver::Impl::gatt_discover(struct bt_conn *conn)
   HTDBG("Service discovery succeeded... now do something with it in the callback!");
 }
 
+void
+ConcreteBLEReceiver::Impl::le_param_updated(struct bt_conn *conn, uint16_t interval,
+            uint16_t latency, uint16_t timeout)
+{
+  HTDBG("le param updated called");
+}
 
 void
 ConcreteBLEReceiver::Impl::connected(struct bt_conn *conn, uint8_t err)
 {
-  HTDBG("Zephyr connection callback. Mac of connected:");
+  HTDBG("**************** Zephyr connection callback. Mac of connected:");
 
   auto addr = bt_conn_get_dst(conn);
 	char addr_str[BT_ADDR_LE_STR_LEN];
@@ -417,7 +457,7 @@ ConcreteBLEReceiver::Impl::connected(struct bt_conn *conn, uint8_t err)
 void
 ConcreteBLEReceiver::Impl::disconnected(struct bt_conn *conn, uint8_t reason)
 {
-  HTDBG("Zephyr disconnection callback. Mac of disconnected:");
+  HTDBG("********** Zephyr disconnection callback. Mac of disconnected:");
 
   auto addr = bt_conn_get_dst(conn);
 	char addr_str[BT_ADDR_LE_STR_LEN];
@@ -519,20 +559,21 @@ ConcreteBLEReceiver::start()
   HDBG("ConcreteBLEReceiver::start");
   herald::ble::zephyrinternal::concreteReceiverInstance = mImpl;
   
-	bt_conn_cb_register(&zephyrinternal::conn_callbacks);
 
   // Ensure our zephyr context has bluetooth ready
+  HDBG("calling start bluetooth");
   int startOk = mImpl->m_context->startBluetooth();
+  HDBG("start bluetooth done");
   if (0 != startOk) {
     HDBG("ERROR starting context bluetooth:-");
     HDBG(std::to_string(startOk));
   }
-  struct bt_le_scan_param scan_param = {
-		.type       = BT_LE_SCAN_TYPE_PASSIVE, // passive scan
-		.options    = BT_LE_SCAN_OPT_NONE, // Scans for EVERYTHING
-		.interval   = 0x0010, // V.FAST, NOT BT_GAP_SCAN_FAST_INTERVAL - gap.h
-		.window     = 0x0010, // V.FAST, NOT BT_GAP_SCAN_FAST_INTERVAL - gap.h
-	};
+  // struct bt_le_scan_param scan_param = {
+	// 	.type       = BT_LE_SCAN_TYPE_PASSIVE, // passive scan
+	// 	.options    = BT_LE_SCAN_OPT_NONE, // Scans for EVERYTHING
+	// 	.interval   = 0x0080, // V.FAST, NOT BT_GAP_SCAN_FAST_INTERVAL - gap.h
+	// 	.window     = 0x0080, // V.FAST, NOT BT_GAP_SCAN_FAST_INTERVAL - gap.h
+	// };
 
   // now start scanning and register callback
   // using namespace std::placeholders;
@@ -541,9 +582,29 @@ ConcreteBLEReceiver::start()
   //     std::bind(&ConcreteBLEReceiver::Impl::scan_cb,mImpl.get(),_1,_2,_3,_4)
   // );
   // bt_le_scan_cb_t* ptrfcb = fcb;
-  zephyrinternal::scan_init();
-  int err = bt_le_scan_start(&scan_param, &zephyrinternal::scan_cb); // scan_cb linked via BT_SCAN_CB_INIT call
-	if (0 != err) {
+  // zephyrinternal::scan_init();
+
+
+  HDBG("Calling conn cb register");
+	bt_conn_cb_register(&zephyrinternal::conn_callbacks);
+  HDBG("conn cb register done");
+
+  // HDBG("calling bt scan init");
+  // bt_scan_init(&zephyrinternal::scan_init);
+  // HDBG("back from bt scan init");
+
+  // bt_scan_cb_register(&zephyrinternal::scan_cbs); // for filtering API only
+  HDBG("calling bt scan start");
+  
+  
+  
+  int err = bt_le_scan_start(&zephyrinternal::defaultScanParam, &zephyrinternal::scan_cb); // scan_cb linked via BT_SCAN_CB_INIT call
+
+  
+  
+  //int err = bt_scan_start(BT_SCAN_TYPE_SCAN_PASSIVE); // calls bt_le_scan_start
+  HDBG("back from bt scan start");
+  if (0 != err) {
 		HDBG("Starting scanning failed");
 		return;
 	}
@@ -557,8 +618,8 @@ ConcreteBLEReceiver::stop()
   
   herald::ble::zephyrinternal::concreteReceiverInstance.reset(); // destroys the shared_ptr not necessarily the underlying value
 
-  // TODO now stop scanning
-  int err = bt_le_scan_stop();
+  // now stop scanning
+  int err = bt_le_scan_stop(); //bt_scan_stop();
   if (err) {
 		// mImpl->logger.info("Stopping scanning failed (err {:d})", err);
   }
@@ -587,25 +648,55 @@ ConcreteBLEReceiver::immediateSendAll(Data data)
 bool
 ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
 {
-  HDBG("openConnection called for");
-  HDBG((std::string)toTarget);
+  // HDBG("openConnection called for");
+  // HDBG((std::string)toTarget);
   // fetch device bluetooth ID
   auto found = mImpl->macs.find(toTarget);
   if (found == mImpl->macs.end()) {
     HDBG("MAC not found");
     return false;
   }
+
+  // print out device info
+  BLEMacAddress mac((Data)toTarget);
+  std::string di("Opening Connection :: Device info: mac=");
+  di += (std::string)mac;
+  di += ", os=";
+  auto devPtr = mImpl->m_db->device(toTarget);
+  auto os = devPtr->operatingSystem();
+  if (os.has_value()) {
+    if (herald::ble::BLEDeviceOperatingSystem::ios == os) {
+      di += "ios";
+    } else if (herald::ble::BLEDeviceOperatingSystem::android == os) {
+      di += "android";
+    }
+  } else {
+    di += "unknown";
+  }
+  di += ", ignore=";
+  auto ignore = devPtr->ignore();
+  if (ignore) {
+    di += "true";
+  } else {
+    di += "false";
+  }
+
+  HDBG(di);
   
   
   // temporarily stop scan - WORKAROUND for https://github.com/zephyrproject-rtos/zephyr/issues/20660
+  // HDBG("pausing scanning");
   bt_le_scan_stop();
-
+  // HDBG("Scanning paused");
+  // TODO restart after connect called
 
 
   // attempt connection
-  bt_conn* conn = NULL;
+  struct bt_conn* conn;
   // use bt_conn_lookup_addr_le first to see if we're already connected
+  // HDBG("Looking up conn for this address");
   conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT,found->second.addr);
+  // HDBG("conn lookup returned");
   bool ok = true;
   if (NULL == conn) {
     HDBG(" - No existing connection. Attempting to connect");
@@ -641,7 +732,7 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
       &conn);
     HDBG(" - post connection attempt");
     if (0 != success) {
-      HDBG(" - Issue connecting");
+      // HDBG(" - Issue connecting");
       ok = false;
       if (-EINVAL == success) {
         HDBG(" - ERROR in passed in parameters");
@@ -675,6 +766,10 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
     HDBG("Connected - discovering GATT");
     // Perform GATT service discovery
     mImpl->gatt_discover(conn);
+  }
+  if (NULL != conn) {
+    HDBG("Decrementing connection reference count");
+    bt_conn_unref(conn);
   }
   
   // Check return value
