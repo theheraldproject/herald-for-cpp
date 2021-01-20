@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SENSORARRAY_H
-#define SENSORARRAY_H
+#ifndef SENSOR_ARRAY_H
+#define SENSOR_ARRAY_H
 
 #include "sensor_delegate.h"
 #include "sensor.h"
@@ -37,6 +37,10 @@ public:
   void add(std::shared_ptr<SensorDelegate> delegate) override;
   void start() override;
   void stop() override;
+  std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() override;
+
+  // Scheduling activities from external OS thread wakes - Since v1.2-beta3
+  void iteration(const TimeInterval sinceLastCompleted);
 
 private:
   class Impl;

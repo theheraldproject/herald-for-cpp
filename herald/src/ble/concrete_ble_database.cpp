@@ -8,6 +8,7 @@
 #include "herald/ble/ble_device.h"
 #include "herald/ble/bluetooth_state_manager.h"
 #include "herald/datatype/bluetooth_state.h"
+#include "herald/data/sensor_logger.h"
 
 // C++17 includes
 #include <memory>
@@ -32,16 +33,21 @@ using namespace herald::datatype;
 
 class ConcreteBLEDatabase::Impl {
 public:
-  Impl();
+  Impl(std::shared_ptr<Context> context);
   ~Impl();
 
+  std::shared_ptr<Context> ctx;
   std::vector<std::shared_ptr<BLEDatabaseDelegate>> delegates;
   std::vector<std::shared_ptr<BLEDevice>> devices;
+
+  HLOGGER;
 };
 
-ConcreteBLEDatabase::Impl::Impl() 
-  : delegates(),
+ConcreteBLEDatabase::Impl::Impl(std::shared_ptr<Context> context) 
+  : ctx(context),
+    delegates(),
     devices()
+    HLOGGERINIT(ctx,"herald","ConcreteBLEDatabase")
 {
   ;
 }
@@ -56,8 +62,8 @@ ConcreteBLEDatabase::Impl::~Impl()
 
 
 
-ConcreteBLEDatabase::ConcreteBLEDatabase()
-  : mImpl(std::make_unique<Impl>())
+ConcreteBLEDatabase::ConcreteBLEDatabase(std::shared_ptr<Context> context)
+  : mImpl(std::make_unique<Impl>(context))
 {
   ;
 }
@@ -91,6 +97,9 @@ ConcreteBLEDatabase::device(const PayloadData& payloadData)
   std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
     TargetIdentifier(payloadData), shared_from_this());
   mImpl->devices.push_back(newDevice);
+  for (auto delegate : mImpl->delegates) {
+    delegate->bleDatabaseDidCreate(newDevice);
+  }
   return newDevice;
 }
 
@@ -103,9 +112,13 @@ ConcreteBLEDatabase::device(const TargetIdentifier& targetIdentifier)
   if (results.size() != 0) {
     return results.front(); // TODO ensure we send back the latest, not just the first match
   }
+  HDBG("New target identified: {}",(std::string)targetIdentifier);
   std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
     targetIdentifier, shared_from_this());
   mImpl->devices.push_back(newDevice);
+  for (auto delegate : mImpl->delegates) {
+    delegate->bleDatabaseDidCreate(newDevice);
+  }
   return newDevice;
 }
 
@@ -139,7 +152,11 @@ ConcreteBLEDatabase::remove(const TargetIdentifier& targetIdentifier)
     }
   );
   if (found != mImpl->devices.end()) {
+    std::shared_ptr<BLEDevice> toRemove = *found;
     mImpl->devices.erase(found);
+    for (auto delegate : mImpl->delegates) {
+      delegate->bleDatabaseDidDelete(toRemove);
+    }
   }
 }
 

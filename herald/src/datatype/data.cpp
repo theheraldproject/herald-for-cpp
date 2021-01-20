@@ -369,6 +369,17 @@ Data::operator!=(const Data& other) const noexcept {
   return hashCode() != other.hashCode();
 }
 
+bool
+Data::operator<(const Data& other) const noexcept
+{
+  return hashCode() < other.hashCode();
+}
+
+bool
+Data::operator>(const Data& other) const noexcept
+{
+  return hashCode() > other.hashCode();
+}
 
 std::size_t
 Data::hashCode() const {

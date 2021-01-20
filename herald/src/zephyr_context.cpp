@@ -67,13 +67,13 @@ ZephyrLoggingSink::log(SensorLoggerLevel level, std::string message)
   std::string finalMessage = m_subsystem + "," + m_category + "," + message;
   switch (level) {
     case SensorLoggerLevel::debug:
-      LOG_DBG("%s\n",log_strdup(finalMessage.c_str()));
+      LOG_DBG("%s",log_strdup(finalMessage.c_str()));
       break;
     case SensorLoggerLevel::fault:
-      LOG_ERR("%s\n",log_strdup(finalMessage.c_str()));
+      LOG_ERR("%s",log_strdup(finalMessage.c_str()));
       break;
     default:
-      LOG_INF("%s\n",log_strdup(finalMessage.c_str()));
+      LOG_INF("%s",log_strdup(finalMessage.c_str()));
       break;
   }
 }
@@ -197,17 +197,24 @@ ZephyrContext::enableBluetooth() noexcept
   //   return success;
   // }
   success = bt_enable(NULL); // NULL means synchronously enabled
+  LOG_INF("bt enable returned");
+  
+  // ^^ Note: Check what value success is (0 or 1), and how that relates to default if logic
 
-  if (success) {
-    // This should only called once
-    if (IS_ENABLED(CONFIG_SETTINGS)) {
-      settings_load();
-    }
+  // This should only called once
+  if (IS_ENABLED(CONFIG_SETTINGS)) {
+    LOG_INF("Calling settings load");
+    settings_load();
+    LOG_INF("settings load returned");
+  }
+  if (0 == success) {
     mImpl->enabled = true;
 
     for (auto delegate : mImpl->stateDelegates) {
       delegate->bluetoothStateManager(BluetoothState::poweredOn);
     }
+  } else {
+    LOG_INF("Error enabling Zephyr Bluetooth: %d", success);
   }
 
   return success;

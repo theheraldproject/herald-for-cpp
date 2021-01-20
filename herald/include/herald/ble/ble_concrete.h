@@ -9,6 +9,7 @@
 #include "ble_receiver.h"
 #include "ble_sensor.h"
 #include "ble_transmitter.h"
+#include "ble_protocols.h"
 #include "bluetooth_state_manager.h"
 #include "ble_device_delegate.h"
 #include "../payload/payload_data_supplier.h"
@@ -26,9 +27,21 @@ using namespace herald::payload;
 //      SPECIFIC PLATFORM DEFINITIONS ARE WITHIN SEVERAL C++ FILES
 //      UNDER WINDOWS AND ZEPHYR SUB DIRECTORIES
 
+class ConcreteBluetoothStateManager : public BluetoothStateManager, public std::enable_shared_from_this<BluetoothStateManager>  {
+public:
+  ConcreteBluetoothStateManager();
+  ConcreteBluetoothStateManager(const ConcreteBluetoothStateManager& from) = delete;
+  ConcreteBluetoothStateManager(ConcreteBluetoothStateManager&& from) = delete;
+  ~ConcreteBluetoothStateManager();
+
+  // Bluetooth State Manager overrides
+  void add(std::shared_ptr<BluetoothStateManagerDelegate> delegate) override;
+  BluetoothState state() override;
+};
+
 class ConcreteBLEDatabase : public BLEDatabase, public BLEDeviceDelegate, public std::enable_shared_from_this<ConcreteBLEDatabase>  {
 public:
-  ConcreteBLEDatabase();
+  ConcreteBLEDatabase(std::shared_ptr<Context> context);
   ConcreteBLEDatabase(const ConcreteBLEDatabase& from) = delete;
   ConcreteBLEDatabase(ConcreteBLEDatabase&& from) = delete;
   ~ConcreteBLEDatabase();
@@ -75,6 +88,9 @@ public:
   ConcreteBLESensor(ConcreteBLESensor&& from) = delete;
   ~ConcreteBLESensor();
 
+  // Coordination overrides - Since v1.2-beta3
+  std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() override;
+
   bool immediateSend(Data data, const TargetIdentifier& targetIdentifier);
   bool immediateSendAll(Data data);
 
@@ -84,9 +100,9 @@ public:
   void stop() override;
 
   // Database overrides
-  void bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device) override;
-  void bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, const BLEDeviceAttribute attribute) override;
-  void bleDatabaseDidDelete(const std::shared_ptr<BLEDevice>& device) override;
+  void bleDatabaseDidCreate(const std::shared_ptr<BLEDevice> device) override;
+  void bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device, const BLEDeviceAttribute attribute) override;
+  void bleDatabaseDidDelete(const std::shared_ptr<BLEDevice> device) override;
 
   // Bluetooth state manager delegate overrides
   void bluetoothStateManager(BluetoothState didUpdateState) override;
@@ -96,13 +112,16 @@ private:
   std::unique_ptr<Impl> mImpl; // unique as this is handled internally for all platforms by Herald
 };
 
-class ConcreteBLEReceiver : public BLEReceiver, public std::enable_shared_from_this<ConcreteBLEReceiver> {
+class ConcreteBLEReceiver : public BLEReceiver, public HeraldProtocolV1Provider, public std::enable_shared_from_this<ConcreteBLEReceiver> {
 public:
   ConcreteBLEReceiver(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
   ConcreteBLEReceiver(const ConcreteBLEReceiver& from) = delete;
   ConcreteBLEReceiver(ConcreteBLEReceiver&& from) = delete;
   ~ConcreteBLEReceiver();
+
+  // Coordination overrides - Since v1.2-beta3
+  std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() override;
 
   bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) override;
   bool immediateSendAll(Data data) override;
@@ -111,6 +130,14 @@ public:
   void add(std::shared_ptr<SensorDelegate> delegate) override;
   void start() override;
   void stop() override;
+
+  // Herald V1 protocol provider overrides
+  bool openConnection(const TargetIdentifier& toTarget) override;
+  bool closeConnection(const TargetIdentifier& toTarget) override;
+  void identifyOS(Activity, CompletionCallback) override;
+  void readPayload(Activity, CompletionCallback) override;
+  void immediateSend(Activity, CompletionCallback) override;
+  void immediateSendAll(Activity, CompletionCallback) override;
 
 private:
   class Impl;
@@ -124,6 +151,9 @@ public:
   ConcreteBLETransmitter(const ConcreteBLETransmitter& from) = delete;
   ConcreteBLETransmitter(ConcreteBLETransmitter&& from) = delete;
   ~ConcreteBLETransmitter();
+
+  // Coordination overrides - Since v1.2-beta3
+  std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() override;
 
   // Sensor overrides
   void add(std::shared_ptr<SensorDelegate> delegate) override;

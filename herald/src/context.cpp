@@ -45,11 +45,17 @@ private:
   const std::string m_category;
 };
 
-
 std::shared_ptr<SensorLoggingSink>
 DefaultContext::getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor)
 {
   return std::make_shared<StdOutLoggingSink>(subsystemFor,categoryFor);
 }
+
+std::shared_ptr<BluetoothStateManager>
+DefaultContext::getBluetoothStateManager()
+{
+
+}
+
 
 }

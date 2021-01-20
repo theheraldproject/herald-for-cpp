@@ -43,6 +43,8 @@ public:
   DefaultContext() = default;
   ~DefaultContext() = default;
 
+  std::shared_ptr<BluetoothStateManager> getBluetoothStateManager() override;
+
   std::shared_ptr<SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor) override;
 };
 

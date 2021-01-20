@@ -10,11 +10,13 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/sensor_delegate.h
   ${HERALD_BASE}/include/herald/sensor.h
   ${HERALD_BASE}/include/herald/ble/ble_concrete.h
+  ${HERALD_BASE}/include/herald/ble/ble_coordinator.h
   ${HERALD_BASE}/include/herald/ble/ble_database_delegate.h
   ${HERALD_BASE}/include/herald/ble/ble_database.h
   ${HERALD_BASE}/include/herald/ble/ble_device_delegate.h
   ${HERALD_BASE}/include/herald/ble/ble_device.h
   ${HERALD_BASE}/include/herald/ble/ble_mac_address.h
+  ${HERALD_BASE}/include/herald/ble/ble_protocols.h
   ${HERALD_BASE}/include/herald/ble/ble_receiver.h
   ${HERALD_BASE}/include/herald/ble/ble_sensor.h
   ${HERALD_BASE}/include/herald/ble/ble_sensor_configuration.h
@@ -47,6 +49,8 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/target_identifier.h
   ${HERALD_BASE}/include/herald/datatype/time_interval.h
   ${HERALD_BASE}/include/herald/datatype/wgs84.h
+  ${HERALD_BASE}/include/herald/engine/activities.h
+  ${HERALD_BASE}/include/herald/engine/coordinator.h
   ${HERALD_BASE}/include/herald/payload/payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/beacon/beacon_payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/fixed/fixed_payload_data_supplier.h
@@ -58,6 +62,7 @@ set(HERALD_HEADERS_ZEPHYR
 )
 set(HERALD_SOURCES
   ${HERALD_BASE}/src/ble/ble_mac_address.cpp
+  ${HERALD_BASE}/src/ble/ble_coordinator.cpp
   ${HERALD_BASE}/src/ble/ble_device.cpp
   ${HERALD_BASE}/src/ble/concrete_ble_sensor.cpp
   ${HERALD_BASE}/src/ble/concrete_ble_database.cpp
@@ -76,6 +81,8 @@ set(HERALD_SOURCES
 	${HERALD_BASE}/src/datatype/target_identifier.cpp
 	${HERALD_BASE}/src/datatype/time_interval.cpp
 	${HERALD_BASE}/src/datatype/uuid.cpp
+	${HERALD_BASE}/src/engine/activities.cpp
+	${HERALD_BASE}/src/engine/coordinator.cpp
 	${HERALD_BASE}/src/payload/beacon/beacon_payload_data_supplier.cpp
 	${HERALD_BASE}/src/payload/fixed/fixed_payload_data_supplier.cpp
 	${HERALD_BASE}/src/payload/extended/extended_data.cpp

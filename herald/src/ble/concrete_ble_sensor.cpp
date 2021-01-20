@@ -5,10 +5,12 @@
 #include "herald/ble/ble_concrete.h"
 #include "herald/ble/bluetooth_state_manager.h"
 #include "herald/datatype/bluetooth_state.h"
+#include "herald/ble/ble_coordinator.h"
 
 // C++17 includes
 #include <memory>
 #include <vector>
+#include <optional>
 
 namespace herald {
 namespace ble {
@@ -32,6 +34,8 @@ public:
   std::shared_ptr<ConcreteBLEReceiver> receiver;
 
   std::vector<std::shared_ptr<SensorDelegate>> delegates;
+  
+  std::shared_ptr<HeraldProtocolBLECoordinationProvider> coordinator;
 
   bool addedSelfAsDelegate;
 };
@@ -39,7 +43,7 @@ public:
 ConcreteBLESensor::Impl::Impl(std::shared_ptr<Context> ctx, 
     std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
-  : database(std::make_shared<ConcreteBLEDatabase>()), 
+  : database(std::make_shared<ConcreteBLEDatabase>(ctx)), 
     stateManager(bluetoothStateManager),
     transmitter(std::make_shared<ConcreteBLETransmitter>(
       ctx, bluetoothStateManager, payloadDataSupplier, database)
@@ -48,6 +52,7 @@ ConcreteBLESensor::Impl::Impl(std::shared_ptr<Context> ctx,
       ctx, bluetoothStateManager, payloadDataSupplier, database)
     ),
     delegates(),
+    coordinator(std::make_shared<HeraldProtocolBLECoordinationProvider>(ctx, database, receiver)),
     addedSelfAsDelegate(false)
 {
   ;
@@ -77,6 +82,12 @@ ConcreteBLESensor::ConcreteBLESensor(std::shared_ptr<Context> ctx,
 ConcreteBLESensor::~ConcreteBLESensor()
 {
   ;
+}
+
+std::optional<std::shared_ptr<CoordinationProvider>>
+ConcreteBLESensor::coordinationProvider()
+{
+  return std::optional<std::shared_ptr<CoordinationProvider>>(mImpl->coordinator);
 }
 
 bool
@@ -110,7 +121,7 @@ ConcreteBLESensor::start()
     mImpl->database->add(shared_from_this());
     mImpl->addedSelfAsDelegate = true;
   }
-  mImpl->transmitter->start();
+  //mImpl->transmitter->start();
   mImpl->receiver->start();
   for (auto delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, SensorState::on);
@@ -120,7 +131,7 @@ ConcreteBLESensor::start()
 void
 ConcreteBLESensor::stop()
 {
-  mImpl->transmitter->stop();
+  //mImpl->transmitter->stop();
   mImpl->receiver->stop();
   for (auto delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, SensorState::off);
@@ -129,7 +140,7 @@ ConcreteBLESensor::stop()
 
 // Database overrides
 void
-ConcreteBLESensor::bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device)
+ConcreteBLESensor::bleDatabaseDidCreate(const std::shared_ptr<BLEDevice> device)
 {
   for (auto delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, device->identifier()); // didDetect
@@ -137,7 +148,7 @@ ConcreteBLESensor::bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device
 }
 
 void
-ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, 
+ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device, 
   const BLEDeviceAttribute attribute)
 {
   switch (attribute) {
@@ -198,7 +209,7 @@ ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device
 }
 
 void
-ConcreteBLESensor::bleDatabaseDidDelete(const std::shared_ptr<BLEDevice>& device)
+ConcreteBLESensor::bleDatabaseDidDelete(const std::shared_ptr<BLEDevice> device)
 {
   ; // TODO just log this // TODO determine if to pass this on too
 }

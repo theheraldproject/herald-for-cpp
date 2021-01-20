@@ -152,6 +152,28 @@ extractAppleManufacturerSegments(std::vector<BLEAdvertManufacturerData> manuData
   return appleSegments;
 }
 
+// std::vector<BLEAdvertServiceData>
+// extractServiceUUID128Data(std::vector<BLEAdvertSegment> segments) noexcept
+// {
+//   std::vector<BLEAdvertServiceData> serviceData;
+//   for (BLEAdvertSegment segment : segments) {
+//     if (segment.type == BLEAdvertSegmentType::serviceUUID128CompleteList) {
+//       // Ensure that the data area is long enough
+//       if (segment.data.size() < 16) { // 128 bits == 16 bytes
+//         continue; // there may be a valid segment of same type... 
+//       }
+//       // Create a manufacturer data segment
+//       if (ok) {
+//         serviceData.emplace_back(
+//           subDataLittleEndian(segment.data,0,16),
+//           subDataBigEndian(segment.data,16,segment.data.size() - 2)
+//         );
+//       }
+//     }
+//   }
+//   return serviceData;
+
+// }
 
 // Low level utility functions
 // Exposed in API to allow others to use them

@@ -5,6 +5,7 @@ add_executable(herald-tests
 	datatypes-tests.cpp
 	
 	# Low level
+	sensorlogger-tests.cpp
 	data-tests.cpp
 	blemacaddress-tests.cpp
 	targetidentifier-tests.cpp
@@ -18,6 +19,8 @@ add_executable(herald-tests
   # high level
 	advertparser-tests.cpp
 	bledatabase-tests.cpp
+	blecoordinator-tests.cpp
+	coordinator-tests.cpp
 )
 
 include_directories(${herald_SOURCE_DIR})

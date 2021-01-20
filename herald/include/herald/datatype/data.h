@@ -8,6 +8,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <iosfwd>
 
 namespace herald {
 namespace datatype {
@@ -49,6 +50,8 @@ public:
   // TODO signed versions of the above functions too
   bool operator==(const Data& other) const noexcept;
   bool operator!=(const Data& other) const noexcept;
+  bool operator<(const Data& other) const noexcept; // required for std::less
+  bool operator>(const Data& other) const noexcept; // required for std::less
 
   Data reversed() const;
 
@@ -69,6 +72,11 @@ protected:
 } // end namespace
 
 namespace std {
+  inline std::ostream& operator<<(std::ostream &os, const herald::datatype::Data& d)
+  {
+    return os << d.hexEncodedString();
+  }
+
   inline void hash_combine_impl(std::size_t& seed, std::size_t value)
   {
     seed ^= value + 0x9e3779b9 + (seed<<6) + (seed>>2);

@@ -55,7 +55,7 @@ BLEDevice::Impl::Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDele
     created(createdAt),
     lastUpdated(std::optional<Date>()),
     state(),
-    os(),
+    os(std::optional<BLEDeviceOperatingSystem>(BLEDeviceOperatingSystem::unknown)),
     payload(),
     immediateSendData(),
     rssi(),
@@ -257,6 +257,12 @@ BLEDevice::immediateSendData(ImmediateSendData toSend)
     mImpl->lastUpdated.emplace(); // Constructs Date as now
     mImpl->delegate->device(shared_from_this(), BLEDeviceAttribute::immediateSendData);
   }
+}
+
+void
+BLEDevice::clearImmediateSendData()
+{
+  mImpl->immediateSendData.reset();
 }
 
 std::optional<RSSI>

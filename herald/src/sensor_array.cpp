@@ -8,6 +8,7 @@
 #include "herald/datatype/payload_timestamp.h"
 #include "herald/payload/payload_data_supplier.h"
 #include "herald/ble/ble_concrete.h"
+#include "herald/engine/coordinator.h"
 
 #include <memory>
 #include <string>
@@ -20,6 +21,7 @@ using namespace ble;
 using namespace data;
 using namespace datatype;
 using namespace payload;
+using namespace engine;
 
 class SensorArray::Impl {
 public:
@@ -30,22 +32,26 @@ public:
   std::shared_ptr<Context> mContext;
   std::shared_ptr<PayloadDataSupplier> mPayloadDataSupplier;
   std::vector<std::shared_ptr<Sensor>> mSensorArray;
-  SensorLogger mLogger;
 
   std::shared_ptr<ConcreteBLESensor> concrete;
 
+  Coordinator engine;
+
   // Not initialised (and thus optional):-
   std::string deviceDescription;
+
+  HLOGGER;
 };
 
 SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
   : mContext(ctx), 
     mPayloadDataSupplier(payloadDataSupplier),
     mSensorArray(),
-    mLogger(mContext, "Sensor", "SensorArray"),
     concrete(std::make_shared<ConcreteBLESensor>(mContext, mContext->getBluetoothStateManager(),
       mPayloadDataSupplier)),
+    engine(ctx),
     deviceDescription("")
+    HLOGGERINIT(mContext, "Sensor", "SensorArray")
 {
   // PayloadTimestamp pts; // now
   // mPayloadData = mPayloadDataSupplier->payload(pts);
@@ -56,6 +62,7 @@ SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDat
   // mBatteryLog = std::make_shared<BatteryLog>(mContext, "battery.csv");
 
   mSensorArray.push_back(concrete); // adds in links to BLE transmitter, receiver
+  engine.add(concrete);
 
   // deviceDescription = ""; // TODO get the real device description
 
@@ -115,17 +122,30 @@ SensorArray::start() {
   for (auto& sensor: mImpl->mSensorArray) {
     sensor->start();
   }
+  mImpl->engine.start();
 }
 
 void
 SensorArray::stop() {
+  mImpl->engine.stop();
   for (auto& sensor: mImpl->mSensorArray) {
     sensor->stop();
   }
 }
 
+std::optional<std::shared_ptr<CoordinationProvider>>
+SensorArray::coordinationProvider()
+{
+  return {};
+}
 
-
+// Periodic actions
+void
+SensorArray::iteration(const TimeInterval sinceLastCompleted)
+{
+  // TODO ensure this works for continuous evaluation with minimal overhead or battery
+  mImpl->engine.iteration();
+}
 
 
 } // end namespace
