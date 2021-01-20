@@ -22,22 +22,31 @@ enum class SignalCharacteristicDataType : short {
 
 namespace SignalCharacteristicData {
 
+[[maybe_unused]]
 static std::optional<Data> encodeWriteRssi(const RSSI& rssi) noexcept;
 
+[[maybe_unused]]
 static std::optional<RSSI> decodeWriteRSSI(const Data& data) noexcept;
 
+[[maybe_unused]]
 static std::optional<Data> encodeWritePayload(const PayloadData& payloadData) noexcept;
 
+[[maybe_unused]]
 static std::optional<PayloadData> decodeWritePayload(const Data& data) noexcept;
 
+[[maybe_unused]]
 static std::optional<Data> encodeWritePayloadSharing(const PayloadSharingData& payloadSharingData) noexcept;
 
+[[maybe_unused]]
 static std::optional<PayloadSharingData> decodeWritePayloadSharing(const Data& data) noexcept;
 
+[[maybe_unused]]
 static std::optional<Data> encodeImmediateSend(const ImmediateSendData& immediateSendData) noexcept;
 
+[[maybe_unused]]
 static std::optional<ImmediateSendData> decodeImmediateSend(const Data& data) noexcept;
 
+[[maybe_unused]]
 static SignalCharacteristicDataType detect(const Data& data) noexcept;
 
 // THE FOLLOWING METHODS ARE MOVED TO THE CPP AND THUS HIDDEN FROM THE ABI

@@ -29,6 +29,7 @@ std::vector<Data> extractHeraldManufacturerData(std::vector<BLEAdvertManufacture
 std::vector<BLEAdvertManufacturerData> extractManufacturerData(std::vector<BLEAdvertSegment> segments) noexcept;
 std::vector<BLEAdvertAppleManufacturerSegment> extractAppleManufacturerSegments(std::vector<BLEAdvertManufacturerData> manuData) noexcept;
 
+// std::vector<BLEAdvertServiceData> extractServiceUUID128Data(std::vector<BLEAdvertSegment> segments) noexcept;
 
 // Low level utility functions
 // Exposed in API to allow others to use them

@@ -49,6 +49,7 @@ public:
 
 namespace {
   
+  [[maybe_unused]]
   void tprintf(std::stringstream& os, const std::string& format) // base function
   {
     std::size_t pos = 0;

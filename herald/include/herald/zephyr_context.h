@@ -71,6 +71,9 @@ public:
   virtual void discovery_completed_cb(struct bt_gatt_dm *dm, void *context) = 0;
   virtual void discovery_service_not_found_cb(struct bt_conn *conn, void *context) = 0;
   virtual void discovery_error_found_cb(struct bt_conn *conn, int err, void *context) = 0;
+  virtual uint8_t gatt_read_cb(struct bt_conn *conn, uint8_t err,
+              struct bt_gatt_read_params *params,
+              const void *data, uint16_t length) = 0;
 
   // Connection management
   virtual void le_param_updated(struct bt_conn *conn, uint16_t interval,
