@@ -46,22 +46,54 @@ public:
   BLEDevice(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> delegate, const Date& created = Date());
   ~BLEDevice();
 
-  const TargetIdentifier& identifier() const override;
+  const TargetIdentifier& identifier() const override; // MAC ADDRESS OR PSEUDO DEVICE ADDRESS
   Date created() const override;
 
   // basic descriptors
   std::string description() const;
   operator std::string() const;
 
-  // timing related getters
+  // GENERAL BLUETOOTH STATE
   TimeInterval timeIntervalSinceLastUpdate() const override;
   TimeInterval timeIntervalSinceConnected() const;
+
+  // TODO add in generic Advert and GATT information caching here
+
+  /** Have we set the service list for this device yet? (i.e. done GATT service discover) **/
+  bool hasServicesSet() const;
+  /** Set services found on this device (set, not append) **/
+  void services(std::vector<UUID> services);
+  /** Does the service list contain a service UUID? **/
+  bool hasService(const UUID& serviceUUID) const;
+
+  std::optional<BLEDeviceState> state() const;
+  void state(BLEDeviceState newState);
+
+  // TODO decide if operatingSystem is relevant anymore???
+  std::optional<BLEDeviceOperatingSystem> operatingSystem() const;
+  void operatingSystem(BLEDeviceOperatingSystem newOS);
+
+  std::optional<RSSI> rssi() const;
+  void rssi(RSSI newRSSI);
+
+  std::optional<BLETxPower> txPower() const;
+  void txPower(BLETxPower newPower);
+
+  // NOTE May need a herald specific version of this, as we may wish a herald device to only receive or transmit
+  bool receiveOnly() const;
+  void receiveOnly(bool newReceiveOnly);
+
+
+
+
+  // HERALD PROTOCOL SPECIFIC STATE - TODO HIDE THESE FROM SENSOR/EXTERNAL CALLS
+
+  // timing related getters
   TimeInterval timeIntervalSinceLastPayloadDataUpdate() const;
   TimeInterval timeIntervalSinceLastWritePayloadSharing() const;
   TimeInterval timeIntervalSinceLastWritePayload() const;
   TimeInterval timeIntervalSinceLastWriteRssi() const;
 
-  // property getters and setters
   std::optional<UUID> signalCharacteristic() const;
   void signalCharacteristic(UUID newChar);
 
@@ -71,11 +103,6 @@ public:
   std::optional<BLEMacAddress> pseudoDeviceAddress() const;
   void pseudoDeviceAddress(BLEMacAddress newAddress);
 
-  std::optional<BLEDeviceState> state() const;
-  void state(BLEDeviceState newState);
-  std::optional<BLEDeviceOperatingSystem> operatingSystem() const;
-  void operatingSystem(BLEDeviceOperatingSystem newOS);
-
   std::optional<PayloadData> payloadData() const;
   void payloadData(PayloadData newPayloadData);
 
@@ -83,16 +110,7 @@ public:
   void immediateSendData(ImmediateSendData toSend);
   void clearImmediateSendData();
 
-  std::optional<RSSI> rssi() const;
-  void rssi(RSSI newRSSI);
-
-  std::optional<BLETxPower> txPower() const;
-  void txPower(BLETxPower newPower);
-
-  bool receiveOnly() const;
-  void receiveOnly(bool newReceiveOnly);
-
-  // State engine methods
+  // State engine methods - Herald specific
   bool ignore() const;
   void ignore(bool newIgnore);
   void invalidateCharacteristics();

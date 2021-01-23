@@ -12,6 +12,9 @@
 #include <vector>
 #include <algorithm>
 #include <iterator>
+#include <optional>
+// #include <utility>
+// #include <future>
 
 namespace herald {
 namespace engine {
@@ -147,7 +150,20 @@ Coordinator::iteration()
   std::vector<PrioritisedPrerequisite> provisioned;
   for (auto& prov : assignPrereqs) {
     // TODO sort by descending priority before passing on
-    auto myProvisioned = prov.first->provision(prov.second);
+
+    // FOR PLATFORMS WITH STD::FUTURE AND STD::ASYNC
+    // std::future<void> fut = std::async(std::launch::async,
+    //     &CoordinationProvider::provision, prov.first,
+    // //prov.first->provision(
+    //     prov.second,[&provisioned] (
+    //   const std::vector<PrioritisedPrerequisite> myProvisioned) -> void {
+    //   std::copy(myProvisioned.begin(),myProvisioned.end(),
+    //     std::back_insert_iterator<std::vector<PrioritisedPrerequisite>>(provisioned));
+    // });
+    // fut.get(); // waits for callback // TODO wait with timeout
+
+    // FOR OTHER PLATFORMS (E.g. ZEPHYR):-
+    std::vector<PrioritisedPrerequisite> myProvisioned = prov.first->provision(prov.second);
     std::copy(myProvisioned.begin(),myProvisioned.end(),
       std::back_insert_iterator<std::vector<PrioritisedPrerequisite>>(provisioned));
   }
@@ -181,11 +197,17 @@ Coordinator::iteration()
       if (allFound) {
         HDBG("All satisfied, calling activity");
         // do activity
-        act.executor(act,[this] (Activity act, std::optional<Activity> followOn) -> void {
-          // TODO handle result
-          // TODO Carry out any follow up activities
-          HDBG("Activity completion callback called");
-        });
+
+        // FOR PLATFORMS WITH STD::ASYNC
+        // act.executor(act,[this] (Activity act, std::optional<Activity> followOn) -> void {
+        //   // TODO handle result
+        //   // TODO Carry out any follow up activities
+        //   HDBG("Activity completion callback called");
+        // });
+
+        // FOR PLATFORMS WITHOUT
+        std::optional<Activity> followOn = act.executor(act);
+        // TODO carry out follow on activity until no more follow ons (or max follow on number hit)
       }
     }
   }

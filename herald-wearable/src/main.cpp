@@ -57,8 +57,8 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 #define FLAGS	0
 #endif
 
-// struct k_thread herald_thread;
-// K_THREAD_STACK_DEFINE(herald_stack, 1024);
+struct k_thread herald_thread;
+K_THREAD_STACK_DEFINE(herald_stack, 2048);
 
 using namespace herald;
 using namespace herald::payload;
@@ -150,31 +150,26 @@ void herald_entry() {
 	// Start array (and thus start advertising)
 	sa->start(); // There's a corresponding stop() call too
 
-	//int count = 0;
 	int iter = 0;
-	int maxIter = (10 * 1000) / (5000); // every numerator multiplier seconds
 	Date last;
-	bool done = false;
+	int delay = 250;
 	while (1) {
-		k_sleep(K_MSEC(5000)); 
-		//k_sleep(K_MSEC(50)); 
+		k_sleep(K_MSEC(delay)); 
 		Date now;
-		// if (!done) {
-			if (iter > 2 && iter < 4) { // some delay to allow us to see advertising output
-				// Only do first x iterations so we can see the older log messages without continually scrolling
-				sa->iteration(now - last); // DISABLED TO SEE SCANNING OUTPUT
-			// } else {
-			// 	done = true;
-			}
-		// }
+		if (iter > 40 /* && iter < 44 */ ) { // some delay to allow us to see advertising output
+			// Only do first 3 iterations so we can see the older log messages without continually scrolling
+			sa->iteration(now - last); // DISABLED TO SEE SCANNING OUTPUT
+			// first = connect, get services
+			// second = stay connected, get payload
+			// third = disconnect
+		}
 		
-		LOG_INF("herald thread still running");
+		if (0 == iter % (5000 / delay)) {
+			LOG_INF("herald thread still running. Iteration: %d", iter);
+		}
 
 		last = now;
 		iter++;
-		// iter = (iter + 1) % maxIter;
-		// if (0 == maxIter) {
-		// }
 	}
 }
 
@@ -227,24 +222,25 @@ void main(void)
 	cc3xx_init();
 
 	// Start herald entry on a new thread in case of errors
-	// k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 1024,
-	// 		(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
-	// 		-1, K_USER,
-	// 		K_NO_WAIT);
+	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 2048,
+			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
+			-1, K_USER,
+			K_NO_WAIT);
 
-  herald_entry(); // starting this as I'm assuming launching a thread kills this
+  // herald_entry();
+  // NOTE Above only works if CONFIG_MAIN_STACK_SIZE=2048 is set in prj.conf
 
 	/* Implement notification. At the moment there is no suitable way
 	 * of starting delayed work so we do it here
 	 */
-	// while (1) {
-	// 	k_sleep(K_SECONDS(2));
-	// 	gpio_pin_set(dev, PIN, (int)led_is_on);
-	// 	led_is_on = !led_is_on;
+	while (1) {
+		k_sleep(K_SECONDS(2));
+		gpio_pin_set(dev, PIN, (int)led_is_on);
+		led_is_on = !led_is_on;
 
-	// 	LOG_INF("main thread still running");
+		LOG_INF("main thread still running");
 
-	// 	// Periodic Herald tasks here
-	// 	// ctx->periodicActions();
-	// }
+		// Periodic Herald tasks here
+		// ctx->periodicActions();
+	}
 }
