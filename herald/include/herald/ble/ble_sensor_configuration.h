@@ -67,6 +67,10 @@ namespace BLESensorConfiguration {
 
   /// Advert refresh time interval
   const TimeInterval advertRefreshTimeInterval = TimeInterval::minutes(15);
+
+  /// Connection management
+  /// Max connections - since v1.2 (allowing multiple connections on Android and C++)
+  const int maxBluetoothConnections = 20; // Same as NRF 52840 max connections
 } // end namespace
 
 } // end namespace
