@@ -12,6 +12,7 @@
 #include "herald/datatype/target_identifier.h"
 
 #include <optional>
+#include <algorithm>
 
 namespace herald {
 namespace ble {
@@ -47,6 +48,8 @@ public:
   std::optional<Date> lastDiscoveredAt;
   std::optional<Date> connected;
   std::optional<Date> payloadUpdated;
+
+  std::optional<std::vector<UUID>> services;
 };
 
 BLEDevice::Impl::Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> del, const Date& createdAt)
@@ -70,7 +73,8 @@ BLEDevice::Impl::Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDele
     lastWritePayloadSharingAt(),
     lastDiscoveredAt(),
     connected(),
-    payloadUpdated()
+    payloadUpdated(),
+    services()
 {
   ;
 }
@@ -355,32 +359,50 @@ BLEDevice::invalidateCharacteristics()
 }
 
 void
-BLEDevice::registerDiscovery(Date& at)
+BLEDevice::registerDiscovery(Date at)
 {
   mImpl->lastDiscoveredAt = at;
 }
 
 void
-BLEDevice::registerWritePayload(Date& at)
+BLEDevice::registerWritePayload(Date at)
 {
   mImpl->lastUpdated = at;
   mImpl->lastWritePayloadAt = at;
 }
 
 void
-BLEDevice::registerWritePayloadSharing(Date& at)
+BLEDevice::registerWritePayloadSharing(Date at)
 {
   mImpl->lastUpdated = at;
   mImpl->lastWritePayloadSharingAt = at;
 }
 
 void
-BLEDevice::registerWriteRssi(Date& at)
+BLEDevice::registerWriteRssi(Date at)
 {
   mImpl->lastUpdated = at;
   mImpl->lastWriteRssiAt = at;
 }
 
+bool
+BLEDevice::hasServicesSet() const
+{
+  return mImpl->services.has_value();
+}
+void
+BLEDevice::services(std::vector<UUID> services)
+{
+  mImpl->services = services;
+}
+
+bool
+BLEDevice::hasService(const UUID& serviceUUID) const
+{
+  if (!mImpl->services.has_value()) return false; // guard
+  auto iter = std::find(std::begin(mImpl->services.value()),std::end(mImpl->services.value()),serviceUUID);
+  return (std::end(mImpl->services.value()) != iter);
+}
 
 }
 }

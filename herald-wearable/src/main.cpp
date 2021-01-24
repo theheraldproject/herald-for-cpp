@@ -57,14 +57,59 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 #define FLAGS	0
 #endif
 
-// struct k_thread herald_thread;
-// K_THREAD_STACK_DEFINE(herald_stack, 1024);
+struct k_thread herald_thread;
+K_THREAD_STACK_DEFINE(herald_stack, 2048);
 
 using namespace herald;
 using namespace herald::payload;
 using namespace herald::payload::fixed;
 
 std::shared_ptr<SensorArray> sa;
+
+class AppLoggingDelegate : public herald::SensorDelegate {
+public:
+	AppLoggingDelegate() = default;
+	~AppLoggingDelegate() = default;
+
+	void sensor(SensorType sensor, const TargetIdentifier& didDetect) override {
+		LOG_INF("sensor didDetect"); // May want to disable this - logs A LOT of info
+	}
+
+  /// Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
+  void sensor(SensorType sensor, PayloadData didRead, const TargetIdentifier& fromTarget) override {
+		LOG_INF("sensor didRead");
+	}
+
+  /// Receive written immediate send data from target, e.g. important timing signal.
+  void sensor(SensorType sensor, ImmediateSendData didReceive, const TargetIdentifier& fromTarget) override {
+		LOG_INF("sensor didReceive");
+	}
+
+  /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
+  void sensor(SensorType sensor, std::vector<PayloadData> didShare, const TargetIdentifier& fromTarget) override {
+		LOG_INF("sensor didShare");
+	}
+
+  /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
+  void sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget) override {
+		LOG_INF("sensor didMeasure");
+	}
+
+  /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
+  void sensor(SensorType sensor, Location didVisit) override {
+		LOG_INF("sensor didVisit");
+	}
+
+  /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
+  void sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget, PayloadData withPayload) override {
+		LOG_INF("sensor didMeasure withPayload");
+	}
+
+  /// Sensor state update
+  void sensor(SensorType sensor, SensorState didUpdateState) override {
+		LOG_INF("sensor didUpdateState");
+	}
+};
 
 void cc3xx_init() {
   // START IMPLEMENTORS GUIDANCE - EXAMPLE CODE NOT NEEDED TO COPY IN TO IN YOUR DEMO APP
@@ -101,6 +146,7 @@ void cc3xx_init() {
 }
 
 void herald_entry() {
+	std::shared_ptr<AppLoggingDelegate> appDelegate = std::make_shared<AppLoggingDelegate>();
 	
 	// IMPLEMENTORS GUIDANCE - USING HERALD
 	// First initialise the Zephyr Context - this links Herald to any Zephyr OS specific constructs or callbacks
@@ -137,9 +183,12 @@ void herald_entry() {
 
 	// sink->log(SensorLoggerLevel::debug,"Got concrete ble sensor");
 	
+	// BUG transmitter currently interferes with wearable receiver
+	BLESensorConfiguration::advertisingEnabled = false;
 	
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
 	sa = std::make_shared<SensorArray>(ctx,pds);
+	sa->add(appDelegate);
 	// THIS IS CAUSING THE FAILURE TO LAUNCH - 'exit'
 	// Caused by use of shared_from_this() use in a constructor of concrete ble sensor? - SEEMS SO THUS FAR...
 
@@ -150,31 +199,26 @@ void herald_entry() {
 	// Start array (and thus start advertising)
 	sa->start(); // There's a corresponding stop() call too
 
-	//int count = 0;
 	int iter = 0;
-	int maxIter = (10 * 1000) / (5000); // every numerator multiplier seconds
 	Date last;
-	bool done = false;
+	int delay = 250;
 	while (1) {
-		k_sleep(K_MSEC(5000)); 
-		//k_sleep(K_MSEC(50)); 
+		k_sleep(K_MSEC(delay)); 
 		Date now;
-		// if (!done) {
-			if (iter > 2 && iter < 4) { // some delay to allow us to see advertising output
-				// Only do first x iterations so we can see the older log messages without continually scrolling
-				sa->iteration(now - last); // DISABLED TO SEE SCANNING OUTPUT
-			// } else {
-			// 	done = true;
-			}
-		// }
+		if (iter > 40 /* && iter < 44 */ ) { // some delay to allow us to see advertising output
+			// Only do first 3 iterations so we can see the older log messages without continually scrolling
+			sa->iteration(now - last); // DISABLED TO SEE SCANNING OUTPUT
+			// first = connect, get services
+			// second = stay connected, get payload
+			// third = disconnect
+		}
 		
-		LOG_INF("herald thread still running");
+		if (0 == iter % (5000 / delay)) {
+			LOG_INF("herald thread still running. Iteration: %d", iter);
+		}
 
 		last = now;
 		iter++;
-		// iter = (iter + 1) % maxIter;
-		// if (0 == maxIter) {
-		// }
 	}
 }
 
@@ -227,24 +271,25 @@ void main(void)
 	cc3xx_init();
 
 	// Start herald entry on a new thread in case of errors
-	// k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 1024,
-	// 		(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
-	// 		-1, K_USER,
-	// 		K_NO_WAIT);
+	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 2048,
+			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
+			-1, K_USER,
+			K_NO_WAIT);
 
-  herald_entry(); // starting this as I'm assuming launching a thread kills this
+  // herald_entry();
+  // NOTE Above only works if CONFIG_MAIN_STACK_SIZE=2048 is set in prj.conf
 
 	/* Implement notification. At the moment there is no suitable way
 	 * of starting delayed work so we do it here
 	 */
-	// while (1) {
-	// 	k_sleep(K_SECONDS(2));
-	// 	gpio_pin_set(dev, PIN, (int)led_is_on);
-	// 	led_is_on = !led_is_on;
+	while (1) {
+		k_sleep(K_SECONDS(2));
+		gpio_pin_set(dev, PIN, (int)led_is_on);
+		led_is_on = !led_is_on;
 
-	// 	LOG_INF("main thread still running");
+		LOG_INF("main thread still running");
 
-	// 	// Periodic Herald tasks here
-	// 	// ctx->periodicActions();
-	// }
+		// Periodic Herald tasks here
+		// ctx->periodicActions();
+	}
 }

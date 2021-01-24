@@ -11,6 +11,8 @@
 #include <memory>
 #include <iosfwd>
 #include <string>
+#include <functional>
+#include <optional>
 
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/gatt.h>
@@ -24,6 +26,23 @@
 namespace herald {
 
 using namespace herald::ble;
+
+namespace zephyrinternal {
+  class Advertiser {
+  public:
+    Advertiser() = default;
+    ~Advertiser() = default;
+    void stopAdvertising() noexcept;
+    void startAdvertising() noexcept;
+    void registerStopCallback(std::function<void()> cb);
+    void registerStartCallback(std::function<void()> cb);
+  private:
+    std::optional<std::function<void()>> stopCallback;
+    std::optional<std::function<void()>> startCallback;
+  };
+
+  static Advertiser advertiser;
+}
 
 /*
  * Zephyr context class - holds state generic across our application for a particular device.

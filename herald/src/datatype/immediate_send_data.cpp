@@ -7,6 +7,7 @@
 namespace herald {
 namespace datatype {
 
+ImmediateSendData::ImmediateSendData() : Data() { } // forces Data copy ctor
 ImmediateSendData::ImmediateSendData(const Data& data) : Data(data) { } // forces Data copy ctor
 
 } // end namespace

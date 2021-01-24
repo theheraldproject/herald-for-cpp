@@ -42,27 +42,65 @@ public:
   {}
   ~NoOpHeraldV1ProtocolProvider() = default;
   
-  bool openConnection(const herald::datatype::TargetIdentifier& toTarget) override {return true;}
-  bool closeConnection(const herald::datatype::TargetIdentifier& toTarget) override {return true;}
+  // FOR PLATFORMS WITH STD::ASYNC:-
+  // void openConnection(const herald::datatype::TargetIdentifier& toTarget,
+  //   const herald::ble::HeraldConnectionCallback& connCallback) override {
+  //   connCallback(toTarget, true);
+  // }
 
-  void identifyOS(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
-    HTDBG("identifyOS called");
-    cb(act,{});
+  // void closeConnection(const herald::datatype::TargetIdentifier& toTarget,
+  //   const herald::ble::HeraldConnectionCallback& connCallback) override {
+  //   connCallback(toTarget,false);
+  // }
+
+  // void serviceDiscovery(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("serviceDiscovery called");
+  //   cb(act,{});
+  // }
+
+  // void readPayload(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("readPayload called");
+  //   cb(act,{});
+  // }
+
+  // void immediateSend(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("immediateSend called");
+  //   cb(act,{});
+  // }
+
+  // void immediateSendAll(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("immediateSendAll called");
+  //   cb(act,{});
+  // }
+
+  // FOR PLATFORMS WITHOUT STD::SYNC
+  bool openConnection(const herald::datatype::TargetIdentifier& toTarget) override {
+    return true;
+  }
+  bool closeConnection(const herald::datatype::TargetIdentifier& toTarget) override {
+    return false;
+  }
+  
+  void restartScanningAndAdvertising() override {}
+
+  std::optional<herald::engine::Activity> serviceDiscovery(herald::engine::Activity act) override {
+    HTDBG("serviceDiscovery called");
+    return {};
   }
 
-  void readPayload(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  std::optional<herald::engine::Activity> readPayload(herald::engine::Activity act) override {
     HTDBG("readPayload called");
-    cb(act,{});
+    return {};
   }
 
-  void immediateSend(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
     HTDBG("immediateSend called");
-    cb(act,{});
+    return {};
   }
 
-  void immediateSendAll(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
     HTDBG("immediateSendAll called");
-    cb(act,{});
+    return {};
   }
 
   std::shared_ptr<herald::Context> ctx;
@@ -78,43 +116,99 @@ public:
   {}
   ~MockHeraldV1ProtocolProvider() = default;
   
-  bool openConnection(const herald::datatype::TargetIdentifier& toTarget) override {return true;}
-  bool closeConnection(const herald::datatype::TargetIdentifier& toTarget) override {return true;}
+  // FOR PLATFORMS WITH STD::ASYNC:-
+  // void openConnection(const herald::datatype::TargetIdentifier& toTarget,
+  //   const herald::ble::HeraldConnectionCallback& connCallback) override {
+  //   connCallback(toTarget, true);
+  // }
+  // void closeConnection(const herald::datatype::TargetIdentifier& toTarget,
+  //   const herald::ble::HeraldConnectionCallback& connCallback) override {
+  //   connCallback(toTarget,false);
+  // }
 
-  void identifyOS(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
-    HTDBG("identifyOS called");
+  // void serviceDiscovery(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("serviceDiscovery called");
+  //   auto device = db->device(std::get<1>(act.prerequisites.front()).value());
+  //   device->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
+  //   hasIdentifiedOs = true;
+  //   lastDeviceOS = device->identifier();
+  //   cb(act,{});
+  // }
+
+  // void readPayload(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("readPayload called");
+  //   auto device = db->device(std::get<1>(act.prerequisites.front()).value());
+  //   device->payloadData(herald::datatype::Data(std::byte(0x02),2));
+  //   hasReadPayload = true;
+  //   lastDevicePayload = device->identifier();
+  //   cb(act,{});
+  // }
+
+  // void immediateSend(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("immediateSend called");
+  //   auto device = db->device(std::get<1>(act.prerequisites.front()).value());
+  //   hasImmediateSend = true;
+  //   lastImmediateSend = device->identifier();
+  //   device->clearImmediateSendData();
+  //   cb(act,{});
+  // }
+
+  // void immediateSendAll(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("immediateSendAll called");
+  //   auto device = db->device(std::get<1>(act.prerequisites.front()).value());
+  //   hasImmediateSendAll = true;
+  //   lastImmediateSendAll = device->identifier();
+  //   device->clearImmediateSendData();
+  //   cb(act,{});
+  // }
+
+  // FOR PLATFORMS WITHOUT:-
+  bool openConnection(const herald::datatype::TargetIdentifier& toTarget) override {
+    return true;
+  }
+  bool closeConnection(const herald::datatype::TargetIdentifier& toTarget) override {
+    return false;
+  }
+  
+  void restartScanningAndAdvertising() override {}
+
+  std::optional<herald::engine::Activity> serviceDiscovery(herald::engine::Activity act) override {
+    HTDBG("serviceDiscovery called");
     auto device = db->device(std::get<1>(act.prerequisites.front()).value());
+    std::vector<herald::datatype::UUID> heraldServiceList;
+    heraldServiceList.push_back(herald::ble::BLESensorConfiguration::serviceUUID);
+    device->services(heraldServiceList);
     device->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
     hasIdentifiedOs = true;
     lastDeviceOS = device->identifier();
-    cb(act,{});
+    return {};
   }
 
-  void readPayload(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  std::optional<herald::engine::Activity> readPayload(herald::engine::Activity act) override {
     HTDBG("readPayload called");
     auto device = db->device(std::get<1>(act.prerequisites.front()).value());
     device->payloadData(herald::datatype::Data(std::byte(0x02),2));
     hasReadPayload = true;
     lastDevicePayload = device->identifier();
-    cb(act,{});
+    return {};
   }
 
-  void immediateSend(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
     HTDBG("immediateSend called");
     auto device = db->device(std::get<1>(act.prerequisites.front()).value());
     hasImmediateSend = true;
     lastImmediateSend = device->identifier();
     device->clearImmediateSendData();
-    cb(act,{});
+    return {};
   }
 
-  void immediateSendAll(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
     HTDBG("immediateSendAll called");
     auto device = db->device(std::get<1>(act.prerequisites.front()).value());
     hasImmediateSendAll = true;
     lastImmediateSendAll = device->identifier();
     device->clearImmediateSendData();
-    cb(act,{});
+    return {};
   }
 
   std::shared_ptr<herald::Context> ctx;
@@ -183,11 +277,19 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
     // check provider used
     REQUIRE(pp->hasIdentifiedOs == true);
     REQUIRE(pp->lastDeviceOS == device1);
+    REQUIRE(pp->hasReadPayload == false);
+    REQUIRE(pp->hasImmediateSend == false);
+    REQUIRE(pp->hasImmediateSendAll == false);
+  //}
+
+  // second iteration should read payload
+    c->iteration();
+    REQUIRE(pp->hasIdentifiedOs == true);
+    REQUIRE(pp->lastDeviceOS == device1);
     REQUIRE(pp->hasReadPayload == true);
     REQUIRE(pp->lastDevicePayload == device1);
     REQUIRE(pp->hasImmediateSend == false);
     REQUIRE(pp->hasImmediateSendAll == false);
-  //}
   
   //SECTION("blecoordinator-complex-iterations-02-immediatesend-device1") {
     //std::shared_ptr<herald::ble::BLEDevice> devPtr1 = db->device(device1);

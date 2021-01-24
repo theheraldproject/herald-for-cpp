@@ -132,12 +132,21 @@ public:
   void stop() override;
 
   // Herald V1 protocol provider overrides
+  // void openConnection(const TargetIdentifier& toTarget, const HeraldConnectionCallback& connCallback) override;
+  // void closeConnection(const TargetIdentifier& toTarget, const HeraldConnectionCallback& connCallback) override;
+  // void serviceDiscovery(Activity, CompletionCallback) override;
+  // void readPayload(Activity, CompletionCallback) override;
+  // void immediateSend(Activity, CompletionCallback) override;
+  // void immediateSendAll(Activity, CompletionCallback) override;
+  
   bool openConnection(const TargetIdentifier& toTarget) override;
   bool closeConnection(const TargetIdentifier& toTarget) override;
-  void identifyOS(Activity, CompletionCallback) override;
-  void readPayload(Activity, CompletionCallback) override;
-  void immediateSend(Activity, CompletionCallback) override;
-  void immediateSendAll(Activity, CompletionCallback) override;
+  void restartScanningAndAdvertising() override;
+
+  std::optional<Activity> serviceDiscovery(Activity) override;
+  std::optional<Activity> readPayload(Activity) override;
+  std::optional<Activity> immediateSend(Activity) override;
+  std::optional<Activity> immediateSendAll(Activity) override;
 
 private:
   class Impl;

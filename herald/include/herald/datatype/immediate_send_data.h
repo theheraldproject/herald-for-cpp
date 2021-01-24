@@ -12,6 +12,7 @@ namespace datatype {
 
 class ImmediateSendData : public Data {
 public:
+  ImmediateSendData();
   ImmediateSendData(const Data& from);
   ~ImmediateSendData() = default;
 };

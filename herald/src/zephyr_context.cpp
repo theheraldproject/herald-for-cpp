@@ -79,6 +79,40 @@ ZephyrLoggingSink::log(SensorLoggerLevel level, std::string message)
 }
 
 
+
+// ADVERTISER SPECIFICATION
+namespace zephyrinternal {
+
+void
+Advertiser::stopAdvertising() noexcept
+{
+  if (stopCallback.has_value()) {
+    stopCallback.value()();
+  }
+}
+
+void
+Advertiser::startAdvertising() noexcept
+{
+  if (startCallback.has_value()) {
+    startCallback.value()();
+  }
+}
+
+void
+Advertiser::registerStopCallback(std::function<void()> cb)
+{
+  stopCallback = cb;
+}
+
+void
+Advertiser::registerStartCallback(std::function<void()> cb)
+{
+  startCallback = cb;
+}
+
+} // end namespace
+
 // HIDDEN CONTEXT IMPLEMENTATION FOR ZEPHYR
 
 
@@ -245,5 +279,7 @@ ZephyrContext::periodicActions() noexcept
   // E.g. determine if we should rotate mac address (if not done for us?)
   // Check if ble receiver needs to go talk to anyone (new device, payload, rssi reading)
 }
+
+
 
 } // end namespace

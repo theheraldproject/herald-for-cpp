@@ -7,6 +7,7 @@
 #include "herald/ble/ble_database.h"
 #include "herald/ble/ble_receiver.h"
 #include "herald/ble/ble_sensor.h"
+#include "herald/ble/ble_sensor_configuration.h"
 #include "herald/ble/ble_transmitter.h"
 #include "herald/ble/bluetooth_state_manager.h"
 #include "herald/data/sensor_logger.h"
@@ -26,6 +27,7 @@
 namespace herald {
 namespace ble {
 
+using namespace herald;
 using namespace herald::datatype;
 using namespace herald::data;
 
@@ -37,6 +39,9 @@ public:
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
   ~Impl();
 
+  void startAdvertising();
+  void stopAdvertising();
+
   std::shared_ptr<ZephyrContext> m_context;
   std::shared_ptr<BluetoothStateManager> m_stateManager;
   std::shared_ptr<PayloadDataSupplier> m_pds;
@@ -44,7 +49,9 @@ public:
 
   std::vector<std::shared_ptr<SensorDelegate>> delegates;
 
-  SensorLogger logger;
+  bool isAdvertising;
+
+  HLOGGER;
 };
 
 /* Herald Service Variables */
@@ -172,7 +179,9 @@ ConcreteBLETransmitter::Impl::Impl(
     m_pds(payloadDataSupplier),
     m_db(bleDatabase),
     delegates(),
-    logger(ctx,"Sensor","BLE.ConcreteBLETransmitter")
+    isAdvertising(false)
+
+    HLOGGERINIT(ctx,"Sensor","BLE.ConcreteBLETransmitter")
 {
   latestPds = m_pds.get();
 }
@@ -180,6 +189,54 @@ ConcreteBLETransmitter::Impl::Impl(
 ConcreteBLETransmitter::Impl::~Impl()
 {
   latestPds = NULL;
+}
+
+void
+ConcreteBLETransmitter::Impl::startAdvertising()
+{
+  HTDBG("startAdvertising called");
+  if (!BLESensorConfiguration::advertisingEnabled) {
+    HTDBG("Sensor Configuration has advertising disabled. Returning.");
+    return;
+  }
+  if (isAdvertising) {
+    return;
+  }
+  // Now start advertising
+  // See https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/reference/bluetooth/gap.html#group__bt__gap_1gac45d16bfe21c3c38e834c293e5ebc42b
+  // bt_le_adv_param param{}; // TODO initialise parameters
+  // bt_data ad{};
+  // size_t ad_len;
+  // bt_data sd{}; // service definition
+  // size_t sd_len; // service definition length
+  int success = bt_le_adv_start(herald::ble::bp, herald::ble::ad, ARRAY_SIZE(herald::ble::ad), NULL, 0);
+  if (!success) {
+    HTDBG("Start advertising failed");
+    return;
+  }
+  HTDBG("Start advertising completed successfully");
+  isAdvertising = true;
+}
+
+void
+ConcreteBLETransmitter::Impl::stopAdvertising()
+{
+  HTDBG("stopAdvertising called");
+  if (!BLESensorConfiguration::advertisingEnabled) {
+    HTDBG("Sensor Configuration has advertising disabled. Returning.");
+    return;
+  }
+  if (!isAdvertising) {
+    return;
+  }
+  isAdvertising = false;
+  int success = bt_le_adv_stop();
+  if (!success) {
+    HTDBG("Stop advertising failed");
+    return;
+  }
+  // Don't stop Bluetooth altogether - this is done by the ZephyrContext->stopBluetooth() function only
+  HTDBG("Stop advertising completed successfully");
 }
 
 // ssize_t ConcreteBLETransmitter::Impl::read_payload(struct bt_conn *conn, const struct bt_gatt_attr *attr,
@@ -245,37 +302,36 @@ ConcreteBLETransmitter::add(std::shared_ptr<SensorDelegate> delegate)
 void
 ConcreteBLETransmitter::start()
 {
-  mImpl->logger.debug("ConcreteBLETransmitter::start");
+  HDBG("ConcreteBLETransmitter::start");
+  if (!BLESensorConfiguration::advertisingEnabled) {
+    HDBG("Sensor Configuration has advertising disabled. Returning.");
+    return;
+  }
+  zephyrinternal::advertiser.registerStopCallback([this] () -> void {
+    mImpl->stopAdvertising();
+  });
+  zephyrinternal::advertiser.registerStartCallback([this] () -> void {
+    mImpl->startAdvertising();
+  });
+  HDBG("Advertising callbacks registered");
 
   // Ensure our zephyr context has bluetooth ready
   mImpl->m_context->startBluetooth();
 
-  // Now start advertising
-  // See https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/reference/bluetooth/gap.html#group__bt__gap_1gac45d16bfe21c3c38e834c293e5ebc42b
-  // bt_le_adv_param param{}; // TODO initialise parameters
-  // bt_data ad{};
-  // size_t ad_len;
-  // bt_data sd{}; // service definition
-  // size_t sd_len; // service definition length
-  int success = bt_le_adv_start(herald::ble::bp, herald::ble::ad, ARRAY_SIZE(herald::ble::ad), NULL, 0);
-  if (!success) {
-    // TODO log
-    return;
-  }
-  mImpl->logger.debug("ConcreteBLETransmitter::start completed successfully");
+  HDBG("Bluetooth started. Requesting start of adverts");
+
+  mImpl->startAdvertising();
 }
 
 void
 ConcreteBLETransmitter::stop()
 {
-  mImpl->logger.debug("ConcreteBLETransmitter::stop");
-  int success = bt_le_adv_stop();
-  if (!success) {
-    // TODO log
+  HDBG("ConcreteBLETransmitter::stop");
+  if (!BLESensorConfiguration::advertisingEnabled) {
+    HDBG("Sensor Configuration has advertising disabled. Returning.");
     return;
   }
-  // Don't stop Bluetooth altogether - this is done by the ZephyrContext->stopBluetooth() function only
-  mImpl->logger.debug("ConcreteBLETransmitter::stop completed successfully");
+  mImpl->stopAdvertising();
 }
 
 }

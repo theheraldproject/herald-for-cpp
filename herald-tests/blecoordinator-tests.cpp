@@ -18,27 +18,64 @@ public:
   {}
   ~NoOpHeraldV1ProtocolProvider() = default;
   
-  bool openConnection(const herald::datatype::TargetIdentifier& toTarget) override {return true;}
-  bool closeConnection(const herald::datatype::TargetIdentifier& toTarget) override {return true;}
+  // FOR PLATFORMS WITH STD::ASYNC
+  // void openConnection(const herald::datatype::TargetIdentifier& toTarget,
+  //   const herald::ble::HeraldConnectionCallback& connCallback) override {
+  //   connCallback(toTarget, true);
+  // }
+  // void closeConnection(const herald::datatype::TargetIdentifier& toTarget,
+  //   const herald::ble::HeraldConnectionCallback& connCallback) override {
+  //   connCallback(toTarget,false);
+  // }
 
-  void identifyOS(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
-    HTDBG("identifyOS called");
-    cb(act,{});
+  // void serviceDiscovery(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("serviceDiscovery called");
+  //   cb(act,{});
+  // }
+
+  // void readPayload(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("readPayload called");
+  //   cb(act,{});
+  // }
+
+  // void immediateSend(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("immediateSend called");
+  //   cb(act,{});
+  // }
+
+  // void immediateSendAll(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  //   HTDBG("immediateSendAll called");
+  //   cb(act,{});
+  // }
+
+  // FOR PLATFORMS WITHOUT STD::SYNC
+  bool openConnection(const herald::datatype::TargetIdentifier& toTarget) override {
+    return true;
+  }
+  bool closeConnection(const herald::datatype::TargetIdentifier& toTarget) override {
+    return false;
+  }
+  
+  void restartScanningAndAdvertising() override {}
+
+  std::optional<herald::engine::Activity> serviceDiscovery(herald::engine::Activity act) override {
+    HTDBG("serviceDiscovery called");
+    return {};
   }
 
-  void readPayload(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  std::optional<herald::engine::Activity> readPayload(herald::engine::Activity act) override {
     HTDBG("readPayload called");
-    cb(act,{});
+    return {};
   }
 
-  void immediateSend(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
     HTDBG("immediateSend called");
-    cb(act,{});
+    return {};
   }
 
-  void immediateSendAll(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
+  std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
     HTDBG("immediateSendAll called");
-    cb(act,{});
+    return {};
   }
 
   std::shared_ptr<herald::Context> ctx;
@@ -126,7 +163,7 @@ TEST_CASE("blecoordinator-unseen-device", "[coordinator][unseen-device][basic]")
     REQUIRE(std::get<2>(firstConn).value() == device1);
 
     std::vector<herald::engine::Activity> acts = coord->requiredActivities();
-    REQUIRE(acts.size() == 2); // determine OS and read payload
+    REQUIRE(acts.size() == 1); // determine if herald only (read payload is at a later state)
     auto firstAct = acts.front();
     REQUIRE(firstAct.prerequisites.size() == 1);
   }
@@ -149,6 +186,9 @@ TEST_CASE("blecoordinator-android-no-id", "[coordinator][android-no-id][basic]")
     std::shared_ptr<herald::ble::BLEDevice> devPtr1 = db->device(device1);
 
     // Specify that some activity has already happened with the device
+    std::vector<herald::datatype::UUID> heraldServiceList;
+    heraldServiceList.push_back(herald::ble::BLESensorConfiguration::serviceUUID);
+    devPtr1->services(heraldServiceList);
     devPtr1->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
 
     std::vector<std::tuple<herald::engine::FeatureTag,herald::engine::Priority,
@@ -188,7 +228,11 @@ TEST_CASE("blecoordinator-two-mixed-no-id", "[coordinator][two-mixed-no-id][basi
     std::shared_ptr<herald::ble::BLEDevice> devPtr2 = db->device(device2);
 
     // Specify that some activity has already happened with the device
+    std::vector<herald::datatype::UUID> heraldServiceList;
+    heraldServiceList.push_back(herald::ble::BLESensorConfiguration::serviceUUID);
+    devPtr1->services(heraldServiceList);
     devPtr1->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
+    devPtr2->services(heraldServiceList);
     devPtr2->operatingSystem(herald::ble::BLEDeviceOperatingSystem::ios);
 
     std::vector<std::tuple<herald::engine::FeatureTag,herald::engine::Priority,
@@ -224,6 +268,9 @@ TEST_CASE("blecoordinator-got-os-and-id", "[coordinator][got-os-and-id][basic]")
     std::shared_ptr<herald::ble::BLEDevice> devPtr1 = db->device(device1);
 
     // Specify that some activity has already happened with the device
+    std::vector<herald::datatype::UUID> heraldServiceList;
+    heraldServiceList.push_back(herald::ble::BLESensorConfiguration::serviceUUID);
+    devPtr1->services(heraldServiceList);
     devPtr1->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
     devPtr1->payloadData(herald::datatype::PayloadData(std::byte(5),32));
 
@@ -257,9 +304,11 @@ TEST_CASE("blecoordinator-got-two-at-different-states", "[coordinator][got-two-a
     std::shared_ptr<herald::ble::BLEDevice> devPtr2 = db->device(device2);
 
     // Specify that some activity has already happened with the device
-    devPtr1->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
+    std::vector<herald::datatype::UUID> heraldServiceList;
+    heraldServiceList.push_back(herald::ble::BLESensorConfiguration::serviceUUID);
+    devPtr1->services(heraldServiceList);
     devPtr1->payloadData(herald::datatype::PayloadData(std::byte(5),32));
-    devPtr2->operatingSystem(herald::ble::BLEDeviceOperatingSystem::ios);
+    devPtr2->services(heraldServiceList);
 
     std::vector<std::tuple<herald::engine::FeatureTag,herald::engine::Priority,
       std::optional<herald::datatype::TargetIdentifier>>> conns = 
@@ -295,6 +344,9 @@ TEST_CASE("blecoordinator-got-immediate-send-targeted", "[coordinator][got-immed
     std::shared_ptr<herald::ble::BLEDevice> devPtr1 = db->device(device1);
 
     // Specify that some activity has already happened with the device
+    std::vector<herald::datatype::UUID> heraldServiceList;
+    heraldServiceList.push_back(herald::ble::BLESensorConfiguration::serviceUUID);
+    devPtr1->services(heraldServiceList);
     devPtr1->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
     devPtr1->payloadData(herald::datatype::PayloadData(std::byte(5),32));
     devPtr1->immediateSendData(herald::datatype::ImmediateSendData(
@@ -334,9 +386,14 @@ TEST_CASE("blecoordinator-got-three-at-different-states", "[coordinator][got-thr
     std::shared_ptr<herald::ble::BLEDevice> devPtr3 = db->device(device3);
 
     // Specify that some activity has already happened with the device
+    std::vector<herald::datatype::UUID> heraldServiceList;
+    heraldServiceList.push_back(herald::ble::BLESensorConfiguration::serviceUUID);
+    devPtr1->services(heraldServiceList);
     devPtr1->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
     devPtr1->payloadData(herald::datatype::PayloadData(std::byte(5),32));
+    devPtr2->services(heraldServiceList);
     devPtr2->operatingSystem(herald::ble::BLEDeviceOperatingSystem::ios);
+    devPtr3->services(heraldServiceList);
     devPtr3->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
     devPtr3->payloadData(herald::datatype::PayloadData(std::byte(5),32));
     devPtr3->immediateSendData(herald::datatype::ImmediateSendData(

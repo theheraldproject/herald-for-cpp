@@ -27,7 +27,10 @@ public:
   
   /** What connections does this Sensor type provide for Coordination **/
   std::vector<FeatureTag> connectionsProvided() override;
-  std::vector<PrioritisedPrerequisite> provision(std::vector<PrioritisedPrerequisite> requested) override;
+  // void provision(const std::vector<PrioritisedPrerequisite>& requested,
+  //   const ConnectionCallback& connCallback) override;
+  std::vector<PrioritisedPrerequisite> provision(
+    const std::vector<PrioritisedPrerequisite>& requested) override;
 
   // Runtime coordination callbacks
   /** Get a list of what connections are required to which devices now (may start, maintain, end (if not included)) **/
