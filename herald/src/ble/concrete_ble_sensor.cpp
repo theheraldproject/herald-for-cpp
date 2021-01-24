@@ -6,6 +6,8 @@
 #include "herald/ble/bluetooth_state_manager.h"
 #include "herald/datatype/bluetooth_state.h"
 #include "herald/ble/ble_coordinator.h"
+#include "herald/ble/ble_sensor_configuration.h"
+#include "herald/data/sensor_logger.h"
 
 // C++17 includes
 #include <memory>
@@ -38,6 +40,8 @@ public:
   std::shared_ptr<HeraldProtocolBLECoordinationProvider> coordinator;
 
   bool addedSelfAsDelegate;
+
+  HLOGGER;
 };
 
 ConcreteBLESensor::Impl::Impl(std::shared_ptr<Context> ctx, 
@@ -54,6 +58,7 @@ ConcreteBLESensor::Impl::Impl(std::shared_ptr<Context> ctx,
     delegates(),
     coordinator(std::make_shared<HeraldProtocolBLECoordinationProvider>(ctx, database, receiver)),
     addedSelfAsDelegate(false)
+    HLOGGERINIT(ctx,"sensor","ConcreteBLESensor")
 {
   ;
 }
@@ -87,7 +92,13 @@ ConcreteBLESensor::~ConcreteBLESensor()
 std::optional<std::shared_ptr<CoordinationProvider>>
 ConcreteBLESensor::coordinationProvider()
 {
-  return std::optional<std::shared_ptr<CoordinationProvider>>(mImpl->coordinator);
+  // Only return this if we support scanning
+  if (BLESensorConfiguration::scanningEnabled) {
+    HDBG("Providing a BLECoordinationProvider");
+    return std::optional<std::shared_ptr<CoordinationProvider>>(mImpl->coordinator);
+  }
+  HDBG("Scanning not supported - so not returning a BLECoordinationProvider");
+  return {};
 }
 
 bool
@@ -121,7 +132,7 @@ ConcreteBLESensor::start()
     mImpl->database->add(shared_from_this());
     mImpl->addedSelfAsDelegate = true;
   }
-  //mImpl->transmitter->start();
+  // mImpl->transmitter->start();
   mImpl->receiver->start();
   for (auto delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, SensorState::on);
@@ -131,7 +142,7 @@ ConcreteBLESensor::start()
 void
 ConcreteBLESensor::stop()
 {
-  //mImpl->transmitter->stop();
+  // mImpl->transmitter->stop();
   mImpl->receiver->stop();
   for (auto delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, SensorState::off);

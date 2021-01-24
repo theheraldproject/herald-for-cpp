@@ -107,8 +107,11 @@ namespace zephyrinternal {
   static struct bt_uuid_128 herald_uuid = BT_UUID_INIT_128(
     0x9b, 0xfd, 0x5b, 0xd6, 0x72, 0x45, 0x1e, 0x80, 0xd3, 0x42, 0x46, 0x47, 0xaf, 0x32, 0x81, 0x42
   );
-  static struct bt_uuid_128 herald_char_signal_uuid = BT_UUID_INIT_128(
+  static struct bt_uuid_128 herald_char_signal_android_uuid = BT_UUID_INIT_128(
     0x11, 0x1a, 0x82, 0x80, 0x9a, 0xe0, 0x24, 0x83, 0x7a, 0x43, 0x2e, 0x09, 0x13, 0xb8, 0x17, 0xf6
+  );
+  static struct bt_uuid_128 herald_char_signal_ios_uuid = BT_UUID_INIT_128(
+    0x63, 0x43, 0x2d, 0xb0, 0xad, 0xa4, 0xf3, 0x8a, 0x9a, 0x4a, 0xe4, 0xea, 0xf2, 0xd5, 0xb0, 0x0e
   );
   static struct bt_uuid_128 herald_char_payload_uuid = BT_UUID_INIT_128(
     0xe7, 0x33, 0x89, 0x8f, 0xe3, 0x43, 0x21, 0xa1, 0x29, 0x48, 0x05, 0x8f, 0xf8, 0xc0, 0x98, 0x3e
@@ -366,6 +369,7 @@ public:
 
   // internal call methods
   void startScanning();
+  void stopScanning();
   void gatt_discover(struct bt_conn *conn);
       
   std::shared_ptr<ZephyrContext> m_context;
@@ -389,6 +393,7 @@ public:
   // std::optional<TargetIdentifier> currentTarget;
 
   std::map<TargetIdentifier,ConnectedDeviceState> connectionStates;
+  bool isScanning;
 
   HLOGGER;
 };
@@ -409,7 +414,8 @@ ConcreteBLEReceiver::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<Bl
     // connectionAvailable(),
     // connectionState(BLEDeviceState::disconnected),
     // currentTarget(),
-    connectionStates()
+    connectionStates(),
+    isScanning(false)
     HLOGGERINIT(ctx,"Sensor","BLE.ConcreteBLEReceiver")
 {
   ;
@@ -481,16 +487,27 @@ ConcreteBLEReceiver::Impl::removeState(const TargetIdentifier& forTarget)
 }
 
 void
+ConcreteBLEReceiver::Impl::stopScanning()
+{
+  if (isScanning) {
+    isScanning = false;
+    bt_le_scan_stop();
+  }
+}
+
+void
 ConcreteBLEReceiver::Impl::startScanning()
 {
+  if (isScanning) {
+    return;
+  }
   int err = bt_le_scan_start(&zephyrinternal::defaultScanParam, &zephyrinternal::scan_cb); // scan_cb linked via BT_SCAN_CB_INIT call
   
-  //int err = bt_scan_start(BT_SCAN_TYPE_SCAN_PASSIVE); // calls bt_le_scan_start
-  HTDBG("back from bt scan start");
   if (0 != err) {
 		HTDBG("Starting scanning failed");
 		return;
 	}
+  isScanning = true;
 }
   
 void
@@ -506,14 +523,15 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
     return;
   }
 
-	char addr_str[BT_ADDR_LE_STR_LEN];
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-  std::string addrStr(addr_str);
-  HTDBG("ADDR FROM SCAN:-");
-  HTDBG(addr_str);
 
   // // Now pass to relevant BLEDatabase API call
   if (!device->rssi().has_value()) {
+    char addr_str[BT_ADDR_LE_STR_LEN];
+    bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+    std::string addrStr(addr_str);
+    HTDBG("New address FROM SCAN:-");
+    HTDBG(addr_str);
+
     Data advert(buf->data,buf->len);
     auto segments = BLEAdvertParser::extractSegments(advert,0);
     // HTDBG("segments:-");
@@ -599,11 +617,12 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
         }
       } else {
         // Not a Herald android or any iOS - so Ignore
-        HTDBG("Unknown non Herald device - inspecting");
+        HTDBG("Unknown non Herald device - inspecting (might be a venue beacon or wearable)");
         HTDBG((std::string)bleMacAddress);
         // device->ignore(true);
       }
     }
+    device->registerDiscovery(Date());
   }
 
   // Add this RSSI reading
@@ -722,6 +741,7 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
   const struct bt_gatt_dm_attr *prev = NULL;
   bool found = false;
   ConnectedDeviceState& state = findOrCreateStateByConnection(bt_gatt_dm_conn_get(dm));
+  auto device = db->device(state.target);
   do {
     prev = bt_gatt_dm_char_next(dm,prev);
     if (NULL != prev) {
@@ -732,14 +752,13 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
       int matches = bt_uuid_cmp(chrc->uuid, &zephyrinternal::herald_char_payload_uuid.uuid);
       if (0 == matches) {
         HTDBG("    - FOUND Herald read characteristic. Reading.");
+        device->payloadCharacteristic(BLESensorConfiguration::payloadCharacteristicUUID);
         // initialise payload data for this state
         state.readPayload.clear();
 
         // if match, for a read
         found = true;
         // set handles
-
-
 
         // TODO REFACTOR THE ACTUAL FETCHING OF PAYLOAD TO READPAYLOAD FUNCTION
         zephyrinternal::read_params.single.handle = chrc->value_handle;
@@ -750,28 +769,37 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
           // bt_conn_disconnect(bt_gatt_dm_conn_get(dm), BT_HCI_ERR_REMOTE_USER_TERM_CONN);
         }
 
-
-
-        break; // leave do while loop once found
-      } else {
-        char uuid_str[32];
-        bt_uuid_to_str(chrc->uuid,uuid_str,sizeof(uuid_str));
-        HTDBG("    - Char doesn't match read payload: TBD"); //, log_strdup(uuid_str));
-        HTDBG(uuid_str);
+        continue; // check for other characteristics too
       }
+      matches = bt_uuid_cmp(chrc->uuid, &zephyrinternal::herald_char_signal_android_uuid.uuid);
+      if (0 == matches) {
+        HTDBG("    - FOUND Herald android signal characteristic. logging.");
+        device->signalCharacteristic(BLESensorConfiguration::androidSignalCharacteristicUUID);
+        device->operatingSystem(BLEDeviceOperatingSystem::android);
+
+        continue; // check for other characteristics too
+      }
+      matches = bt_uuid_cmp(chrc->uuid, &zephyrinternal::herald_char_signal_ios_uuid.uuid);
+      if (0 == matches) {
+        HTDBG("    - FOUND Herald ios signal characteristic. logging.");
+        device->signalCharacteristic(BLESensorConfiguration::iosSignalCharacteristicUUID);
+        device->operatingSystem(BLEDeviceOperatingSystem::ios);
+
+        continue; // check for other characteristics too
+      }
+      // otherwise
+      char uuid_str[32];
+      bt_uuid_to_str(chrc->uuid,uuid_str,sizeof(uuid_str));
+      HTDBG("    - Char doesn't match any herald char uuid:-"); //, log_strdup(uuid_str));
+      HTDBG(uuid_str);
     }
   } while (NULL != prev);
 
-  if (found) {
-  } else {
-    HTDBG("Herald read payload char not found in herald service (weird...)");
+  if (!found) {
+    HTDBG("Herald read payload char not found in herald service (weird...). Ignoring device.");
+    device->ignore(true);
     // bt_conn_disconnect(bt_gatt_dm_conn_get(dm), BT_HCI_ERR_REMOTE_USER_TERM_CONN);
   }
-
-  auto device = db->device(state.target);
-  std::vector<UUID> serviceList;
-  serviceList.push_back(BLESensorConfiguration::serviceUUID);
-  device->services(serviceList);
 
   // No it doesn't - this is safe: does ending this here break our bt_gatt_read? (as it uses that connection?)
   int err = bt_gatt_dm_data_release(dm);
@@ -779,6 +807,11 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
     HTDBG("Could not release the discovery data, error code: TBD");
     // bt_conn_disconnect(bt_gatt_dm_conn_get(dm), BT_HCI_ERR_REMOTE_USER_TERM_CONN);
   }
+
+  // very last action - concurrency
+  std::vector<UUID> serviceList;
+  serviceList.push_back(BLESensorConfiguration::serviceUUID);
+  device->services(serviceList);
 }
 
 void
@@ -878,6 +911,10 @@ void
 ConcreteBLEReceiver::start()
 {
   HDBG("ConcreteBLEReceiver::start");
+  if (!BLESensorConfiguration::scanningEnabled) {
+    HDBG("Sensor Configuration has scanning disabled. Returning.");
+    return;
+  }
   herald::ble::zephyrinternal::concreteReceiverInstance = mImpl;
   
 
@@ -927,14 +964,14 @@ void
 ConcreteBLEReceiver::stop()
 {
   HDBG("ConcreteBLEReceiver::stop");
+  if (!BLESensorConfiguration::scanningEnabled) {
+    HDBG("Sensor Configuration has scanning disabled. Returning.");
+    return;
+  }
   
   herald::ble::zephyrinternal::concreteReceiverInstance.reset(); // destroys the shared_ptr not necessarily the underlying value
 
-  // now stop scanning
-  int err = bt_le_scan_stop(); //bt_scan_stop();
-  if (err) {
-		// mImpl->logger.info("Stopping scanning failed (err {:d})", err);
-  }
+  mImpl->stopScanning();
 
   // Don't stop Bluetooth altogether - this is done by the ZephyrContext->stopBluetooth() function only
   
@@ -1032,7 +1069,8 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
   
   // temporarily stop scan - WORKAROUND for https://github.com/zephyrproject-rtos/zephyr/issues/20660
   // HDBG("pausing scanning");
-  bt_le_scan_stop();
+  mImpl->stopScanning();
+  herald::zephyrinternal::advertiser.stopAdvertising();
   // HDBG("Scanning paused");
   // TODO restart after connect called
 
@@ -1084,7 +1122,9 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
       } else if (-EALREADY == success) {
         HDBG(" - bt device initiating")
       } else if (-ENOMEM == success) {
-        HDBG(" - bt connect attempt failed with default BT ID");
+        HDBG(" - bt connect attempt failed with default BT ID. Ignoring device (doesn't allow connections).");
+        auto device = mImpl->db->device(toTarget);
+        device->ignore(true);
       } else if (-ENOBUFS == success) {
         HDBG(" - bt_hci_cmd_create has no buffers free");
       } else if (-ECONNREFUSED == success) {
@@ -1178,6 +1218,8 @@ ConcreteBLEReceiver::closeConnection(const TargetIdentifier& toTarget)
   if (NULL != state.connection) {
     // bt_conn_disconnect(zephyrinternal::conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
     bt_conn_disconnect(state.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+    // auto device = mImpl->db.device(toTarget);
+    // device->registerDisconnect(Date());
   }
   mImpl->removeState(toTarget);
   return false; // assumes we've closed it // TODO proper multi-connection state tracking
@@ -1186,7 +1228,40 @@ ConcreteBLEReceiver::closeConnection(const TargetIdentifier& toTarget)
 void
 ConcreteBLEReceiver::restartScanningAndAdvertising()
 {
+  // Print out current list of devices and their info
+  if (!mImpl->connectionStates.empty()) {
+    HDBG("Current connection states cached:-");
+    for (auto& [key,value] : mImpl->connectionStates) {
+      std::string ci = " - ";
+      ci += ((Data)value.target).hexEncodedString();
+      ci += " state: ";
+      switch (value.state) {
+        case BLEDeviceState::connected:
+          ci += "connected";
+          break;
+        case BLEDeviceState::disconnected:
+          ci += "disconnected";
+          break;
+        default:
+          ci += "connecting";
+      }
+      ci += " connection is null: ";
+      ci += (NULL == value.connection ? "true" : "false");
+      HDBG(ci);
+    }
+
+    // Do internal clean up too - remove states no longer required
+    for (auto iter = mImpl->connectionStates.begin();mImpl->connectionStates.end() != iter; ++iter) {
+      if (NULL == iter->second.connection) { // means Zephyr callbacks are finished with the connection object (i.e. disconnect was called)
+        mImpl->connectionStates.erase(iter);
+      }
+    }
+  }
+
+  // Restart scanning
+  HDBG("restartScanningAndAdvertising - requesting scanning and advertising restarts");
   mImpl->startScanning();
+  // herald::zephyrinternal::advertiser.startAdvertising();
 }
 
 std::optional<Activity>

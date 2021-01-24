@@ -64,6 +64,7 @@ set(HERALD_SOURCES
   ${HERALD_BASE}/src/ble/ble_mac_address.cpp
   ${HERALD_BASE}/src/ble/ble_coordinator.cpp
   ${HERALD_BASE}/src/ble/ble_device.cpp
+  ${HERALD_BASE}/src/ble/ble_sensor_configuration.cpp
   ${HERALD_BASE}/src/ble/concrete_ble_sensor.cpp
   ${HERALD_BASE}/src/ble/concrete_ble_database.cpp
   ${HERALD_BASE}/src/ble/filter/ble_advert_parser.cpp

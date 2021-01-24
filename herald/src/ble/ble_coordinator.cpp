@@ -25,8 +25,10 @@ public:
   std::shared_ptr<BLEDatabase> db;
   std::shared_ptr<HeraldProtocolV1Provider> pp;
 
-  int currentConnections;
-  int maxConnections;
+  std::vector<PrioritisedPrerequisite> previouslyProvisioned;
+
+  // int currentConnections;
+  // int maxConnections;
 
   HLOGGER;
 };
@@ -35,8 +37,10 @@ HeraldProtocolBLECoordinationProvider::Impl::Impl(std::shared_ptr<Context> ctx, 
   : context(ctx),
     db(bledb),
     pp(provider),
-    currentConnections(0),
-    maxConnections(20)
+    previouslyProvisioned()
+    // ,
+    // currentConnections(0),
+    // maxConnections(20)
     HLOGGERINIT(ctx,"heraldble","coordinationprovider")
 {
   ;
@@ -76,17 +80,40 @@ std::vector<PrioritisedPrerequisite>
 HeraldProtocolBLECoordinationProvider::provision(
   const std::vector<PrioritisedPrerequisite>& requested)
 {
-  HDBG("Entered provision");
+  if (requested.empty()) {
+    HDBG("No connections requested for provisioning");
+  } else {
+    HDBG("Provisioning connections");
+  }
+
+  // Remove those previously provisoned that we no longer require
+  for (auto& previous : mImpl->previouslyProvisioned) {
+    bool found = false;
+    for (auto& req : requested) {
+      found = found || std::get<2>(req)==std::get<2>(previous); // comparing target values
+    }
+    if (!found) {
+      HDBG(" - Found connection to remove");
+      auto& optTarget = std::get<2>(previous);
+      // We can't disconnect from 'all', so check for target
+      if (optTarget.has_value()) {
+        // Ignoring closed true/false result
+        mImpl->pp->closeConnection(optTarget.value());
+      }
+    }
+  }
+
+  // Now provision new connections
   std::vector<PrioritisedPrerequisite> provisioned;
   // For this provider, a prerequisite is a connection to a remote target identifier over Bluetooth
   auto requestIter = requested.cbegin();
   bool lastConnectionSuccessful = true;
-  while (mImpl->currentConnections < mImpl->maxConnections && 
+  while (/*mImpl->currentConnections < mImpl->maxConnections && */
          lastConnectionSuccessful && 
          requestIter != requested.cend()) {
     HDBG(" - Satisfying prereq");
-    HDBG(" - currentConnections currently:-");
-    HDBG(std::to_string(mImpl->currentConnections));
+    // HDBG(" - currentConnections currently:-");
+    // HDBG(std::to_string(mImpl->currentConnections));
     auto& req = *requestIter;
     // See if we're already connected
     // If so, add to provisioned list
@@ -108,7 +135,7 @@ HeraldProtocolBLECoordinationProvider::provision(
       if (lastConnectionSuccessful) {
         HDBG(" - Ensuring connection successful");
         provisioned.push_back(req);
-        mImpl->currentConnections++;
+        // mImpl->currentConnections++;
       } else {
         HDBG(" - Ensuring connection UNSUCCESSFUL");
       }
@@ -124,9 +151,13 @@ HeraldProtocolBLECoordinationProvider::provision(
     lastConnectionSuccessful = true;
   }
 
-  // TODO schedule disconnection from not required items (E.g. after minimum connection time)
+  mImpl->previouslyProvisioned = provisioned;
 
-  HDBG("Returning from provision");
+  // TODO schedule disconnection from not required items (E.g. after minimum connection time)
+  //  - we already do this if provision is called, but not after a time period
+  //  - Bluetooth timeout will deal with the underlying connection, but not any intermediate state in the PP instance
+
+  // HDBG("Returning from provision");
   // connCallback(provisioned);
   return provisioned;
 }
@@ -206,7 +237,7 @@ HeraldProtocolBLECoordinationProvider::requiredConnections()
       HDBG(di);
     }
   } else {
-    // restart scanning
+    // restart scanning when no connection activity is expected
     mImpl->pp->restartScanningAndAdvertising();
   }
 

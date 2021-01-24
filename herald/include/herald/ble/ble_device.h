@@ -114,10 +114,10 @@ public:
   bool ignore() const;
   void ignore(bool newIgnore);
   void invalidateCharacteristics();
-  void registerDiscovery(Date& at); // ALWAYS externalise time (now())
-  void registerWritePayload(Date& at); // ALWAYS externalise time (now())
-  void registerWritePayloadSharing(Date& at); // ALWAYS externalise time (now())
-  void registerWriteRssi(Date& at); // ALWAYS externalise time (now())
+  void registerDiscovery(Date at); // ALWAYS externalise time (now())
+  void registerWritePayload(Date at); // ALWAYS externalise time (now())
+  void registerWritePayloadSharing(Date at); // ALWAYS externalise time (now())
+  void registerWriteRssi(Date at); // ALWAYS externalise time (now())
   
 private:
   class Impl;

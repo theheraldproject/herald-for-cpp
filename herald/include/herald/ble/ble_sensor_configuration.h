@@ -71,6 +71,13 @@ namespace BLESensorConfiguration {
   /// Connection management
   /// Max connections - since v1.2 (allowing multiple connections on Android and C++)
   const int maxBluetoothConnections = 20; // Same as NRF 52840 max connections
+
+  // Does this Herald application support advertising?
+  static bool advertisingEnabled = true;
+  // Does this Herald application support scanning? (Simple Venue Beacons don't)
+  static bool scanningEnabled = true;
+
+
 } // end namespace
 
 } // end namespace

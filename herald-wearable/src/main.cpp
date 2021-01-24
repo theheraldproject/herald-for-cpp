@@ -66,6 +66,51 @@ using namespace herald::payload::fixed;
 
 std::shared_ptr<SensorArray> sa;
 
+class AppLoggingDelegate : public herald::SensorDelegate {
+public:
+	AppLoggingDelegate() = default;
+	~AppLoggingDelegate() = default;
+
+	void sensor(SensorType sensor, const TargetIdentifier& didDetect) override {
+		LOG_INF("sensor didDetect"); // May want to disable this - logs A LOT of info
+	}
+
+  /// Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
+  void sensor(SensorType sensor, PayloadData didRead, const TargetIdentifier& fromTarget) override {
+		LOG_INF("sensor didRead");
+	}
+
+  /// Receive written immediate send data from target, e.g. important timing signal.
+  void sensor(SensorType sensor, ImmediateSendData didReceive, const TargetIdentifier& fromTarget) override {
+		LOG_INF("sensor didReceive");
+	}
+
+  /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
+  void sensor(SensorType sensor, std::vector<PayloadData> didShare, const TargetIdentifier& fromTarget) override {
+		LOG_INF("sensor didShare");
+	}
+
+  /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
+  void sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget) override {
+		LOG_INF("sensor didMeasure");
+	}
+
+  /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
+  void sensor(SensorType sensor, Location didVisit) override {
+		LOG_INF("sensor didVisit");
+	}
+
+  /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
+  void sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget, PayloadData withPayload) override {
+		LOG_INF("sensor didMeasure withPayload");
+	}
+
+  /// Sensor state update
+  void sensor(SensorType sensor, SensorState didUpdateState) override {
+		LOG_INF("sensor didUpdateState");
+	}
+};
+
 void cc3xx_init() {
   // START IMPLEMENTORS GUIDANCE - EXAMPLE CODE NOT NEEDED TO COPY IN TO IN YOUR DEMO APP
   // NOTE TO IMPLEMENTORS: Please remember to use a hardware security module where present.
@@ -101,6 +146,7 @@ void cc3xx_init() {
 }
 
 void herald_entry() {
+	std::shared_ptr<AppLoggingDelegate> appDelegate = std::make_shared<AppLoggingDelegate>();
 	
 	// IMPLEMENTORS GUIDANCE - USING HERALD
 	// First initialise the Zephyr Context - this links Herald to any Zephyr OS specific constructs or callbacks
@@ -137,9 +183,12 @@ void herald_entry() {
 
 	// sink->log(SensorLoggerLevel::debug,"Got concrete ble sensor");
 	
+	// BUG transmitter currently interferes with wearable receiver
+	BLESensorConfiguration::advertisingEnabled = false;
 	
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
 	sa = std::make_shared<SensorArray>(ctx,pds);
+	sa->add(appDelegate);
 	// THIS IS CAUSING THE FAILURE TO LAUNCH - 'exit'
 	// Caused by use of shared_from_this() use in a constructor of concrete ble sensor? - SEEMS SO THUS FAR...
 

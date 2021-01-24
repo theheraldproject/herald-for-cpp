@@ -359,27 +359,27 @@ BLEDevice::invalidateCharacteristics()
 }
 
 void
-BLEDevice::registerDiscovery(Date& at)
+BLEDevice::registerDiscovery(Date at)
 {
   mImpl->lastDiscoveredAt = at;
 }
 
 void
-BLEDevice::registerWritePayload(Date& at)
+BLEDevice::registerWritePayload(Date at)
 {
   mImpl->lastUpdated = at;
   mImpl->lastWritePayloadAt = at;
 }
 
 void
-BLEDevice::registerWritePayloadSharing(Date& at)
+BLEDevice::registerWritePayloadSharing(Date at)
 {
   mImpl->lastUpdated = at;
   mImpl->lastWritePayloadSharingAt = at;
 }
 
 void
-BLEDevice::registerWriteRssi(Date& at)
+BLEDevice::registerWriteRssi(Date at)
 {
   mImpl->lastUpdated = at;
   mImpl->lastWriteRssiAt = at;
