@@ -141,6 +141,7 @@ public:
   
   bool openConnection(const TargetIdentifier& toTarget) override;
   bool closeConnection(const TargetIdentifier& toTarget) override;
+  void restartScanningAndAdvertising() override;
 
   std::optional<Activity> serviceDiscovery(Activity) override;
   std::optional<Activity> readPayload(Activity) override;

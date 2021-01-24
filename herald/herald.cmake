@@ -91,7 +91,7 @@ set(HERALD_SOURCES
   ${HERALD_BASE}/src/sensor_array.cpp
 )
 set(HERALD_SOURCES_ZEPHYR
-  ${HERALD_BASE}/src/ble/zephyr/concrete_ble_transmitter_nrf.cpp
-  ${HERALD_BASE}/src/ble/zephyr/concrete_ble_receiver_nrf.cpp
+  ${HERALD_BASE}/src/ble/zephyr/concrete_ble_transmitter.cpp
+  ${HERALD_BASE}/src/ble/zephyr/concrete_ble_receiver.cpp
   ${HERALD_BASE}/src/zephyr_context.cpp
 )

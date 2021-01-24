@@ -36,7 +36,7 @@ HeraldProtocolBLECoordinationProvider::Impl::Impl(std::shared_ptr<Context> ctx, 
     db(bledb),
     pp(provider),
     currentConnections(0),
-    maxConnections(1)
+    maxConnections(20)
     HLOGGERINIT(ctx,"heraldble","coordinationprovider")
 {
   ;
@@ -85,13 +85,15 @@ HeraldProtocolBLECoordinationProvider::provision(
          lastConnectionSuccessful && 
          requestIter != requested.cend()) {
     HDBG(" - Satisfying prereq");
+    HDBG(" - currentConnections currently:-");
+    HDBG(std::to_string(mImpl->currentConnections));
     auto& req = *requestIter;
     // See if we're already connected
     // If so, add to provisioned list
     // If not, try to connect
     auto& optTarget = std::get<2>(req);
     if (optTarget.has_value()) {
-      HDBG(" - Have defined target");
+      HDBG(" - Have defined target for this prerequisite. Requesting connection be made available.");
       // std::future<void> fut = std::async(std::launch::async,
       //     &HeraldProtocolV1Provider::openConnection,mImpl->pp,
       //     optTarget.value(),[&lastConnectionSuccessful] (
@@ -104,11 +106,11 @@ HeraldProtocolBLECoordinationProvider::provision(
 
       // If successful, add to provisioned list
       if (lastConnectionSuccessful) {
-        HDBG(" - Opening new connection successful");
+        HDBG(" - Ensuring connection successful");
         provisioned.push_back(req);
         mImpl->currentConnections++;
       } else {
-        HDBG(" - Opening new connection UNSUCCESSFUL");
+        HDBG(" - Ensuring connection UNSUCCESSFUL");
       }
     } else {
       HDBG(" - No defined target, returning satisfied - always true for Herald BLE");
@@ -167,6 +169,46 @@ HeraldProtocolBLECoordinationProvider::requiredConnections()
   }
 
   // TODO any other devices we may have outstanding work for that requires connections
+
+  // DEBUG ONLY ELEMENTS
+  if (newConns.size() > 0) {
+    // print debug info about the BLE Database
+    HDBG("BLE DATABASE CURRENT CONTENTS:-");
+    auto allDevices = mImpl->db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
+      return true;
+    });
+    for (auto& device : allDevices) {
+      std::string di(" - ");
+      BLEMacAddress mac((Data)device->identifier());
+      di += (std::string)mac;
+      di += ", os=";
+      auto os = device->operatingSystem();
+      if (os.has_value()) {
+        if (herald::ble::BLEDeviceOperatingSystem::ios == os) {
+          di += "ios";
+        } else if (herald::ble::BLEDeviceOperatingSystem::android == os) {
+          di += "android";
+        }
+      } else {
+        di += "unknown";
+      }
+      di += ", ignore=";
+      auto ignore = device->ignore();
+      if (ignore) {
+        di += "true";
+      } else {
+        di += "false";
+      }
+      di += ", hasServices=";
+      di += (device->hasServicesSet() ? "true" : "false");
+      di += ", hasReadPayload=";
+      di += (device->payloadData().has_value() ? device->payloadData().value().hexEncodedString() : "false");
+      HDBG(di);
+    }
+  } else {
+    // restart scanning
+    mImpl->pp->restartScanningAndAdvertising();
+  }
 
   return results;
 }

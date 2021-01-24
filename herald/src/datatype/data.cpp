@@ -392,5 +392,11 @@ Data::size() const {
   return mImpl->data.size();
 }
 
+void
+Data::clear() noexcept
+{
+  mImpl->data.clear();
+}
+
 } // end namespace
 } // end namespace

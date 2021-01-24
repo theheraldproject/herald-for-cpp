@@ -82,7 +82,7 @@ uint32_t waitWithTimeout(uint32_t timeoutMillis, k_timeout_t period, std::functi
 struct ConnectedDeviceState {
   ConnectedDeviceState(const TargetIdentifier& id)
     : target(id), state(BLEDeviceState::disconnected), connection(NULL), address(),
-      readPayloadData(), immediateSendData()
+      readPayload(), immediateSend()
   {}
   ConnectedDeviceState(const ConnectedDeviceState& from) = delete;
   ConnectedDeviceState(ConnectedDeviceState&& from) = delete;
@@ -92,8 +92,8 @@ struct ConnectedDeviceState {
   BLEDeviceState state;
   bt_conn* connection;
   bt_addr_le_t address;
-  PayloadData readPayloadData;
-  ImmediateSendData immediateSendData;
+  PayloadData readPayload;
+  ImmediateSendData immediateSend;
 };
 
 
@@ -376,7 +376,7 @@ public:
   std::vector<std::shared_ptr<SensorDelegate>> delegates;
 
   // std::map<TargetIdentifier,AddrRef> macs; // TODO remove items over time
-  Data readPayloadData; // TODO move this to connectedDeviceState
+  // Data readPayloadData; // moved this to connectedDeviceState
 
   // std::optional<TargetIdentifier> targetForConnection;
   // std::optional<HeraldConnectionCallback> connCallback;
@@ -402,7 +402,7 @@ ConcreteBLEReceiver::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<Bl
     db(bleDatabase),
     delegates(),
     // macs(),
-    readPayloadData(),
+    // readPayloadData(),
     // targetForConnection(),
     // connCallback(),
     // bleInUse(),
@@ -496,35 +496,24 @@ ConcreteBLEReceiver::Impl::startScanning()
 void
 ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
   struct net_buf_simple *buf)
-{
-  // HTDBG("Callback");
-  // Data advert;
-  // // Convert advert scan data to Herald format
-  // for (std::uint16_t p = 0;p < buf->len;p++) {
-  //   advert.append(std::uint8_t(buf->data[p]));
-  // }
-  
+{  
+  BLEMacAddress bleMacAddress(addr->a.val);
+  TargetIdentifier target((Data)bleMacAddress);
+
+  auto device = db->device(target);
+  if (device->ignore()) {
+    // device->rssi(RSSI(rssi)); // TODO should we do this so our update date works and shows this as a 'live' device?
+    return;
+  }
+
 	char addr_str[BT_ADDR_LE_STR_LEN];
 	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-  // zephyrinternal::last_addr = addr;
-  // bt_addr_le_copy(zephyrinternal::last_addr,addr);
   std::string addrStr(addr_str);
   HTDBG("ADDR FROM SCAN:-");
   HTDBG(addr_str);
-  
-  // HTDBG(addrStr);
-  //HTDBG("taskConnectScanResults, didDiscover (device=%s)", (char*)addr_str);
-  BLEMacAddress bleMacAddress(addr->a.val);
-  TargetIdentifier target((Data)bleMacAddress);
-  // macs.emplace(target,AddrRef{.addr = addr});
-  // HTDBG((std::string)bleMacAddress);
-
-  auto device = db->device(target);
-  // HTDBG("taskConnectScanResults, didDiscover (deviceMAC={})", (std::string)bleMacAddress);
 
   // // Now pass to relevant BLEDatabase API call
   if (!device->rssi().has_value()) {
-    device->rssi(RSSI(rssi));
     Data advert(buf->data,buf->len);
     auto segments = BLEAdvertParser::extractSegments(advert,0);
     // HTDBG("segments:-");
@@ -606,6 +595,7 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
         } else {
           // Perform GATT service discovery to check for Herald service
           // NOTE: Happens from Connection request (handled by BLE Coordinator)
+          HTDBG(" - Unknown apple device... Logging so we can discover services later");
         }
       } else {
         // Not a Herald android or any iOS - so Ignore
@@ -615,6 +605,9 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
       }
     }
   }
+
+  // Add this RSSI reading
+  device->rssi(RSSI(rssi));
 }
 
 void
@@ -622,9 +615,6 @@ ConcreteBLEReceiver::Impl::gatt_discover(struct bt_conn *conn)
 {
   HTDBG("Attempting GATT service discovery");
   int err;
-
-  // Reinitialise data
-  readPayloadData = Data();
 
   // begin introspection
   err = bt_gatt_dm_start(conn, &zephyrinternal::herald_uuid.uuid, &zephyrinternal::discovery_cb, NULL);
@@ -731,6 +721,7 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
 	HTDBG("The GATT discovery procedure succeeded");
   const struct bt_gatt_dm_attr *prev = NULL;
   bool found = false;
+  ConnectedDeviceState& state = findOrCreateStateByConnection(bt_gatt_dm_conn_get(dm));
   do {
     prev = bt_gatt_dm_char_next(dm,prev);
     if (NULL != prev) {
@@ -741,6 +732,9 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
       int matches = bt_uuid_cmp(chrc->uuid, &zephyrinternal::herald_char_payload_uuid.uuid);
       if (0 == matches) {
         HTDBG("    - FOUND Herald read characteristic. Reading.");
+        // initialise payload data for this state
+        state.readPayload.clear();
+
         // if match, for a read
         found = true;
         // set handles
@@ -774,15 +768,6 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
     // bt_conn_disconnect(bt_gatt_dm_conn_get(dm), BT_HCI_ERR_REMOTE_USER_TERM_CONN);
   }
 
-  // err = bt_hogp_handles_assign(dm, &hogp);
-  // if (err) {
-  // 	HTDBG("Could not init HIDS client object, error: ")
-//   HTDBG(std::to_string(err);
-  // }
-
-
-  ConnectedDeviceState& state = findOrCreateStateByConnection(bt_gatt_dm_conn_get(dm));
-
   auto device = db->device(state.target);
   std::vector<UUID> serviceList;
   serviceList.push_back(BLESensorConfiguration::serviceUUID);
@@ -794,8 +779,6 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
     HTDBG("Could not release the discovery data, error code: TBD");
     // bt_conn_disconnect(bt_gatt_dm_conn_get(dm), BT_HCI_ERR_REMOTE_USER_TERM_CONN);
   }
-
-  // TODO replace all disconnect calls above with callback to fire didDiscoverCharacteristics callback
 }
 
 void
@@ -828,20 +811,27 @@ ConcreteBLEReceiver::Impl::gatt_read_cb(struct bt_conn *conn, uint8_t err,
               struct bt_gatt_read_params *params,
               const void *data, uint16_t length)
   {
+    // Fetch state for this element
+    ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
     // LOG_INF("GATT READ CB CALLED");
     if (NULL == data) {
       // LOG_INF("Finished gatt value read");
       HTDBG("Finished reading CHAR read payload:-");
-      HTDBG(readPayloadData.hexEncodedString());
+      HTDBG(state.readPayload.hexEncodedString());
+      
+      // Set final read payload (triggers success callback on observer)
+      db->device(state.target)->payloadData(state.readPayload);
+
       // Now disconnect post payload read
-      bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+      // Disconnect in separate coordinator led fashion
+      // bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
       // NOTE OR read next characteristic value, as required
       return 0;
     }
     // char hex_str[length * 2];
     // int transferred = bin2hex(data,length,hex_str,length * 2);
     // LOG_INF("  hex: %s",log_strdup(hex_str)); // do we need to append \0?
-    readPayloadData.append((const uint8_t*)data,0,length);
+    state.readPayload.append((const uint8_t*)data,0,length);
     return length;
   }
 
@@ -1012,43 +1002,32 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
 
 
 
-  // HDBG("openConnection called for");
-  // HDBG((std::string)toTarget);
-  // fetch device bluetooth ID
-  // auto found = mImpl->macs.find(toTarget);
-  // if (found == mImpl->macs.end()) {
-  //   HDBG("MAC not found");
-  //   // connCallback(toTarget,false);
-  //   return false;
+
+  // // print out device info
+  // BLEMacAddress mac(addrData);
+  // std::string di("Opening Connection :: Device info: mac=");
+  // di += (std::string)mac;
+  // di += ", os=";
+  // auto devPtr = mImpl->db->device(toTarget);
+  // auto os = devPtr->operatingSystem();
+  // if (os.has_value()) {
+  //   if (herald::ble::BLEDeviceOperatingSystem::ios == os) {
+  //     di += "ios";
+  //   } else if (herald::ble::BLEDeviceOperatingSystem::android == os) {
+  //     di += "android";
+  //   }
+  // } else {
+  //   di += "unknown";
   // }
-  // mImpl->connCallback = connCallback;
-  // mImpl->targetForConnection = toTarget;
+  // di += ", ignore=";
+  // auto ignore = devPtr->ignore();
+  // if (ignore) {
+  //   di += "true";
+  // } else {
+  //   di += "false";
+  // }
 
-  // print out device info
-  BLEMacAddress mac(addrData);
-  std::string di("Opening Connection :: Device info: mac=");
-  di += (std::string)mac;
-  di += ", os=";
-  auto devPtr = mImpl->db->device(toTarget);
-  auto os = devPtr->operatingSystem();
-  if (os.has_value()) {
-    if (herald::ble::BLEDeviceOperatingSystem::ios == os) {
-      di += "ios";
-    } else if (herald::ble::BLEDeviceOperatingSystem::android == os) {
-      di += "android";
-    }
-  } else {
-    di += "unknown";
-  }
-  di += ", ignore=";
-  auto ignore = devPtr->ignore();
-  if (ignore) {
-    di += "true";
-  } else {
-    di += "false";
-  }
-
-  HDBG(di);
+  // HDBG(di);
   
   
   // temporarily stop scan - WORKAROUND for https://github.com/zephyrproject-rtos/zephyr/issues/20660
@@ -1058,12 +1037,7 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
   // TODO restart after connect called
 
 
-  // attempt connection
-  // struct bt_conn* conn = NULL;
-  // use bt_conn_lookup_addr_le first to see if we're already connected
-  // HDBG("Looking up conn for this address");
-  // conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT,found->second.addr);
-  // HDBG("conn lookup returned");
+  // attempt connection, if required
   bool ok = true;
   if (NULL == state.connection) {
     HDBG(" - No existing connection. Attempting to connect");
@@ -1095,25 +1069,13 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
     // zephyrinternal::conn = NULL;
     state.state = BLEDeviceState::connecting; // this is used by the condition variable
     int success = bt_conn_le_create(
-      //found->second.addr,
-      // zephyrinternal::last_addr,
       &state.address,
-      // zephyrinternal::BTLECreateParam,
-      // zephyrinternal::BTLEConnParam,
-      // BT_LE_CONN_PARAM_DEFAULT,
-      // BT_CONN_LE_CREATE_CONN,
-      // BT_CONN_LE_CREATE_CONN,
-      // BT_LE_CONN_PARAM_DEFAULT
       &zephyrinternal::defaultCreateParam,
       &zephyrinternal::defaultConnParam,
-      //BT_CONN_LE_CREATE_PARAM_INIT(BT_CONN_LE_OPT_NONE,BT_GAP_SCAN_FAST_INTERVAL,BT_GAP_SCAN_FAST_INTERVAL),
-      //BT_LE_CONN_PARAM_INIT(BT_GAP_INIT_CONN_INT_MIN,BT_GAP_INIT_CONN_INT_MAX,0,400),
-      // &zephyrinternal::conn
       &state.connection
-      );
+    );
     HDBG(" - post connection attempt");
     if (0 != success) {
-      // HDBG(" - Issue connecting");
       ok = false;
       if (-EINVAL == success) {
         HDBG(" - ERROR in passed in parameters");
@@ -1133,7 +1095,6 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
         HDBG(" - Unknown error code...");
         HDBG(std::to_string(success));
       }
-      // HDBG(" - Issue connecting: {}",std::to_string(success));
 
       // Add to ignore list for now
       // DONT DO THIS HERE - MANY REASONS IT CAN FAIL auto device = mImpl->db->device(toTarget);
@@ -1172,11 +1133,6 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
     }
   } else {
     HDBG(" - Existing connection exists! Reusing.");
-    // zephyrinternal::conn = conn;
-    // Assume discovery performed on first run through connect()
-    // // Perform GATT service discovery
-    // mImpl->gatt_discover(conn);
-    // connCallback(toTarget,true);
     return true;
   }
 }
@@ -1224,8 +1180,13 @@ ConcreteBLEReceiver::closeConnection(const TargetIdentifier& toTarget)
     bt_conn_disconnect(state.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
   }
   mImpl->removeState(toTarget);
-  mImpl->startScanning();
   return false; // assumes we've closed it // TODO proper multi-connection state tracking
+}
+
+void
+ConcreteBLEReceiver::restartScanningAndAdvertising()
+{
+  mImpl->startScanning();
 }
 
 std::optional<Activity>

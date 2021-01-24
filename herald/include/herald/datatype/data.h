@@ -62,6 +62,8 @@ public:
   std::size_t size() const noexcept;
   // TODO support other C++ STD container type functions to allow iteration over data elements (uint8)
 
+  void clear() noexcept;
+  
 protected:
   static const char hexChars[];
   class Impl;

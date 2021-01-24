@@ -38,10 +38,13 @@ public:
 
   // FOR OTHER PLATFORMS:-
   
-  /** Opens a new connection. Returns true if successful or already connected */
+  /** Opens a new connection. Returns true if successful or already connected. Will cause scanning and advertising to stop. */
   virtual bool openConnection(const TargetIdentifier& toTarget) = 0;
   /** Closes a connection. Returns true if successful or already disconnected */
   virtual bool closeConnection(const TargetIdentifier& toTarget) = 0;
+
+  /** Restart scanning and advertising (if they were previously doing so) **/
+  virtual void restartScanningAndAdvertising() = 0;
 
   virtual std::optional<Activity> serviceDiscovery(Activity) = 0;
   virtual std::optional<Activity> readPayload(Activity) = 0;

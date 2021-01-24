@@ -55,6 +55,8 @@ public:
   bool closeConnection(const herald::datatype::TargetIdentifier& toTarget) override {
     return false;
   }
+  
+  void restartScanningAndAdvertising() override {}
 
   std::optional<herald::engine::Activity> serviceDiscovery(herald::engine::Activity act) override {
     HTDBG("serviceDiscovery called");
