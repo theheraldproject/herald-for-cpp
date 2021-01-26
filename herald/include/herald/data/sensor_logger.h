@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -7,8 +7,6 @@
 
 #include "../datatype/bluetooth_state.h"
 #include "../context.h"
-
-// #include "fmt/format.h"
 
 #include <string>
 #include <memory>
@@ -32,7 +30,6 @@
 namespace herald {
 namespace data {
 
-// TODO is the below used anywhere?
 enum class SensorLoggerLevel : int {
   debug, info, fault
 };

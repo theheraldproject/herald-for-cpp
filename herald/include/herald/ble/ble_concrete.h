@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -132,6 +132,7 @@ public:
   void stop() override;
 
   // Herald V1 protocol provider overrides
+  // C++17 CALLBACK VERSION:-
   // void openConnection(const TargetIdentifier& toTarget, const HeraldConnectionCallback& connCallback) override;
   // void closeConnection(const TargetIdentifier& toTarget, const HeraldConnectionCallback& connCallback) override;
   // void serviceDiscovery(Activity, CompletionCallback) override;
@@ -139,10 +140,10 @@ public:
   // void immediateSend(Activity, CompletionCallback) override;
   // void immediateSendAll(Activity, CompletionCallback) override;
   
+  // NON C++17 VERSION:-
   bool openConnection(const TargetIdentifier& toTarget) override;
   bool closeConnection(const TargetIdentifier& toTarget) override;
   void restartScanningAndAdvertising() override;
-
   std::optional<Activity> serviceDiscovery(Activity) override;
   std::optional<Activity> readPayload(Activity) override;
   std::optional<Activity> immediateSend(Activity) override;

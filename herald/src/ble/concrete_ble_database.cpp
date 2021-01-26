@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -19,17 +19,6 @@ namespace herald {
 namespace ble {
 
 using namespace herald::datatype;
-
-
-// TODO functional filter classes as required - consider moving to the header for re-use
-// class with_identifier {
-//   bool operator()
-// };
-
-// class with_payload {
-
-// };
-
 
 class ConcreteBLEDatabase::Impl {
 public:
@@ -133,7 +122,7 @@ ConcreteBLEDatabase::matches(
   const std::function<bool(std::shared_ptr<BLEDevice>)>& matcher) const
 {
   std::vector<std::shared_ptr<BLEDevice>> results;
-  // in the absence of copy if in C++20... Just copies the pointers not the objects
+  // in the absence of copy_if in C++20... Just copies the pointers not the objects
   for (auto d : mImpl->devices) {
     if (matcher(d)) {
       results.push_back(d);

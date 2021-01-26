@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -82,11 +82,27 @@ ZephyrLoggingSink::log(SensorLoggerLevel level, std::string message)
 
 // ADVERTISER SPECIFICATION
 namespace zephyrinternal {
+  
+Advertiser::Advertiser()
+  : startCallback(),
+    stopCallback()
+{
+  // LOG_DBG("Advertiser::ctor");
+}
+
+Advertiser::~Advertiser()
+{
+  // LOG_DBG("Advertiser::dtor");
+  startCallback.reset();
+  stopCallback.reset();
+}
 
 void
 Advertiser::stopAdvertising() noexcept
 {
+  // LOG_DBG("stopAdvertising called");
   if (stopCallback.has_value()) {
+    // LOG_DBG("stopAdvertising callback exists. Calling.");
     stopCallback.value()();
   }
 }
@@ -94,7 +110,9 @@ Advertiser::stopAdvertising() noexcept
 void
 Advertiser::startAdvertising() noexcept
 {
+  // LOG_DBG("startAdvertising called");
   if (startCallback.has_value()) {
+    // LOG_DBG("startAdvertising callback exists. Calling.");
     startCallback.value()();
   }
 }
@@ -102,14 +120,18 @@ Advertiser::startAdvertising() noexcept
 void
 Advertiser::registerStopCallback(std::function<void()> cb)
 {
+  // LOG_DBG("registerStopCallback called");
   stopCallback = cb;
 }
 
 void
 Advertiser::registerStartCallback(std::function<void()> cb)
 {
+  // LOG_DBG("registerStartCallback called");
   startCallback = cb;
 }
+
+// TODO add functions for unregister, and call from transmitter destructor
 
 } // end namespace
 
@@ -122,7 +144,6 @@ public:
   ~Impl();
 
   // Any Zephyr RTOS specific global handles go here
-  bt_addr_le_t m_addr;
   bool enabled;
 
   std::vector<std::shared_ptr<BluetoothStateManagerDelegate>> stateDelegates;
@@ -130,14 +151,15 @@ public:
   // pair is subsystem and category
   std::map<std::pair<std::string,std::string>,
            std::shared_ptr<ZephyrLoggingSink>> logSinks;
+
+  zephyrinternal::Advertiser advertiser;
 };
 
 ZephyrContext::Impl::Impl()
-  : m_addr({ 0, { { 0, 0, 0, 0, 0, 0 } } }) // TODO make this random, and rotate too (if not beacon)
-    ,
-    enabled(false),
+  : enabled(false),
     stateDelegates(),
-    logSinks()
+    logSinks(),
+    advertiser()
 {
   ;
 }
@@ -195,7 +217,7 @@ ZephyrContext::add(std::shared_ptr<BluetoothStateManagerDelegate> delegate)
 BluetoothState
 ZephyrContext::state()
 {
-  // TODO support detection of Bluetooth unsupported, and power cycling/resetting states
+  // TODO support detection of Bluetooth being unsupported, and power cycling/resetting states
   if (mImpl->enabled) {
     return BluetoothState::poweredOn;
   } else {
@@ -203,11 +225,21 @@ ZephyrContext::state()
   }
 }
 
+zephyrinternal::Advertiser&
+ZephyrContext::getAdvertiser() noexcept
+{
+  return mImpl->advertiser;
+}
+
 int 
 ZephyrContext::enableBluetooth() noexcept
 {
   LOG_INF("ZephyrContext::enableBluetooth");
   int success;
+
+  // TODO determine if default Zephyr mac address rotation uses Nordic CC3xx, if present
+  //  - If not, force an address ourselves using this functionality
+
   // rotate mac address using onboard crypto
   // auto success = bt_rand(&mImpl->m_addr, 1);
   // if (!success) {
@@ -232,8 +264,6 @@ ZephyrContext::enableBluetooth() noexcept
   // }
   success = bt_enable(NULL); // NULL means synchronously enabled
   LOG_INF("bt enable returned");
-  
-  // ^^ Note: Check what value success is (0 or 1), and how that relates to default if logic
 
   // This should only called once
   if (IS_ENABLED(CONFIG_SETTINGS)) {
@@ -277,7 +307,6 @@ ZephyrContext::periodicActions() noexcept
 {
   // TODO periodic bluetooth actions
   // E.g. determine if we should rotate mac address (if not done for us?)
-  // Check if ble receiver needs to go talk to anyone (new device, payload, rssi reading)
 }
 
 

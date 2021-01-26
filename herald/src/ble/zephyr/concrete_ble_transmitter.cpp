@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -93,9 +93,6 @@ static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	return len;
 }
 
-// static uint8_t payloadData[100]; // TODO ensure this doesn't overflow
-// static uint8_t payloadSize = 0;
-
 static ssize_t read_payload(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			void *buf, uint16_t len, uint16_t offset)
 {
@@ -109,16 +106,7 @@ static ssize_t read_payload(struct bt_conn *conn, const struct bt_gatt_attr *att
       for (i = 0;i < payload->size();i++) {
         newvalue[i] = (char)payload->at(i);
       }
-      // newvalue[i] = '\0'; // termination string
-      // newvalue[0] = 'w';
-      // newvalue[1] = 't';
-      // newvalue[2] = 'a';
-      // newvalue[3] = 'f';
-      // newvalue[4] = '\0';
-      // std::strcpy(value, newvalue);
-      // value = (const char*)newvalue;
       value = newvalue;
-      // value = "venue value";
       return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
         payload->size());
     // } else {
@@ -194,23 +182,19 @@ ConcreteBLETransmitter::Impl::~Impl()
 void
 ConcreteBLETransmitter::Impl::startAdvertising()
 {
-  HTDBG("startAdvertising called");
+  // HTDBG("startAdvertising called");
   if (!BLESensorConfiguration::advertisingEnabled) {
     HTDBG("Sensor Configuration has advertising disabled. Returning.");
     return;
   }
   if (isAdvertising) {
+    // HTDBG("Already advertising. Returning.");
     return;
   }
   // Now start advertising
   // See https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/reference/bluetooth/gap.html#group__bt__gap_1gac45d16bfe21c3c38e834c293e5ebc42b
-  // bt_le_adv_param param{}; // TODO initialise parameters
-  // bt_data ad{};
-  // size_t ad_len;
-  // bt_data sd{}; // service definition
-  // size_t sd_len; // service definition length
   int success = bt_le_adv_start(herald::ble::bp, herald::ble::ad, ARRAY_SIZE(herald::ble::ad), NULL, 0);
-  if (!success) {
+  if (0 != success) {
     HTDBG("Start advertising failed");
     return;
   }
@@ -221,17 +205,18 @@ ConcreteBLETransmitter::Impl::startAdvertising()
 void
 ConcreteBLETransmitter::Impl::stopAdvertising()
 {
-  HTDBG("stopAdvertising called");
+  // HTDBG("stopAdvertising called");
   if (!BLESensorConfiguration::advertisingEnabled) {
     HTDBG("Sensor Configuration has advertising disabled. Returning.");
     return;
   }
   if (!isAdvertising) {
+    // HTDBG("Not advertising already. Returning.");
     return;
   }
   isAdvertising = false;
   int success = bt_le_adv_stop();
-  if (!success) {
+  if (0 != success) {
     HTDBG("Stop advertising failed");
     return;
   }
@@ -239,31 +224,6 @@ ConcreteBLETransmitter::Impl::stopAdvertising()
   HTDBG("Stop advertising completed successfully");
 }
 
-// ssize_t ConcreteBLETransmitter::Impl::read_payload(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-// 			void *buf, uint16_t len, uint16_t offset)
-// {
-// 	const char *value = (const char*)attr->user_data;
-
-//   value = "venue value";
-
-// 	return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
-// 				 strlen(value));
-// }
-
-// ssize_t ConcreteBLETransmitter::Impl::write_payload(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-// 			 const void *buf, uint16_t len, uint16_t offset,
-// 			 uint8_t flags)
-// {
-// 	uint8_t *value = (uint8_t*)attr->user_data;
-
-// 	if (offset + len > sizeof(vnd_value)) {
-// 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
-// 	}
-
-// 	memcpy(value + offset, buf, len);
-
-// 	return len;
-// }
 
 
 
@@ -307,10 +267,10 @@ ConcreteBLETransmitter::start()
     HDBG("Sensor Configuration has advertising disabled. Returning.");
     return;
   }
-  zephyrinternal::advertiser.registerStopCallback([this] () -> void {
+  mImpl->m_context->getAdvertiser().registerStopCallback([this] () -> void {
     mImpl->stopAdvertising();
   });
-  zephyrinternal::advertiser.registerStartCallback([this] () -> void {
+  mImpl->m_context->getAdvertiser().registerStartCallback([this] () -> void {
     mImpl->startAdvertising();
   });
   HDBG("Advertising callbacks registered");
