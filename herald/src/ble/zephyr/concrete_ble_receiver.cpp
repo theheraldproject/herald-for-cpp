@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -31,10 +31,7 @@
 // C++17 includes
 #include <memory>
 #include <vector>
-#include <cstring>
 #include <map>
-#include <sstream>
-// #include <mutex>
 
 namespace herald {
 namespace ble {
@@ -379,19 +376,6 @@ public:
 
   std::vector<std::shared_ptr<SensorDelegate>> delegates;
 
-  // std::map<TargetIdentifier,AddrRef> macs; // TODO remove items over time
-  // Data readPayloadData; // moved this to connectedDeviceState
-
-  // std::optional<TargetIdentifier> targetForConnection;
-  // std::optional<HeraldConnectionCallback> connCallback;
-
-  // std::mutex bleInUse; // for ALL ble operations requiring a lock (connect, write, close, gatt, etc.)
-  // std::condition_variable connectionAvailable;
-  // DONT DO THIS - failure returns a conn too use zephyrinternal::conn for the condition checking routine
-  // BLEDeviceState connectionState;
-
-  // std::optional<TargetIdentifier> currentTarget;
-
   std::map<TargetIdentifier,ConnectedDeviceState> connectionStates;
   bool isScanning;
 
@@ -406,14 +390,6 @@ ConcreteBLEReceiver::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<Bl
     m_pds(payloadDataSupplier),
     db(bleDatabase),
     delegates(),
-    // macs(),
-    // readPayloadData(),
-    // targetForConnection(),
-    // connCallback(),
-    // bleInUse(),
-    // connectionAvailable(),
-    // connectionState(BLEDeviceState::disconnected),
-    // currentTarget(),
     connectionStates(),
     isScanning(false)
     HLOGGERINIT(ctx,"Sensor","BLE.ConcreteBLEReceiver")
@@ -566,10 +542,10 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
         HTDBG((std::string)bleMacAddress);
         device->operatingSystem(BLEDeviceOperatingSystem::ios);
         // TODO see if we should ignore this Apple device
-        // TODO abstract these out eventually
+        // TODO abstract these out eventually in to BLEDevice class
         bool ignore = false;
         /*
-"^10....04",
+            "^10....04",
             "^10....14",
             "^0100000000000000000000000000000000",
             "^05","^07","^09",
@@ -616,16 +592,15 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
           HTDBG(" - Unknown apple device... Logging so we can discover services later");
         }
       } else {
-        // Not a Herald android or any iOS - so Ignore
+        // Not a Herald android or any iOS - so inspect later (beacon or wearable)
         HTDBG("Unknown non Herald device - inspecting (might be a venue beacon or wearable)");
         HTDBG((std::string)bleMacAddress);
-        // device->ignore(true);
       }
     }
     device->registerDiscovery(Date());
   }
 
-  // Add this RSSI reading
+  // Add this RSSI reading - called at the end to ensure all other data variables set
   device->rssi(RSSI(rssi));
 }
 
@@ -657,10 +632,6 @@ void
 ConcreteBLEReceiver::Impl::connected(struct bt_conn *conn, uint8_t err)
 {
   HTDBG("**************** Zephyr connection callback. Mac of connected:");
-	// if (conn != zephyrinternal::conn) {
-  //   HTDBG("  - WARNING connected callback conn is not the same as the global conn - timing issue?");
-	// 	return;
-	// }
 
   auto addr = bt_conn_get_dst(conn);
 	char addr_str[BT_ADDR_LE_STR_LEN];
@@ -679,9 +650,7 @@ ConcreteBLEReceiver::Impl::connected(struct bt_conn *conn, uint8_t err)
     
     state.state = BLEDeviceState::disconnected;
     state.connection = NULL;
-    // state.address = NULL;
 
-		// startScanning();
     // if (targetForConnection.has_value() && connCallback.has_value()) {
     //   connCallback.value()(targetForConnection.value(),false);
     // }
@@ -691,7 +660,6 @@ ConcreteBLEReceiver::Impl::connected(struct bt_conn *conn, uint8_t err)
   // TODO log last connected time in BLE database
 
   state.connection = conn;
-  // state.address = BT_ADDR_LE_NONE;
   bt_addr_le_copy(&state.address,addr);
   state.state = BLEDeviceState::connected;
 
@@ -726,9 +694,6 @@ ConcreteBLEReceiver::Impl::disconnected(struct bt_conn *conn, uint8_t reason)
 
   state.state = BLEDeviceState::disconnected;
   state.connection = NULL;
-  // state.address = NULL;
-
-	// startScanning();
 }
 
 // Discovery callbacks
@@ -747,7 +712,6 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
     if (NULL != prev) {
       // Check for match of uuid to a herald read payload char
       struct bt_gatt_chrc *chrc = bt_gatt_dm_attr_chrc_val(prev);
-      //if (chrc->uuid->type != BT_UUID_TYPE_128) continue; - not needed, done in cmp
 
       int matches = bt_uuid_cmp(chrc->uuid, &zephyrinternal::herald_char_payload_uuid.uuid);
       if (0 == matches) {
@@ -761,6 +725,7 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
         // set handles
 
         // TODO REFACTOR THE ACTUAL FETCHING OF PAYLOAD TO READPAYLOAD FUNCTION
+        //  - Actually important, as currently a wearable will request the char multiple times from iOS before a reply is received
         zephyrinternal::read_params.single.handle = chrc->value_handle;
         zephyrinternal::read_params.single.offset = 0x0000; // gets changed on each use
         int readErr = bt_gatt_read(bt_gatt_dm_conn_get(dm), &zephyrinternal::read_params);
@@ -808,7 +773,7 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
     // bt_conn_disconnect(bt_gatt_dm_conn_get(dm), BT_HCI_ERR_REMOTE_USER_TERM_CONN);
   }
 
-  // very last action - concurrency
+  // very last action - for concurrency reasons (C++17 threading/mutex/async/future not available on Zephyr)
   std::vector<UUID> serviceList;
   serviceList.push_back(BLESensorConfiguration::serviceUUID);
   device->services(serviceList);
@@ -825,8 +790,6 @@ ConcreteBLEReceiver::Impl::discovery_service_not_found_cb(struct bt_conn *conn,
   std::vector<UUID> serviceList; // empty service list // TODO put other listened-for services here
   device->services(serviceList);
   device->ignore(true);
-  
-  // bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
 }
 
 void
@@ -846,35 +809,19 @@ ConcreteBLEReceiver::Impl::gatt_read_cb(struct bt_conn *conn, uint8_t err,
   {
     // Fetch state for this element
     ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
-    // LOG_INF("GATT READ CB CALLED");
     if (NULL == data) {
-      // LOG_INF("Finished gatt value read");
       HTDBG("Finished reading CHAR read payload:-");
       HTDBG(state.readPayload.hexEncodedString());
       
       // Set final read payload (triggers success callback on observer)
       db->device(state.target)->payloadData(state.readPayload);
 
-      // Now disconnect post payload read
-      // Disconnect in separate coordinator led fashion
-      // bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-      // NOTE OR read next characteristic value, as required
       return 0;
     }
-    // char hex_str[length * 2];
-    // int transferred = bin2hex(data,length,hex_str,length * 2);
-    // LOG_INF("  hex: %s",log_strdup(hex_str)); // do we need to append \0?
+
     state.readPayload.append((const uint8_t*)data,0,length);
     return length;
   }
-
-// FIGURE OUT WHY INCLUDING BLE RECEIVER CPP FILE EVEN IF UNUSED STOPS THE DEVICE FUNCTIONING AND LOADING USB DRIVE
-
-// 2. Implement discovery callbacks and test
-
-// 4. Implement all other connect/disconnect logic and BLE device lifecycle methods
-
-// 5. Implement Apple device pro-active filtering
 
 
 
@@ -926,35 +873,12 @@ ConcreteBLEReceiver::start()
     HDBG("ERROR starting context bluetooth:-");
     HDBG(std::to_string(startOk));
   }
-  // struct bt_le_scan_param scan_param = {
-	// 	.type       = BT_LE_SCAN_TYPE_PASSIVE, // passive scan
-	// 	.options    = BT_LE_SCAN_OPT_NONE, // Scans for EVERYTHING
-	// 	.interval   = 0x0080, // V.FAST, NOT BT_GAP_SCAN_FAST_INTERVAL - gap.h
-	// 	.window     = 0x0080, // V.FAST, NOT BT_GAP_SCAN_FAST_INTERVAL - gap.h
-	// };
-
-  // now start scanning and register callback
-  // using namespace std::placeholders;
-  // auto fcb = std::function<void(const bt_addr_le_t *addr, std::int8_t rssi, 
-  //   std::uint8_t adv_type, struct net_buf_simple *buf)>(
-  //     std::bind(&ConcreteBLEReceiver::Impl::scan_cb,mImpl.get(),_1,_2,_3,_4)
-  // );
-  // bt_le_scan_cb_t* ptrfcb = fcb;
-  // zephyrinternal::scan_init();
-
 
   HDBG("Calling conn cb register");
 	bt_conn_cb_register(&zephyrinternal::conn_callbacks);
   HDBG("conn cb register done");
 
-  // HDBG("calling bt scan init");
-  // bt_scan_init(&zephyrinternal::scan_init);
-  // HDBG("back from bt scan init");
-
-  // bt_scan_cb_register(&zephyrinternal::scan_cbs); // for filtering API only
   HDBG("calling bt scan start");
-  
-  
   mImpl->startScanning();
 
   HDBG("ConcreteBLEReceiver::start completed successfully");
@@ -1070,9 +994,8 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
   // temporarily stop scan - WORKAROUND for https://github.com/zephyrproject-rtos/zephyr/issues/20660
   // HDBG("pausing scanning");
   mImpl->stopScanning();
-  herald::zephyrinternal::advertiser.stopAdvertising();
+  mImpl->m_context->getAdvertiser().stopAdvertising();
   // HDBG("Scanning paused");
-  // TODO restart after connect called
 
 
   // attempt connection, if required
@@ -1104,7 +1027,7 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
     bt_addr_le_to_str(&state.address, addr_str, sizeof(addr_str));
     HDBG("ADDR AS STRING in openConnection:-");
     HDBG(addr_str);
-    // zephyrinternal::conn = NULL;
+
     state.state = BLEDeviceState::connecting; // this is used by the condition variable
     int success = bt_conn_le_create(
       &state.address,
@@ -1141,13 +1064,11 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
       // HDBG(" - Ignoring following target: {}", toTarget);
       // device->ignore(true);
 
-      // restart scanning on failure
-      // mImpl->startScanning();
-      // connCallback(toTarget,false);
       return false;
     } else {
       HDBG("Zephyr waitWithTimeout for new connection");
       // lock and wait for connection to be created
+      
       // STD::ASYNC/MUTEX variant:-
       // std::unique_lock<std::mutex> lk(mImpl->bleInUse);
       // mImpl->connectionAvailable.wait(lk, [this] {
@@ -1158,12 +1079,10 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
 
       // ZEPHYR SPECIFIC VARIANT
       uint32_t timedOut = waitWithTimeout(5'000, K_MSEC(25), [&state] {
-        // return mImpl->connectionState == BLEDeviceState::connecting;
         return state.state == BLEDeviceState::connecting;
       });
       if (timedOut != 0) {
         HDBG("ZEPHYR WAIT TIMED OUT. Is connected?");
-        // HDBG((mImpl->connectionState == BLEDeviceState::connected) ? "true" : "false");
         HDBG((state.state == BLEDeviceState::connected) ? "true" : "false");
         HDBG(std::to_string(timedOut));
         return false;
@@ -1216,7 +1135,6 @@ ConcreteBLEReceiver::closeConnection(const TargetIdentifier& toTarget)
   bt_addr_le_to_str(&state.address, addr_str, sizeof(addr_str));
   HDBG(addr_str);
   if (NULL != state.connection) {
-    // bt_conn_disconnect(zephyrinternal::conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
     bt_conn_disconnect(state.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
     // auto device = mImpl->db.device(toTarget);
     // device->registerDisconnect(Date());
@@ -1259,9 +1177,9 @@ ConcreteBLEReceiver::restartScanningAndAdvertising()
   }
 
   // Restart scanning
-  HDBG("restartScanningAndAdvertising - requesting scanning and advertising restarts");
+  // HDBG("restartScanningAndAdvertising - requesting scanning and advertising restarts");
   mImpl->startScanning();
-  // herald::zephyrinternal::advertiser.startAdvertising();
+  mImpl->m_context->getAdvertiser().startAdvertising();
 }
 
 std::optional<Activity>
@@ -1289,7 +1207,7 @@ ConcreteBLEReceiver::serviceDiscovery(Activity activity)
   uint32_t timedOut = waitWithTimeout(5'000, K_MSEC(25), [&device] () -> bool {
     return !device->hasServicesSet(); // service discovery not completed yet
   });
-  // mImpl->currentTarget = {};
+
   if (0 != timedOut) {
     HDBG("service discovery timed out for device");
     HDBG(std::to_string(timedOut));

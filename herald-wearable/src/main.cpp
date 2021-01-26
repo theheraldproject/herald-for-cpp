@@ -1,4 +1,5 @@
 /*
+ * Copyright 2020-2021 Herald Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -146,6 +147,8 @@ void cc3xx_init() {
 }
 
 void herald_entry() {
+	k_sleep(K_MSEC(5000)); // pause so we have time to see Herald initialisation log messages. Don't do this in production!
+
 	std::shared_ptr<AppLoggingDelegate> appDelegate = std::make_shared<AppLoggingDelegate>();
 	
 	// IMPLEMENTORS GUIDANCE - USING HERALD
@@ -188,11 +191,10 @@ void herald_entry() {
 	
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
 	sa = std::make_shared<SensorArray>(ctx,pds);
-	sa->add(appDelegate);
-	// THIS IS CAUSING THE FAILURE TO LAUNCH - 'exit'
-	// Caused by use of shared_from_this() use in a constructor of concrete ble sensor? - SEEMS SO THUS FAR...
-
+	
 	// Note: You will likely want to register a SensorDelegate implementation of your own to the sensor array to get callbacks on nearby devices
+	sa->add(appDelegate);
+
 
 	// 3. Create and add a Logging sensor delegate to enable testing of discovery
 
@@ -201,16 +203,13 @@ void herald_entry() {
 
 	int iter = 0;
 	Date last;
-	int delay = 250;
+	int delay = 250; // KEEP THIS SMALL!!! This is how often we check to see if anything needs to happen over a connection.
 	while (1) {
 		k_sleep(K_MSEC(delay)); 
 		Date now;
 		if (iter > 40 /* && iter < 44 */ ) { // some delay to allow us to see advertising output
-			// Only do first 3 iterations so we can see the older log messages without continually scrolling
-			sa->iteration(now - last); // DISABLED TO SEE SCANNING OUTPUT
-			// first = connect, get services
-			// second = stay connected, get payload
-			// third = disconnect
+			// You could only do first 3 iterations so we can see the older log messages without continually scrolling through log messages
+			sa->iteration(now - last);
 		}
 		
 		if (0 == iter % (5000 / delay)) {
@@ -263,14 +262,10 @@ void main(void)
 	LOG_INF("Logging test");
 	LOG_INF("Const char* param test: %s","some string param");
 	LOG_INF("int param test: %d",1234);
-	// std::string myString("my string string");
-	// LOG_INF("Const char* from string param test: %s",myString.c_str());
-	//k_sleep(K_SECONDS(20));
-	//LOG_INF("string from string param test: %s",myString); - ZEPHYR DOESN'T SUPPORT THIS
 
 	cc3xx_init();
 
-	// Start herald entry on a new thread in case of errors
+	// Start herald entry on a new thread in case of errors, or needing to do something on the main thread
 	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 2048,
 			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
 			-1, K_USER,
@@ -288,8 +283,5 @@ void main(void)
 		led_is_on = !led_is_on;
 
 		LOG_INF("main thread still running");
-
-		// Periodic Herald tasks here
-		// ctx->periodicActions();
 	}
 }

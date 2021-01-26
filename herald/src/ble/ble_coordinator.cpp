@@ -27,9 +27,6 @@ public:
 
   std::vector<PrioritisedPrerequisite> previouslyProvisioned;
 
-  // int currentConnections;
-  // int maxConnections;
-
   HLOGGER;
 };
 
@@ -38,9 +35,6 @@ HeraldProtocolBLECoordinationProvider::Impl::Impl(std::shared_ptr<Context> ctx, 
     db(bledb),
     pp(provider),
     previouslyProvisioned()
-    // ,
-    // currentConnections(0),
-    // maxConnections(20)
     HLOGGERINIT(ctx,"heraldble","coordinationprovider")
 {
   ;
@@ -81,7 +75,7 @@ HeraldProtocolBLECoordinationProvider::provision(
   const std::vector<PrioritisedPrerequisite>& requested)
 {
   if (requested.empty()) {
-    HDBG("No connections requested for provisioning");
+    // HDBG("No connections requested for provisioning");
   } else {
     HDBG("Provisioning connections");
   }
@@ -170,17 +164,6 @@ HeraldProtocolBLECoordinationProvider::requiredConnections()
   std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>> results;
 
   // Add all targets in database that are not known
-  // auto newConns = mImpl->db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
-  //   return !device->ignore() &&
-  //     (
-  //       device->operatingSystem() == BLEDeviceOperatingSystem::unknown // not yet determined OS
-  //       ||
-  //       !device->payloadData().has_value() // Know the OS, but not the payload (ID)
-  //       ||
-  //       device->immediateSendData().has_value()
-  //     )
-  //     ;
-  // });
   auto newConns = mImpl->db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
     return !device->ignore() &&
       (
@@ -278,18 +261,6 @@ HeraldProtocolBLECoordinationProvider::requiredActivities()
             device->immediateSendData().has_value();
   });
   // TODO State X (timed out / out of range) devices filter check -> Then remove from BLEDatabase
-
-  // auto relevantDevices = mImpl->db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
-  //   return device->operatingSystem() == BLEDeviceOperatingSystem::unknown ||
-  //     (
-  //       device->ignore() == false && (
-  //         !device->payloadData().has_value()
-  //         ||
-  //         device->immediateSendData().has_value()
-  //       )
-  //     )
-  //   ;
-  // });
   
   // NOTE State 0 is handled by the Herald BLE scan function, and so has no specific activity
 

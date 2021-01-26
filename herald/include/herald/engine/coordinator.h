@@ -20,7 +20,7 @@ namespace engine {
  * - Determining Sensor capabilities and requirements around connections and activities
  * 
  * Manages:- 
- * - Nothing, but corrdinates activities throughout Herald Sensor networks on behalf of Sensor Array
+ * - Nothing, but coordinates activities throughout Herald Sensor networks on behalf of Sensor Array
  * 
  * Is managed by:-
  * - Sensor Array

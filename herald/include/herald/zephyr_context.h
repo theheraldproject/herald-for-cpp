@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -30,8 +30,8 @@ using namespace herald::ble;
 namespace zephyrinternal {
   class Advertiser {
   public:
-    Advertiser() = default;
-    ~Advertiser() = default;
+    Advertiser();
+    ~Advertiser();
     void stopAdvertising() noexcept;
     void startAdvertising() noexcept;
     void registerStopCallback(std::function<void()> cb);
@@ -40,8 +40,6 @@ namespace zephyrinternal {
     std::optional<std::function<void()>> stopCallback;
     std::optional<std::function<void()>> startCallback;
   };
-
-  static Advertiser advertiser;
 }
 
 /*
@@ -62,6 +60,8 @@ public:
 
   // Zephyr OS specific methods
   int enableBluetooth() noexcept;
+
+  zephyrinternal::Advertiser& getAdvertiser() noexcept;
 
   int startBluetooth() noexcept;
   int stopBluetooth() noexcept;

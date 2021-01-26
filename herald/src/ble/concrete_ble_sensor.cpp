@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -26,7 +26,7 @@ public:
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
   ~Impl();
 
-  // TODO internal API private methods here too
+  // Internal API private methods here too
 
   // Data members hidden by PIMPL
 
@@ -78,10 +78,7 @@ ConcreteBLESensor::ConcreteBLESensor(std::shared_ptr<Context> ctx,
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
   : mImpl(std::make_unique<Impl>(ctx,bluetoothStateManager,payloadDataSupplier))
 {
-  // Note: Use of shared_from_this is safe as we known SensorArray 
-  //       creates a shared_ptr of this class during instantiation
-  // bluetoothStateManager->add(shared_from_this()); // TEST FOR FAILURE IF USED HERE IN THE CTOR - YES IT FAILS, DO NOT DO THIS FROM CTOR
-  // mImpl->database->add(shared_from_this());
+  ;
 }
 
 ConcreteBLESensor::~ConcreteBLESensor()
@@ -132,7 +129,7 @@ ConcreteBLESensor::start()
     mImpl->database->add(shared_from_this());
     mImpl->addedSelfAsDelegate = true;
   }
-  // mImpl->transmitter->start();
+  mImpl->transmitter->start();
   mImpl->receiver->start();
   for (auto delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, SensorState::on);
@@ -142,7 +139,7 @@ ConcreteBLESensor::start()
 void
 ConcreteBLESensor::stop()
 {
-  // mImpl->transmitter->stop();
+  mImpl->transmitter->stop();
   mImpl->receiver->stop();
   for (auto delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, SensorState::off);
@@ -182,7 +179,7 @@ ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device,
               prox,
               device->identifier(),
               *payload
-            ); // didReadPayloadAndMeasure
+            ); // didMeasure withPayload
           }
         }
       }
@@ -207,7 +204,7 @@ ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device,
               prox,
               device->identifier(),
               *payload
-            ); // didReadPayloadAndMeasure
+            ); // didMeasure withPayload
           }
         }
       }
