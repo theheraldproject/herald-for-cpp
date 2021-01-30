@@ -74,42 +74,42 @@ public:
 	~AppLoggingDelegate() = default;
 
 	void sensor(SensorType sensor, const TargetIdentifier& didDetect) override {
-		LOG_INF("sensor didDetect"); // May want to disable this - logs A LOT of info
+		LOG_DBG("sensor didDetect"); // May want to disable this - logs A LOT of info
 	}
 
   /// Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
   void sensor(SensorType sensor, PayloadData didRead, const TargetIdentifier& fromTarget) override {
-		LOG_INF("sensor didRead");
+		LOG_DBG("sensor didRead");
 	}
 
   /// Receive written immediate send data from target, e.g. important timing signal.
   void sensor(SensorType sensor, ImmediateSendData didReceive, const TargetIdentifier& fromTarget) override {
-		LOG_INF("sensor didReceive");
+		LOG_DBG("sensor didReceive");
 	}
 
   /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
   void sensor(SensorType sensor, std::vector<PayloadData> didShare, const TargetIdentifier& fromTarget) override {
-		LOG_INF("sensor didShare");
+		LOG_DBG("sensor didShare");
 	}
 
   /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
   void sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget) override {
-		LOG_INF("sensor didMeasure");
+		LOG_DBG("sensor didMeasure");
 	}
 
   /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
   void sensor(SensorType sensor, Location didVisit) override {
-		LOG_INF("sensor didVisit");
+		LOG_DBG("sensor didVisit");
 	}
 
   /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
   void sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget, PayloadData withPayload) override {
-		LOG_INF("sensor didMeasure withPayload");
+		LOG_DBG("sensor didMeasure withPayload");
 	}
 
   /// Sensor state update
   void sensor(SensorType sensor, SensorState didUpdateState) override {
-		LOG_INF("sensor didUpdateState");
+		LOG_DBG("sensor didUpdateState");
 	}
 };
 
@@ -130,15 +130,15 @@ void cc3xx_init() {
 	size_t olen = 0;
 	int success = nrf_cc3xx_platform_init();
 	if (0 != success) {
-		LOG_INF("Could not initialise CC3xx cryptocell - Check prj.conf to ensure hardware is enabled");
+		LOG_DBG("Could not initialise CC3xx cryptocell - Check prj.conf to ensure hardware is enabled");
 	} else {
 		success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); // blocks, doesn't have its own pool
 		if (0 != success) {
-			LOG_INF("Secure RNG failed");
+			LOG_DBG("Secure RNG failed");
 		} else if (olen != buflen) {
-			LOG_INF("Didn't generate enough randomness for output");
+			LOG_DBG("Didn't generate enough randomness for output");
 		} else {
-			LOG_INF("nRF CC3xx cryptocell successfully initialised and tested");
+			LOG_DBG("nRF CC3xx cryptocell successfully initialised and tested");
 			// Note: Your random number is in buf. Note the function will block until randomness is generated.
 			//       For performance use an entropy pool and fill it out of sequence in another thread when it
 			//       dips below your needs. (E.g. use 256 bit pool, and refill if its length is <= 32 bits).
@@ -170,7 +170,7 @@ void herald_entry() {
 		LOG_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
 		clientId = *uniqueId;
 	} else {
-		LOG_DBG("Couldn't read hardware info for zephyr device. Error code: %s", hwInfoAvailable);
+		LOG_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
 	}
 	LOG_DBG("Final clientID: %d", clientId);
 
@@ -184,13 +184,13 @@ void herald_entry() {
 		clientId
 	);
 	auto sink = ctx->getLoggingSink("mySub","myCat");
-	sink->log(SensorLoggerLevel::info,"Here's some info for you");
+	sink->log(SensorLoggerLevel::debug,"Here's some info for you");
 	auto payload = pds->payload(PayloadTimestamp(),nullptr);
-	sink->log(SensorLoggerLevel::info,"I've got some payload data");
-	sink->log(SensorLoggerLevel::info,payload->hexEncodedString());
+	sink->log(SensorLoggerLevel::debug,"I've got some payload data");
+	sink->log(SensorLoggerLevel::debug,payload->hexEncodedString());
 	
 	auto sink2 = ctx->getLoggingSink("mySub","mySecondCat");
-	sink2->log(SensorLoggerLevel::info,"Here's some more info for you");
+	sink2->log(SensorLoggerLevel::debug,"Here's some more info for you");
 
 	// auto bles = std::make_shared<ConcreteBLESensor>(ctx, ctx->getBluetoothStateManager(),
   //     pds);
@@ -224,7 +224,7 @@ void herald_entry() {
 		}
 		
 		if (0 == iter % (5000 / delay)) {
-			LOG_INF("herald thread still running. Iteration: %d", iter);
+			LOG_DBG("herald thread still running. Iteration: %d", iter);
 		}
 
 		last = now;
@@ -270,9 +270,9 @@ void main(void)
 	// 	return;
 	// }
 
-	LOG_INF("Logging test");
-	LOG_INF("Const char* param test: %s","some string param");
-	LOG_INF("int param test: %d",1234);
+	LOG_DBG("Logging test");
+	LOG_DBG("Const char* param test: %s","some string param");
+	LOG_DBG("int param test: %d",1234);
 
 	cc3xx_init();
 
@@ -293,6 +293,6 @@ void main(void)
 		gpio_pin_set(dev, PIN, (int)led_is_on);
 		led_is_on = !led_is_on;
 
-		LOG_INF("main thread still running");
+		LOG_DBG("main thread still running");
 	}
 }

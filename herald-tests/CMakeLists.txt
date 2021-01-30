@@ -23,6 +23,8 @@ add_executable(herald-tests
 	coordinator-tests.cpp
 )
 
+add_definitions(-DHERALD_LOG_LEVEL=4)
+
 include_directories(${herald_SOURCE_DIR})
 
 set(THREADS_PREFER_PTHREAD_FLAG ON)

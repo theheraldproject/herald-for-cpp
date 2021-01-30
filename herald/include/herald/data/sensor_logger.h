@@ -13,19 +13,63 @@
 #include <ostream>
 #include <sstream>
 
+#ifdef HERALD_LOG_LEVEL
+
 // Defines for within Impl class definitions
 #define HLOGGER herald::data::SensorLogger logger;
 #define HLOGGERINIT(_ctx,_subsystem,_category) ,logger(_ctx,_subsystem,_category)
 
-// Defines for within main class (more common)
+// HDBG Defines for within main class (more common)
+// HTDBG Defines for within Impl class
+#if HERALD_LOG_LEVEL == 4
 #define HDBG(_msg, ...) mImpl->logger.debug(_msg, ##__VA_ARGS__);
-#define HERR(_msg, ...) mImpl->logger.fault(_msg, ##__VA_ARGS__);
-#define HLOG(_msg, ...) mImpl->logger.info(_msg, ##__VA_ARGS__);
-
-// Defines for within Impl class
 #define HTDBG(_msg, ...) logger.debug(_msg, ##__VA_ARGS__);
-#define HTERR(_msg, ...) logger.fault(_msg, ##__VA_ARGS__);
+#define HLOG(_msg, ...) mImpl->logger.info(_msg, ##__VA_ARGS__);
 #define HTLOG(_msg, ...) logger.info(_msg, ##__VA_ARGS__);
+#define HERR(_msg, ...) mImpl->logger.fault(_msg, ##__VA_ARGS__);
+#define HTERR(_msg, ...) logger.fault(_msg, ##__VA_ARGS__);
+#endif
+
+#if HERALD_LOG_LEVEL == 3
+#define HDBG(...) /* No debug log */
+#define HTDBG(...) /* No debug log */
+#define HLOG(_msg, ...) mImpl->logger.info(_msg, ##__VA_ARGS__);
+#define HTLOG(_msg, ...) logger.info(_msg, ##__VA_ARGS__);
+#define HERR(_msg, ...) mImpl->logger.fault(_msg, ##__VA_ARGS__);
+#define HTERR(_msg, ...) logger.fault(_msg, ##__VA_ARGS__);
+#endif
+
+// This 'WARN' exists for runtime valid logging. E.g. contacts.log to RTT on Zephyr
+#if HERALD_LOG_LEVEL == 2
+#define HDBG(...) /* No debug log */
+#define HTDBG(...) /* No debug log */
+#define HLOG(_msg, ...) mImpl->logger.info(_msg, ##__VA_ARGS__);
+#define HTLOG(_msg, ...) logger.info(_msg, ##__VA_ARGS__);
+#define HERR(_msg, ...) mImpl->logger.fault(_msg, ##__VA_ARGS__);
+#define HTERR(_msg, ...) logger.fault(_msg, ##__VA_ARGS__);
+#endif
+
+#if HERALD_LOG_LEVEL == 1
+#define HDBG(...) /* No debug log */
+#define HTDBG(...) /* No debug log */
+#define HLOG(...) /* No info log */
+#define HTLOG(...) /* No info log */
+#define HERR(_msg, ...) mImpl->logger.fault(_msg, ##__VA_ARGS__);
+#define HTERR(_msg, ...) logger.fault(_msg, ##__VA_ARGS__);
+#endif
+
+#else
+
+#define HLOGGER /* No logger instance */
+#define HLOGGERINIT(...) /* No logger init */
+#define HDBG(...) /* No debug log */
+#define HERR(...) /* No error log */
+#define HLOG(...) /* No info log */
+#define HTDBG(...) /* No debug log */
+#define HTERR(...) /* No error log */
+#define HTLOG(...) /* No info log */
+
+#endif
 
 namespace herald {
 namespace data {
