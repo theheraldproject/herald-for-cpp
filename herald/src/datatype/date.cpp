@@ -1,10 +1,16 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
 #include "herald/datatype/date.h"
+#include "herald/datatype/time_interval.h"
 
+#ifdef __ZEPHYR__
+#include <kernel.h>
+#else
 #include <chrono>
+#endif
+
 #include <ctime>
 
 namespace herald {
@@ -14,22 +20,27 @@ namespace datatype {
 class Date::Impl {
 public:
   Impl(); // now
-  Impl(long secondsSinceUnixEpoch);
+  Impl(std::uint64_t secondsSinceEpochOrRestart);
   ~Impl() = default;
 
-  long seconds;
+  std::uint64_t seconds;
 };
 
 // PIMPL DECLARATIONS
 Date::Impl::Impl()
- : seconds(std::chrono::duration_cast<std::chrono::seconds>(
+ : 
+#ifdef __ZEPHYR__
+  seconds(0.001 * k_uptime_get())
+#else
+ seconds(std::chrono::duration_cast<std::chrono::seconds>(
     std::chrono::system_clock::now().time_since_epoch()).count())
+#endif
 {
   ;
 }
 
-Date::Impl::Impl(long secondsSinceUnixEpoch)
- : seconds(secondsSinceUnixEpoch)
+Date::Impl::Impl(std::uint64_t secondsSinceEpochOrRestart)
+ : seconds(secondsSinceEpochOrRestart)
 {
   ;
 }
@@ -42,8 +53,8 @@ Date::Date()
   ;
 }
 
-Date::Date(long secondsSinceEpoch)
- : mImpl(std::make_unique<Impl>(secondsSinceEpoch))
+Date::Date(std::uint64_t secondsSinceEpochOrRestart)
+ : mImpl(std::make_unique<Impl>(secondsSinceEpochOrRestart))
 {
   ;
 }
@@ -54,12 +65,38 @@ Date::Date(const Date& from)
   ;
 }
 
-Date::~Date() {}
+Date::~Date() = default;
 
 Date&
 Date::operator=(const Date& other) noexcept
 {
   mImpl->seconds = other.mImpl->seconds;
+  return *this;
+}
+
+Date
+Date::operator-(const TimeInterval& other) noexcept
+{
+  return Date(mImpl->seconds - other.seconds());
+}
+
+Date&
+Date::operator-=(const TimeInterval& other) noexcept
+{
+  mImpl->seconds -= other.seconds();
+  return *this;
+}
+
+Date
+Date::operator+(const TimeInterval& other) noexcept
+{
+  return Date(mImpl->seconds + other.seconds());
+}
+
+Date&
+Date::operator+=(const TimeInterval& other) noexcept
+{
+  mImpl->seconds += other.seconds();
   return *this;
 }
 
@@ -75,7 +112,7 @@ Date::operator std::string() const noexcept {
   return iso8601DateTime();
 }
 
-long
+std::uint64_t
 Date::secondsSinceUnixEpoch() const noexcept {
   return mImpl->seconds;
 }

@@ -51,15 +51,17 @@ public:
   void add(const std::shared_ptr<BLEDatabaseDelegate>& delegate) override;
 
   // Creation overrides
+  std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const Data& advert) override;
+  std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const BLEMacAddress& pseudo) override;
+  std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac) override;
   std::shared_ptr<BLEDevice> device(const PayloadData& payloadData) override;
-
   std::shared_ptr<BLEDevice> device(const TargetIdentifier& targetIdentifier) override;
   
   // Introspection overrides
   std::size_t size() const override;
 
   std::vector<std::shared_ptr<BLEDevice>> matches(
-    const std::function<bool(std::shared_ptr<BLEDevice>)>& matcher) const override;
+    const std::function<bool(std::shared_ptr<BLEDevice>&)>& matcher) const override;
 
   // std::vector<std::shared_ptr<BLEDevice>> devices() const override;
 

@@ -39,6 +39,11 @@ TimeInterval::never() {
   return TimeInterval(LONG_MAX);
 }
 
+TimeInterval
+TimeInterval::zero() {
+  return TimeInterval(0);
+}
+
 
 TimeInterval::TimeInterval(long seconds)
  : mImpl(std::make_unique<Impl>(seconds))
@@ -84,9 +89,57 @@ TimeInterval::operator+(const TimeInterval& other) noexcept {
   return TimeInterval(mImpl->seconds + other.mImpl->seconds);
 }
 
+TimeInterval&
+TimeInterval::operator+=(const TimeInterval& other) noexcept {
+  mImpl->seconds += other.mImpl->seconds;
+  return *this;
+}
+
 TimeInterval
 TimeInterval::operator-(const TimeInterval& other) noexcept {
   return TimeInterval(mImpl->seconds - other.mImpl->seconds);
+}
+
+TimeInterval&
+TimeInterval::operator-=(const TimeInterval& other) noexcept {
+  mImpl->seconds -= other.mImpl->seconds;
+  return *this;
+}
+
+TimeInterval
+TimeInterval::operator*(double multiplier) noexcept
+{
+  auto output = mImpl->seconds * multiplier;
+  return TimeInterval(static_cast<decltype(mImpl->seconds)>(output));
+}
+
+TimeInterval&
+TimeInterval::operator*=(double multiplier) noexcept
+{
+  auto output = mImpl->seconds * multiplier;
+  mImpl->seconds = static_cast<decltype(mImpl->seconds)>(output);
+  return *this;
+}
+
+TimeInterval
+TimeInterval::operator/(double divisor) noexcept
+{
+  if (0 == divisor) {
+    return *this;
+  }
+  auto output = mImpl->seconds / divisor;
+  return TimeInterval(static_cast<decltype(mImpl->seconds)>(output));
+}
+
+TimeInterval&
+TimeInterval::operator/=(double divisor) noexcept
+{
+  if (0 == divisor) {
+    return *this;
+  }
+  auto output = mImpl->seconds / divisor;
+  mImpl->seconds = static_cast<decltype(mImpl->seconds)>(output);
+  return *this;
 }
 
 TimeInterval::operator long() const noexcept {
@@ -136,6 +189,11 @@ TimeInterval::millis() const noexcept {
     return LONG_MAX;
   }
   return mImpl->seconds * 1000;
+}
+
+long
+TimeInterval::seconds() const noexcept {
+  return mImpl->seconds;
 }
 
 TimeInterval::operator std::string() const noexcept {

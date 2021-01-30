@@ -61,7 +61,7 @@ bool
 extractTxPower(const std::vector<BLEAdvertSegment>& segments, std::uint8_t& into) noexcept
 {
   // find the txPower code segment in the list
-  for (auto segment : segments) {
+  for (auto& segment : segments) {
     if (segment.type == BLEAdvertSegmentType::txPowerLevel && segment.data.size() > 0) {
       bool ok = segment.data.uint8(0, into);
       if (ok) {
@@ -73,11 +73,11 @@ extractTxPower(const std::vector<BLEAdvertSegment>& segments, std::uint8_t& into
 }
 
 std::vector<BLEAdvertManufacturerData>
-extractManufacturerData(std::vector<BLEAdvertSegment> segments) noexcept
+extractManufacturerData(const std::vector<BLEAdvertSegment>& segments) noexcept
 {
   // find the manufacturerData code segment in the list
   std::vector<BLEAdvertManufacturerData> manufacturerData;
-  for (BLEAdvertSegment segment : segments) {
+  for (auto& segment : segments) {
     if (segment.type == BLEAdvertSegmentType::manufacturerData) {
       // Ensure that the data area is long enough
       if (segment.data.size() < 2) {
@@ -98,10 +98,10 @@ extractManufacturerData(std::vector<BLEAdvertSegment> segments) noexcept
 }
 
 std::vector<Data>
-extractHeraldManufacturerData(std::vector<BLEAdvertManufacturerData> manuData) noexcept
+extractHeraldManufacturerData(const std::vector<BLEAdvertManufacturerData>& manuData) noexcept
 {
   std::vector<Data> heraldSegments;
-  for (auto manu : manuData) {
+  for (auto& manu : manuData) {
     if (manu.manufacturer != to_integral(BLEAdvertManufacturers::heraldUnregistered)) {
       continue;
     }
@@ -111,11 +111,11 @@ extractHeraldManufacturerData(std::vector<BLEAdvertManufacturerData> manuData) n
 }
 
 std::vector<BLEAdvertAppleManufacturerSegment>
-extractAppleManufacturerSegments(std::vector<BLEAdvertManufacturerData> manuData) noexcept
+extractAppleManufacturerSegments(const std::vector<BLEAdvertManufacturerData>& manuData) noexcept
 {
   std::vector<BLEAdvertAppleManufacturerSegment> appleSegments;
   std::size_t bytePos;
-  for (auto manu : manuData) {
+  for (auto& manu : manuData) {
     if (manu.manufacturer != to_integral(BLEAdvertManufacturers::apple)) {
       continue;
     }

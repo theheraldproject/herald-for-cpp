@@ -25,9 +25,9 @@ std::vector<BLEAdvertSegment> extractSegments(const Data& raw, std::size_t offse
 // Parse result extraction functions
 
 bool extractTxPower(const std::vector<BLEAdvertSegment>& segments, std::uint8_t& into) noexcept;
-std::vector<Data> extractHeraldManufacturerData(std::vector<BLEAdvertManufacturerData> manuData) noexcept;
-std::vector<BLEAdvertManufacturerData> extractManufacturerData(std::vector<BLEAdvertSegment> segments) noexcept;
-std::vector<BLEAdvertAppleManufacturerSegment> extractAppleManufacturerSegments(std::vector<BLEAdvertManufacturerData> manuData) noexcept;
+std::vector<Data> extractHeraldManufacturerData(const std::vector<BLEAdvertManufacturerData>& manuData) noexcept;
+std::vector<BLEAdvertManufacturerData> extractManufacturerData(const std::vector<BLEAdvertSegment>& segments) noexcept;
+std::vector<BLEAdvertAppleManufacturerSegment> extractAppleManufacturerSegments(const std::vector<BLEAdvertManufacturerData>& manuData) noexcept;
 
 // std::vector<BLEAdvertServiceData> extractServiceUUID128Data(std::vector<BLEAdvertSegment> segments) noexcept;
 

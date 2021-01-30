@@ -36,6 +36,7 @@
 #include <kernel_structs.h>
 #include <sys/thread_stack.h>
 #include <drivers/gpio.h>
+#include <drivers/hwinfo.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
@@ -59,7 +60,7 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 #endif
 
 struct k_thread herald_thread;
-K_THREAD_STACK_DEFINE(herald_stack, 2048);
+K_THREAD_STACK_DEFINE(herald_stack, 4096); // TODO reduce this down
 
 using namespace herald;
 using namespace herald::payload;
@@ -162,6 +163,16 @@ void herald_entry() {
   std::uint16_t countryCode = 826; // UK ISO 3166-1 numeric
 	std::uint16_t stateCode = 0; // National default
 	std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
+
+	std::uint8_t uniqueId[8];
+	auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
+	if (hwInfoAvailable > 0) {
+		LOG_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
+		clientId = *uniqueId;
+	} else {
+		LOG_DBG("Couldn't read hardware info for zephyr device. Error code: %s", hwInfoAvailable);
+	}
+	LOG_DBG("Final clientID: %d", clientId);
 
 
   // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)

@@ -231,15 +231,58 @@ TEST_CASE("datatypes-timeinterval-basics", "[datatypes][timeinterval][ctor][basi
     auto t4 = herald::datatype::TimeInterval::seconds(20);
     REQUIRE(t4.millis() == 20 * 1000);
 
+    auto t5 = herald::datatype::TimeInterval::zero();
+    REQUIRE(t5.millis() == 0);
+
     herald::datatype::Date d1{1000};
     herald::datatype::Date d2{1200};
-    herald::datatype::TimeInterval t5(d1,d2);
+    herald::datatype::TimeInterval t6(d1,d2);
 
-    REQUIRE(t5.millis() == 200 * 1000);
-    REQUIRE(((std::string)t5) == std::string("200"));
+    REQUIRE(t6.millis() == 200 * 1000);
+    REQUIRE(((std::string)t6) == std::string("200"));
+
+    REQUIRE(t5 < ti);
+    REQUIRE(t5 < t2);
+    REQUIRE(t5 < t3);
+    REQUIRE(!(t5 > t3));
+    REQUIRE(t5 < t4);
   }
 }
 
+
+TEST_CASE("datatypes-timeinterval-date", "[datatypes][timeinterval][ctor][date]") {
+  SECTION("datatypes-timeinterval-date") {
+    herald::datatype::Date earlier{1200};
+    herald::datatype::Date now{1500};
+
+    herald::datatype::TimeInterval difference{earlier,now};
+    REQUIRE(difference.seconds() == 300);
+
+    herald::datatype::TimeInterval reverseDifference{now,earlier};
+    REQUIRE(reverseDifference.seconds() == -300);
+
+    herald::datatype::Date advanced = earlier + difference;
+    REQUIRE(advanced == now);
+  }
+}
+
+
+TEST_CASE("datatypes-timeinterval-daterelative", "[datatypes][timeinterval][ctor][daterelative]") {
+  SECTION("datatypes-timeinterval-daterelative") {
+    herald::datatype::Date now;
+    herald::datatype::TimeInterval threeHundred(300);
+    herald::datatype::Date earlier = now - threeHundred;
+
+    herald::datatype::TimeInterval difference{earlier,now};
+    REQUIRE(difference.seconds() == 300);
+
+    herald::datatype::TimeInterval reverseDifference{now,earlier};
+    REQUIRE(reverseDifference.seconds() == -300);
+
+    herald::datatype::Date advanced = earlier + difference;
+    REQUIRE(advanced == now);
+  }
+}
 
 
 

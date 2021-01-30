@@ -18,6 +18,9 @@ public:
   RSSI(RSSI&& other); // move
   ~RSSI();
 
+  RSSI& operator=(const RSSI& other); // copy assign
+  RSSI& operator=(RSSI&& other); // move assign
+  
   bool operator==(const RSSI& other) const noexcept;
   bool operator!=(const RSSI& other) const noexcept;
   bool operator<(const RSSI& other) const noexcept;
