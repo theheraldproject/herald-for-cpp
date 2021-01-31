@@ -175,7 +175,7 @@ ConcreteBLEDatabase::device(const PayloadData& payloadData)
 
 
 std::shared_ptr<BLEDevice>
-ConcreteBLEDatabase::device(const BLEMacAddress& mac, const Data& advert)
+ConcreteBLEDatabase::device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/)
 {
   // Check by MAC first
   TargetIdentifier targetIdentifier((Data)mac);
@@ -186,6 +186,8 @@ ConcreteBLEDatabase::device(const BLEMacAddress& mac, const Data& advert)
     // HDBG("DEVICE ALREADY KNOWN BY MAC");
     // Assume advert details are known already
     return results.front(); // TODO ensure we send back the latest, not just the first match
+    // res->rssi(rssi);
+    // return res;
   }
 
   // Now check by pseudo mac
@@ -225,6 +227,7 @@ ConcreteBLEDatabase::device(const BLEMacAddress& mac, const Data& advert)
     // Now create new device with mac and pseudo
     auto newDevice = device(mac,pseudo);
     mImpl->assignAdvertData(newDevice,std::move(segments), manuData);
+    // newDevice->rssi(rssi);
     return newDevice;
   }
 
@@ -234,6 +237,7 @@ ConcreteBLEDatabase::device(const BLEMacAddress& mac, const Data& advert)
   auto newDevice = device(targetIdentifier);
   // HDBG("Got new device");
   mImpl->assignAdvertData(newDevice,std::move(segments), manuData);
+  // newDevice->rssi(rssi);
   // HDBG("Assigned advert data");
   return newDevice;
 }
@@ -337,10 +341,10 @@ ConcreteBLEDatabase::remove(const TargetIdentifier& targetIdentifier)
 
 // BLE Device Delegate overrides
 void
-ConcreteBLEDatabase::device(std::shared_ptr<BLEDevice> device, const BLEDeviceAttribute didUpdate)
+ConcreteBLEDatabase::device(const std::shared_ptr<BLEDevice>& device, const BLEDeviceAttribute didUpdate)
 {
   // TODO update any internal DB state as necessary (E.g. deletion)
-  for (auto delegate : mImpl->delegates) {
+  for (auto& delegate : mImpl->delegates) {
     delegate->bleDatabaseDidUpdate(device, didUpdate); // TODO verify this is the right onward call
   }
 }

@@ -26,6 +26,8 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/ble/bluetooth_state_manager_delegate.h
   ${HERALD_BASE}/include/herald/ble/filter/ble_advert_parser.h
   ${HERALD_BASE}/include/herald/ble/filter/ble_advert_types.h
+  ${HERALD_BASE}/include/herald/data/contact_log.h
+  ${HERALD_BASE}/include/herald/data/payload_data_formatter.h
   ${HERALD_BASE}/include/herald/data/sensor_logger.h
   ${HERALD_BASE}/include/herald/datatype/base64_string.h 
   ${HERALD_BASE}/include/herald/datatype/bluetooth_state.h
@@ -69,6 +71,8 @@ set(HERALD_SOURCES
   ${HERALD_BASE}/src/ble/concrete_ble_database.cpp
   ${HERALD_BASE}/src/ble/filter/ble_advert_parser.cpp
   ${HERALD_BASE}/src/ble/filter/ble_advert_types.cpp
+  ${HERALD_BASE}/src/data/concrete_payload_data_formatter.cpp
+  ${HERALD_BASE}/src/data/contact_log.cpp
   ${HERALD_BASE}/src/data/sensor_logger.cpp
 	${HERALD_BASE}/src/datatype/base64_string.cpp
 	${HERALD_BASE}/src/datatype/data.cpp
@@ -78,6 +82,7 @@ set(HERALD_SOURCES
 	${HERALD_BASE}/src/datatype/location.cpp
 	${HERALD_BASE}/src/datatype/payload_data.cpp
 	${HERALD_BASE}/src/datatype/rssi.cpp
+	${HERALD_BASE}/src/datatype/sensor_type.cpp
 	${HERALD_BASE}/src/datatype/signal_characteristic_data.cpp
 	${HERALD_BASE}/src/datatype/target_identifier.cpp
 	${HERALD_BASE}/src/datatype/time_interval.cpp

@@ -16,19 +16,19 @@ public:
   ~DummyBLEDBDelegate() {}
 
   // overrides
-  void bleDatabaseDidCreate(const std::shared_ptr<herald::ble::BLEDevice> device) override {
+  void bleDatabaseDidCreate(const std::shared_ptr<herald::ble::BLEDevice>& device) override {
     createCallbackCalled = true;
     dev = device;
   }
   
-  void bleDatabaseDidUpdate(const std::shared_ptr<herald::ble::BLEDevice> device, 
+  void bleDatabaseDidUpdate(const std::shared_ptr<herald::ble::BLEDevice>& device, 
     const herald::ble::BLEDeviceAttribute attribute) override {
     updateCallbackCalled = true;
     dev = device;
     attr = attribute;
   }
   
-  void bleDatabaseDidDelete(const std::shared_ptr<herald::ble::BLEDevice> device) override {
+  void bleDatabaseDidDelete(const std::shared_ptr<herald::ble::BLEDevice>& device) override {
     deleteCallbackCalled = true;
     dev = device;
   }

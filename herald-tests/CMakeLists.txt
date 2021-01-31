@@ -6,6 +6,7 @@ add_executable(herald-tests
 	
 	# Low level
 	sensorlogger-tests.cpp
+	errorcontactlog-tests.cpp
 	data-tests.cpp
 	blemacaddress-tests.cpp
 	targetidentifier-tests.cpp
@@ -22,8 +23,6 @@ add_executable(herald-tests
 	blecoordinator-tests.cpp
 	coordinator-tests.cpp
 )
-
-add_definitions(-DHERALD_LOG_LEVEL=4)
 
 include_directories(${herald_SOURCE_DIR})
 

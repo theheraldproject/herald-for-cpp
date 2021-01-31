@@ -252,7 +252,7 @@ ConcreteBLETransmitter::coordinationProvider()
 }
 
 void
-ConcreteBLETransmitter::add(std::shared_ptr<SensorDelegate> delegate)
+ConcreteBLETransmitter::add(const std::shared_ptr<SensorDelegate>& delegate)
 {
   mImpl->delegates.push_back(delegate);
 }

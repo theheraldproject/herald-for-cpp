@@ -15,7 +15,7 @@ public:
   ~DummyBLEDeviceDelegate() = default;
 
   // overrides
-  void device(std::shared_ptr<herald::ble::BLEDevice> device, const herald::ble::BLEDeviceAttribute didUpdate) override {
+  void device(const std::shared_ptr<herald::ble::BLEDevice>& device, const herald::ble::BLEDeviceAttribute didUpdate) override {
     callbackCalled = true;
     dev = device;
     attr = didUpdate;

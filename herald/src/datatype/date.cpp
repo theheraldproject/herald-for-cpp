@@ -104,7 +104,7 @@ std::string
 Date::iso8601DateTime() const noexcept {
   time_t t(mImpl->seconds);
   char buf[21];
-  strftime(buf, sizeof buf, "%FT%TZ", gmtime(&t));
+  strftime(buf, sizeof(buf), "%FT%TZ", gmtime(&t));
   return std::string(buf);
 }
 

@@ -51,7 +51,7 @@ public:
   void add(const std::shared_ptr<BLEDatabaseDelegate>& delegate) override;
 
   // Creation overrides
-  std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const Data& advert) override;
+  std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/) override;
   std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const BLEMacAddress& pseudo) override;
   std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac) override;
   std::shared_ptr<BLEDevice> device(const PayloadData& payloadData) override;
@@ -71,7 +71,7 @@ public:
   // std::optional<PayloadSharingData> payloadSharingData(const std::shared_ptr<BLEDevice>& peer) override;
 
   // BLE Device Delegate overrides
-  void device(std::shared_ptr<BLEDevice> device, BLEDeviceAttribute didUpdate) override;
+  void device(const std::shared_ptr<BLEDevice>& device, BLEDeviceAttribute didUpdate) override;
 
 private:
   class Impl;
@@ -97,14 +97,14 @@ public:
   bool immediateSendAll(Data data);
 
   // Sensor overrides
-  void add(std::shared_ptr<SensorDelegate> delegate) override;
+  void add(const std::shared_ptr<SensorDelegate>& delegate) override;
   void start() override;
   void stop() override;
 
   // Database overrides
-  void bleDatabaseDidCreate(const std::shared_ptr<BLEDevice> device) override;
-  void bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device, const BLEDeviceAttribute attribute) override;
-  void bleDatabaseDidDelete(const std::shared_ptr<BLEDevice> device) override;
+  void bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device) override;
+  void bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, const BLEDeviceAttribute attribute) override;
+  void bleDatabaseDidDelete(const std::shared_ptr<BLEDevice>& device) override;
 
   // Bluetooth state manager delegate overrides
   void bluetoothStateManager(BluetoothState didUpdateState) override;
@@ -129,7 +129,7 @@ public:
   bool immediateSendAll(Data data) override;
 
   // Sensor overrides
-  void add(std::shared_ptr<SensorDelegate> delegate) override;
+  void add(const std::shared_ptr<SensorDelegate>& delegate) override;
   void start() override;
   void stop() override;
 
@@ -168,7 +168,7 @@ public:
   std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() override;
 
   // Sensor overrides
-  void add(std::shared_ptr<SensorDelegate> delegate) override;
+  void add(const std::shared_ptr<SensorDelegate>& delegate) override;
   void start() override;
   void stop() override;
 

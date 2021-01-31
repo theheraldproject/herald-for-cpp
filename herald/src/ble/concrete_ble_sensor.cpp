@@ -112,7 +112,7 @@ ConcreteBLESensor::immediateSendAll(Data data)
 
 // Sensor overrides
 void
-ConcreteBLESensor::add(std::shared_ptr<SensorDelegate> delegate)
+ConcreteBLESensor::add(const std::shared_ptr<SensorDelegate>& delegate)
 {
   mImpl->delegates.push_back(delegate);
   // add all delegates to receiver and transmitter too?
@@ -131,7 +131,7 @@ ConcreteBLESensor::start()
   }
   mImpl->transmitter->start();
   mImpl->receiver->start();
-  for (auto delegate : mImpl->delegates) {
+  for (auto& delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, SensorState::on);
   }
 }
@@ -141,22 +141,22 @@ ConcreteBLESensor::stop()
 {
   mImpl->transmitter->stop();
   mImpl->receiver->stop();
-  for (auto delegate : mImpl->delegates) {
+  for (auto& delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, SensorState::off);
   }
 }
 
 // Database overrides
 void
-ConcreteBLESensor::bleDatabaseDidCreate(const std::shared_ptr<BLEDevice> device)
+ConcreteBLESensor::bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device)
 {
-  for (auto delegate : mImpl->delegates) {
+  for (auto& delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, device->identifier()); // didDetect
   }
 }
 
 void
-ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device, 
+ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, 
   const BLEDeviceAttribute attribute)
 {
   switch (attribute) {
@@ -165,7 +165,7 @@ ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device,
       if (rssi.has_value()) {
         double rssiValue = (double)rssi->intValue();
         auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
-        for (auto delegate: mImpl->delegates) {
+        for (auto& delegate: mImpl->delegates) {
           delegate->sensor(SensorType::BLE,
             prox,
             device->identifier()
@@ -174,7 +174,7 @@ ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device,
         // also payload with rssi
         auto payload = device->payloadData();
         if (payload.has_value()) {
-          for (auto delegate: mImpl->delegates) {
+          for (auto& delegate: mImpl->delegates) {
             delegate->sensor(SensorType::BLE,
               prox,
               device->identifier(),
@@ -188,7 +188,7 @@ ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device,
     case BLEDeviceAttribute::payloadData: {
       auto payload = device->payloadData();
       if (payload.has_value()) {
-        for (auto delegate: mImpl->delegates) {
+        for (auto& delegate: mImpl->delegates) {
           delegate->sensor(SensorType::BLE,
             *payload,
             device->identifier()
@@ -199,7 +199,7 @@ ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device,
         if (rssi.has_value()) {
           double rssiValue = (double)rssi->intValue();
           auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
-          for (auto delegate: mImpl->delegates) {
+          for (auto& delegate: mImpl->delegates) {
             delegate->sensor(SensorType::BLE,
               prox,
               device->identifier(),
@@ -217,7 +217,7 @@ ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device,
 }
 
 void
-ConcreteBLESensor::bleDatabaseDidDelete(const std::shared_ptr<BLEDevice> device)
+ConcreteBLESensor::bleDatabaseDidDelete(const std::shared_ptr<BLEDevice>& device)
 {
   ; // TODO just log this // TODO determine if to pass this on too
 }
@@ -233,7 +233,7 @@ ConcreteBLESensor::bluetoothStateManager(BluetoothState didUpdateState)
     // start();
   }
   if (BluetoothState::unsupported == didUpdateState) {
-    for (auto delegate : mImpl->delegates) {
+    for (auto& delegate : mImpl->delegates) {
       delegate->sensor(SensorType::BLE, SensorState::unavailable);
     }
   }

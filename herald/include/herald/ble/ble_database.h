@@ -10,6 +10,7 @@
 
 #include "../datatype/payload_data.h"
 #include "../datatype/payload_sharing_data.h"
+#include "../datatype/rssi.h"
 #include "../datatype/target_identifier.h"
 
 #include <memory>
@@ -28,7 +29,7 @@ public:
 
   virtual void add(const std::shared_ptr<BLEDatabaseDelegate>& delegate) = 0;
 
-  virtual std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const Data& advert) = 0;
+  virtual std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/) = 0;
 
   virtual std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const BLEMacAddress& pseudo) = 0;
   

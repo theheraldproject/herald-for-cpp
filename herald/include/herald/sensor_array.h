@@ -34,7 +34,7 @@ public:
   std::optional<PayloadData> payloadData();
 
   // SENSOR OVERRIDES 
-  void add(std::shared_ptr<SensorDelegate> delegate) override;
+  void add(const std::shared_ptr<SensorDelegate>& delegate) override;
   void start() override;
   void stop() override;
   std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() override;

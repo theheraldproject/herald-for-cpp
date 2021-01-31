@@ -40,7 +40,8 @@ message("HERALD HEADERS: ${HERALD_HEADERS}")
 include_directories(../herald/include) # including this causes uart.h to fail complaining about incomplete type const struct device in zephyr
 #include_directories(../fmt/include)
 
-add_definitions(-DHERALD_LOG_LEVEL=1 -DCONFIG_APP_LOG_LEVEL=1)
+#add_definitions(-DHERALD_LOG_LEVEL=1 -DCONFIG_APP_LOG_LEVEL=1)
+add_definitions(-DHERALD_LOG_LEVEL=4 -DCONFIG_APP_LOG_LEVEL=4)
 # HERALD_LOG_LEVEL 4 = debug, 3 = info, 2 = warn / errors (Zephyr LOG_WARN), 1 = info contacts log only (Zephyr LOG_ERR)
 
 # gcc arm does not warn about missing defs until runtime

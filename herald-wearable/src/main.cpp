@@ -60,13 +60,18 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 #endif
 
 struct k_thread herald_thread;
-K_THREAD_STACK_DEFINE(herald_stack, 4096); // TODO reduce this down
+K_THREAD_STACK_DEFINE(herald_stack, 9192); // TODO reduce this down
 
 using namespace herald;
+using namespace herald::data;
 using namespace herald::payload;
 using namespace herald::payload::fixed;
 
 std::shared_ptr<SensorArray> sa;
+
+char* str(const TargetIdentifier& ti) {
+  return log_strdup( ((std::string)ti).c_str());
+}
 
 class AppLoggingDelegate : public herald::SensorDelegate {
 public:
@@ -74,41 +79,49 @@ public:
 	~AppLoggingDelegate() = default;
 
 	void sensor(SensorType sensor, const TargetIdentifier& didDetect) override {
-		LOG_DBG("sensor didDetect"); // May want to disable this - logs A LOT of info
+		// LOG_DBG("sensor didDetect");
+		LOG_DBG("sensor didDetect: %s", str(didDetect) ); // May want to disable this - logs A LOT of info
 	}
 
   /// Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
-  void sensor(SensorType sensor, PayloadData didRead, const TargetIdentifier& fromTarget) override {
-		LOG_DBG("sensor didRead");
+  void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) override {
+		// LOG_DBG("sensor didRead");
+		LOG_DBG("sensor didRead: %s with payload: %s", str(fromTarget), log_strdup(didRead.hexEncodedString().c_str()));
 	}
 
   /// Receive written immediate send data from target, e.g. important timing signal.
-  void sensor(SensorType sensor, ImmediateSendData didReceive, const TargetIdentifier& fromTarget) override {
-		LOG_DBG("sensor didReceive");
+  void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) override {
+		// LOG_DBG("sensor didReceive");
+		LOG_DBG("sensor didReceive: %s with immediate send data: %s", str(fromTarget), log_strdup(didReceive.hexEncodedString().c_str()));
 	}
 
   /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
-  void sensor(SensorType sensor, std::vector<PayloadData> didShare, const TargetIdentifier& fromTarget) override {
+  void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) override {
 		LOG_DBG("sensor didShare");
+		// LOG_DBG("sensor didShare: %s", str(fromTarget) );
+		// for (auto& p : didShare) {
+		// 	LOG_DBG(" - %s", log_strdup(p.hexEncodedString().c_str()));
+		// }
 	}
 
   /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
-  void sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget) override {
+  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) override {
 		LOG_DBG("sensor didMeasure");
+		// LOG_DBG("sensor didMeasure: %s with proximity: %d", str(fromTarget), didMeasure.value); 
 	}
 
   /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
-  void sensor(SensorType sensor, Location didVisit) override {
+  void sensor(SensorType sensor, const Location& didVisit) override {
 		LOG_DBG("sensor didVisit");
 	}
 
   /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
-  void sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget, PayloadData withPayload) override {
+  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) override {
 		LOG_DBG("sensor didMeasure withPayload");
 	}
 
   /// Sensor state update
-  void sensor(SensorType sensor, SensorState didUpdateState) override {
+  void sensor(SensorType sensor, const SensorState& didUpdateState) override {
 		LOG_DBG("sensor didUpdateState");
 	}
 };
@@ -149,6 +162,13 @@ void cc3xx_init() {
 
 void herald_entry() {
 	k_sleep(K_MSEC(5000)); // pause so we have time to see Herald initialisation log messages. Don't do this in production!
+
+	// Test date/time based things on Zephyr - interesting issues with compliance!
+	Date now;
+	LOG_DBG("BEFORE DATE");
+	std::string s = now.iso8601DateTime();
+	LOG_DBG("DATE: %s", log_strdup(s.c_str()));
+	LOG_DBG("PAST DATE");
 
 	std::shared_ptr<AppLoggingDelegate> appDelegate = std::make_shared<AppLoggingDelegate>();
 	
@@ -202,6 +222,12 @@ void herald_entry() {
 	
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
 	sa = std::make_shared<SensorArray>(ctx,pds);
+
+	// Add contacts.log delegate
+	// CURRENTLY BREAKS ZEPHYR - DON'T KNOW WHY YET - LOGGING SUBSYSTEM ISSUE
+	// std::shared_ptr<ConcretePayloadDataFormatter> pdf = std::make_shared<ConcretePayloadDataFormatter>();
+	// std::shared_ptr<ErrorStreamContactLogger> contactLogger = std::make_shared<ErrorStreamContactLogger>(ctx, pdf);
+	// sa->add(contactLogger);
 	
 	// Note: You will likely want to register a SensorDelegate implementation of your own to the sensor array to get callbacks on nearby devices
 	sa->add(appDelegate);

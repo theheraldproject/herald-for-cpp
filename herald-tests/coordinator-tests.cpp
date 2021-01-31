@@ -22,7 +22,7 @@ public:
   ~MockSensor() = default;
 
   
-  void add(std::shared_ptr<herald::ble::SensorDelegate> delegate) override {}
+  void add(const std::shared_ptr<herald::ble::SensorDelegate>& delegate) override {}
   void start() override {}
   void stop() override {}
 

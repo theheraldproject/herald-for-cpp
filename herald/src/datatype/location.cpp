@@ -44,12 +44,18 @@ Location::Location(std::shared_ptr<LocationReference> value, Date start, Date en
   ;
 }
 
+Location::~Location() {}
+
 std::string
 Location::description() const {
   return mImpl->mValue->description() + ":[from=" + ((std::string)mImpl->mStart) + ",to=" + ((std::string)mImpl->mEnd) + "]";
 }
 
-Location::~Location() {}
+Location::operator std::string() const noexcept
+{
+  return description();
+}
+
 
 
 } // end namespace

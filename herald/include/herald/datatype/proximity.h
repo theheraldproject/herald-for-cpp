@@ -18,11 +18,11 @@ struct Proximity {
   ProximityMeasurementUnit unit;
   double value;
 
-  std::string description() {
+  std::string description() const noexcept {
     return std::to_string((short)unit) + ":" + std::to_string(value);
   }
 
-  std::string toString() {
+  operator std::string() const noexcept {
     return description();
   }
 };

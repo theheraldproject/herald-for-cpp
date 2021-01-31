@@ -17,7 +17,7 @@ public:
   Sensor() = default;
   virtual ~Sensor() = default;
 
-  virtual void add(std::shared_ptr<SensorDelegate> delegate) = 0;
+  virtual void add(const std::shared_ptr<SensorDelegate>& delegate) = 0;
   virtual void start() = 0;
   virtual void stop() = 0;
 

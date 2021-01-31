@@ -758,7 +758,7 @@ ConcreteBLEReceiver::coordinationProvider()
 }
 
 void
-ConcreteBLEReceiver::add(std::shared_ptr<SensorDelegate> delegate)
+ConcreteBLEReceiver::add(const std::shared_ptr<SensorDelegate>& delegate)
 {
   mImpl->delegates.push_back(delegate);
 }
@@ -1106,7 +1106,7 @@ ConcreteBLEReceiver::serviceDiscovery(Activity activity)
     return {};
   }
   if (NULL == state.connection) {
-    HDBG("State for activity does not have a connection. Returning.")
+    HDBG("State for activity does not have a connection. Returning.");
     return {};
   }
   auto device = mImpl->db->device(currentTargetOpt.value());

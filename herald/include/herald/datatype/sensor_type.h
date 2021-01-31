@@ -1,9 +1,11 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
 #ifndef SENSOR_TYPE_H
 #define SENSOR_TYPE_H
+
+#include <string>
 
 namespace herald {
 namespace datatype {
@@ -23,6 +25,8 @@ enum class SensorType : short {
   /// Future / other
   OTHER
 };
+
+std::string str(SensorType t) noexcept;
 
 } // end namespace
 } // end namespace

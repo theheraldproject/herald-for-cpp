@@ -111,7 +111,7 @@ SensorArray::payloadData() {
 
 // SENSOR OVERRIDES 
 void
-SensorArray::add(std::shared_ptr<SensorDelegate> delegate) {
+SensorArray::add(const std::shared_ptr<SensorDelegate>& delegate) {
   for (auto& sensor: mImpl->mSensorArray) {
     sensor->add(delegate);
   }
