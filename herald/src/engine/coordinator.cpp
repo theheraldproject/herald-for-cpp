@@ -110,6 +110,7 @@ Coordinator::iteration()
     HDBG("Coordinator not running. Returning from iteration having done nothing.");
     return;
   }
+  HDBG("################# ITERATION #################");
   // HDBG("Entered iteration");
   // Create empty list of required prereqs per provider
   std::map<std::shared_ptr<CoordinationProvider>,std::vector<PrioritisedPrerequisite>> assignPrereqs;
@@ -175,6 +176,9 @@ Coordinator::iteration()
     auto maxActs = prov->requiredActivities();
     // TODO sort by descending priority before actioning
     for (auto& act : maxActs) {
+      std::string san("Activity ");
+      san += act.name;
+      HDBG(san);
       // HDBG("Checking next desired activity for prereqs being satisfied");
       // Filter requested by provisioned
       bool allFound = true;
@@ -212,6 +216,7 @@ Coordinator::iteration()
     }
   }
   // HDBG("Leaving iteration");
+  HDBG("#################    END    #################");
 }
 
 /** Closes out any existing connections/activities **/

@@ -21,14 +21,14 @@
 #include <bluetooth/bluetooth.h>
 
 // NOTE: Link Herald to the Zephyr logging system
-// Set CONFIG_HERALD_LOG_LEVEL=4 for debug in CMake using add_definitions(-DCONFIG_HERALD_LOG_LEVEL=4 )
+// Set HERALD_LOG_LEVEL=4 for debug in CMake using add_definitions(-DHERALD_LOG_LEVEL=4 )
 //   Defaults to 0 (OFF) - see zephyr_context.h
 #include <logging/log.h>
 
 namespace herald {
 
 // THE BELOW IS DONE IN EXACTLY ONE HERALD FILE
-LOG_MODULE_REGISTER(heraldlogger, CONFIG_HERALD_LOG_LEVEL);
+LOG_MODULE_REGISTER(heraldlogger, HERALD_LOG_LEVEL);
 
 using namespace herald::data;
 using namespace herald::datatype;

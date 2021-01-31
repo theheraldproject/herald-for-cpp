@@ -212,6 +212,14 @@ void herald_entry() {
 	auto sink2 = ctx->getLoggingSink("mySub","mySecondCat");
 	sink2->log(SensorLoggerLevel::debug,"Here's some more info for you");
 
+	// LOGGING LEVEL TESTING
+	LOG_DBG("Zephyr debug message");
+	LOG_INF("Zephyr info message");
+	LOG_ERR("Zephyr error message");
+	sink2->log(SensorLoggerLevel::debug,"Herald debug message");
+	sink2->log(SensorLoggerLevel::info,"Herald info message");
+	sink2->log(SensorLoggerLevel::fault,"Herald error message");
+
 	// auto bles = std::make_shared<ConcreteBLESensor>(ctx, ctx->getBluetoothStateManager(),
   //     pds);
 

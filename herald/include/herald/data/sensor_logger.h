@@ -13,6 +13,11 @@
 #include <ostream>
 #include <sstream>
 
+// Zephyr compile workaround. Not ideal.
+// #ifndef HERALD_LOG_LEVEL
+// #define HERALD_LOG_LEVEL 4
+// #endif
+
 #ifdef HERALD_LOG_LEVEL
 
 // Defines for within Impl class definitions

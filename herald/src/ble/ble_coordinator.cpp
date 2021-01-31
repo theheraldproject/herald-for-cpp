@@ -27,6 +27,10 @@ public:
 
   std::vector<PrioritisedPrerequisite> previouslyProvisioned;
 
+  int iterationsSinceBreak;
+  int breakEvery;
+  int breakFor;
+
   HLOGGER;
 };
 
@@ -34,7 +38,10 @@ HeraldProtocolBLECoordinationProvider::Impl::Impl(std::shared_ptr<Context> ctx, 
   : context(ctx),
     db(bledb),
     pp(provider),
-    previouslyProvisioned()
+    previouslyProvisioned(),
+    iterationsSinceBreak(0),
+    breakEvery(10),
+    breakFor(10)
     HLOGGERINIT(ctx,"heraldble","coordinationprovider")
 {
   ;
@@ -161,6 +168,23 @@ HeraldProtocolBLECoordinationProvider::provision(
 std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>>
 HeraldProtocolBLECoordinationProvider::requiredConnections()
 {
+
+  std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>> results;
+
+  // This ensures we break from making connections to allow advertising and scanning
+  mImpl->iterationsSinceBreak++;
+  if (mImpl->iterationsSinceBreak >= mImpl->breakEvery &&
+     mImpl->iterationsSinceBreak < (mImpl->breakEvery + mImpl->breakFor) ) {
+    HDBG("###### Skipping connections - giving advertising & scanning a chance");
+    // if (mImpl->iterationsSinceBreak == mImpl->breakEvery) { // incase it fails
+      mImpl->pp->restartScanningAndAdvertising();
+    // }
+    return results;
+  } else if (mImpl->iterationsSinceBreak == (mImpl->breakEvery + mImpl->breakFor) ) {
+    // reset
+    mImpl->iterationsSinceBreak = 0;
+  }
+
   // Remove expired devices
   auto expired = mImpl->db->matches([this] (std::shared_ptr<BLEDevice>& device) -> bool {
     auto interval = device->timeIntervalSinceLastUpdate();
@@ -192,9 +216,6 @@ HeraldProtocolBLECoordinationProvider::requiredConnections()
     device->operatingSystem(BLEDeviceOperatingSystem::unknown);
   }
 
-
-
-  std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>> results;
 
   // Add all targets in database that are not known
   auto newConns = mImpl->db->matches([](std::shared_ptr<BLEDevice>& device) -> bool {

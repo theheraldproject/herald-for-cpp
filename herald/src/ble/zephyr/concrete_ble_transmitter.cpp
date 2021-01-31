@@ -15,6 +15,9 @@
 // nRF Connect SDK includes
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
+#include <bluetooth/hci_vs.h>
+#include <sys/util.h>
+#include <sys/byteorder.h>
 #include <bluetooth/conn.h>
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
@@ -32,6 +35,43 @@ using namespace herald::datatype;
 using namespace herald::data;
 
 static PayloadDataSupplier* latestPds = NULL;
+
+namespace zephyrinternal {
+  static void get_tx_power(uint8_t handle_type, uint16_t handle, int8_t *tx_pwr_lvl)
+  {
+    struct bt_hci_cp_vs_read_tx_power_level *cp;
+    struct bt_hci_rp_vs_read_tx_power_level *rp;
+    struct net_buf *buf, *rsp = NULL;
+    int err;
+
+    *tx_pwr_lvl = 0xFF;
+    buf = bt_hci_cmd_create(BT_HCI_OP_VS_READ_TX_POWER_LEVEL,
+          sizeof(*cp));
+    if (!buf) {
+      printk("Unable to allocate command buffer\n");
+      return;
+    }
+
+    cp = (bt_hci_cp_vs_read_tx_power_level*)net_buf_add(buf, sizeof(*cp));
+    cp->handle = sys_cpu_to_le16(handle);
+    cp->handle_type = handle_type;
+
+    err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_TX_POWER_LEVEL,
+            buf, &rsp);
+    if (err) {
+      uint8_t reason = rsp ?
+        ((struct bt_hci_rp_vs_read_tx_power_level *)
+          rsp->data)->status : 0;
+      printk("Read Tx power err: %d reason 0x%02x\n", err, reason);
+      return;
+    }
+
+    rp = (bt_hci_rp_vs_read_tx_power_level *)rsp->data;
+    *tx_pwr_lvl = rp->tx_power_level;
+
+    net_buf_unref(rsp);
+  }
+}
 
 class ConcreteBLETransmitter::Impl {
 public:
@@ -144,19 +184,32 @@ BT_GATT_SERVICE_DEFINE(herald_svc,
             BT_GATT_PERM_READ,
             read_payload, write_payload, nullptr)
 );
-static auto bp = BT_LE_ADV_CONN_NAME;
-static const struct bt_data ad[] = {
+static auto bp = BT_LE_ADV_CONN_NAME; // No TxPower support
+// static auto bp = BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
+// 					    BT_LE_ADV_OPT_USE_NAME, \
+// 					    BT_GAP_ADV_FAST_INT_MIN_2, \
+// 					    BT_GAP_ADV_FAST_INT_MAX_2, \
+//               BT_LE_ADV_OPT_USE_TX_POWER, \
+//               NULL); // txpower - REQUIRES EXT ADV OPT on Zephyr (experimental)
+static struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+  BT_DATA_BYTES(BT_DATA_TX_POWER, 0x00 ),
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 
 					BT_UUID_16_ENCODE(BT_UUID_DIS_VAL),
 					BT_UUID_16_ENCODE(BT_UUID_GATT_VAL),
 					BT_UUID_16_ENCODE(BT_UUID_GAP_VAL)
 	),
-	BT_DATA_BYTES(BT_DATA_UUID128_ALL,
-		      0x9b, 0xfd, 0x5b, 0xd6, 0x72, 0x45, 0x1e, 0x80, 
-					0xd3, 0x42, 0x46, 0x47, 0xaf, 0x32, 0x81, 0x42
-	),
 };
+// Herald is discovered via GATT, not via Advert :-
+	// BT_DATA_BYTES(BT_DATA_UUID128_ALL,
+	// 	      0x9b, 0xfd, 0x5b, 0xd6, 0x72, 0x45, 0x1e, 0x80, 
+	// 				0xd3, 0x42, 0x46, 0x47, 0xaf, 0x32, 0x81, 0x42
+	// ),
+//  BT_DATA_BYTES(BT_DATA_TX_POWER, 0x00 ), // 'too big advertising data' if both included
+
+// #ifdef CONFIG_BT_CTLR_TX_PWR
+  // BT_DATA_BYTES(BT_DATA_TX_POWER, CONFIG_BT_CTLR_TX_PWR ),
+// #endif
 
 
 ConcreteBLETransmitter::Impl::Impl(
@@ -191,6 +244,18 @@ ConcreteBLETransmitter::Impl::startAdvertising()
     // HTDBG("Already advertising. Returning.");
     return;
   }
+
+  // Get current TxPower and alter advert accordingly:-
+  int8_t txp_get = 0;
+  zephyrinternal::get_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_ADV,0, &txp_get);
+  HTDBG("Zephyr tx power:-");
+  HTDBG(std::to_string(txp_get));
+  herald::ble::ad[1] = bt_data{
+    .type=BT_DATA_TX_POWER,
+    .data_len=sizeof(txp_get),
+    .data=(const uint8_t *)uint8_t(txp_get)
+  };
+
   // Now start advertising
   // See https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/reference/bluetooth/gap.html#group__bt__gap_1gac45d16bfe21c3c38e834c293e5ebc42b
   int success = bt_le_adv_start(herald::ble::bp, herald::ble::ad, ARRAY_SIZE(herald::ble::ad), NULL, 0);
