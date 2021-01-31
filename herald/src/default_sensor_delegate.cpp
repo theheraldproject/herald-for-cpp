@@ -13,31 +13,31 @@ DefaultSensorDelegate::sensor(SensorType sensor, const TargetIdentifier& didDete
 };
 
 void 
-DefaultSensorDelegate::sensor(SensorType sensor, PayloadData didRead, const TargetIdentifier& fromTarget) {
+DefaultSensorDelegate::sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) {
 };
 
 void
-DefaultSensorDelegate::sensor(SensorType sensor, ImmediateSendData didReceive, const TargetIdentifier& fromTarget) {
+DefaultSensorDelegate::sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) {
 };
 
 void 
-DefaultSensorDelegate::sensor(SensorType sensor, std::vector<PayloadData> didShare, const TargetIdentifier& fromTarget) {
+DefaultSensorDelegate::sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) {
 };
 
 void 
-DefaultSensorDelegate::sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget) {
+DefaultSensorDelegate::sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {
 };
 
 void 
-DefaultSensorDelegate::sensor(SensorType sensor, Location didVisit) {
+DefaultSensorDelegate::sensor(SensorType sensor, const Location& didVisit) {
 };
 
 void 
-DefaultSensorDelegate::sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget, PayloadData withPayload) {
+DefaultSensorDelegate::sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {
 };
 
 void 
-DefaultSensorDelegate::sensor(SensorType sensor, SensorState didUpdateState) {
+DefaultSensorDelegate::sensor(SensorType sensor, const SensorState& didUpdateState) {
 };
 
 

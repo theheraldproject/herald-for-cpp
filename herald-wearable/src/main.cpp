@@ -36,6 +36,7 @@
 #include <kernel_structs.h>
 #include <sys/thread_stack.h>
 #include <drivers/gpio.h>
+#include <drivers/hwinfo.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
@@ -59,13 +60,18 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 #endif
 
 struct k_thread herald_thread;
-K_THREAD_STACK_DEFINE(herald_stack, 2048);
+K_THREAD_STACK_DEFINE(herald_stack, 9192); // TODO reduce this down
 
 using namespace herald;
+using namespace herald::data;
 using namespace herald::payload;
 using namespace herald::payload::fixed;
 
 std::shared_ptr<SensorArray> sa;
+
+char* str(const TargetIdentifier& ti) {
+  return log_strdup( ((std::string)ti).c_str());
+}
 
 class AppLoggingDelegate : public herald::SensorDelegate {
 public:
@@ -73,42 +79,50 @@ public:
 	~AppLoggingDelegate() = default;
 
 	void sensor(SensorType sensor, const TargetIdentifier& didDetect) override {
-		LOG_INF("sensor didDetect"); // May want to disable this - logs A LOT of info
+		// LOG_DBG("sensor didDetect");
+		LOG_DBG("sensor didDetect: %s", str(didDetect) ); // May want to disable this - logs A LOT of info
 	}
 
   /// Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
-  void sensor(SensorType sensor, PayloadData didRead, const TargetIdentifier& fromTarget) override {
-		LOG_INF("sensor didRead");
+  void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) override {
+		// LOG_DBG("sensor didRead");
+		LOG_DBG("sensor didRead: %s with payload: %s", str(fromTarget), log_strdup(didRead.hexEncodedString().c_str()));
 	}
 
   /// Receive written immediate send data from target, e.g. important timing signal.
-  void sensor(SensorType sensor, ImmediateSendData didReceive, const TargetIdentifier& fromTarget) override {
-		LOG_INF("sensor didReceive");
+  void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) override {
+		// LOG_DBG("sensor didReceive");
+		LOG_DBG("sensor didReceive: %s with immediate send data: %s", str(fromTarget), log_strdup(didReceive.hexEncodedString().c_str()));
 	}
 
   /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
-  void sensor(SensorType sensor, std::vector<PayloadData> didShare, const TargetIdentifier& fromTarget) override {
-		LOG_INF("sensor didShare");
+  void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) override {
+		LOG_DBG("sensor didShare");
+		// LOG_DBG("sensor didShare: %s", str(fromTarget) );
+		// for (auto& p : didShare) {
+		// 	LOG_DBG(" - %s", log_strdup(p.hexEncodedString().c_str()));
+		// }
 	}
 
   /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
-  void sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget) override {
-		LOG_INF("sensor didMeasure");
+  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) override {
+		LOG_DBG("sensor didMeasure");
+		// LOG_DBG("sensor didMeasure: %s with proximity: %d", str(fromTarget), didMeasure.value); 
 	}
 
   /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
-  void sensor(SensorType sensor, Location didVisit) override {
-		LOG_INF("sensor didVisit");
+  void sensor(SensorType sensor, const Location& didVisit) override {
+		LOG_DBG("sensor didVisit");
 	}
 
   /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
-  void sensor(SensorType sensor, Proximity didMeasure, const TargetIdentifier& fromTarget, PayloadData withPayload) override {
-		LOG_INF("sensor didMeasure withPayload");
+  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) override {
+		LOG_DBG("sensor didMeasure withPayload");
 	}
 
   /// Sensor state update
-  void sensor(SensorType sensor, SensorState didUpdateState) override {
-		LOG_INF("sensor didUpdateState");
+  void sensor(SensorType sensor, const SensorState& didUpdateState) override {
+		LOG_DBG("sensor didUpdateState");
 	}
 };
 
@@ -129,15 +143,15 @@ void cc3xx_init() {
 	size_t olen = 0;
 	int success = nrf_cc3xx_platform_init();
 	if (0 != success) {
-		LOG_INF("Could not initialise CC3xx cryptocell - Check prj.conf to ensure hardware is enabled");
+		LOG_DBG("Could not initialise CC3xx cryptocell - Check prj.conf to ensure hardware is enabled");
 	} else {
 		success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); // blocks, doesn't have its own pool
 		if (0 != success) {
-			LOG_INF("Secure RNG failed");
+			LOG_DBG("Secure RNG failed");
 		} else if (olen != buflen) {
-			LOG_INF("Didn't generate enough randomness for output");
+			LOG_DBG("Didn't generate enough randomness for output");
 		} else {
-			LOG_INF("nRF CC3xx cryptocell successfully initialised and tested");
+			LOG_DBG("nRF CC3xx cryptocell successfully initialised and tested");
 			// Note: Your random number is in buf. Note the function will block until randomness is generated.
 			//       For performance use an entropy pool and fill it out of sequence in another thread when it
 			//       dips below your needs. (E.g. use 256 bit pool, and refill if its length is <= 32 bits).
@@ -148,6 +162,13 @@ void cc3xx_init() {
 
 void herald_entry() {
 	k_sleep(K_MSEC(5000)); // pause so we have time to see Herald initialisation log messages. Don't do this in production!
+
+	// Test date/time based things on Zephyr - interesting issues with compliance!
+	Date now;
+	LOG_DBG("BEFORE DATE");
+	std::string s = now.iso8601DateTime();
+	LOG_DBG("DATE: %s", log_strdup(s.c_str()));
+	LOG_DBG("PAST DATE");
 
 	std::shared_ptr<AppLoggingDelegate> appDelegate = std::make_shared<AppLoggingDelegate>();
 	
@@ -163,6 +184,16 @@ void herald_entry() {
 	std::uint16_t stateCode = 0; // National default
 	std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
 
+	std::uint8_t uniqueId[8];
+	auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
+	if (hwInfoAvailable > 0) {
+		LOG_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
+		clientId = *uniqueId;
+	} else {
+		LOG_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
+	}
+	LOG_DBG("Final clientID: %d", clientId);
+
 
   // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
 
@@ -173,13 +204,21 @@ void herald_entry() {
 		clientId
 	);
 	auto sink = ctx->getLoggingSink("mySub","myCat");
-	sink->log(SensorLoggerLevel::info,"Here's some info for you");
+	sink->log(SensorLoggerLevel::debug,"Here's some info for you");
 	auto payload = pds->payload(PayloadTimestamp(),nullptr);
-	sink->log(SensorLoggerLevel::info,"I've got some payload data");
-	sink->log(SensorLoggerLevel::info,payload->hexEncodedString());
+	sink->log(SensorLoggerLevel::debug,"I've got some payload data");
+	sink->log(SensorLoggerLevel::debug,payload->hexEncodedString());
 	
 	auto sink2 = ctx->getLoggingSink("mySub","mySecondCat");
-	sink2->log(SensorLoggerLevel::info,"Here's some more info for you");
+	sink2->log(SensorLoggerLevel::debug,"Here's some more info for you");
+
+	// LOGGING LEVEL TESTING
+	LOG_DBG("Zephyr debug message");
+	LOG_INF("Zephyr info message");
+	LOG_ERR("Zephyr error message");
+	sink2->log(SensorLoggerLevel::debug,"Herald debug message");
+	sink2->log(SensorLoggerLevel::info,"Herald info message");
+	sink2->log(SensorLoggerLevel::fault,"Herald error message");
 
 	// auto bles = std::make_shared<ConcreteBLESensor>(ctx, ctx->getBluetoothStateManager(),
   //     pds);
@@ -191,6 +230,12 @@ void herald_entry() {
 	
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
 	sa = std::make_shared<SensorArray>(ctx,pds);
+
+	// Add contacts.log delegate
+	// CURRENTLY BREAKS ZEPHYR - DON'T KNOW WHY YET - LOGGING SUBSYSTEM ISSUE
+	// std::shared_ptr<ConcretePayloadDataFormatter> pdf = std::make_shared<ConcretePayloadDataFormatter>();
+	// std::shared_ptr<ErrorStreamContactLogger> contactLogger = std::make_shared<ErrorStreamContactLogger>(ctx, pdf);
+	// sa->add(contactLogger);
 	
 	// Note: You will likely want to register a SensorDelegate implementation of your own to the sensor array to get callbacks on nearby devices
 	sa->add(appDelegate);
@@ -213,7 +258,7 @@ void herald_entry() {
 		}
 		
 		if (0 == iter % (5000 / delay)) {
-			LOG_INF("herald thread still running. Iteration: %d", iter);
+			LOG_DBG("herald thread still running. Iteration: %d", iter);
 		}
 
 		last = now;
@@ -259,9 +304,9 @@ void main(void)
 	// 	return;
 	// }
 
-	LOG_INF("Logging test");
-	LOG_INF("Const char* param test: %s","some string param");
-	LOG_INF("int param test: %d",1234);
+	LOG_DBG("Logging test");
+	LOG_DBG("Const char* param test: %s","some string param");
+	LOG_DBG("int param test: %d",1234);
 
 	cc3xx_init();
 
@@ -282,6 +327,6 @@ void main(void)
 		gpio_pin_set(dev, PIN, (int)led_is_on);
 		led_is_on = !led_is_on;
 
-		LOG_INF("main thread still running");
+		LOG_DBG("main thread still running");
 	}
 }

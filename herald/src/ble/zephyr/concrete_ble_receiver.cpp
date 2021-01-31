@@ -14,7 +14,6 @@
 #include "herald/datatype/payload_data.h"
 #include "herald/datatype/immediate_send_data.h"
 #include "herald/ble/ble_mac_address.h"
-#include "herald/ble/filter/ble_advert_parser.h"
 
 // nRF Connect SDK includes
 #include <bluetooth/bluetooth.h>
@@ -38,7 +37,6 @@ namespace ble {
 
 using namespace herald::datatype;
 using namespace herald::data;
-using namespace herald::ble::filter;
 
 // ZEPHYR UTILITY FUNCTIONS
 /** wait with timeout for Zephyr. Returns true if the function timed out rather than completed **/
@@ -490,15 +488,16 @@ void
 ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
   struct net_buf_simple *buf)
 {  
+  // identify device by both MAC and potential pseudoDeviceAddress
   BLEMacAddress bleMacAddress(addr->a.val);
-  TargetIdentifier target((Data)bleMacAddress);
+  Data advert(buf->data,buf->len);
+  auto device = db->device(bleMacAddress,advert);
 
-  auto device = db->device(target);
+  // auto device = db->device(target);
   if (device->ignore()) {
     // device->rssi(RSSI(rssi)); // TODO should we do this so our update date works and shows this as a 'live' device?
     return;
   }
-
 
   // // Now pass to relevant BLEDatabase API call
   if (!device->rssi().has_value()) {
@@ -507,97 +506,6 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
     std::string addrStr(addr_str);
     HTDBG("New address FROM SCAN:-");
     HTDBG(addr_str);
-
-    Data advert(buf->data,buf->len);
-    auto segments = BLEAdvertParser::extractSegments(advert,0);
-    // HTDBG("segments:-");
-    // HTDBG(std::to_string(segments.size()));
-    auto manuData = BLEAdvertParser::extractManufacturerData(segments);
-    auto heraldDataSegments = BLEAdvertParser::extractHeraldManufacturerData(manuData);
-    // HTDBG("herald data segments:-");
-    // HTDBG(std::to_string(heraldDataSegments.size()));
-    // auto device = mImpl->db->device(bleMacAddress); // For most devices this will suffice
-
-    // TODO Check for public herald service in ADV_IND packet - shown if an Android device, wearable or beacon in zephyr
-    // auto serviceData128 = BLEAdvertParser::extractServiceUUID128Data(segments);
-    // bool hasHeraldService = false;
-    // for (auto& service : serviceData128) {
-    //   if (service.uuid == heraldUuidData) {
-    //     hasHeraldService = true;
-    //     HTDBG("FOUND DEVICE ADVERTISING HERALD SERVICE");
-    //     device->operatingSystem(BLEDeviceOperatingSystem::android);
-    //   }
-    // }
-    
-
-    if (0 != heraldDataSegments.size()) {
-      HTDBG("Found Herald Android pseudo device address");
-      device->pseudoDeviceAddress(BLEMacAddress(heraldDataSegments.front())); // For devices with unnatural (very fast) ble mac rotation, we need to use this rotating data area (some Android devices)
-      device->operatingSystem(BLEDeviceOperatingSystem::android);
-    } else {
-      // If it's an apple device, check to see if its on our ignore list
-      auto appleDataSegments = BLEAdvertParser::extractAppleManufacturerSegments(manuData);
-      if (0 != appleDataSegments.size()) {
-        HTDBG("Found apple device");
-        HTDBG((std::string)bleMacAddress);
-        device->operatingSystem(BLEDeviceOperatingSystem::ios);
-        // TODO see if we should ignore this Apple device
-        // TODO abstract these out eventually in to BLEDevice class
-        bool ignore = false;
-        /*
-            "^10....04",
-            "^10....14",
-            "^0100000000000000000000000000000000",
-            "^05","^07","^09",
-            "^00","^1002","^06","^08","^03","^0C","^0D","^0F","^0E","^0B"
-        */
-        for (auto& segment : appleDataSegments) {
-          HTDBG(segment.data.hexEncodedString());
-          switch (segment.type) {
-            case 0x00:
-            case 0x05:
-            case 0x07:
-            case 0x09:
-            case 0x06:
-            case 0x08:
-            case 0x03:
-            case 0x0C:
-            case 0x0D:
-            case 0x0F:
-            case 0x0E:
-            case 0x0B:
-              ignore = true;
-              break;
-            case 0x10:
-              // check if second is 02
-              if (segment.data.at(0) == std::byte(0x02)) {
-                ignore = true;
-              } else {
-                // Check 3rd data bit for 14 or 04
-                if (segment.data.at(2) == std::byte(0x04) || segment.data.at(2) == std::byte(0x14)) {
-                  ignore = true;
-                }
-              }
-              break;
-            default:
-              break;
-          }
-        }
-        if (ignore) {
-          HTDBG(" - Ignoring Apple device due to Apple data filter");
-          device->ignore(true);
-        } else {
-          // Perform GATT service discovery to check for Herald service
-          // NOTE: Happens from Connection request (handled by BLE Coordinator)
-          HTDBG(" - Unknown apple device... Logging so we can discover services later");
-        }
-      } else {
-        // Not a Herald android or any iOS - so inspect later (beacon or wearable)
-        HTDBG("Unknown non Herald device - inspecting (might be a venue beacon or wearable)");
-        HTDBG((std::string)bleMacAddress);
-      }
-    }
-    device->registerDiscovery(Date());
   }
 
   // Add this RSSI reading - called at the end to ensure all other data variables set
@@ -642,7 +550,7 @@ ConcreteBLEReceiver::Impl::connected(struct bt_conn *conn, uint8_t err)
 
   ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
 
-  if (err) {
+  if (err) { // 2 = SMP issues? StreetPass blocker on Android device perhaps. Disabled SMP use?
     HTDBG("Connected: Error value:-");
     HTDBG(std::to_string(err));
 
@@ -783,8 +691,9 @@ void
 ConcreteBLEReceiver::Impl::discovery_service_not_found_cb(struct bt_conn *conn,
 					   void *context)
 {
-	HTDBG("The service could not be found during the discovery. Ignoring device");
+	HTDBG("The service could not be found during the discovery. Ignoring device:");
   ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
+  HTDBG((std::string)state.target);
 
   auto device = db->device(state.target);
   std::vector<UUID> serviceList; // empty service list // TODO put other listened-for services here
@@ -849,7 +758,7 @@ ConcreteBLEReceiver::coordinationProvider()
 }
 
 void
-ConcreteBLEReceiver::add(std::shared_ptr<SensorDelegate> delegate)
+ConcreteBLEReceiver::add(const std::shared_ptr<SensorDelegate>& delegate)
 {
   mImpl->delegates.push_back(delegate);
 }
@@ -1045,9 +954,9 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
       } else if (-EALREADY == success) {
         HDBG(" - bt device initiating")
       } else if (-ENOMEM == success) {
-        HDBG(" - bt connect attempt failed with default BT ID. Ignoring device (doesn't allow connections).");
-        auto device = mImpl->db->device(toTarget);
-        device->ignore(true);
+        HDBG(" - bt connect attempt failed with default BT ID. Trying again later.");
+        // auto device = mImpl->db->device(toTarget);
+        // device->ignore(true);
       } else if (-ENOBUFS == success) {
         HDBG(" - bt_hci_cmd_create has no buffers free");
       } else if (-ECONNREFUSED == success) {
@@ -1197,7 +1106,7 @@ ConcreteBLEReceiver::serviceDiscovery(Activity activity)
     return {};
   }
   if (NULL == state.connection) {
-    HDBG("State for activity does not have a connection. Returning.")
+    HDBG("State for activity does not have a connection. Returning.");
     return {};
   }
   auto device = mImpl->db->device(currentTargetOpt.value());

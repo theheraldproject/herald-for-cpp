@@ -21,11 +21,11 @@ public:
   BLEDatabaseDelegate() = default;
   virtual ~BLEDatabaseDelegate() = default;
 
-  virtual void bleDatabaseDidCreate(const std::shared_ptr<BLEDevice> device) = 0;
+  virtual void bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device) = 0;
   
-  virtual void bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice> device, const BLEDeviceAttribute attribute) = 0;
+  virtual void bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, const BLEDeviceAttribute attribute) = 0;
   
-  virtual void bleDatabaseDidDelete(const std::shared_ptr<BLEDevice> device) = 0;
+  virtual void bleDatabaseDidDelete(const std::shared_ptr<BLEDevice>& device) = 0;
 };
 
 } // end namespace

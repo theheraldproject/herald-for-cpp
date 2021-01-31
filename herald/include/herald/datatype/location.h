@@ -20,6 +20,7 @@ public:
   ~Location();
 
   std::string description() const;
+  operator std::string() const noexcept;
 
 private:
   class Impl;

@@ -40,6 +40,20 @@ RSSI::RSSI(RSSI&& other)
 
 RSSI::~RSSI() {}
 
+RSSI&
+RSSI::operator=(const RSSI& other)
+{
+  mImpl->value = other.mImpl->value;
+  return *this;
+}
+
+RSSI&
+RSSI::operator=(RSSI&& other)
+{
+  mImpl->value = other.mImpl->value;
+  return *this;
+}
+
 std::size_t
 RSSI::hashCode() const noexcept {
   return std::hash<int>{}(mImpl->value);

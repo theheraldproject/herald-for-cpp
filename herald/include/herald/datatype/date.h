@@ -11,12 +11,14 @@
 namespace herald {
 namespace datatype {
 
+class TimeInterval; // fwd decl
+
 // Basic date representation. Uses epoch seconds since Jan 1st 1970. Subclasses
 // can use different mechanisms if they wish
 class Date {
 public:
   Date(); // now
-  Date(long secondsSinceEpoch);
+  Date(std::uint64_t secondsSinceEpochOrRestart);
   Date(const Date& from);
   ~Date();
 
@@ -24,7 +26,7 @@ public:
 
   std::string iso8601DateTime() const noexcept;
   operator std::string() const noexcept;
-  long secondsSinceUnixEpoch() const noexcept;
+  std::uint64_t secondsSinceUnixEpoch() const noexcept;
 
   bool operator==(const Date& other) const noexcept;
   bool operator!=(const Date& other) const noexcept;
@@ -32,6 +34,11 @@ public:
   bool operator>(const Date& other) const noexcept;
   bool operator<=(const Date& other) const noexcept;
   bool operator>=(const Date& other) const noexcept;
+
+  Date operator-(const TimeInterval& other) noexcept;
+  Date& operator-=(const TimeInterval& other) noexcept;
+  Date operator+(const TimeInterval& other) noexcept;
+  Date& operator+=(const TimeInterval& other) noexcept;
 
   operator long() const noexcept;
 

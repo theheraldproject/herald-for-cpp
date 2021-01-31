@@ -21,6 +21,7 @@ public:
   static TimeInterval minutes(long minutes);
   static TimeInterval seconds(long seconds);
   static TimeInterval never();
+  static TimeInterval zero();
 
   TimeInterval(long seconds);
   TimeInterval(const Date& date);
@@ -33,7 +34,15 @@ public:
 
   TimeInterval operator*(const TimeInterval& other) noexcept;
   TimeInterval operator+(const TimeInterval& other) noexcept;
+  TimeInterval& operator+=(const TimeInterval& other) noexcept;
   TimeInterval operator-(const TimeInterval& other) noexcept;
+  TimeInterval& operator-=(const TimeInterval& other) noexcept;
+  TimeInterval operator*(double multiplier) noexcept;
+  TimeInterval& operator*=(double multiplier) noexcept;
+  /** If divisor is zero, makes no modification. **/
+  TimeInterval operator/(double divisor) noexcept;
+  /** If divisor is zero, makes no modification. **/
+  TimeInterval& operator/=(double divisor) noexcept;
   
   bool operator>(const TimeInterval& other) const noexcept;
   bool operator>=(const TimeInterval& other) const noexcept;
@@ -43,9 +52,10 @@ public:
   bool operator!=(const TimeInterval& other) const noexcept;
 
   long millis() const noexcept;
+  long seconds() const noexcept;
 
   operator std::string() const noexcept;
-  operator long() const noexcept;
+  operator long() const noexcept; // returns SECONDS not millis
 
 private:
   class Impl;

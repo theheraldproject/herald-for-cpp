@@ -27,6 +27,10 @@ public:
 
   std::vector<PrioritisedPrerequisite> previouslyProvisioned;
 
+  int iterationsSinceBreak;
+  int breakEvery;
+  int breakFor;
+
   HLOGGER;
 };
 
@@ -34,7 +38,10 @@ HeraldProtocolBLECoordinationProvider::Impl::Impl(std::shared_ptr<Context> ctx, 
   : context(ctx),
     db(bledb),
     pp(provider),
-    previouslyProvisioned()
+    previouslyProvisioned(),
+    iterationsSinceBreak(0),
+    breakEvery(10),
+    breakFor(10)
     HLOGGERINIT(ctx,"heraldble","coordinationprovider")
 {
   ;
@@ -161,10 +168,57 @@ HeraldProtocolBLECoordinationProvider::provision(
 std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>>
 HeraldProtocolBLECoordinationProvider::requiredConnections()
 {
+
   std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>> results;
 
+  // This ensures we break from making connections to allow advertising and scanning
+  mImpl->iterationsSinceBreak++;
+  if (mImpl->iterationsSinceBreak >= mImpl->breakEvery &&
+     mImpl->iterationsSinceBreak < (mImpl->breakEvery + mImpl->breakFor) ) {
+    HDBG("###### Skipping connections - giving advertising & scanning a chance");
+    // if (mImpl->iterationsSinceBreak == mImpl->breakEvery) { // incase it fails
+      mImpl->pp->restartScanningAndAdvertising();
+    // }
+    return results;
+  } else if (mImpl->iterationsSinceBreak == (mImpl->breakEvery + mImpl->breakFor) ) {
+    // reset
+    mImpl->iterationsSinceBreak = 0;
+  }
+
+  // Remove expired devices
+  auto expired = mImpl->db->matches([this] (std::shared_ptr<BLEDevice>& device) -> bool {
+    auto interval = device->timeIntervalSinceLastUpdate();
+    bool notZero = interval != TimeInterval::zero();
+    bool isOld = interval > TimeInterval::minutes(15);
+    // HDBG("ID, created, Now, interval, notZero, isOld:-");
+    // HDBG((std::string)device->identifier());
+    // HDBG(std::to_string((long)device->created()));
+    // HDBG(std::to_string((long)Date()));
+    // HDBG((std::string)interval);
+    // HDBG(notZero?"true":"false");
+    // HDBG(isOld?"true":"false");
+    return notZero && isOld;
+  });
+  for (auto& exp : expired) {
+    mImpl->db->remove(exp->identifier());
+    HDBG("Removing expired device with ID: ");
+    HDBG((std::string)exp->identifier());
+    HDBG("time since last update:-");
+    HDBG(std::to_string(exp->timeIntervalSinceLastUpdate()));
+  }
+
+  // Allow updates from ignored (for a time) status, to retry status
+  auto tempIgnoredOS = mImpl->db->matches([](std::shared_ptr<BLEDevice>& device) -> bool {
+    return device->operatingSystem() == BLEDeviceOperatingSystem::ignore;
+  });
+  for (auto& device : tempIgnoredOS) {
+    // don't bother with separate activity right now - no connection required
+    device->operatingSystem(BLEDeviceOperatingSystem::unknown);
+  }
+
+
   // Add all targets in database that are not known
-  auto newConns = mImpl->db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
+  auto newConns = mImpl->db->matches([](std::shared_ptr<BLEDevice>& device) -> bool {
     return !device->ignore() &&
       (
         !device->hasService(BLESensorConfiguration::serviceUUID)
@@ -175,7 +229,7 @@ HeraldProtocolBLECoordinationProvider::requiredConnections()
       )
       ;
   });
-  for (auto device : newConns) {
+  for (auto& device : newConns) {
     results.emplace_back(herald::engine::Features::HeraldBluetoothProtocolConnection,
       herald::engine::Priorities::High,
       device->identifier()
@@ -188,13 +242,22 @@ HeraldProtocolBLECoordinationProvider::requiredConnections()
   if (newConns.size() > 0) {
     // print debug info about the BLE Database
     HDBG("BLE DATABASE CURRENT CONTENTS:-");
-    auto allDevices = mImpl->db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
+    auto allDevices = mImpl->db->matches([](std::shared_ptr<BLEDevice>& device) -> bool {
       return true;
     });
     for (auto& device : allDevices) {
       std::string di(" - ");
       BLEMacAddress mac((Data)device->identifier());
       di += (std::string)mac;
+      di += ", created=";
+      di += std::to_string(device->created());
+      di += ", pseudoAddress=";
+      auto pseudo = device->pseudoDeviceAddress();
+      if (pseudo.has_value()) {
+        di += (std::string)pseudo.value();
+      } else {
+        di += "unset";
+      }
       di += ", os=";
       auto os = device->operatingSystem();
       if (os.has_value()) {
@@ -202,9 +265,19 @@ HeraldProtocolBLECoordinationProvider::requiredConnections()
           di += "ios";
         } else if (herald::ble::BLEDeviceOperatingSystem::android == os) {
           di += "android";
+        } else if (herald::ble::BLEDeviceOperatingSystem::unknown == os) {
+          di += "unknown";
+        } else if (herald::ble::BLEDeviceOperatingSystem::ignore == os) {
+          di += "ignore";
+        } else if (herald::ble::BLEDeviceOperatingSystem::android_tbc == os) {
+          di += "android_tbc";
+        } else if (herald::ble::BLEDeviceOperatingSystem::ios_tbc == os) {
+          di += "ios_tbc";
+        } else if (herald::ble::BLEDeviceOperatingSystem::shared == os) {
+          di += "shared";
         }
       } else {
-        di += "unknown";
+        di += "unknown/unset";
       }
       di += ", ignore=";
       auto ignore = device->ignore();
@@ -240,23 +313,28 @@ HeraldProtocolBLECoordinationProvider::requiredActivities()
   // TODO check for nearby payloads
   // State 3 - Not seen in a while -> State X
   // State X - Out of range. No actions.
-  // State Z - Ignore (not a relevant device for Herald). No actions.
+  // State Z - Ignore (not a relevant device for Herald... right now). Ignore for a period of time. No actions.
+
+  // TODO is IOS and needs payload sharing
 
   
   // auto state0Devices = mImpl->db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
   //   return !device->ignore() && !device->pseudoDeviceAddress().has_value();
   // });
-  auto state1Devices = mImpl->db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
+  auto state1Devices = mImpl->db->matches([](std::shared_ptr<BLEDevice>& device) -> bool {
     return !device->ignore() && 
+           !device->receiveOnly() &&
            !device->hasService(BLESensorConfiguration::serviceUUID);
   });
-  auto state2Devices = mImpl->db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
+  auto state2Devices = mImpl->db->matches([](std::shared_ptr<BLEDevice>& device) -> bool {
     return !device->ignore() && 
+           !device->receiveOnly() &&
             device->hasService(BLESensorConfiguration::serviceUUID) &&
            !device->payloadData().has_value(); // TODO check for Herald transferred payload data (not legacy)
   });
-  auto state4Devices = mImpl->db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
+  auto state4Devices = mImpl->db->matches([](std::shared_ptr<BLEDevice>& device) -> bool {
     return !device->ignore() && 
+           !device->receiveOnly() &&
             device->hasService(BLESensorConfiguration::serviceUUID) &&
             device->immediateSendData().has_value();
   });
@@ -265,7 +343,7 @@ HeraldProtocolBLECoordinationProvider::requiredActivities()
   // NOTE State 0 is handled by the Herald BLE scan function, and so has no specific activity
 
   // State 1 - discovery Herald service
-  for (auto device : state1Devices) {
+  for (auto& device : state1Devices) {
     results.emplace_back(Activity{
       .priority = Priorities::High + 10,
       .name = "herald-service-discovery",
@@ -289,7 +367,7 @@ HeraldProtocolBLECoordinationProvider::requiredActivities()
   }
 
   // State 2 - read herald payload(s)
-  for (auto device : state2Devices) {
+  for (auto& device : state2Devices) {
     results.emplace_back(Activity{
       .priority = Priorities::High + 9,
       .name = "herald-read-payload",
@@ -316,7 +394,7 @@ HeraldProtocolBLECoordinationProvider::requiredActivities()
   // TODO add BLESensorConfiguration.deviceIntrospectionEnabled && device.supportsDeviceNameCharacteristic() && device.deviceName() == null
   
   // State 4 - Has data for immediate send
-  for (auto device : state4Devices) {
+  for (auto& device : state4Devices) {
     results.emplace_back(Activity{
       .priority = Priorities::Default + 10,
       .name = "herald-immediate-send-targeted",

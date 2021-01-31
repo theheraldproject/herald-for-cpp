@@ -49,6 +49,8 @@
 #include "herald/datatype/wgs84.h"
 
 // data namespace
+#include "herald/data/contact_log.h"
+#include "herald/data/payload_data_formatter.h"
 #include "herald/data/sensor_logger.h"
 
 // engine namespace

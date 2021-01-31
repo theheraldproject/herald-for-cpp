@@ -10,6 +10,7 @@
 
 #include "../datatype/payload_data.h"
 #include "../datatype/payload_sharing_data.h"
+#include "../datatype/rssi.h"
 #include "../datatype/target_identifier.h"
 
 #include <memory>
@@ -28,6 +29,12 @@ public:
 
   virtual void add(const std::shared_ptr<BLEDatabaseDelegate>& delegate) = 0;
 
+  virtual std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/) = 0;
+
+  virtual std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const BLEMacAddress& pseudo) = 0;
+  
+  virtual std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac) = 0;
+
   virtual std::shared_ptr<BLEDevice> device(const PayloadData& payloadData) = 0;
 
   virtual std::shared_ptr<BLEDevice> device(const TargetIdentifier& targetIdentifier) = 0;
@@ -37,7 +44,7 @@ public:
   virtual std::size_t size() const = 0;
 
   virtual std::vector<std::shared_ptr<BLEDevice>> matches(
-    const std::function<bool(std::shared_ptr<BLEDevice>)>& matcher) const = 0;
+    const std::function<bool(std::shared_ptr<BLEDevice>&)>& matcher) const = 0;
 
   /// Cannot name a function delete in C++. remove is common.
   virtual void remove(const TargetIdentifier& targetIdentifier) = 0;

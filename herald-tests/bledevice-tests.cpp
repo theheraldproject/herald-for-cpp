@@ -15,7 +15,7 @@ public:
   ~DummyBLEDeviceDelegate() = default;
 
   // overrides
-  void device(std::shared_ptr<herald::ble::BLEDevice> device, const herald::ble::BLEDeviceAttribute didUpdate) override {
+  void device(const std::shared_ptr<herald::ble::BLEDevice>& device, const herald::ble::BLEDeviceAttribute didUpdate) override {
     callbackCalled = true;
     dev = device;
     attr = didUpdate;
@@ -39,7 +39,7 @@ TEST_CASE("ble-device-ctor", "[ble][device][ctor]") {
 
     REQUIRE(device.timeIntervalSinceConnected() == herald::datatype::TimeInterval::never());
     REQUIRE(device.timeIntervalSinceLastPayloadDataUpdate() == herald::datatype::TimeInterval::never());
-    REQUIRE(device.timeIntervalSinceLastUpdate() == herald::datatype::TimeInterval::never());
+    REQUIRE(device.timeIntervalSinceLastUpdate() == herald::datatype::TimeInterval::zero());
     REQUIRE(device.timeIntervalSinceLastWritePayload() == herald::datatype::TimeInterval::never());
     REQUIRE(device.timeIntervalSinceLastWritePayloadSharing() == herald::datatype::TimeInterval::never());
     REQUIRE(device.timeIntervalSinceLastWriteRssi() == herald::datatype::TimeInterval::never());
@@ -265,7 +265,7 @@ TEST_CASE("ble-device-update-pseudo", "[ble][device][update][pseudo]") {
     REQUIRE(!delegate->callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
-    REQUIRE(lu == herald::datatype::TimeInterval::never());
+    REQUIRE(lu != herald::datatype::TimeInterval::never()); // pseudo address counts as update
   }
 }
 
@@ -291,7 +291,7 @@ TEST_CASE("ble-device-update-receiveOnly", "[ble][device][update][receiveOnly]")
     REQUIRE(!delegate->callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
-    REQUIRE(lu == herald::datatype::TimeInterval::never());
+    REQUIRE(lu == herald::datatype::TimeInterval::zero());
   }
 }
 
@@ -317,7 +317,7 @@ TEST_CASE("ble-device-update-ignore", "[ble][device][update][ignore]") {
     REQUIRE(!delegate->callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
-    REQUIRE(lu == herald::datatype::TimeInterval::never());
+    REQUIRE(lu == herald::datatype::TimeInterval::zero());
   }
 }
 
@@ -346,7 +346,7 @@ TEST_CASE("ble-device-update-payloadchar", "[ble][device][update][payloadchar]")
     REQUIRE(!delegate->callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
-    REQUIRE(lu == herald::datatype::TimeInterval::never());
+    REQUIRE(lu == herald::datatype::TimeInterval::zero());
   }
 }
 
@@ -375,7 +375,7 @@ TEST_CASE("ble-device-update-signalchar", "[ble][device][update][signalchar]") {
     REQUIRE(!delegate->callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
-    REQUIRE(lu == herald::datatype::TimeInterval::never());
+    REQUIRE(lu == herald::datatype::TimeInterval::zero());
   }
 }
 
@@ -415,7 +415,7 @@ TEST_CASE("ble-device-invalidate-chars", "[ble][device][update][invalidatechars]
     REQUIRE(!delegate->callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
-    REQUIRE(lu == herald::datatype::TimeInterval::never());
+    REQUIRE(lu == herald::datatype::TimeInterval::zero());
   }
 }
 

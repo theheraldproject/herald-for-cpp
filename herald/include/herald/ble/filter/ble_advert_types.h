@@ -53,16 +53,22 @@ BLEAdvertSegmentType typeFor(int code);
 // BLEAdvertSegmentType typeFor(const std::string& name);
 
 struct BLEAdvertSegment {
-  const BLEAdvertSegmentType type;
-  const Data data;
+  BLEAdvertSegmentType type;
+  Data data;
   BLEAdvertSegment(BLEAdvertSegmentType t,Data&& d) : type(t), data(d) {};
+  BLEAdvertSegment(const BLEAdvertSegment&) = default;
+  BLEAdvertSegment(BLEAdvertSegment&&) = default;
+  BLEAdvertSegment& operator=(const BLEAdvertSegment&) = default;
+  BLEAdvertSegment& operator=(BLEAdvertSegment&&) = default;
 };
 
 struct BLEScanResponseData {
-  const std::size_t dataLength;
-  const std::vector<BLEAdvertSegment> segments;
+  std::size_t dataLength;
+  std::vector<BLEAdvertSegment> segments;
   BLEScanResponseData(std::size_t dl, std::vector<BLEAdvertSegment>&& segs) :
     dataLength(dl), segments(segs) {};
+  BLEScanResponseData(const BLEScanResponseData&) = default;
+  BLEScanResponseData(BLEScanResponseData&&) = default;
 };
 
 enum class BLEAdvertManufacturers : uint16_t {
@@ -73,15 +79,19 @@ enum class BLEAdvertManufacturers : uint16_t {
 
 // low level types
 struct BLEAdvertManufacturerData {
-  const std::uint16_t manufacturer;
-  const Data data;
+  std::uint16_t manufacturer;
+  Data data;
   BLEAdvertManufacturerData(std::uint16_t code, Data&& d) : manufacturer(code), data(d) {};
+  BLEAdvertManufacturerData(const BLEAdvertManufacturerData&) = default;
+  BLEAdvertManufacturerData(BLEAdvertManufacturerData&&) = default;
 };
 
 struct BLEAdvertAppleManufacturerSegment {
-  const std::uint8_t type;
-  const Data data;
+  std::uint8_t type;
+  Data data;
   BLEAdvertAppleManufacturerSegment(std::uint8_t t, Data&& d) : type(t), data(d) {};
+  BLEAdvertAppleManufacturerSegment(const BLEAdvertAppleManufacturerSegment&) = default;
+  BLEAdvertAppleManufacturerSegment(BLEAdvertAppleManufacturerSegment&&) = default;
 };
 
 }

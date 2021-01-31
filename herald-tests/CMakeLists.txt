@@ -6,6 +6,7 @@ add_executable(herald-tests
 	
 	# Low level
 	sensorlogger-tests.cpp
+	errorcontactlog-tests.cpp
 	data-tests.cpp
 	blemacaddress-tests.cpp
 	targetidentifier-tests.cpp

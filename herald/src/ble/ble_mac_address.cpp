@@ -127,6 +127,12 @@ BLEMacAddress::operator==(const BLEMacAddress& other) const
   return mImpl->data == other.mImpl->data;
 }
 
+bool
+BLEMacAddress::operator!=(const BLEMacAddress& other) const
+{
+  return mImpl->data != other.mImpl->data;
+}
+
 void
 BLEMacAddress::bytesBigEndian(std::uint8_t bytesBigEndian[6]) const
 {
