@@ -103,6 +103,9 @@ void main(void)
 	using namespace herald::payload::beacon;
 	using namespace herald::payload::extended;
 
+	// Disable receiver / scanning mode - we're just transmitting our value
+	herald::ble::BLESensorConfiguration::scanningEnabled = false;
+
 	// Create Herald sensor array
 	std::shared_ptr<ZephyrContext> ctx = std::make_shared<ZephyrContext>();
 	ConcreteExtendedDataV1 extendedData;
@@ -118,12 +121,16 @@ void main(void)
 	// Start array (and thus start advertising)
 	sa.start();
 
+	Date last;
 	/* Implement notification. At the moment there is no suitable way
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
 		k_sleep(K_SECONDS(1));
 
-    // TODO periodic Herald tidy up tasks here
+    // Periodic Herald tidy up tasks here
+		Date now;
+		sa.iteration(now - last);
+		last = now;
 	}
 }

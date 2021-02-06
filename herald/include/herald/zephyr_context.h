@@ -37,8 +37,8 @@ namespace zephyrinternal {
     void registerStopCallback(std::function<void()> cb);
     void registerStartCallback(std::function<void()> cb);
   private:
-    std::optional<std::function<void()>> stopCallback;
     std::optional<std::function<void()>> startCallback;
+    std::optional<std::function<void()>> stopCallback;
   };
 }
 
