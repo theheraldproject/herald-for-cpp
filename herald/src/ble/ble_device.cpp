@@ -62,6 +62,9 @@ public:
 
   std::optional<std::vector<BLEAdvertSegment>> segments;
   std::optional<std::vector<UUID>> services;
+
+  bool hasEverConnected;
+  int connectRepeatedFailures;
 };
 
 BLEDevice::Impl::Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> del, const Date& createdAt)
@@ -89,7 +92,9 @@ BLEDevice::Impl::Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDele
     connected(),
     payloadUpdated(),
     segments(),
-    services()
+    services(),
+    hasEverConnected(false),
+    connectRepeatedFailures(0)
 {
   ;
 }
@@ -312,6 +317,24 @@ BLEDevice::state() const
 void
 BLEDevice::state(BLEDeviceState newState)
 {
+  // Check if failed to connect
+  if (BLEDeviceState::disconnected == newState &&
+      (!mImpl->state.has_value() ||
+       (mImpl->state.has_value() && BLEDeviceState::disconnected == mImpl->state )
+      )
+  ) {
+    mImpl->connectRepeatedFailures++;
+    if (mImpl->connectRepeatedFailures >= 10) {
+      // Ignore for a while (progressive backoff)
+      operatingSystem(BLEDeviceOperatingSystem::ignore);
+      // Don't backoff again immediately
+      mImpl->connectRepeatedFailures = 0;
+    }
+  }
+  if (BLEDeviceState::connected == newState) {
+    mImpl->hasEverConnected = true;
+    mImpl->connectRepeatedFailures = 0;
+  }
   bool changed = !mImpl->state.has_value() || mImpl->state.value() != newState;
   if (changed) {
     mImpl->state.emplace(newState);
