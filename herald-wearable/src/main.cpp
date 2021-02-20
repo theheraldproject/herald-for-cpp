@@ -219,14 +219,9 @@ void herald_entry() {
 	sink2->log(SensorLoggerLevel::debug,"Herald debug message");
 	sink2->log(SensorLoggerLevel::info,"Herald info message");
 	sink2->log(SensorLoggerLevel::fault,"Herald error message");
-
-	// auto bles = std::make_shared<ConcreteBLESensor>(ctx, ctx->getBluetoothStateManager(),
-  //     pds);
-
-	// sink->log(SensorLoggerLevel::debug,"Got concrete ble sensor");
 	
-	// BUG transmitter currently interferes with wearable receiver
-	BLESensorConfiguration::advertisingEnabled = false;
+	// Enable transmitter (i.e. this is a Herald device)
+	BLESensorConfiguration::advertisingEnabled = true;
 	
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
 	sa = std::make_shared<SensorArray>(ctx,pds);
@@ -282,28 +277,6 @@ void main(void)
 		return;
 	}
 
-	// const struct device *dev = device_get_binding(
-	// 	CONFIG_UART_CONSOLE_ON_DEV_NAME);
-	// uint32_t dtr = 0;
-
-	// if (usb_enable(NULL)) {
-	// 	//return;
-	// }
-
-	// /* Poll if the DTR flag was set, optional */
-	// while (!dtr) {
-	// 	uart_line_ctrl_get(dev, UART_LINE_CTRL_DTR, &dtr);
-	// }
-
-	// if (strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME) !=
-	//     strlen("CDC_ACM_0") ||
-	//     strncmp(CONFIG_UART_CONSOLE_ON_DEV_NAME, "CDC_ACM_0",
-	// 	    strlen(CONFIG_UART_CONSOLE_ON_DEV_NAME))) {
-	// 	printk("Error: Console device name is not USB ACM\n");
-
-	// 	return;
-	// }
-
 	LOG_DBG("Logging test");
 	LOG_DBG("Const char* param test: %s","some string param");
 	LOG_DBG("int param test: %d",1234);
@@ -328,5 +301,7 @@ void main(void)
 		led_is_on = !led_is_on;
 
 		LOG_DBG("main thread still running");
+
+		// TODO Add logic here to detect failure in Herald thread, and restart to resume as necessary
 	}
 }

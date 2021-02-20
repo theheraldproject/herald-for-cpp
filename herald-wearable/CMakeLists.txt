@@ -8,16 +8,61 @@ set(CMAKE_CXX_EXTENSIONS ON)
 
 
 # Zephyr build environment variables set here
-# TODO detect if these have already been set externally as overrides
-set(ENV{ARCH} arm)
 #set(ENV{BOARD} nrf52840dongle_nrf52840) # nRF52840 USB dongle
 #set(ENV{BOARD} nrf52dk_nrf52832) # nRF52832 USB dongle
-set(ENV{BOARD} nrf5340dk_nrf5340_cpuapp) # nRF5340 DK using secure app core
+#set(ENV{BOARD} nrf5340dk_nrf5340_cpuapp) # nRF5340 DK using secure app core
+# Detect if already set. If not, default to latest nRF DK board (5340)
+if(DEFINED ENV{BOARD})
+  message("Using board specified in BOARD variable: $ENV{BOARD}")
+else()
+  message("No board specified in BOARD variable. Defaulting to nrf5340dk app core")
+  set(ENV{BOARD} nrf5340dk_nrf5340_cpuapp) # nRF5340 DK using secure app core
+  set(ENV{ARCH} arm)
+  message("BOARD variable now set to: $ENV{BOARD}")
+endif()
+
+# Specify additional PROJ settings based on build settings
+set(BASE_CONFIG ../config/zephyr)
+set(OVERLAY_CONFIG
+  ${BASE_CONFIG}/base.conf
+  ${BASE_CONFIG}/receiver.conf
+  ${BASE_CONFIG}/transmitter.conf
+)
+
+if($ENV{BOARD} MATCHES .*nrf5340.*)
+  set(OVERLAY_CONFIG 
+    ${OVERLAY_CONFIG} 
+    ${BASE_CONFIG}/nrf5340.conf
+  )
+elseif($ENV{BOARD} MATCHES .*nrf52840.*)
+  set(OVERLAY_CONFIG 
+    ${OVERLAY_CONFIG} 
+    ${BASE_CONFIG}/nrf52840.conf
+  )
+elseif($ENV{BOARD} MATCHES .*nrf52832.*)
+  set(OVERLAY_CONFIG 
+    ${OVERLAY_CONFIG} 
+    ${BASE_CONFIG}/nrf52832.conf
+  )
+endif()
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  set(OVERLAY_CONFIG 
+    ${OVERLAY_CONFIG} 
+    ${BASE_CONFIG}/debug.conf
+  )
+else()
+  set(OVERLAY_CONFIG 
+    ${OVERLAY_CONFIG} 
+    ${BASE_CONFIG}/release.conf
+  )
+endif()
+
 
 # Generic Zephyr build command below
 cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(herald-wearable VERSION 1.2.0 LANGUAGES CXX)
+
 # NOTE: Don't include C library as it bloats the binary beyond DFU max load size (i.e. beyond half of the available flash)
 
 set(HERALD_TARGET zephyr)
@@ -27,32 +72,26 @@ set(HERALD_TARGET zephyr)
 # IT DOES NOT PROVIDE ZEPHYR BUILD SETTINGS CORRECTLY WHEN CROSS COMPILING ON WINDOWS
 
 
-
 # Include Herald core library
-#add_subdirectory(../fmt ./build/fmt)
-#add_subdirectory(../herald ./build/herald)
-
 set(HERALD_BASE ${CMAKE_CURRENT_SOURCE_DIR}/../herald)
 include(../herald/herald.cmake) # include sources and headers
 
 message("HERALD HEADERS: ${HERALD_HEADERS}")
 
-include_directories(../herald/include) # including this causes uart.h to fail complaining about incomplete type const struct device in zephyr
-#include_directories(../fmt/include)
+include_directories(../herald/include)
 
-add_definitions(-DHERALD_LOG_LEVEL=4 -DCONFIG_APP_LOG_LEVEL=4)
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+  add_definitions(-DHERALD_LOG_LEVEL=4 -DCONFIG_APP_LOG_LEVEL=4)
+else()
+  add_definitions(-DHERALD_LOG_LEVEL=1 -DCONFIG_APP_LOG_LEVEL=1)
+endif()
 #HERALD_LOG_LEVEL 4 = debug, 3 = info, 2 = warn / errors (Zephyr LOG_WARN), 1 = info contacts log only (Zephyr LOG_ERR)
 
 # gcc arm does not warn about missing defs until runtime
 add_compile_options(--no-undefined -ffunction-sections -fdata-sections -s -fno-exception -fno-rtti -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
 
 target_sources(app PRIVATE
-#  ${HERALD_HEADERS}
-#  ${HERALD_HEADERS_ZEPHYR}
-#  ../fmt/src/format.cc
   ${HERALD_SOURCES}
   ${HERALD_SOURCES_ZEPHYR}
   src/main.cpp
 )
-
-#target_link_libraries(app PUBLIC fmt)

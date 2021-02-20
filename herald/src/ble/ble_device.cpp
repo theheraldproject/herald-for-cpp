@@ -62,6 +62,9 @@ public:
 
   std::optional<std::vector<BLEAdvertSegment>> segments;
   std::optional<std::vector<UUID>> services;
+
+  bool hasEverConnected;
+  int connectRepeatedFailures;
 };
 
 BLEDevice::Impl::Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> del, const Date& createdAt)
@@ -89,7 +92,9 @@ BLEDevice::Impl::Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDele
     connected(),
     payloadUpdated(),
     segments(),
-    services()
+    services(),
+    hasEverConnected(false),
+    connectRepeatedFailures(0)
 {
   ;
 }
@@ -281,10 +286,10 @@ BLEDevice::timeIntervalUntilIgnoreExpired() const
   if (!mImpl->ignoreUntil.has_value()) {
     return TimeInterval::zero();
   }
-  if (mImpl->ignoreUntil == TimeInterval::never()) {
+  if (mImpl->ignoreUntil.value() == TimeInterval::never()) {
     return TimeInterval::never();
   }
-  return TimeInterval(mImpl->ignoreUntil.value(),Date());
+  return TimeInterval(Date(),mImpl->ignoreUntil.value());
 }
 
 // property getters and setters
@@ -312,6 +317,25 @@ BLEDevice::state() const
 void
 BLEDevice::state(BLEDeviceState newState)
 {
+  // Check if failed to connect
+  if (BLEDeviceState::disconnected == newState &&
+      (!mImpl->state.has_value() ||
+       (mImpl->state.has_value() && BLEDeviceState::disconnected == mImpl->state ) ||
+       (mImpl->state.has_value() && BLEDeviceState::connecting == mImpl->state )
+      )
+  ) {
+    mImpl->connectRepeatedFailures++;
+    if (mImpl->connectRepeatedFailures >= 5) { // Changed to 5 from 10 for quicker failure in busy areas
+      // Ignore for a while (progressive backoff)
+      operatingSystem(BLEDeviceOperatingSystem::ignore);
+      // Don't backoff again immediately
+      mImpl->connectRepeatedFailures = 0;
+    }
+  }
+  if (BLEDeviceState::connected == newState) {
+    mImpl->hasEverConnected = true;
+    mImpl->connectRepeatedFailures = 0;
+  }
   bool changed = !mImpl->state.has_value() || mImpl->state.value() != newState;
   if (changed) {
     mImpl->state.emplace(newState);
@@ -334,9 +358,14 @@ BLEDevice::operatingSystem(BLEDeviceOperatingSystem newOS)
   if (mImpl->os.has_value() && mImpl->os == BLEDeviceOperatingSystem::ignore) {
     if (!mImpl->ignoreForDuration.has_value()) {
       mImpl->ignoreForDuration = TimeInterval::minutes(1);
-    } else if (mImpl->ignoreForDuration < TimeInterval::minutes(3)) {
+    } else if (mImpl->ignoreForDuration.value() < TimeInterval::minutes(3)) {
       // progressive backoff for unknown device
       mImpl->ignoreForDuration.value() * 1.2;
+      if (mImpl->ignoreForDuration.value() > TimeInterval::minutes(7)) {
+        // just ignore as the mac will have rotated (7:43 will occur half way through 15 mins intervals)
+        // As the total BLE DB timeout is ~ 25 minutes, this will save significant connection attempt cycles
+        mImpl->ignore = true;
+      }
     }
     mImpl->ignoreUntil = mImpl->lastUpdated.value() + mImpl->ignoreForDuration.value();
   } else {
@@ -475,7 +504,7 @@ BLEDevice::ignore() const
   if (!mImpl->ignoreUntil.has_value()) {
     return false;
   }
-  if (Date() < mImpl->ignoreUntil) {
+  if (Date() < mImpl->ignoreUntil.value()) {
     return true;
   }
   return false;

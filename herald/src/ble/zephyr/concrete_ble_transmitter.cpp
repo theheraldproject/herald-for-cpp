@@ -263,6 +263,11 @@ ConcreteBLETransmitter::Impl::startAdvertising()
     HTDBG("Start advertising failed");
     return;
   }
+  
+  zephyrinternal::get_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_ADV,0, &txp_get);
+  HTDBG("Zephyr tx power post advertising starting:-");
+  HTDBG(std::to_string(txp_get));
+
   HTDBG("Start advertising completed successfully");
   isAdvertising = true;
 }

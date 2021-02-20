@@ -98,6 +98,16 @@ set(HERALD_SOURCES
 )
 set(HERALD_SOURCES_ZEPHYR
   ${HERALD_BASE}/src/ble/zephyr/concrete_ble_transmitter.cpp
-  ${HERALD_BASE}/src/ble/zephyr/concrete_ble_receiver.cpp
   ${HERALD_BASE}/src/zephyr_context.cpp
 )
+if(DEFINED CONFIG_BT_SCAN)
+  set(HERALD_SOURCES_ZEPHYR
+    ${HERALD_SOURCES_ZEPHYR}
+    ${HERALD_BASE}/src/ble/zephyr/concrete_ble_receiver.cpp
+  )
+else()
+  set(HERALD_SOURCES_ZEPHYR
+    ${HERALD_SOURCES_ZEPHYR}
+    ${HERALD_BASE}/src/ble/default/concrete_ble_receiver.cpp
+  )
+endif()

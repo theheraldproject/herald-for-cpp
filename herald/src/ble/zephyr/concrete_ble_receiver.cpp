@@ -77,7 +77,7 @@ uint32_t waitWithTimeout(uint32_t timeoutMillis, k_timeout_t period, std::functi
 struct ConnectedDeviceState {
   ConnectedDeviceState(const TargetIdentifier& id)
     : target(id), state(BLEDeviceState::disconnected), connection(NULL), address(),
-      readPayload(), immediateSend()
+      readPayload(), immediateSend(), remoteInstigated(false)
   {}
   ConnectedDeviceState(const ConnectedDeviceState& from) = delete;
   ConnectedDeviceState(ConnectedDeviceState&& from) = delete;
@@ -89,6 +89,7 @@ struct ConnectedDeviceState {
   bt_addr_le_t address;
   PayloadData readPayload;
   ImmediateSendData immediateSend;
+  bool remoteInstigated;
 };
 
 
@@ -359,7 +360,7 @@ public:
   // std::optional<ConnectedDeviceState&> findState(const TargetIdentifier& forTarget);
   // std::optional<ConnectedDeviceState&> findStateByConnection(struct bt_conn *conn);
   ConnectedDeviceState& findOrCreateState(const TargetIdentifier& toTarget);
-  ConnectedDeviceState& findOrCreateStateByConnection(struct bt_conn *conn);
+  ConnectedDeviceState& findOrCreateStateByConnection(struct bt_conn *conn, bool remoteInstigated = false);
   void removeState(const TargetIdentifier& forTarget);
 
   // internal call methods
@@ -435,7 +436,7 @@ ConcreteBLEReceiver::Impl::findOrCreateState(const TargetIdentifier& forTarget)
 }
 
 ConnectedDeviceState&
-ConcreteBLEReceiver::Impl::findOrCreateStateByConnection(struct bt_conn *conn)
+ConcreteBLEReceiver::Impl::findOrCreateStateByConnection(struct bt_conn *conn, bool remoteInstigated)
 {
   for (auto& [key, value] : connectionStates) {
     if (value.connection == conn) {
@@ -448,6 +449,7 @@ ConcreteBLEReceiver::Impl::findOrCreateStateByConnection(struct bt_conn *conn)
   TargetIdentifier target((Data)bleMacAddress);
   auto result = connectionStates.emplace(target, target);
   bt_addr_le_copy(&result.first->second.address,addr);
+  result.first->second.remoteInstigated = remoteInstigated;
   return result.first->second;
 }
 
@@ -548,16 +550,24 @@ ConcreteBLEReceiver::Impl::connected(struct bt_conn *conn, uint8_t err)
   BLEMacAddress bleMacAddress(addr->a.val);
   HTDBG((std::string)bleMacAddress);
 
-  ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
+  ConnectedDeviceState& state = findOrCreateStateByConnection(conn, true);
+  auto device = db->device(bleMacAddress); // Find by actual current physical address
 
   if (err) { // 2 = SMP issues? StreetPass blocker on Android device perhaps. Disabled SMP use?
+    // When connecting to some devices (E.g. HTC Vive base station), you will connect BUT get an error code
+    // The below ensures that this is counted as a connection failure
+
     HTDBG("Connected: Error value:-");
     HTDBG(std::to_string(err));
+    // Note: See Bluetooth Specification, Vol 2. Part D (Error codes)
 
 		bt_conn_unref(conn);
     
     state.state = BLEDeviceState::disconnected;
     state.connection = NULL;
+      
+    // Log last disconnected time in BLE database
+    device->state(BLEDeviceState::disconnected);
 
     // if (targetForConnection.has_value() && connCallback.has_value()) {
     //   connCallback.value()(targetForConnection.value(),false);
@@ -565,11 +575,12 @@ ConcreteBLEReceiver::Impl::connected(struct bt_conn *conn, uint8_t err)
 		return;
   }
 
-  // TODO log last connected time in BLE database
-
   state.connection = conn;
   bt_addr_le_copy(&state.address,addr);
   state.state = BLEDeviceState::connected;
+
+  // Log last connected time in BLE database
+  device->state(BLEDeviceState::connected);
 
   
   // if (targetForConnection.has_value() && connCallback.has_value()) {
@@ -593,8 +604,10 @@ ConcreteBLEReceiver::Impl::disconnected(struct bt_conn *conn, uint8_t reason)
   if (reason) {
     HTDBG("Disconnection: Reason value:-");
     HTDBG(std::to_string(reason));
+    // Note: See Bluetooth Specification, Vol 2. Part D (Error codes)
+    // 0x20 = Unsupported LL parameter value
   }
-
+  
   // TODO log disconnection time in ble database
   
 	bt_conn_unref(conn);
@@ -602,6 +615,10 @@ ConcreteBLEReceiver::Impl::disconnected(struct bt_conn *conn, uint8_t reason)
 
   state.state = BLEDeviceState::disconnected;
   state.connection = NULL;
+
+  // Log last disconnected time in BLE database
+  auto device = db->device(bleMacAddress); // Find by actual current physical address
+  device->state(BLEDeviceState::disconnected);
 }
 
 // Discovery callbacks
@@ -938,6 +955,7 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
     HDBG(addr_str);
 
     state.state = BLEDeviceState::connecting; // this is used by the condition variable
+    state.remoteInstigated = false; // as we're now definitely the instigators
     int success = bt_conn_le_create(
       &state.address,
       &zephyrinternal::defaultCreateParam,
@@ -972,6 +990,13 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
       // DONT DO THIS HERE - MANY REASONS IT CAN FAIL auto device = mImpl->db->device(toTarget);
       // HDBG(" - Ignoring following target: {}", toTarget);
       // device->ignore(true);
+      
+      // Log last disconnected time in BLE database (records failure, allows progressive backoff)
+      auto device = mImpl->db->device(newMac); // Find by actual current physical address
+      device->state(BLEDeviceState::disconnected);
+      
+      // Immediately restart advertising on failure, but not scanning
+      mImpl->m_context->getAdvertiser().startAdvertising();
 
       return false;
     } else {
@@ -1044,12 +1069,22 @@ ConcreteBLEReceiver::closeConnection(const TargetIdentifier& toTarget)
   bt_addr_le_to_str(&state.address, addr_str, sizeof(addr_str));
   HDBG(addr_str);
   if (NULL != state.connection) {
-    bt_conn_disconnect(state.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-    // auto device = mImpl->db.device(toTarget);
-    // device->registerDisconnect(Date());
+    if (state.remoteInstigated) {
+      HDBG("Connection remote instigated - not forcing close");
+    } else {
+      bt_conn_disconnect(state.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+      // auto device = mImpl->db.device(toTarget);
+      // device->registerDisconnect(Date());
+    }
+  } else {
+    // Can clear the remote instigated flag as they've closed the connection
+    state.remoteInstigated = false;
   }
-  mImpl->removeState(toTarget);
-  return false; // assumes we've closed it // TODO proper multi-connection state tracking
+  if (!state.remoteInstigated) {
+    mImpl->removeState(toTarget);
+    return false; // assumes we've closed it // TODO proper multi-connection state tracking
+  }
+  return true; // remote instigated the connection - keep it open and inform caller
 }
 
 void
@@ -1075,6 +1110,27 @@ ConcreteBLEReceiver::restartScanningAndAdvertising()
       ci += " connection is null: ";
       ci += (NULL == value.connection ? "true" : "false");
       HDBG(ci);
+
+      // Check connection reference is valid by address - has happened with non connectable devices (VR headset bluetooth stations)
+      value.connection = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &value.address);
+      // If the above returns null, the next iterator will remove our state
+
+      // Check for non null connection but disconnected state
+      
+      if (BLEDeviceState::disconnected == value.state) {
+        value.connection = NULL;
+      }
+      // Now check for timeout - nRF Connect doesn't cause a disconnect callback
+      if (NULL != value.connection && value.remoteInstigated) {
+        HDBG("REMOTELY INSTIGATED OR CONNECTED DEVICE TIMED OUT");
+        auto device = mImpl->db->device(value.target);
+        if (device->timeIntervalSinceConnected() < TimeInterval::never() &&
+            device->timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+          // disconnect
+          bt_conn_disconnect(value.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+          value.connection = NULL;
+        }
+      }
     }
 
     // Do internal clean up too - remove states no longer required
