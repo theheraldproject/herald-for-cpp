@@ -554,8 +554,12 @@ ConcreteBLEReceiver::Impl::connected(struct bt_conn *conn, uint8_t err)
   auto device = db->device(bleMacAddress); // Find by actual current physical address
 
   if (err) { // 2 = SMP issues? StreetPass blocker on Android device perhaps. Disabled SMP use?
+    // When connecting to some devices (E.g. HTC Vive base station), you will connect BUT get an error code
+    // The below ensures that this is counted as a connection failure
+
     HTDBG("Connected: Error value:-");
     HTDBG(std::to_string(err));
+    // Note: See Bluetooth Specification, Vol 2. Part D (Error codes)
 
 		bt_conn_unref(conn);
     
@@ -600,8 +604,10 @@ ConcreteBLEReceiver::Impl::disconnected(struct bt_conn *conn, uint8_t reason)
   if (reason) {
     HTDBG("Disconnection: Reason value:-");
     HTDBG(std::to_string(reason));
+    // Note: See Bluetooth Specification, Vol 2. Part D (Error codes)
+    // 0x20 = Unsupported LL parameter value
   }
-
+  
   // TODO log disconnection time in ble database
   
 	bt_conn_unref(conn);
@@ -949,6 +955,7 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
     HDBG(addr_str);
 
     state.state = BLEDeviceState::connecting; // this is used by the condition variable
+    state.remoteInstigated = false; // as we're now definitely the instigators
     int success = bt_conn_le_create(
       &state.address,
       &zephyrinternal::defaultCreateParam,
@@ -1115,7 +1122,7 @@ ConcreteBLEReceiver::restartScanningAndAdvertising()
       }
       // Now check for timeout - nRF Connect doesn't cause a disconnect callback
       if (NULL != value.connection && value.remoteInstigated) {
-        HDBG("REMOTELY INSTIGATED ORCONNECTED DEVICE TIMED OUT");
+        HDBG("REMOTELY INSTIGATED OR CONNECTED DEVICE TIMED OUT");
         auto device = mImpl->db->device(value.target);
         if (device->timeIntervalSinceConnected() < TimeInterval::never() &&
             device->timeIntervalSinceConnected() > TimeInterval::seconds(30)) {

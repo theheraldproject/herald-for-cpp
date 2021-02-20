@@ -282,7 +282,9 @@ HeraldProtocolBLECoordinationProvider::requiredConnections()
       di += ", ignore=";
       auto ignore = device->ignore();
       if (ignore) {
-        di += "true";
+        di += "true (for ";
+        di += std::to_string(device->timeIntervalUntilIgnoreExpired().millis());
+        di += " more secs)";
       } else {
         di += "false";
       }

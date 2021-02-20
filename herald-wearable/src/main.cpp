@@ -301,5 +301,7 @@ void main(void)
 		led_is_on = !led_is_on;
 
 		LOG_DBG("main thread still running");
+
+		// TODO Add logic here to detect failure in Herald thread, and restart to resume as necessary
 	}
 }
