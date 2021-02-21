@@ -31,7 +31,7 @@ add_library(heraldns
 )
 set_target_properties(heraldns PROPERTIES PUBLIC_HEADER "${HEADERS}")
 
-include_directories(${herald_SOURCE_DIR}/fmt/include)
+# include_directories(${herald_SOURCE_DIR}/fmt/include)
 
 target_include_directories(heraldns 
 	PUBLIC 
@@ -44,7 +44,7 @@ target_compile_features(heraldns PRIVATE cxx_std_17)
 # NB: This is here to ensure binaries that link us also link stdc++fs for non-Apple targets
 # https://github.com/OpenRCT2/OpenRCT2/pull/10522
 if(NOT (APPLE OR MSVC) )
-target_link_libraries(heraldns PRIVATE stdc++fs fmt::fmt-header-only)
+target_link_libraries(heraldns PRIVATE stdc++fs ) # fmt::fmt-header-only
 endif(NOT (APPLE OR MSVC) )
 
 install(TARGETS heraldns 

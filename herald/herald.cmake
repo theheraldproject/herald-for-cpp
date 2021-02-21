@@ -47,6 +47,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/rssi.h
   ${HERALD_BASE}/include/herald/datatype/sensor_state.h
   ${HERALD_BASE}/include/herald/datatype/sensor_type.h
+  ${HERALD_BASE}/include/herald/datatype/sha256.h
   ${HERALD_BASE}/include/herald/datatype/signal_characteristic_data.h
   ${HERALD_BASE}/include/herald/datatype/target_identifier.h
   ${HERALD_BASE}/include/herald/datatype/time_interval.h
@@ -109,6 +110,9 @@ set(HERALD_SOURCES
 set(HERALD_SOURCES_ZEPHYR
   ${HERALD_BASE}/src/ble/zephyr/concrete_ble_transmitter.cpp
   ${HERALD_BASE}/src/zephyr_context.cpp
+)
+set(HERALD_SOURCES_WINDOWS
+  ${HERALD_BASE}/src/datatype/windows/sha256.cpp
 )
 if(DEFINED CONFIG_BT_SCAN)
   set(HERALD_SOURCES_ZEPHYR
