@@ -56,6 +56,13 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/payload/payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/beacon/beacon_payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/fixed/fixed_payload_data_supplier.h
+  ${HERALD_BASE}/include/herald/payload/simple/contact_identifier.h
+  ${HERALD_BASE}/include/herald/payload/simple/contact_key.h
+  ${HERALD_BASE}/include/herald/payload/simple/f.h
+  ${HERALD_BASE}/include/herald/payload/simple/k.h
+  ${HERALD_BASE}/include/herald/payload/simple/matching_key.h
+  ${HERALD_BASE}/include/herald/payload/simple/secret_key.h
+  ${HERALD_BASE}/include/herald/payload/simple/simple_payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/extended/extended_data.h
 
 )
@@ -91,6 +98,9 @@ set(HERALD_SOURCES
 	${HERALD_BASE}/src/engine/coordinator.cpp
 	${HERALD_BASE}/src/payload/beacon/beacon_payload_data_supplier.cpp
 	${HERALD_BASE}/src/payload/fixed/fixed_payload_data_supplier.cpp
+	${HERALD_BASE}/src/payload/simple/f.cpp
+	${HERALD_BASE}/src/payload/simple/k.cpp
+	${HERALD_BASE}/src/payload/simple/simple_payload_data_supplier.cpp
 	${HERALD_BASE}/src/payload/extended/extended_data.cpp
   ${HERALD_BASE}/src/default_sensor_delegate.cpp
   ${HERALD_BASE}/src/context.cpp

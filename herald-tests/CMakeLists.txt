@@ -15,6 +15,7 @@ add_executable(herald-tests
 	beaconpayload-tests.cpp
 	extendeddata-tests.cpp
 	fixedpayload-tests.cpp
+	simplepayload-tests.cpp
 	bledevice-tests.cpp
 
   # high level
