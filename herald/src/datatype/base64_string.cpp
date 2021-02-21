@@ -137,7 +137,7 @@ Base64String::encode(const Data& from) noexcept {
 
   Base64String value;
   value.mImpl->value = std::move(ret);
-  return std::move(value);
+  return value;
 }
 
 Data

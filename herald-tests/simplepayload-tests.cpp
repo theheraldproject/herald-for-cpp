@@ -54,6 +54,64 @@ TEST_CASE("payload-simple-k-period", "[payload][simple][k][period]") {
   }
 }
 
+TEST_CASE("payload-simple-secretkey", "[payload][simple][secretkey]") {
+  SECTION("payload-simple-secretkey") {
+    // TODO use random source to generate secret key data
+    REQUIRE(true == true);
+  }
+}
+
+
+
+TEST_CASE("payload-simple-matchingkeys", "[payload][simple][matchingkeys]") {
+  SECTION("payload-simple-matchingkeys") {
+    // Generate two keys the same
+    herald::payload::simple::SecretKey ks1(std::byte(0),2048);
+    herald::payload::simple::SecretKey ks2(std::byte(0),2048);
+    // Generate a third that is different
+    herald::payload::simple::SecretKey ks3(std::byte(1),2048);
+
+    // Create basis for comparison
+    herald::payload::simple::K k1;
+    herald::payload::simple::K k2;
+    herald::payload::simple::K k3;
+
+    // Generate matching keys based on the same secret key
+    const std::vector<herald::payload::simple::MatchingKey>& km1 = k1.matchingKeys(ks1);
+    const std::vector<herald::payload::simple::MatchingKey>& km2 = k2.matchingKeys(ks2);
+    const std::vector<herald::payload::simple::MatchingKey>& km3 = k3.matchingKeys(ks3);
+
+    REQUIRE(km1.size() == 2001);
+    REQUIRE(km2.size() == 2001);
+    REQUIRE(km3.size() == 2001);
+
+    // matching key is 32 bytes
+    REQUIRE(km1.front().size() == 32);
+    REQUIRE(km2.front().size() == 32);
+    REQUIRE(km3.front().size() == 32);
+
+    // ensure subsequent matching keys vary
+    REQUIRE(km1[0] != km1[1]);
+    REQUIRE(km2[0] != km2[1]);
+    REQUIRE(km3[0] != km3[1]);
+
+    REQUIRE(km1[2] != km1[100]);
+    REQUIRE(km2[2] != km2[100]);
+    REQUIRE(km3[2] != km3[100]);
+
+    bool km12eq = (km1 == km2);
+    bool km13eq = (km1 == km3);
+    bool km32eq = (km3 == km2);
+    // same secret for matching
+    REQUIRE(km12eq);
+    // different keys yield different results
+    REQUIRE(km13eq);
+    REQUIRE(km32eq);
+  }
+}
+
+
+
 TEST_CASE("payload-simple-basic", "[payload][simple][basic]") {
   SECTION("payload-simple-basic") {
     std::uint16_t country = 826;

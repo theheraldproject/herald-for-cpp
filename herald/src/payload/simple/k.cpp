@@ -3,8 +3,10 @@
 //
 
 #include "herald/payload/simple/k.h"
+#include "herald/payload/simple/f.h"
 #include "herald/payload/simple/secret_key.h"
 #include "herald/payload/simple/matching_key.h"
+#include "herald/payload/simple/matching_key_seed.h"
 #include "herald/payload/simple/contact_key.h"
 #include "herald/payload/simple/contact_identifier.h"
 #include "herald/datatype/data.h"
@@ -92,7 +94,32 @@ K::period(Date at) noexcept {
 
 const std::vector<MatchingKey>&
 K::matchingKeys(const SecretKey& secretKey) noexcept {
-  // TODO real implementation
+  if (0 == mImpl->matchingKeySet.size()) {
+    // lazy initialisation
+    std::vector<MatchingKeySeed> matchingKeySeed(mImpl->daysFor + 1);
+    matchingKeySeed.reserve(mImpl->daysFor + 1);
+    matchingKeySeed[mImpl->daysFor] = MatchingKeySeed(F::h(secretKey));
+    for (int i = mImpl->daysFor - 1;i >=0; i--) {
+      matchingKeySeed[i] = MatchingKeySeed(F::h(F::t(matchingKeySeed[i + 1])));
+    }
+
+    mImpl->matchingKeySet.reserve(mImpl->daysFor + 1);
+    for (int i = 0;i <= mImpl->daysFor;i++) {
+      mImpl->matchingKeySet.emplace_back();
+    }
+    
+    // matching key on day 0 is derived from matching key seed on day 0 and day -1
+    MatchingKeySeed minusOne(F::h(F::t(matchingKeySeed[0])));
+    mImpl->matchingKeySet[0] = MatchingKey(F::h(F::xorData(matchingKeySeed[0],minusOne)));
+    
+    // Matching key for day i is the hash of the matching key seed for day i xor i-1
+    for (int i = 1; i <= mImpl->daysFor;i++) {
+      mImpl->matchingKeySet[i] = MatchingKey(F::h(F::xorData(matchingKeySeed[i], matchingKeySeed[i - 1])));
+    }
+    // TODO set sk hash in this class to cache result
+  } else {
+    // TODO verify that the hash of the sk is the same as before
+  }
   return mImpl->matchingKeySet;
 }
 
