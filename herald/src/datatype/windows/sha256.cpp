@@ -19,13 +19,6 @@ namespace datatype {
 
 #define STATUS_UNSUCCESSFUL         ((NTSTATUS)0xC0000001L)
 
-
-static const BYTE rgbMsg[] = 
-{
-    0x61, 0x62, 0x63
-};
-
-
 class SHA256::Impl {
 public:
   Impl() noexcept;
@@ -77,6 +70,7 @@ SHA256::digest(const Data& with) noexcept {
   DWORD                   cbData          = 0,
                           cbHash          = 0,
                           cbHashObject    = 0;
+  PBYTE                   message         = NULL;
   PBYTE                   pbHashObject    = NULL;
   PBYTE                   pbHash          = NULL;
 
@@ -149,12 +143,17 @@ SHA256::digest(const Data& with) noexcept {
       goto Cleanup;
   }
   
+  // copy over data
+  message = (PBYTE)HeapAlloc (GetProcessHeap (), 0, with.size());
+  for (std::size_t i = 0;i < with.size();i++) {
+    message[i] = BYTE(with.at(i));
+  }
 
   //hash some data
   if(!NT_SUCCESS(status = BCryptHashData(
                                       hHash,
-                                      (PBYTE)rgbMsg,
-                                      sizeof(rgbMsg),
+                                      message,
+                                      sizeof(message),
                                       0)))
   {
       wprintf(L"**** Error 0x%x returned by BCryptHashData\n", status);

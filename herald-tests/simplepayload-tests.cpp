@@ -66,10 +66,17 @@ TEST_CASE("payload-simple-secretkey", "[payload][simple][secretkey]") {
 TEST_CASE("payload-simple-matchingkeys", "[payload][simple][matchingkeys]") {
   SECTION("payload-simple-matchingkeys") {
     // Generate two keys the same
-    herald::payload::simple::SecretKey ks1(std::byte(0),2048);
-    herald::payload::simple::SecretKey ks2(std::byte(0),2048);
+    herald::payload::simple::SecretKey ks1;
+    herald::payload::simple::SecretKey ks2;
     // Generate a third that is different
-    herald::payload::simple::SecretKey ks3(std::byte(1),2048);
+    herald::payload::simple::SecretKey ks3;
+    int v = 0;
+    for (int i = 0;i < 2048;i++) {
+      ks1.append(std::byte(v));
+      ks2.append(std::byte(v));
+      ks3.append(std::byte(2048 - v));
+      v++;
+    }
 
     // Create basis for comparison
     herald::payload::simple::K k1;
@@ -99,14 +106,18 @@ TEST_CASE("payload-simple-matchingkeys", "[payload][simple][matchingkeys]") {
     REQUIRE(km2[2] != km2[100]);
     REQUIRE(km3[2] != km3[100]);
 
+    // ensure equal sequences' matching keys are equal
+    REQUIRE(km1.front() == km2.front());
+    REQUIRE(km3.front() != km2.front());
+
     bool km12eq = (km1 == km2);
-    bool km13eq = (km1 == km3);
-    bool km32eq = (km3 == km2);
+    bool km13ne = (km1 != km3);
+    bool km32ne = (km3 != km2);
     // same secret for matching
     REQUIRE(km12eq);
     // different keys yield different results
-    REQUIRE(km13eq);
-    REQUIRE(km32eq);
+    REQUIRE(km13ne);
+    REQUIRE(km32ne);
   }
 }
 
