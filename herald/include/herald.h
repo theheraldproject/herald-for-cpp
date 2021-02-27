@@ -87,6 +87,7 @@
 #include "herald/payload/fixed/fixed_payload_data_supplier.h"
 #include "herald/payload/simple/contact_identifier.h"
 #include "herald/payload/simple/contact_key.h"
+#include "herald/payload/simple/contact_key_seed.h"
 #include "herald/payload/simple/f.h"
 #include "herald/payload/simple/k.h"
 #include "herald/payload/simple/matching_key.h"

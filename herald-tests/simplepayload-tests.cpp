@@ -121,22 +121,105 @@ TEST_CASE("payload-simple-matchingkeys", "[payload][simple][matchingkeys]") {
   }
 }
 
+TEST_CASE("payload-simple-contactkeys", "[payload][simple][contactkeys]") {
+  SECTION("payload-simple-contactkeys") {
+    herald::payload::simple::SecretKey ks1;
+    int v = 0;
+    for (int i = 0;i < 2048;i++) {
+      ks1.append(std::byte(v));
+      v++;
+    }
+
+    herald::payload::simple::K k1;
+    const std::vector<herald::payload::simple::MatchingKey>& km1 = k1.matchingKeys(ks1);
+
+    // generate contact keys based on the same matching key
+    const std::vector<herald::payload::simple::ContactKey> kc1 = k1.contactKeys(km1[0]);
+    const std::vector<herald::payload::simple::ContactKey> kc2 = k1.contactKeys(km1[0]);
+    // Now generate a contact key based on a different matching key
+    const std::vector<herald::payload::simple::ContactKey> kc3 = k1.contactKeys(km1[1]);
+
+    // 241 contact keys per day (key 241 is not used)
+    REQUIRE(kc1.size() == 241);
+    REQUIRE(kc2.size() == 241);
+    REQUIRE(kc3.size() == 241);
+
+    // contact keys are 32 bytes
+    REQUIRE(kc1.front().size() == 32);
+    REQUIRE(kc2.front().size() == 32);
+    REQUIRE(kc3.front().size() == 32);
+
+    bool kc1eq2 = (kc1 == kc2);
+    bool kc1ne3 = (kc1 != kc3);
+    bool kc3ne2 = (kc3 != kc2);
+
+    REQUIRE(kc1eq2);
+    REQUIRE(kc1ne3);
+    REQUIRE(kc3ne2);
+
+    // All keys during the same day are different
+    for (int i = 0;i < 239;i++) {
+      for (int j = (i + 1); j < 240; j++) {
+        REQUIRE(kc1[i] != kc1[j]);
+        REQUIRE(kc2[i] != kc2[j]);
+        REQUIRE(kc3[i] != kc3[j]);
+      }
+    }
+  }
+}
+
+TEST_CASE("payload-simple-contactid", "[payload][simple][contactid]") {
+  SECTION("payload-simple-contactid") {
+    herald::payload::simple::SecretKey ks1;
+    int v = 0;
+    for (int i = 0;i < 2048;i++) {
+      ks1.append(std::byte(v));
+      v++;
+    }
+
+    herald::payload::simple::K k1;
+    const std::vector<herald::payload::simple::MatchingKey>& km1 = k1.matchingKeys(ks1);
+    const std::vector<herald::payload::simple::ContactKey> kc1 = k1.contactKeys(km1[0]);
+
+    // generate contact identifiers
+    herald::payload::simple::ContactIdentifier ic1 = k1.contactIdentifier(kc1[0]);
+    herald::payload::simple::ContactIdentifier ic2 = k1.contactIdentifier(kc1[0]);
+    herald::payload::simple::ContactIdentifier ic3 = k1.contactIdentifier(kc1[1]);
+
+    REQUIRE(ic1.size() == 16);
+    REQUIRE(ic2.size() == 16);
+    REQUIRE(ic3.size() == 16);
+
+    bool ic1eq2 = (ic1 == ic2);
+    bool ic1ne3 = (ic1 != ic3);
+    bool ic3ne2 = (ic3 != ic2);
+
+    REQUIRE(ic1eq2);
+    REQUIRE(ic1ne3);
+    REQUIRE(ic3ne2);
+  }
+}
 
 
 TEST_CASE("payload-simple-basic", "[payload][simple][basic]") {
   SECTION("payload-simple-basic") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
     std::uint16_t country = 826;
     std::uint16_t state = 4;
+    herald::payload::simple::K k;
     herald::payload::simple::SecretKey sk(std::byte(0x00),2048);
     herald::payload::simple::ConcreteSimplePayloadDataSupplierV1 pds(
+      ctx,
       country,
       state,
-      sk
+      sk,
+      k
     );
-    auto pd = pds.payload(herald::datatype::PayloadTimestamp(),nullptr);
+    auto pd = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(0)},nullptr);
 
     REQUIRE(pd.has_value());
-    REQUIRE(pd->size() == 21); // 1 version code, 2 country, 2 state, 16 clientId, no optional = 21
+    REQUIRE(pd->size() == 23); // 1 version code, 2 country, 2 state, 2 remainder length, 16 clientId, no optional = 23
     std::uint8_t rpidversion = 0;
     std::uint16_t rc = 0;
     std::uint16_t rs = 0;
@@ -150,7 +233,39 @@ TEST_CASE("payload-simple-basic", "[payload][simple][basic]") {
     REQUIRE(rpidversion == std::uint8_t(0x10)); // https://vmware.github.io/herald/specs/payload-simple
     REQUIRE(rc == country);
     REQUIRE(rs == state);
-    REQUIRE(rcid1 == 0); // TODO verify
-    REQUIRE(rcid2 == 0); // TODO verify
+    REQUIRE(rcid1 != 0); // TODO verify
+    REQUIRE(rcid2 != 0); // TODO verify
+  }
+}
+
+TEST_CASE("payload-simple-payloadbounds", "[payload][simple][payloadbounds]") {
+  SECTION("payload-simple-payloadbounds") {
+    std::shared_ptr<herald::DefaultContext> ctx = 
+      std::make_shared<herald::DefaultContext>();
+    std::uint16_t country = 826;
+    std::uint16_t state = 4;
+    herald::payload::simple::K k;
+    herald::payload::simple::SecretKey sk(std::byte(0x00),2048);
+    herald::payload::simple::ConcreteSimplePayloadDataSupplierV1 pds(
+      ctx,
+      country,
+      state,
+      sk,
+      k
+    );
+
+    // same payload in same period - basis is 0
+    auto p1start = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(0)}, nullptr);
+    auto p1samestart = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(0)}, nullptr);
+    auto p1end = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date((6 * 60) - 1)}, nullptr);
+    auto p2start = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(6 * 60)}, nullptr);
+    REQUIRE(p1start.has_value());
+    REQUIRE(p1samestart.has_value());
+    REQUIRE(p1end.has_value());
+    REQUIRE(p2start.has_value());
+    REQUIRE(p1start == p1samestart);
+    REQUIRE(p1start == p1end);
+    REQUIRE(p1start != p2start);
+
   }
 }

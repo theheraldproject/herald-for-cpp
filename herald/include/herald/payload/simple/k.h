@@ -23,15 +23,17 @@ using namespace herald::datatype;
 class K {
 public:
   K() noexcept;
+  K(const K& other) noexcept;
+  K(K&&) = delete;
   K(int keyLength, int daysFor, int periodsInDay) noexcept;
   K(int keyLength, int daysFor, int periodsInDay, TimeInterval epochBeginning) noexcept;
   ~K() noexcept;
 
   static TimeInterval getEpoch() noexcept;
 
-  int day(Date on) noexcept;
+  int day(Date on) const noexcept;
 
-  int period(Date at) noexcept;
+  int period(Date at) const noexcept;
 
   const std::vector<MatchingKey>& matchingKeys(const SecretKey& secretKey) noexcept;
 
