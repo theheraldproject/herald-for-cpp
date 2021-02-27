@@ -35,7 +35,7 @@ Data xorData(const Data& left, const Data& right) noexcept {
   Data result;
   // note: we're ensuring we don't have an out of bound index (has effect of XOR with 0 as we set value above)
   for (std::size_t i = 0;i < right.size() && i < left.size();i++) {
-    result.append(left.at(i) ^ right.at(i));
+    result.append(std::byte(((int)left.at(i)) ^ ((int)right.at(i))));
   }
   if (right.size() < left.size()) {
     for (std::size_t i = left.size();i < left.size();i++) {

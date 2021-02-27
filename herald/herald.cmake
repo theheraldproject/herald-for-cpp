@@ -59,6 +59,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/payload/fixed/fixed_payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/simple/contact_identifier.h
   ${HERALD_BASE}/include/herald/payload/simple/contact_key.h
+  ${HERALD_BASE}/include/herald/payload/simple/contact_key_seed.h
   ${HERALD_BASE}/include/herald/payload/simple/f.h
   ${HERALD_BASE}/include/herald/payload/simple/k.h
   ${HERALD_BASE}/include/herald/payload/simple/matching_key.h
@@ -110,6 +111,9 @@ set(HERALD_SOURCES
 set(HERALD_SOURCES_ZEPHYR
   ${HERALD_BASE}/src/ble/zephyr/concrete_ble_transmitter.cpp
   ${HERALD_BASE}/src/zephyr_context.cpp
+)
+set(HERALD_SOURCES_MBEDTLS
+  ${HERALD_BASE}/src/datatype/mbedtls/sha256.cpp
 )
 set(HERALD_SOURCES_WINDOWS
   ${HERALD_BASE}/src/datatype/windows/sha256.cpp

@@ -8,6 +8,7 @@
 #include "herald/payload/simple/matching_key.h"
 #include "herald/payload/simple/matching_key_seed.h"
 #include "herald/payload/simple/contact_key.h"
+#include "herald/payload/simple/contact_key_seed.h"
 #include "herald/payload/simple/contact_identifier.h"
 #include "herald/datatype/data.h"
 #include "herald/datatype/time_interval.h"
@@ -27,26 +28,24 @@ public:
   Impl(int keyLength, int daysFor, int periodsInDay, TimeInterval epochBeginning);
   ~Impl();
 
-  int keyLength;
-  int daysFor;
-  int periodsInDay;
-  TimeInterval epoch;
+  const int keyLength;
+  const int daysFor;
+  const int periodsInDay;
+  const TimeInterval epoch;
 
   // instance data members (lazy populated)
   std::vector<MatchingKey> matchingKeySet;
-  std::vector<ContactKey> contactKeySet;
   std::size_t lastSecretKeyHash;
-  std::size_t lastContactKeyHash;
 };
 
 K::Impl::Impl(int keyLength, int daysFor, int periodsInDay)
-  : keyLength(keyLength), daysFor(daysFor), periodsInDay(periodsInDay), epoch(K::getEpoch()), matchingKeySet(), contactKeySet(), lastSecretKeyHash(0), lastContactKeyHash(0)
+  : keyLength(keyLength), daysFor(daysFor), periodsInDay(periodsInDay), epoch(K::getEpoch()), matchingKeySet(), lastSecretKeyHash(0)
 {
   ;
 }
 
 K::Impl::Impl(int keyLength, int daysFor, int periodsInDay, TimeInterval epochBeginning)
-  : keyLength(keyLength), daysFor(daysFor), periodsInDay(periodsInDay), epoch(epochBeginning), matchingKeySet(), contactKeySet(), lastSecretKeyHash(0), lastContactKeyHash(0)
+  : keyLength(keyLength), daysFor(daysFor), periodsInDay(periodsInDay), epoch(epochBeginning), matchingKeySet(), lastSecretKeyHash(0)
 {
   ;
 }
@@ -57,6 +56,12 @@ K::Impl::~Impl() = default;
 
 K::K() noexcept
   : mImpl(std::make_unique<Impl>(2048,2000,240))
+{
+  ;
+}
+
+K::K(const K& other) noexcept
+  : mImpl(std::make_unique<Impl>(other.mImpl->keyLength, other.mImpl->daysFor,other.mImpl->periodsInDay, other.mImpl->epoch))
 {
   ;
 }
@@ -77,17 +82,16 @@ K::~K() noexcept = default;
 
 TimeInterval
 K::getEpoch() noexcept {
-  // TODO real implementation
-  return TimeInterval(0);
+  return TimeInterval(0); // Jan 1st 1970, seconds
 }
 
 int
-K::day(Date on) noexcept {
+K::day(Date on) const noexcept {
   return (long)(on - mImpl->epoch) / 86400;
 }
 
 int
-K::period(Date at) noexcept {
+K::period(Date at) const noexcept {
   long seconds = (long)(at - mImpl->epoch) % 86400;
   return (seconds * mImpl->periodsInDay) / 86400; // more accurate
 }
@@ -125,14 +129,41 @@ K::matchingKeys(const SecretKey& secretKey) noexcept {
 
 const std::vector<ContactKey>
 K::contactKeys(const MatchingKey& matchingKey) noexcept {
-  // TODO real implementation
-  return mImpl->contactKeySet;
+  const int n = mImpl->periodsInDay;
+
+  std::vector<ContactKeySeed> contactKeySeed;
+  contactKeySeed.reserve(n + 1);
+
+  for (int i = 0;i <= n;i++) {
+    contactKeySeed.emplace_back();
+  }
+
+  contactKeySeed[n].append(F::h(matchingKey));
+  for (int j = n - 1;j >= 0;j--) {
+    contactKeySeed[j].append(F::h(F::t(contactKeySeed[j + 1])));
+  }
+
+  std::vector<ContactKey> contactKey;
+  contactKey.reserve(n + 1);
+
+  for (int i = 0;i <= n;i++) {
+    contactKey.emplace_back();
+  }
+  
+  for (int j = 1;j <= n;j++) {
+    contactKey[j].append(F::h(F::xorData(contactKeySeed[j],contactKeySeed[j - 1])));
+  }
+
+  // Day 0 key now
+  ContactKeySeed minusOne(F::h(F::t(contactKeySeed[0])));
+  contactKey[0].append(F::h(F::xorData(contactKeySeed[0], minusOne)));
+
+  return contactKey;
 }
 
 const ContactIdentifier
 K::contactIdentifier(const ContactKey& contactKey) noexcept {
-  // TODO real implementation
-  return ContactIdentifier();
+  return ContactIdentifier(F::t(contactKey, 16));
 }
 
 
