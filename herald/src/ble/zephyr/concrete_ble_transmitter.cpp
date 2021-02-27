@@ -193,14 +193,19 @@ static auto bp = BT_LE_ADV_CONN_NAME; // No TxPower support
 //               NULL); // txpower - REQUIRES EXT ADV OPT on Zephyr (experimental)
 static struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
-  BT_DATA_BYTES(BT_DATA_TX_POWER, 0x00 ),
+  // BT_DATA_BYTES(BT_DATA_TX_POWER, 0x00 ), // See https://github.com/vmware/herald-for-cpp/issues/26
 	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 
 					BT_UUID_16_ENCODE(BT_UUID_DIS_VAL),
 					BT_UUID_16_ENCODE(BT_UUID_GATT_VAL),
 					BT_UUID_16_ENCODE(BT_UUID_GAP_VAL)
 	),
+  BT_DATA_BYTES(BT_DATA_UUID128_ALL,
+		      0x9b, 0xfd, 0x5b, 0xd6, 0x72, 0x45, 0x1e, 0x80, 
+					0xd3, 0x42, 0x46, 0x47, 0xaf, 0x32, 0x81, 0x42
+	),
 };
-// Herald is discovered via GATT, not via Advert :-
+// WRONG: Android and iOS need the service UUID Herald is discovered via GATT, not via Advert :-
+//        See https://github.com/vmware/herald-for-cpp/issues/26
 	// BT_DATA_BYTES(BT_DATA_UUID128_ALL,
 	// 	      0x9b, 0xfd, 0x5b, 0xd6, 0x72, 0x45, 0x1e, 0x80, 
 	// 				0xd3, 0x42, 0x46, 0x47, 0xaf, 0x32, 0x81, 0x42
@@ -245,16 +250,18 @@ ConcreteBLETransmitter::Impl::startAdvertising()
     return;
   }
 
+  // Note: TxPower currently disabled due to restricted advert space and the need to include Herald's service. 
+  //       See https://github.com/vmware/herald-for-cpp/issues/26
   // Get current TxPower and alter advert accordingly:-
-  int8_t txp_get = 0;
-  zephyrinternal::get_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_ADV,0, &txp_get);
-  HTDBG("Zephyr tx power:-");
-  HTDBG(std::to_string(txp_get));
-  herald::ble::ad[1] = bt_data{
-    .type=BT_DATA_TX_POWER,
-    .data_len=sizeof(txp_get),
-    .data=(const uint8_t *)uint8_t(txp_get)
-  };
+  // int8_t txp_get = 0;
+  // zephyrinternal::get_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_ADV,0, &txp_get);
+  // HTDBG("Zephyr tx power:-");
+  // HTDBG(std::to_string(txp_get));
+  // herald::ble::ad[1] = bt_data{
+  //   .type=BT_DATA_TX_POWER,
+  //   .data_len=sizeof(txp_get),
+  //   .data=(const uint8_t *)uint8_t(txp_get)
+  // };
 
   // Now start advertising
   // See https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/reference/bluetooth/gap.html#group__bt__gap_1gac45d16bfe21c3c38e834c293e5ebc42b
@@ -264,9 +271,9 @@ ConcreteBLETransmitter::Impl::startAdvertising()
     return;
   }
   
-  zephyrinternal::get_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_ADV,0, &txp_get);
-  HTDBG("Zephyr tx power post advertising starting:-");
-  HTDBG(std::to_string(txp_get));
+  // zephyrinternal::get_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_ADV,0, &txp_get);
+  // HTDBG("Zephyr tx power post advertising starting:-");
+  // HTDBG(std::to_string(txp_get));
 
   HTDBG("Start advertising completed successfully");
   isAdvertising = true;
