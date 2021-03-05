@@ -85,6 +85,14 @@
 
 #include "herald/payload/beacon/beacon_payload_data_supplier.h"
 #include "herald/payload/fixed/fixed_payload_data_supplier.h"
+#include "herald/payload/simple/contact_identifier.h"
+#include "herald/payload/simple/contact_key.h"
+#include "herald/payload/simple/contact_key_seed.h"
+#include "herald/payload/simple/f.h"
+#include "herald/payload/simple/k.h"
+#include "herald/payload/simple/matching_key.h"
+#include "herald/payload/simple/secret_key.h"
+#include "herald/payload/simple/simple_payload_data_supplier.h"
 #include "herald/payload/extended/extended_data.h"
 
 // service namespace

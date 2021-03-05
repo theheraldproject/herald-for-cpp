@@ -97,6 +97,7 @@ UUID::operator=(const UUID& other) noexcept
 {
   mImpl->mData = other.mImpl->mData;
   mImpl->mValid = other.mImpl->mValid;
+  return *this;
 }
 
 bool

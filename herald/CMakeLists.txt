@@ -10,9 +10,22 @@ include(GNUInstallDirs
 set(HERALD_BASE .)
 include(herald.cmake)
 
+if (MSVC)
+  set(PLATFORM_SOURCES
+    ${HERALD_SOURCES_WINDOWS}
+  )
+else()
+  if(HERALD_TARGET STREQUAL zephyr)
+    set(PLATFORM_SOURCES
+      ${HERALD_SOURCES_ZEPHYR}
+    )
+  endif()
+endif()
+
 add_library(herald 
 	${HERALD_HEADERS}
   ${HERALD_SOURCES}
+  ${PLATFORM_SOURCES}
 )
 
 set_target_properties(herald PROPERTIES PUBLIC_HEADER "${HERALD_HEADERS}")
@@ -22,6 +35,10 @@ target_include_directories(herald
 	$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
 	$<INSTALL_INTERFACE:include>
 )
+
+if (MSVC)
+  target_link_libraries(herald Crypt32.lib Bcrypt.lib)
+endif()
 
 if(HERALD_TARGET STREQUAL zephyr)  
   message("HERALD TARGET is ZEPHYR RTOS ${HERALD_TARGET}")

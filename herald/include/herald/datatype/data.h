@@ -38,6 +38,7 @@ public:
   void append(const std::uint8_t* data, std::size_t offset, std::size_t length);
   void appendReversed(const Data& data, std::size_t offset, std::size_t length);
   void append(const Data& data);
+  void append(std::byte data);
   void append(uint8_t data);
   void append(uint16_t data);
   void append(uint32_t data);

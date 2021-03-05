@@ -303,6 +303,15 @@ Data::append(uint8_t data)
 }
 
 void
+Data::append(std::byte data)
+{
+  std::size_t curSize = mImpl->data.size();
+  mImpl->data.reserve(curSize + 1);
+  mImpl->data.push_back(data);
+  curSize++;
+}
+
+void
 Data::append(uint16_t data)
 {
   std::size_t curSize = mImpl->data.size();
@@ -382,13 +391,13 @@ Data::operator>(const Data& other) const noexcept
 }
 
 std::size_t
-Data::hashCode() const {
+Data::hashCode() const noexcept {
   // TODO consider a faster (E.g. SIMD) algorithm or one with less hotspots (see hashdos attacks)
   return std::hash<std::vector<std::byte>>{}(mImpl->data);
 }
 
 std::size_t
-Data::size() const {
+Data::size() const noexcept {
   return mImpl->data.size();
 }
 

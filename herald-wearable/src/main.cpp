@@ -161,7 +161,9 @@ void cc3xx_init() {
 }
 
 void herald_entry() {
-	k_sleep(K_MSEC(5000)); // pause so we have time to see Herald initialisation log messages. Don't do this in production!
+	LOG_DBG("Herald entry");
+	k_sleep(K_MSEC(10000)); // pause so we have time to see Herald initialisation log messages. Don't do this in production!
+	LOG_DBG("Herald setup begins");
 
 	// Test date/time based things on Zephyr - interesting issues with compliance!
 	Date now;
@@ -182,9 +184,12 @@ void herald_entry() {
 	//             Consider the SecuredPayload or SimplePayload in all other circumstances.
   std::uint16_t countryCode = 826; // UK ISO 3166-1 numeric
 	std::uint16_t stateCode = 0; // National default
-	std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
 
-	std::uint8_t uniqueId[8];
+	// TESTING ONLY
+	// IF IN TESTING / DEBUG, USE A FIXED PAYLOAD (SO YOU CAN TRACK IT OVER TIME)
+	std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
+	std::uint8_t uniqueId[8];	
+  // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
 	auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
 	if (hwInfoAvailable > 0) {
 		LOG_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
@@ -194,15 +199,43 @@ void herald_entry() {
 	}
 	LOG_DBG("Final clientID: %d", clientId);
 
-
-  // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
-
-
 	std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
 		countryCode,
 		stateCode,
 		clientId
 	);
+	// END TESTING ONLY
+
+	// PRODUCTION ONLY
+	// Use the simple payload, or secured payload, that implements privacy features to prevent user tracking
+	// herald::payload::simple::K k;
+	// // NOTE: You should store a secret key for a period of days and pass the value for the correct epoch in to here instead of sk
+	
+	// // Note: Using the CC310 to do this. You can use RandomnessSource.h random sources instead if you wish, but CC310 is more secure.
+	// herald::payload::simple::SecretKey sk(std::byte(0x00),2048); // fallback - you should do something different.
+	
+	// size_t buflen = 2048;
+	// uint8_t* buf = new uint8_t[buflen];
+	// size_t olen = 0;
+	// int success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); 
+	// if (0 == success) {
+	// 	sk.clear();
+	// 	sk.append(buf, 0, buflen);
+	// 	LOG_DBG("Have applied CC3xx generated data to secret key");
+	// } else {
+	// 	LOG_DBG("Could not generate 2048 bytes of randomness required for SimplePayload Secret Key. Falling back to fixed generic secret key.");
+	// }
+
+	// std::shared_ptr<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1> pds = std::make_shared<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1>(
+	// 	ctx,
+	// 	countryCode,
+	// 	stateCode,
+	// 	sk,
+	// 	k
+	// );
+	// END PRODUCTION ONLY
+
+
 	auto sink = ctx->getLoggingSink("mySub","myCat");
 	sink->log(SensorLoggerLevel::debug,"Here's some info for you");
 	auto payload = pds->payload(PayloadTimestamp(),nullptr);

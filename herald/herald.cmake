@@ -47,6 +47,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/rssi.h
   ${HERALD_BASE}/include/herald/datatype/sensor_state.h
   ${HERALD_BASE}/include/herald/datatype/sensor_type.h
+  ${HERALD_BASE}/include/herald/datatype/sha256.h
   ${HERALD_BASE}/include/herald/datatype/signal_characteristic_data.h
   ${HERALD_BASE}/include/herald/datatype/target_identifier.h
   ${HERALD_BASE}/include/herald/datatype/time_interval.h
@@ -56,6 +57,14 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/payload/payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/beacon/beacon_payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/fixed/fixed_payload_data_supplier.h
+  ${HERALD_BASE}/include/herald/payload/simple/contact_identifier.h
+  ${HERALD_BASE}/include/herald/payload/simple/contact_key.h
+  ${HERALD_BASE}/include/herald/payload/simple/contact_key_seed.h
+  ${HERALD_BASE}/include/herald/payload/simple/f.h
+  ${HERALD_BASE}/include/herald/payload/simple/k.h
+  ${HERALD_BASE}/include/herald/payload/simple/matching_key.h
+  ${HERALD_BASE}/include/herald/payload/simple/secret_key.h
+  ${HERALD_BASE}/include/herald/payload/simple/simple_payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/extended/extended_data.h
 
 )
@@ -91,6 +100,9 @@ set(HERALD_SOURCES
 	${HERALD_BASE}/src/engine/coordinator.cpp
 	${HERALD_BASE}/src/payload/beacon/beacon_payload_data_supplier.cpp
 	${HERALD_BASE}/src/payload/fixed/fixed_payload_data_supplier.cpp
+	${HERALD_BASE}/src/payload/simple/f.cpp
+	${HERALD_BASE}/src/payload/simple/k.cpp
+	${HERALD_BASE}/src/payload/simple/simple_payload_data_supplier.cpp
 	${HERALD_BASE}/src/payload/extended/extended_data.cpp
   ${HERALD_BASE}/src/default_sensor_delegate.cpp
   ${HERALD_BASE}/src/context.cpp
@@ -99,6 +111,15 @@ set(HERALD_SOURCES
 set(HERALD_SOURCES_ZEPHYR
   ${HERALD_BASE}/src/ble/zephyr/concrete_ble_transmitter.cpp
   ${HERALD_BASE}/src/zephyr_context.cpp
+)
+set(HERALD_SOURCES_MBEDTLS
+  ${HERALD_BASE}/src/datatype/mbedtls/sha256.cpp
+)
+set(HERALD_SOURCES_TINYCRYPT
+  ${HERALD_BASE}/src/datatype/tinycrypt/sha256.cpp
+)
+set(HERALD_SOURCES_WINDOWS
+  ${HERALD_BASE}/src/datatype/windows/sha256.cpp
 )
 if(DEFINED CONFIG_BT_SCAN)
   set(HERALD_SOURCES_ZEPHYR

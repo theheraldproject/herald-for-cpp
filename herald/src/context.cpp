@@ -54,7 +54,7 @@ DefaultContext::getLoggingSink(const std::string& subsystemFor, const std::strin
 std::shared_ptr<BluetoothStateManager>
 DefaultContext::getBluetoothStateManager()
 {
-
+  return nullptr;
 }
 
 

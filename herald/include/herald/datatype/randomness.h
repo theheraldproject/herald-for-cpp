@@ -111,7 +111,7 @@ private:
  * to use the most appropriate randomness source for their target
  * platform and application needs.
  * 
- * A secondary course of entropy may be something else going on in the
+ * A secondary source of entropy may be something else going on in the
  * app. In Herald, for example, it could be the time it actually takes
  * to complete a scan-and-interact loop. This combines outside effects
  * of communication, internal timer/interrupt timing changes, and
