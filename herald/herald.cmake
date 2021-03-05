@@ -115,6 +115,9 @@ set(HERALD_SOURCES_ZEPHYR
 set(HERALD_SOURCES_MBEDTLS
   ${HERALD_BASE}/src/datatype/mbedtls/sha256.cpp
 )
+set(HERALD_SOURCES_TINYCRYPT
+  ${HERALD_BASE}/src/datatype/tinycrypt/sha256.cpp
+)
 set(HERALD_SOURCES_WINDOWS
   ${HERALD_BASE}/src/datatype/windows/sha256.cpp
 )
