@@ -16,6 +16,7 @@ add_executable(herald-tests
 	extendeddata-tests.cpp
 	fixedpayload-tests.cpp
 	bledevice-tests.cpp
+	ranges-tests.cpp
 
   # high level
 	advertparser-tests.cpp
