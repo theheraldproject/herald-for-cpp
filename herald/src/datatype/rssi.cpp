@@ -19,6 +19,11 @@ public:
 
 RSSI::Impl::Impl() : value(0) { }
 
+RSSI::RSSI()
+ : mImpl(std::make_unique<Impl>())
+{
+  ;
+}
 
 RSSI::RSSI(int value)
  : mImpl(std::make_unique<Impl>())

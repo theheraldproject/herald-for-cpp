@@ -17,6 +17,7 @@ add_executable(herald-tests
 	fixedpayload-tests.cpp
 	simplepayload-tests.cpp
 	bledevice-tests.cpp
+	sample-tests.cpp
 	ranges-tests.cpp
 
   # high level

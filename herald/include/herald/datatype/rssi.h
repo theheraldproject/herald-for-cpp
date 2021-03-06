@@ -13,6 +13,7 @@ namespace datatype {
 
 class RSSI {
 public:
+  RSSI(); // default ctor (evaluates to 0)
   RSSI(int value); // int
   RSSI(const RSSI& other); // copy
   RSSI(RSSI&& other); // move
