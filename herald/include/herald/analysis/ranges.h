@@ -12,8 +12,179 @@
 /// our implementation for embedded devices, and we cannot use compiler features not
 /// yet present in gcc-arm.
 
+#include <array>
+#include <cstdint>
+
 namespace herald {
 namespace analysis {
+
+/// A set of structs compatible with, but not reliant upon, views and ranges in Herald
+namespace sampling {
+
+template <typename ValT>
+struct Sample {
+  Date taken; // Date first for alignment reasons
+  ValT value;
+
+  Sample() : taken(), value() {} // default ctor (required for array)
+  Sample(Date sampled, ValT v) : taken(sampled), value(v) {}
+  ~Sample() = default;
+};
+
+/// FWD DECL
+template <typename ValT, 
+          std::size_t MaxSize>
+class SampleIterator;
+
+/// A Circular container for Samples
+/// Can be used as a container in the views library
+template <typename ValT, 
+          std::size_t MaxSize>
+class SampleList {
+public:
+  using iterator = typename std::array<ValT,MaxSize>::iterator;
+  using value_type = Sample<ValT>;
+  using size_type = std::size_t;
+
+  SampleList() : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {};
+  ~SampleList() = default;
+
+  void push(Date taken, ValT val) {
+    if (SIZE_MAX == newestPosition) {
+      newestPosition = 0;
+      oldestPosition = 0;
+    } else {
+      if (newestPosition == (oldestPosition - 1)) {
+        ++oldestPosition;
+        if (oldestPosition == data.size()) {
+          oldestPosition = 0;
+        }
+      }
+      ++newestPosition;
+    }
+    if (newestPosition == data.size()) {
+      // just gone past the end of the container
+      newestPosition = 0;
+      if (0 == oldestPosition) {
+        ++oldestPosition; // erases oldest if not already removed
+      }
+    }
+    data[newestPosition] = {taken,val};
+  }
+
+  std::size_t size() const {
+    if (newestPosition == SIZE_MAX) return 0;
+    if (newestPosition >= oldestPosition) {
+      // not overlapping the end
+      return newestPosition - oldestPosition + 1;
+    }
+    // we've overlapped
+    return (1 + newestPosition) + (data.size() - oldestPosition);
+  }
+
+  const Sample<ValT>& operator[](std::size_t idx) const {
+    if (newestPosition >= oldestPosition) {
+      return data[idx + oldestPosition];
+    }
+    if (idx + oldestPosition >= data.size()) {
+      // TODO handle the situation where this pos > newestPosition (i.e. gap in the middle)
+      return data[idx + oldestPosition - data.size()];
+    }
+    return data[idx + oldestPosition];
+  }
+
+  void clearBeforeDate(const Date& before) {
+    if (SIZE_MAX == oldestPosition) return;
+    while (oldestPosition != newestPosition) {
+      if (data[oldestPosition].taken < before) {
+        ++oldestPosition;
+        if (data.size() == oldestPosition) {
+          // overflowed
+          oldestPosition = 0;
+        }
+      } else {
+        return;
+      }
+    }
+    // now we're on the last element
+    if (data[oldestPosition].taken < before) {
+      // remove last element
+      oldestPosition = SIZE_MAX;
+      newestPosition = SIZE_MAX;
+    }
+  }
+
+  void clear() {
+    oldestPosition = SIZE_MAX;
+    newestPosition = SIZE_MAX;
+  }
+
+  SampleIterator<ValT,MaxSize> begin() {
+    return SampleIterator<ValT,MaxSize>(*this);
+  }
+
+  SampleIterator<ValT,MaxSize> end() {
+    if (size() == 0) return SampleIterator<ValT,MaxSize>(*this);
+    return SampleIterator<ValT,MaxSize>(*this,size()); // calls this object's size() function, not the array!
+  }
+
+private:
+  std::array<Sample<ValT>,MaxSize> data;
+  std::size_t oldestPosition;
+  std::size_t newestPosition;
+};
+
+template <typename ValT, 
+          std::size_t MaxSize>
+class SampleIterator {
+public:
+  SampleIterator(const SampleList<ValT,MaxSize>& sl) : list(sl), pos(0) {}
+  SampleIterator(const SampleList<ValT,MaxSize>& sl, std::size_t from) : list(sl), pos(from) {} // used to get list.end() (size() + 1)
+  SampleIterator(const SampleIterator<ValT,MaxSize>& other) : list(other.list), pos(other.pos) {} // copy ctor
+  SampleIterator(SampleIterator<ValT,MaxSize>&& other) : list(other.list), pos(other.pos) {} // move ctor (cheaper to copy)
+  ~SampleIterator() = default;
+
+  // always returns const for safety
+  const Sample<ValT>& operator*() {
+    return list[pos];
+  }
+
+  /// prefix operator
+  SampleIterator<ValT,MaxSize>& operator++() {
+    ++pos; // if it's one after the end of the list, then that's the same as list.end()
+    return *this; // reference to instance
+  }
+
+  // postfix operator
+  SampleIterator<ValT,MaxSize> operator++(int) {
+    SampleIterator<ValT,MaxSize> cp =  *this; // copy of instance
+    ++(*this);
+    return cp;
+  }
+
+  bool operator==(SampleIterator<ValT,MaxSize> otherIter) const {
+    return pos == otherIter.pos;
+  }
+
+  bool operator!=(SampleIterator<ValT,MaxSize> otherIter) const {
+    return pos != otherIter.pos;
+  }
+
+  // friend bool operator!=(SampleIterator<ValT,MaxSize> otherIter,SampleIterator<ValT,MaxSize> thisIter) {
+  //   return otherIter != thisIter;
+  // }
+
+  // friend bool operator==(SampleIterator<ValT,MaxSize> otherIter,SampleIterator<ValT,MaxSize> thisIter) {
+  //   return otherIter == thisIter;
+  // }
+
+
+private:
+  const SampleList<ValT,MaxSize>& list;
+  std::size_t pos;
+};
+
+} // end sampling namespace
 
 namespace views {
 
@@ -35,6 +206,23 @@ private:
 };
 */
 
+/// dual or chained filter
+template <typename Pred1,typename Pred2>
+struct dual_filter {
+public:
+  dual_filter(const Pred1 p1, const Pred2 p2) : pred1(p1), pred2(p2) {}
+  ~dual_filter() = default;
+
+  template <typename VTOther>
+  bool operator()(const VTOther& value) const {
+    return pred1(value) && pred2(value);
+  }
+
+private:
+  const Pred1 pred1;
+  const Pred2 pred2;
+};
+
 // Is genericised to...
 template <typename VT>
 struct in_range {
@@ -52,6 +240,21 @@ private:
   const VT max;
 };
 
+template <typename VT>
+struct greater_than {
+public:
+  greater_than(const VT min) : min(min) {}
+  ~greater_than() = default;
+
+  template <typename VTOther>
+  bool operator()(const VTOther& value) const {
+    return value > min;
+  }
+
+private:
+  const VT min;
+};
+
 // TODO consider clamping modifications as well as in_range filtering
 
 /// Proxies a collection's iterator
@@ -65,9 +268,14 @@ private:
 template <typename Coll,
           //typename ValT = typename std::remove_cv<typename Coll::value_type::first_type>::type,
           typename ValT = typename std::remove_cv<typename Coll::value_type>::type, // works for intrinsic types and complex types
-          typename IterT = typename Coll::iterator
+          typename IterT = typename Coll::iterator,
+          typename SizeT = typename Coll::size_type
          >
 struct iterator_proxy {
+  using base_iterator = IterT;
+  using base_value_type = ValT;
+  using base_size_type = SizeT;
+
   iterator_proxy(Coll& coll) : iter(std::move(std::begin(coll))), endIter(std::move(std::end(coll))) {}
   iterator_proxy(iterator_proxy&& other) : iter(std::move(other.iter)), endIter(std::move(other.endIter)) {}
   iterator_proxy(const iterator_proxy& other) : iter(other.iter), endIter(other.endIter) {}
@@ -138,8 +346,58 @@ struct filter_fn {
     return pred(val);
   }
 
+  const Pred predicate() const {
+    return pred;
+  }
+
 private:
   const Pred pred;
+};
+
+/// Create a view holder that wraps an iterator, so the result of all returns have a begin() and end()
+/// just like an STL collection
+template <typename IterProxyT,
+          typename BaseValT = typename IterProxyT::base_value_type,
+          typename BaseIterT = typename IterProxyT::base_iterator,
+          typename BaseSizeT = typename IterProxyT::base_size_type>
+struct view {
+  // Make this look like an STL collection (so filter<Coll,Pred> works with a view)
+  using value_type = BaseValT;
+  using iterator = BaseIterT;
+  using size_type = BaseSizeT;
+
+  view(IterProxyT srcIter) : source(std::forward<IterProxyT>(srcIter)) {} // TAKE OWNERSHIP
+  ~view() = default;
+
+  auto begin() -> IterProxyT {
+    return source;
+  }
+
+  auto end() -> BaseIterT {
+    return source.end();
+  }
+
+  template <typename IterT>
+  bool operator==(const IterT& other) {
+    return other == source;
+  }
+
+  template <typename IterT>
+  bool operator!=(const IterT& other) {
+    return other != source;
+  }
+
+  auto size() -> BaseSizeT {
+    // return source.size(); // this is the UNFILTERED size
+    return std::distance(source.wrapped(),source.end() - 1); // minus one as we don't want the distance to end() but the last element the 1 before it
+  }
+
+  auto operator[](BaseSizeT position) -> BaseValT {
+    return *(source.wrapped() + position);
+  }
+
+private:
+  IterProxyT source;
 };
 
 /// Now we create a version that selectively returns the underlying iterator's elements using filter_fn
@@ -154,18 +412,36 @@ template <typename Coll,
           typename Pred,
           // typename ValT = typename std::remove_cv<typename Coll::value_type::first_type>::type,
           typename ValT = typename std::remove_cv<typename Coll::value_type>::type, // works for intrinsic types and complex types
-          typename IterT = typename Coll::iterator
+          typename IterT = typename Coll::iterator,
+          typename SizeT = typename Coll::size_type
          >
 struct filtered_iterator_proxy {
-  // const value_type = typename ValT;
-  // const iterator = typename IterT;
+  using base_iterator = IterT;
+  using base_coll_type = Coll; // for chaining
+  using base_pred_type = Pred; // for chaining
+  using base_value_type = ValT;
+  using base_size_type = SizeT;
 
-  filtered_iterator_proxy(Coll& coll, Pred pred) : iter(std::move(std::begin(coll))), endIter(std::move(std::end(coll))), filter(pred) {
+  using value_type = ValT;
+  using iterator = IterT;
+  using size_type = SizeT;
+
+  filtered_iterator_proxy(Coll& coll, Pred pred) : coll(coll), iter(std::move(std::begin(coll))), endIter(std::move(std::end(coll))), filter(pred) {
     // move forward to the first match (or end)
     moveToNext();
   }
-  filtered_iterator_proxy(filtered_iterator_proxy&& other) : iter(std::move(other.iter)), endIter(std::move(other.endIter)), filter(other.filter) {}
-  filtered_iterator_proxy(const filtered_iterator_proxy& other) : iter(other.iter), endIter(other.endIter), filter(other.filter) {}
+  // // and from an intermediary proxy
+  // template <typename OtherColl, typename OtherPred>
+  // filtered_iterator_proxy(filtered_iterator_proxy<OtherColl,OtherPred>& otherProxy, Pred pred) 
+  //   : iter(otherProxy), endIter(otherProxy.end()), filter(pred) {
+  //   // move forward to the first match (or end)
+  //   moveToNext();
+  // }
+
+  // chaining ctor
+  // filtered_iterator_proxy(filtered_iterator_proxy&& other, Pred pred) : iter(std::move(other.iter)), endIter(std::move(other.endIter)), filter(dual_filter(other.filter,pred)) {}
+  filtered_iterator_proxy(filtered_iterator_proxy&& other) : coll(other.coll), iter(std::move(other.iter)), endIter(std::move(other.endIter)), filter(other.filter) {}
+  filtered_iterator_proxy(const filtered_iterator_proxy& other) : coll(other.coll), iter(other.iter), endIter(other.endIter), filter(other.filter) {}
   ~filtered_iterator_proxy() = default;
 
   auto operator*() -> ValT& {
@@ -225,8 +501,16 @@ struct filtered_iterator_proxy {
     return endIter == iter;
   }
 
+  Coll& collection() const {
+    return coll;
+  }
+
+  Pred predicate() const {
+    return filter.predicate();
+  }
 
 private:
+  Coll& coll;
   IterT iter;
   IterT endIter;
   filter_fn<Pred> filter;
@@ -239,34 +523,6 @@ private:
   }
 };
 
-/// Create a view holder that wraps an iterator, so the result of all returns have a begin() and end()
-/// just like an STL collection
-template <typename IterProxyT>
-struct view {
-  view(IterProxyT&& srcIter) : source(std::move(srcIter)) {} // TAKE OWNERSHIP
-  ~view() = default;
-
-  auto begin() -> IterProxyT {
-    return source;
-  }
-
-  auto end() -> IterProxyT {
-    return source.end();
-  }
-
-  template <typename IterT>
-  bool operator==(const IterT& other) {
-    return other == source;
-  }
-
-  template <typename IterT>
-  bool operator!=(const IterT& other) {
-    return other != source;
-  }
-
-private:
-  IterProxyT source;
-};
 
 
 
@@ -297,9 +553,28 @@ public:
   auto operator()(Coll& c) -> filtered_iterator_proxy<Coll,Pred> {
     return filtered_iterator_proxy<Coll,Pred>(c,pred);
   }
+  
+  // specialisation for two chained filters
+  // template <typename OtherPred>
+  // friend auto operator|(filter<OtherPred> otherFilter,filter<Pred> pred) -> filtered_iterator_proxy<view<filter<OtherPred>>,Pred> {
+  //   return filtered_iterator_proxy<view<filter<OtherPred>>,Pred>(view(otherFilter),pred.pred);
+  // }
+  // template <typename OtherColl, typename OtherPred>
+  // friend auto operator|(filtered_iterator_proxy<OtherColl,OtherPred> otherProxy,filter<Pred> pred) -> filtered_iterator_proxy<OtherColl,Pred> {
+  //   return filtered_iterator_proxy<OtherColl,Pred>(otherProxy,pred.pred);
+  // }
+
+  // template <typename OtherIterProxyT>
+  // friend auto operator|(filter<OtherIterProxyT> c,filter<Pred> pred) -> filtered_iterator_proxy<view<OtherIterProxyT>,Pred> {
+  //   return filtered_iterator_proxy<view<OtherIterProxyT>,Pred>(std::forward<view<OtherIterProxyT>>(c),pred.pred); // perfect forwarding
+  // }
+  template <typename OtherColl, typename OtherPred> // first argument must be l-value below
+  friend auto operator|(filtered_iterator_proxy<OtherColl,OtherPred> c,filter<Pred> pred) -> filtered_iterator_proxy<OtherColl,dual_filter<OtherPred,Pred>> {
+    return filtered_iterator_proxy<OtherColl,dual_filter<OtherPred,Pred>>(c.collection(),dual_filter(c.predicate(),pred.pred));
+  }
 
   template <typename Coll>
-  friend auto operator|(Coll c,filter<Pred> pred) -> filtered_iterator_proxy<Coll,Pred> {
+  friend auto operator|(Coll& c,filter<Pred> pred) -> filtered_iterator_proxy<Coll,Pred> {
     return filtered_iterator_proxy<Coll,Pred>(c,pred.pred);
   }
 
@@ -310,6 +585,18 @@ public:
 
 private:
   Pred pred;
+};
+
+/// Simple action to convert the end of a *iterator_proxy chain in to a final view class
+/// The final view class has begin() and end() and other STL collection like features
+struct to_view {
+  to_view() = default;
+  ~to_view() = default;
+
+  template <typename IterProxyT>
+  friend auto operator|(IterProxyT proxy,to_view view) -> herald::analysis::views::view<IterProxyT> {
+    return herald::analysis::views::view<IterProxyT>(proxy);
+  }
 };
 
 /*
