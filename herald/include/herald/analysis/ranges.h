@@ -23,6 +23,8 @@ namespace sampling {
 
 template <typename ValT>
 struct Sample {
+  using value_type = ValT;
+
   Date taken; // Date first for alignment reasons
   ValT value;
 
@@ -32,24 +34,29 @@ struct Sample {
 };
 
 /// FWD DECL
-template <typename ValT, 
-          std::size_t MaxSize>
-class SampleIterator;
+// template <typename ValT, 
+//           std::size_t MaxSize>
+template <typename SampleListT,
+          typename ValT = typename SampleListT::value_type>
+struct SampleIterator;
 
 /// A Circular container for Samples
 /// Can be used as a container in the views library
-template <typename ValT, 
-          std::size_t MaxSize>
-class SampleList {
-public:
-  using iterator = typename std::array<ValT,MaxSize>::iterator;
-  using value_type = Sample<ValT>;
+template <typename SampleT, // This is Sample<SampleValueT>
+          std::size_t MaxSize,
+          typename SampleValueT = typename std::remove_cv<typename SampleT::value_type>::type
+         >
+struct SampleList {
+  using value_type = SampleT; // MUST be before the next line!
+  using iterator = SampleIterator<SampleList<SampleT,MaxSize>>;
   using size_type = std::size_t;
+
+  static constexpr std::size_t max_size = MaxSize;
 
   SampleList() : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {};
   ~SampleList() = default;
 
-  void push(Date taken, ValT val) {
+  void push(Date taken, SampleValueT val) {
     if (SIZE_MAX == newestPosition) {
       newestPosition = 0;
       oldestPosition = 0;
@@ -69,7 +76,7 @@ public:
         ++oldestPosition; // erases oldest if not already removed
       }
     }
-    data[newestPosition] = {taken,val};
+    data[newestPosition] = SampleT{taken,val};
   }
 
   std::size_t size() const {
@@ -82,7 +89,7 @@ public:
     return (1 + newestPosition) + (data.size() - oldestPosition);
   }
 
-  const Sample<ValT>& operator[](std::size_t idx) const {
+  const SampleT& operator[](std::size_t idx) const {
     if (newestPosition >= oldestPosition) {
       return data[idx + oldestPosition];
     }
@@ -119,54 +126,55 @@ public:
     newestPosition = SIZE_MAX;
   }
 
-  SampleIterator<ValT,MaxSize> begin() {
-    return SampleIterator<ValT,MaxSize>(*this);
+  SampleIterator<SampleList<SampleT,MaxSize>> begin() {
+    return SampleIterator<SampleList<SampleT,MaxSize>>(*this);
   }
 
-  SampleIterator<ValT,MaxSize> end() {
-    if (size() == 0) return SampleIterator<ValT,MaxSize>(*this);
-    return SampleIterator<ValT,MaxSize>(*this,size()); // calls this object's size() function, not the array!
+  SampleIterator<SampleList<SampleT,MaxSize>> end() {
+    if (size() == 0) return SampleIterator<SampleList<SampleT,MaxSize>>(*this);
+    return SampleIterator<SampleList<SampleT,MaxSize>>(*this,size()); // calls this object's size() function, not the array!
   }
 
 private:
-  std::array<Sample<ValT>,MaxSize> data;
+  std::array<SampleT,MaxSize> data;
   std::size_t oldestPosition;
   std::size_t newestPosition;
 };
 
-template <typename ValT, 
-          std::size_t MaxSize>
-class SampleIterator {
-public:
-  SampleIterator(const SampleList<ValT,MaxSize>& sl) : list(sl), pos(0) {}
-  SampleIterator(const SampleList<ValT,MaxSize>& sl, std::size_t from) : list(sl), pos(from) {} // used to get list.end() (size() + 1)
-  SampleIterator(const SampleIterator<ValT,MaxSize>& other) : list(other.list), pos(other.pos) {} // copy ctor
-  SampleIterator(SampleIterator<ValT,MaxSize>&& other) : list(other.list), pos(other.pos) {} // move ctor (cheaper to copy)
+template <typename SampleListT,
+          typename ValT> // from fwd decl =>  = typename SampleListT::value_type
+struct SampleIterator {
+  SampleIterator(SampleListT& sl) : list(sl), pos(0) {}
+  SampleIterator(SampleListT& sl, std::size_t from) : list(sl), pos(from) {} // used to get list.end() (size() + 1)
+  SampleIterator(const SampleIterator<SampleListT>& other) : list(other.list), pos(other.pos) {} // copy ctor
+  SampleIterator(SampleIterator<SampleListT>&& other) : list(other.list), pos(other.pos) {} // move ctor (cheaper to copy)
   ~SampleIterator() = default;
 
   // always returns const for safety
-  const Sample<ValT>& operator*() {
+  const ValT& operator*() {
     return list[pos];
   }
 
+  // TODO implement operator+(int amt) to move this iterator forward
+
   /// prefix operator
-  SampleIterator<ValT,MaxSize>& operator++() {
+  SampleIterator<SampleListT>& operator++() {
     ++pos; // if it's one after the end of the list, then that's the same as list.end()
     return *this; // reference to instance
   }
 
   // postfix operator
-  SampleIterator<ValT,MaxSize> operator++(int) {
-    SampleIterator<ValT,MaxSize> cp =  *this; // copy of instance
+  SampleIterator<SampleListT> operator++(int) {
+    SampleIterator<SampleListT> cp =  *this; // copy of instance
     ++(*this);
     return cp;
   }
 
-  bool operator==(SampleIterator<ValT,MaxSize> otherIter) const {
+  bool operator==(const SampleIterator<SampleListT>& otherIter) const {
     return pos == otherIter.pos;
   }
 
-  bool operator!=(SampleIterator<ValT,MaxSize> otherIter) const {
+  bool operator!=(const SampleIterator<SampleListT>& otherIter) const {
     return pos != otherIter.pos;
   }
 
@@ -180,7 +188,7 @@ public:
 
 
 private:
-  const SampleList<ValT,MaxSize>& list;
+  SampleListT& list;
   std::size_t pos;
 };
 
@@ -255,6 +263,21 @@ private:
   const VT min;
 };
 
+template <typename VT>
+struct less_than {
+public:
+  less_than(const VT max) : max(max) {}
+  ~less_than() = default;
+
+  template <typename VTOther>
+  bool operator()(const VTOther& value) const {
+    return value < max;
+  }
+
+private:
+  const VT max;
+};
+
 // TODO consider clamping modifications as well as in_range filtering
 
 /// Proxies a collection's iterator
@@ -281,7 +304,7 @@ struct iterator_proxy {
   iterator_proxy(const iterator_proxy& other) : iter(other.iter), endIter(other.endIter) {}
   ~iterator_proxy() = default;
 
-  auto operator*() -> ValT& {
+  auto operator*() -> const ValT& {
     return *iter;
   }
 
@@ -572,6 +595,11 @@ public:
   friend auto operator|(filtered_iterator_proxy<OtherColl,OtherPred> c,filter<Pred> pred) -> filtered_iterator_proxy<OtherColl,dual_filter<OtherPred,Pred>> {
     return filtered_iterator_proxy<OtherColl,dual_filter<OtherPred,Pred>>(c.collection(),dual_filter(c.predicate(),pred.pred));
   }
+
+  // template <typename ValT, std::size_t MaxSize> // first argument must be l-value below
+  // friend auto operator|(herald::analysis::sampling::SampleList<ValT,MaxSize>& c,filter<Pred> pred) -> filtered_iterator_proxy<herald::analysis::sampling::SampleList<ValT,MaxSize>,Pred> {
+  //   return filtered_iterator_proxy<herald::analysis::sampling::SampleList<ValT,MaxSize>,Pred>(c,pred.pred);
+  // }
 
   template <typename Coll>
   friend auto operator|(Coll& c,filter<Pred> pred) -> filtered_iterator_proxy<Coll,Pred> {

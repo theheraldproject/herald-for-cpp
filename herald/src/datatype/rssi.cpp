@@ -77,6 +77,18 @@ RSSI::intValue() const noexcept {
 
 
 bool
+RSSI::operator==(const int other) const noexcept
+{
+  return mImpl->value == other;
+}
+
+bool
+RSSI::operator!=(const int other) const noexcept
+{
+  return mImpl->value != other;
+}
+
+bool
 RSSI::operator==(const RSSI& other) const noexcept
 {
   return mImpl->value == other.mImpl->value;
