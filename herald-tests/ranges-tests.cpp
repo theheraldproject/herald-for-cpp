@@ -20,9 +20,18 @@ TEST_CASE("ranges-iterator-proxy", "[ranges][iterator][proxy]") {
     ages.push_back(66);
     herald::analysis::views::iterator_proxy<std::vector<int>> proxy(ages);
 
-    // REQUIRE(std::end(ages) != proxy.wrapped());
-    // REQUIRE(std::end(ages) != proxy);
     REQUIRE(!proxy.ended());
+    REQUIRE(*proxy == 12);
+    ++proxy;
+    REQUIRE(*proxy == 14);
+    ++proxy;
+    REQUIRE(*proxy == 19);
+    ++proxy;
+    REQUIRE(*proxy == 45);
+    ++proxy;
+    REQUIRE(*proxy == 66);
+    ++proxy;
+    REQUIRE(proxy.ended());
   }
 }
 
@@ -53,24 +62,31 @@ TEST_CASE("ranges-filter-typed", "[ranges][typed]") {
 
 // TODO a version like the above but using generic ranges/views to remove type names
 
-TEST_CASE("ranges-filter-generic", "[ranges][generic]") {
-  SECTION("ranges-filter-generic") {
-    // herald::analysis::views::in_range workingAge(18,65);
+// TEST_CASE("ranges-filter-generic", "[ranges][generic]") {
+//   SECTION("ranges-filter-generic") {
+//     herald::analysis::views::in_range workingAge(18,65);
     
-    // std::vector<int> ages;
-    // ages.push_back(12);
-    // ages.push_back(14);
-    // ages.push_back(19);
-    // ages.push_back(45);
-    // ages.push_back(66);
+//     std::vector<int> ages;
+//     ages.push_back(12);
+//     ages.push_back(14);
+//     ages.push_back(19);
+//     ages.push_back(45);
+//     ages.push_back(66);
 
-    // auto workingAges = ages | herald::analysis::views::filter(workingAge);
+//     auto workingAges = ages | herald::analysis::views::filter(workingAge);
 
-    // REQUIRE(workingAges.size() == 2);
-    // REQUIRE(workingAges[0] == 19);
-    // REQUIRE(workingAges[1] == 45);
-  }
-}
+//     auto iter = workingAges.begin();
+//     REQUIRE(iter != workingAges.end());
+//     REQUIRE(*iter == 19);
+//     ++iter;
+//     REQUIRE(*iter == 45);
+
+//     // TODO make the below work just like any other STL collection
+//     // REQUIRE(workingAges.size() == 2);
+//     // REQUIRE(workingAges[0] == 19);
+//     // REQUIRE(workingAges[1] == 45);
+//   }
+// }
 
 // TEST_CASE("analysis-rssi-distance", "[analysis][rssi]") {
 //   SECTION("analysis-rssi-distance") {

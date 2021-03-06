@@ -42,14 +42,9 @@ public:
   in_range(const VT min, const VT max) : min(min), max(max) {}
   ~in_range() = default;
 
-  // template <typename VT>
-  // bool operator()(const VT& value) const {
-  //   return value >= min && value <= max;
-  // }
-
-  template <typename VTIter>
-  bool operator()(const VTIter& valueIter) const {
-    return ((*valueIter) >= min) && ((*valueIter) <= max);
+  template <typename VTOther>
+  bool operator()(const VTOther& value) const {
+    return value >= min && value <= max;
   }
 
 private:
@@ -73,7 +68,9 @@ template <typename Coll,
           typename IterT = typename Coll::iterator
          >
 struct iterator_proxy {
-  iterator_proxy(Coll& coll) : iter(std::begin(coll)), end(std::end(coll)) {}
+  iterator_proxy(Coll& coll) : iter(std::move(std::begin(coll))), endIter(std::move(std::end(coll))) {}
+  iterator_proxy(iterator_proxy&& other) : iter(std::move(other.iter)), endIter(std::move(other.endIter)) {}
+  iterator_proxy(const iterator_proxy& other) : iter(other.iter), endIter(other.endIter) {}
   ~iterator_proxy() = default;
 
   auto operator*() -> ValT& {
@@ -113,13 +110,17 @@ struct iterator_proxy {
     return iter;
   }
 
+  IterT& end() {
+    return endIter;
+  }
+
   bool ended() {
-    return end == iter;
+    return endIter == iter;
   }
 
 private:
   IterT iter;
-  IterT end;
+  IterT endIter;
 };
 
 ///
@@ -151,42 +152,123 @@ private:
 /// }
 template <typename Coll,
           typename Pred,
-          typename ValT = typename std::remove_cv<typename Coll::value_type::first_type>::type,
+          // typename ValT = typename std::remove_cv<typename Coll::value_type::first_type>::type,
+          typename ValT = typename std::remove_cv<typename Coll::value_type>::type, // works for intrinsic types and complex types
           typename IterT = typename Coll::iterator
          >
 struct filtered_iterator_proxy {
-  filtered_iterator_proxy(Coll& coll, Pred pred) : iter(std::begin(coll)), end(std::end(coll)), filter(pred) {
+  // const value_type = typename ValT;
+  // const iterator = typename IterT;
+
+  filtered_iterator_proxy(Coll& coll, Pred pred) : iter(std::move(std::begin(coll))), endIter(std::move(std::end(coll))), filter(pred) {
     // move forward to the first match (or end)
     moveToNext();
   }
+  filtered_iterator_proxy(filtered_iterator_proxy&& other) : iter(std::move(other.iter)), endIter(std::move(other.endIter)), filter(other.filter) {}
+  filtered_iterator_proxy(const filtered_iterator_proxy& other) : iter(other.iter), endIter(other.endIter), filter(other.filter) {}
   ~filtered_iterator_proxy() = default;
 
   auto operator*() -> ValT& {
     return *iter;
   }
 
+  /// prefix operator
   filtered_iterator_proxy<Coll,Pred>& operator++() {
     // move forward until we get a match (or end)
     moveToNext();
     return *this;
   }
 
-  bool ended() {
-    return end == iter;
+  // postfix operator
+  filtered_iterator_proxy<Coll,Pred> operator++(int) {
+    filtered_iterator_proxy<Coll,Pred> cp =  *this; // copy of instance
+    ++(*this);
+    return cp;
   }
+
+  bool operator==(IterT otherIter) const {
+    return iter == otherIter;
+  }
+
+  bool operator!=(IterT otherIter) const {
+    return iter != otherIter;
+  }
+
+  friend bool operator!=(IterT otherIter,filtered_iterator_proxy<Coll,Pred> thisIter) {
+    return otherIter != thisIter.iter;
+  }
+
+  friend bool operator==(IterT otherIter,filtered_iterator_proxy<Coll,Pred> thisIter) {
+    return otherIter == thisIter.iter;
+  }
+
+  // template <typename Coll>
+  // Coll& operator=(filtered_iterator_proxy<Coll,Pred> proxy) {
+  //   // Iterate over iterator proxy and add each value in to the result coll
+  //   // In effect, this performs filtering 'on the fly' when an = operator is encountered
+  //   //   i.e. this is the point the chain of proxy iterators is evaluated - resulting in
+  //   //   an iteration over the source collection just ONCE, and no temporary collections.
+  //   // Note: Using STL functions for this (using resultColl, proxy.iter and proxy.end)
+  //   resultColl.insert(resultColl.end(), proxy, proxy.end());
+  //   return resultColl;
+  // }
+
+  IterT& wrapped() {
+    return iter;
+  }
+
+  IterT& end() {
+    return endIter;
+  }
+
+  bool ended() {
+    return endIter == iter;
+  }
+
 
 private:
   IterT iter;
-  IterT end;
+  IterT endIter;
   filter_fn<Pred> filter;
 
   void moveToNext() {
-    if (end == iter) return; // guard
+    if (endIter == iter) return; // guard
     do {
       ++iter;
-    } while (end != iter && !filter(*iter));
+    } while (endIter != iter && !filter(*iter));
   }
 };
+
+/// Create a view holder that wraps an iterator, so the result of all returns have a begin() and end()
+/// just like an STL collection
+template <typename IterProxyT>
+struct view {
+  view(IterProxyT&& srcIter) : source(std::move(srcIter)) {} // TAKE OWNERSHIP
+  ~view() = default;
+
+  auto begin() -> IterProxyT {
+    return source;
+  }
+
+  auto end() -> IterProxyT {
+    return source.end();
+  }
+
+  template <typename IterT>
+  bool operator==(const IterT& other) {
+    return other == source;
+  }
+
+  template <typename IterT>
+  bool operator!=(const IterT& other) {
+    return other != source;
+  }
+
+private:
+  IterProxyT source;
+};
+
+
 
 /// Now think about a filter instance that would filter an entire range of values
 ///
@@ -212,9 +294,19 @@ public:
   // }
 
   template <typename Coll>
-  auto operator()(Coll c) -> iterator_proxy<Coll> {
-    return iterator_proxy<Coll>(c);
+  auto operator()(Coll& c) -> filtered_iterator_proxy<Coll,Pred> {
+    return filtered_iterator_proxy<Coll,Pred>(c,pred);
   }
+
+  template <typename Coll>
+  friend auto operator|(Coll c,filter<Pred> pred) -> filtered_iterator_proxy<Coll,Pred> {
+    return filtered_iterator_proxy<Coll,Pred>(c,pred.pred);
+  }
+
+  // template <typename Coll>
+  // friend auto operator|(Coll c,filter<Pred> pred) -> view<filtered_iterator_proxy<Coll,Pred>> {
+  //   return view<filtered_iterator_proxy<Coll,Pred>>(filtered_iterator_proxy<Coll,Pred>(c,pred.pred));
+  // }
 
 private:
   Pred pred;
