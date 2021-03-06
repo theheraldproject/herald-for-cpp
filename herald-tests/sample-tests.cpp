@@ -19,16 +19,16 @@ TEST_CASE("sample-basic", "[sample][basic]") {
 
 TEST_CASE("samplelist-empty", "[samplelist][empty]") {
   SECTION("samplelist-empty") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
 
     REQUIRE(sl.size() == 0);
-    // REQUIRE(std::begin(sl) == std::end(sl));
+    REQUIRE(std::begin(sl) == std::end(sl));
   }
 }
 
 TEST_CASE("samplelist-notfull", "[samplelist][notfull]") {
   SECTION("samplelist-notfull") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -42,7 +42,7 @@ TEST_CASE("samplelist-notfull", "[samplelist][notfull]") {
 
 TEST_CASE("samplelist-exactlyfull", "[samplelist][exactlyfull]") {
   SECTION("samplelist-exactlyfull") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -60,7 +60,7 @@ TEST_CASE("samplelist-exactlyfull", "[samplelist][exactlyfull]") {
 
 TEST_CASE("samplelist-oneover", "[samplelist][oneover]") {
   SECTION("samplelist-oneover") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -79,7 +79,7 @@ TEST_CASE("samplelist-oneover", "[samplelist][oneover]") {
 
 TEST_CASE("samplelist-threeover", "[samplelist][threeover]") {
   SECTION("samplelist-threeover") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -100,7 +100,7 @@ TEST_CASE("samplelist-threeover", "[samplelist][threeover]") {
 
 TEST_CASE("samplelist-justunderfullagain", "[samplelist][justunderfullagain]") {
   SECTION("samplelist-justunderfullagain") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -122,7 +122,7 @@ TEST_CASE("samplelist-justunderfullagain", "[samplelist][justunderfullagain]") {
 
 TEST_CASE("samplelist-fullagain", "[samplelist][fullagain]") {
   SECTION("samplelist-fullagain") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -147,7 +147,7 @@ TEST_CASE("samplelist-fullagain", "[samplelist][fullagain]") {
 
 TEST_CASE("samplelist-clearoneold", "[samplelist][clearoneold]") {
   SECTION("samplelist-clearoneold") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -171,7 +171,7 @@ TEST_CASE("samplelist-clearoneold", "[samplelist][clearoneold]") {
 
 TEST_CASE("samplelist-clearfourold", "[samplelist][clearfourold]") {
   SECTION("samplelist-clearfourold") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -192,7 +192,7 @@ TEST_CASE("samplelist-clearfourold", "[samplelist][clearfourold]") {
 
 TEST_CASE("samplelist-clearallold", "[samplelist][clearallold]") {
   SECTION("samplelist-clearallold") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -213,7 +213,7 @@ TEST_CASE("samplelist-clearallold", "[samplelist][clearallold]") {
 // Now handle clear()
 TEST_CASE("samplelist-clear", "[samplelist][clear]") {
   SECTION("samplelist-clear") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -234,7 +234,7 @@ TEST_CASE("samplelist-clear", "[samplelist][clear]") {
 // Now handle iterators
 TEST_CASE("samplelist-iterator-empty", "[samplelist][iterator][empty]") {
   SECTION("samplelist-iterator-empty") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     
     auto iter = std::begin(sl);
     auto endIter = std::end(sl);
@@ -246,7 +246,7 @@ TEST_CASE("samplelist-iterator-empty", "[samplelist][iterator][empty]") {
 }
 TEST_CASE("samplelist-iterator-single", "[samplelist][iterator][single]") {
   SECTION("samplelist-iterator-single") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     
     auto iter = std::begin(sl);
@@ -263,7 +263,7 @@ TEST_CASE("samplelist-iterator-single", "[samplelist][iterator][single]") {
 
 TEST_CASE("samplelist-iterator-three", "[samplelist][iterator][three]") {
   SECTION("samplelist-iterator-three") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -286,7 +286,7 @@ TEST_CASE("samplelist-iterator-three", "[samplelist][iterator][three]") {
 
 TEST_CASE("samplelist-iterator-exactlyfull", "[samplelist][iterator][exactlyfull]") {
   SECTION("samplelist-iterator-exactlyfull") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -315,7 +315,7 @@ TEST_CASE("samplelist-iterator-exactlyfull", "[samplelist][iterator][exactlyfull
 
 TEST_CASE("samplelist-iterator-oneover", "[samplelist][iterator][oneover]") {
   SECTION("samplelist-iterator-oneover") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -345,7 +345,7 @@ TEST_CASE("samplelist-iterator-oneover", "[samplelist][iterator][oneover]") {
 
 TEST_CASE("samplelist-iterator-twoover", "[samplelist][iterator][twoover]") {
   SECTION("samplelist-iterator-twoover") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -376,7 +376,7 @@ TEST_CASE("samplelist-iterator-twoover", "[samplelist][iterator][twoover]") {
 
 TEST_CASE("samplelist-iterator-fullagain", "[samplelist][iterator][fullagain]") {
   SECTION("samplelist-iterator-fullagain") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);
@@ -410,7 +410,7 @@ TEST_CASE("samplelist-iterator-fullagain", "[samplelist][iterator][fullagain]") 
 
 TEST_CASE("samplelist-iterator-cleared", "[samplelist][iterator][cleared]") {
   SECTION("samplelist-iterator-cleared") {
-    herald::analysis::sampling::SampleList<herald::datatype::RSSI,5> sl;
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
     sl.push(1234,-55);
     sl.push(1244,-60);
     sl.push(1265,-58);

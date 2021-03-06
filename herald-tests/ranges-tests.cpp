@@ -56,11 +56,8 @@ TEST_CASE("ranges-filter-typed", "[ranges][typed]") {
     REQUIRE(*iter == 45);
     ++iter;
     REQUIRE(iter.ended());
-    // REQUIRE(thirdOfWorkingAge == std::end(ages));
   }
 }
-
-// TODO a version like the above but using generic ranges/views to remove type names
 
 TEST_CASE("ranges-filter-generic", "[ranges][generic]") {
   SECTION("ranges-filter-generic") {
@@ -83,7 +80,6 @@ TEST_CASE("ranges-filter-generic", "[ranges][generic]") {
     ++iter;
     REQUIRE(*iter == 45);
 
-    // TODO make the below work just like any other STL collection
     REQUIRE(workingAges.size() == 2);
     REQUIRE(workingAges[0] == 19);
     REQUIRE(workingAges[1] == 45);
@@ -113,9 +109,68 @@ TEST_CASE("ranges-filter-multi", "[ranges][filter][multi]") {
     ++iter;
     REQUIRE(iter == workingAges.end());
 
-    // TODO make the below work just like any other STL collection
     REQUIRE(workingAges.size() == 1);
     REQUIRE(workingAges[0] == 45);
+  }
+}
+
+TEST_CASE("ranges-iterator-rssisamples", "[ranges][iterator][rssisamples][rssi]") {
+  SECTION("ranges-iterator-rssisamples") {
+    herald::analysis::views::in_range valid(-99,-10);
+    herald::analysis::views::less_than strong(-59);
+    
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
+    sl.push(1234,-9);
+    sl.push(1244,-60);
+    sl.push(1265,-58);
+    sl.push(1282,-61);
+    sl.push(1294,-100);
+
+    herald::analysis::views::iterator_proxy<herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5>> proxy(sl);
+
+    REQUIRE(!proxy.ended());
+    REQUIRE((*proxy).value == -9);
+    ++proxy;
+    REQUIRE((*proxy).value == -60);
+    ++proxy;
+    REQUIRE((*proxy).value == -58);
+    ++proxy;
+    REQUIRE((*proxy).value == -61);
+    ++proxy;
+    REQUIRE((*proxy).value == -100);
+    ++proxy;
+    REQUIRE(proxy.ended());
+  }
+}
+
+TEST_CASE("ranges-filter-multi-rssisamples", "[ranges][filter][multi][rssisamples][rssi]") {
+  SECTION("ranges-filter-multi-rssisamples") {
+    herald::analysis::views::in_range valid(-99,-10);
+    herald::analysis::views::less_than strong(-59);
+    
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
+    sl.push(1234,-9);
+    sl.push(1244,-60);
+    sl.push(1265,-58);
+    sl.push(1282,-61);
+    sl.push(1294,-100);
+
+    auto values = sl 
+                | herald::analysis::views::filter(valid) 
+                // | herald::analysis::views::filter(strong)
+                | herald::analysis::views::to_view();
+
+    auto iter = values.begin();
+    REQUIRE(iter != values.end());
+    REQUIRE((*iter).value == -60);
+    ++iter;
+    REQUIRE((*iter).value == -61);
+    ++iter;
+    REQUIRE(iter == values.end());
+
+    REQUIRE(values.size() == 2);
+    REQUIRE(values[0].value == -60);
+    REQUIRE(values[1].value == -61);
   }
 }
 
