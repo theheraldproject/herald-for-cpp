@@ -19,6 +19,11 @@ public:
 
 RSSI::Impl::Impl() : value(0) { }
 
+RSSI::RSSI()
+ : mImpl(std::make_unique<Impl>())
+{
+  ;
+}
 
 RSSI::RSSI(int value)
  : mImpl(std::make_unique<Impl>())
@@ -68,8 +73,27 @@ RSSI::intValue() const noexcept {
   return mImpl->value;
 }
 
+RSSI::operator long() const noexcept {
+  return mImpl->value;
+}
+
+RSSI::operator double() const noexcept {
+  return (double)mImpl->value;
+}
 
 
+
+bool
+RSSI::operator==(const int other) const noexcept
+{
+  return mImpl->value == other;
+}
+
+bool
+RSSI::operator!=(const int other) const noexcept
+{
+  return mImpl->value != other;
+}
 
 bool
 RSSI::operator==(const RSSI& other) const noexcept

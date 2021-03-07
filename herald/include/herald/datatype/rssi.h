@@ -13,6 +13,7 @@ namespace datatype {
 
 class RSSI {
 public:
+  RSSI(); // default ctor (evaluates to 0)
   RSSI(int value); // int
   RSSI(const RSSI& other); // copy
   RSSI(RSSI&& other); // move
@@ -21,12 +22,17 @@ public:
   RSSI& operator=(const RSSI& other); // copy assign
   RSSI& operator=(RSSI&& other); // move assign
   
+  bool operator==(const int other) const noexcept;
+  bool operator!=(const int other) const noexcept;
   bool operator==(const RSSI& other) const noexcept;
   bool operator!=(const RSSI& other) const noexcept;
   bool operator<(const RSSI& other) const noexcept;
   bool operator<=(const RSSI& other) const noexcept;
   bool operator>(const RSSI& other) const noexcept;
   bool operator>=(const RSSI& other) const noexcept;
+
+  operator long() const noexcept;
+  operator double() const noexcept;
 
   std::size_t hashCode() const noexcept;
 
