@@ -65,10 +65,23 @@ Date::Date(const Date& from)
   ;
 }
 
+Date::Date(Date&& from)
+ : mImpl(std::make_unique<Impl>(from.mImpl->seconds))
+{
+  ;
+}
+
 Date::~Date() = default;
 
 Date&
 Date::operator=(const Date& other) noexcept
+{
+  mImpl->seconds = other.mImpl->seconds;
+  return *this;
+}
+
+Date&
+Date::operator=(Date&& other) noexcept
 {
   mImpl->seconds = other.mImpl->seconds;
   return *this;

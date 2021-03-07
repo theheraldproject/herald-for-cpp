@@ -8,6 +8,7 @@
 #include <map>
 #include <variant>
 #include <vector>
+#include <iostream>
 
 #include "ranges.h"
 
@@ -173,20 +174,21 @@ struct aggregate {
       for (auto& agg : me.aggregates) {
         std::visit([&run](auto&& arg) {
           arg.beginRun(run);
+          std::cout << "Beggining run " << run << std::endl;
         }, agg);
       }
 
       for (auto& v : from) {
-        // double vd = (double)v;
         for (auto& agg : me.aggregates) {
           std::visit([&v](auto&& arg) {
+            std::cout << "Sample taken: " << v.taken.secondsSinceUnixEpoch() << std::endl;
             arg.map(v);
           }, agg);
         }
       }
     }
 
-    // return *this so we can then do get<Agg>()
+    // return me so we can then do get<Agg>()
     return me;
   }
 
@@ -210,13 +212,13 @@ private:
 
   template <typename Last>
   void addAggregate(Last last) {
-    aggregates.emplace_back(last);
+    aggregates.emplace_back(std::move(last));
   }
 
   template <typename First, typename Second, typename... Remaining>
   void addAggregate(First first, Second second, Remaining... remaining) {
-    aggregates.emplace_back(first);
-    addAggregate<Second, Remaining...>(second, remaining);
+    aggregates.emplace_back(std::move(first));
+    addAggregate<Second, Remaining...>(second, remaining...);
   }
 };
 
@@ -259,16 +261,15 @@ struct summarise {
       }
 
       for (auto& v : from) {
-        double vd = (double)v;
         for (auto& agg : me.aggregates) {
-          std::visit([&vd](auto&& arg) {
-            arg.map(vd);
+          std::visit([&v](auto&& arg) {
+            arg.map(v);
           }, agg);
         }
       }
     }
 
-    // return *this so we can then do get<Agg>()
+    // return me so we can then do get<Agg>()
     return me;
   }
 

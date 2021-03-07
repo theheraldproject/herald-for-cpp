@@ -25,8 +25,22 @@ struct Sample {
   ValT value;
 
   Sample() : taken(), value() {} // default ctor (required for array)
-  Sample(Date sampled, ValT v) : taken(sampled), value(v) {}
+  Sample(Date sampled, ValT v) : taken(Date{sampled.secondsSinceUnixEpoch()}), value(v) {}
+  Sample(const Sample& other) : taken(Date{other.taken.secondsSinceUnixEpoch()}), value(other.value) {} // copy ctor
+  Sample(Sample&& other) : taken(std::move(other.taken)), value(std::move(other.value)) {} // move ctor
   ~Sample() = default;
+
+  Sample& operator=(Sample&& other) {
+    taken = std::move(other.taken);
+    value = std::move(other.value);
+    return *this;
+  }
+
+  Sample& operator=(const Sample& other) {
+    taken = Date{other.taken.secondsSinceUnixEpoch()};
+    value = other.value;
+    return *this;
+  }
 
   // Note ValT MUST have comparison operators OR conversion to double defined
 
@@ -85,6 +99,7 @@ struct SampleList {
   static constexpr std::size_t max_size = MaxSize;
 
   SampleList() : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {};
+  SampleList(const SampleList&) = delete; // no shallow copies allowed
   ~SampleList() = default;
 
   void push(Date taken, SampleValueT val) {

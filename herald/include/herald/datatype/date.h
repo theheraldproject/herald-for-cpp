@@ -20,9 +20,11 @@ public:
   Date(); // now
   Date(std::uint64_t secondsSinceEpochOrRestart);
   Date(const Date& from);
+  Date(Date&& from);
   ~Date();
 
   Date& operator=(const Date& other) noexcept;
+  Date& operator=(Date&& other) noexcept;
 
   std::string iso8601DateTime() const noexcept;
   operator std::string() const noexcept;
