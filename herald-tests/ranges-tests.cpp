@@ -157,7 +157,7 @@ TEST_CASE("ranges-filter-multi-rssisamples", "[ranges][filter][multi][rssisample
 
     auto values = sl 
                 | herald::analysis::views::filter(valid) 
-                // | herald::analysis::views::filter(strong)
+                | herald::analysis::views::filter(strong)
                 | herald::analysis::views::to_view();
 
     auto iter = values.begin();
@@ -169,8 +169,10 @@ TEST_CASE("ranges-filter-multi-rssisamples", "[ranges][filter][multi][rssisample
     REQUIRE(iter == values.end());
 
     REQUIRE(values.size() == 2);
-    REQUIRE(values[0].value == -60);
-    REQUIRE(values[1].value == -61);
+    auto val0 = values[0].value.intValue();
+    auto val1 = values[1].value.intValue();
+    REQUIRE(val0 == -60);
+    REQUIRE(val1 == -61);
   }
 }
 

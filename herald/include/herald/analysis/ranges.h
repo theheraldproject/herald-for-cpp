@@ -31,6 +31,36 @@ struct Sample {
   Sample() : taken(), value() {} // default ctor (required for array)
   Sample(Date sampled, ValT v) : taken(sampled), value(v) {}
   ~Sample() = default;
+
+  template <typename T>
+  bool operator>(const T& other) const {
+    return value > other;
+  }
+
+  template <typename T>
+  bool operator>=(const T& other) const {
+    return value >= other;
+  }
+
+  template <typename T>
+  bool operator<(const T& other) const {
+    return value < other;
+  }
+
+  template <typename T>
+  bool operator<=(const T& other) const {
+    return value <= other;
+  }
+
+  template <typename T>
+  bool operator==(const T& other) const {
+    return value == other;
+  }
+
+  template <typename T>
+  bool operator!=(const T& other) const {
+    return value != other;
+  }
 };
 
 /// FWD DECL
@@ -48,6 +78,7 @@ template <typename SampleT, // This is Sample<SampleValueT>
          >
 struct SampleList {
   using value_type = SampleT; // MUST be before the next line!
+  using difference_type = std::size_t;
   using iterator = SampleIterator<SampleList<SampleT,MaxSize>>;
   using size_type = std::size_t;
 
@@ -144,6 +175,12 @@ private:
 template <typename SampleListT,
           typename ValT> // from fwd decl =>  = typename SampleListT::value_type
 struct SampleIterator {
+  using difference_type = std::size_t;
+  using value_type = ValT;
+  using iterator_category = std::forward_iterator_tag;
+  using pointer = value_type*;
+  using reference = value_type&;
+
   SampleIterator(SampleListT& sl) : list(sl), pos(0) {}
   SampleIterator(SampleListT& sl, std::size_t from) : list(sl), pos(from) {} // used to get list.end() (size() + 1)
   SampleIterator(const SampleIterator<SampleListT>& other) : list(other.list), pos(other.pos) {} // copy ctor
@@ -155,7 +192,29 @@ struct SampleIterator {
     return list[pos];
   }
 
-  // TODO implement operator+(int amt) to move this iterator forward
+  /// Implement operator+(int amt) to move this iterator forward
+  SampleIterator<SampleListT>& operator+(int by) {
+    pos += by;
+    if (pos > list.size()) {
+      pos = list.size(); // i.e. list.end()
+    }
+    return *this;
+  }
+
+  /// Implement operator+(int amt) to move this iterator forward
+  SampleIterator<SampleListT>& operator-(int by) {
+    if (by > pos) {
+      pos = 0; // prevents underflow and a very large value of pos (as it's a std::size_t)
+    } else {
+      pos -= by;
+    }
+    return *this;
+  }
+
+  // to allow std::distance to work
+  difference_type operator-(const SampleIterator<SampleListT>& other) {
+    return pos - other.pos;
+  }
 
   /// prefix operator
   SampleIterator<SampleListT>& operator++() {
@@ -191,6 +250,12 @@ private:
   SampleListT& list;
   std::size_t pos;
 };
+
+/// for std::distance
+template<typename T>
+typename SampleIterator<T>::difference_type distance(SampleIterator<T> first, SampleIterator<T> last) {
+  return last - first;
+}
 
 } // end sampling namespace
 
@@ -412,11 +477,20 @@ struct view {
 
   auto size() -> BaseSizeT {
     // return source.size(); // this is the UNFILTERED size
-    return std::distance(source.wrapped(),source.end() - 1); // minus one as we don't want the distance to end() but the last element the 1 before it
+    BaseSizeT sz = 0;
+    auto iter = source;
+    auto end = source.end();
+    while (iter != end) {
+      ++sz;
+      ++iter;
+    }
+    // minus one as we don't want the distance to end() but the last element the 1 before it
+    return sz;
+    // return std::distance(source.wrapped(),source.end() - 1);
   }
 
   auto operator[](BaseSizeT position) -> BaseValT {
-    return *(source.wrapped() + position);
+    return *(source + position);
   }
 
 private:
@@ -448,6 +522,7 @@ struct filtered_iterator_proxy {
   using value_type = ValT;
   using iterator = IterT;
   using size_type = SizeT;
+  // using difference_type = typename Coll::difference_type;
 
   filtered_iterator_proxy(Coll& coll, Pred pred) : coll(coll), iter(std::move(std::begin(coll))), endIter(std::move(std::end(coll))), filter(pred) {
     // move forward to the first match (or end)
@@ -467,7 +542,7 @@ struct filtered_iterator_proxy {
   filtered_iterator_proxy(const filtered_iterator_proxy& other) : coll(other.coll), iter(other.iter), endIter(other.endIter), filter(other.filter) {}
   ~filtered_iterator_proxy() = default;
 
-  auto operator*() -> ValT& {
+  auto operator*() -> const ValT& {
     return *iter;
   }
 
@@ -482,6 +557,14 @@ struct filtered_iterator_proxy {
   filtered_iterator_proxy<Coll,Pred> operator++(int) {
     filtered_iterator_proxy<Coll,Pred> cp =  *this; // copy of instance
     ++(*this);
+    return cp;
+  }
+
+  filtered_iterator_proxy<Coll,Pred> operator+(int by) {
+    filtered_iterator_proxy<Coll,Pred> cp =  *this; // copy of instance
+    for (int i = 0;i < by;++i) {
+      ++cp;
+    }
     return cp;
   }
 
@@ -532,6 +615,11 @@ struct filtered_iterator_proxy {
     return filter.predicate();
   }
 
+  // // to allow std::distance to work
+  // difference_type operator-(const filtered_iterator_proxy<Coll,Pred>& other) {
+  //   return iter - other.iter;
+  // }
+
 private:
   Coll& coll;
   IterT iter;
@@ -546,6 +634,11 @@ private:
   }
 };
 
+// /// for std::distance
+// template<typename Coll, typename Pred>
+// typename filtered_iterator_proxy<Coll,Pred>::difference_type distance(filtered_iterator_proxy<Coll,Pred> first, filtered_iterator_proxy<Coll,Pred> last) {
+//   return last - first;
+// }
 
 
 
