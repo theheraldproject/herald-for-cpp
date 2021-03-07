@@ -177,10 +177,10 @@ struct aggregate {
       }
 
       for (auto& v : from) {
-        double vd = (double)v;
+        // double vd = (double)v;
         for (auto& agg : me.aggregates) {
-          std::visit([&vd](auto&& arg) {
-            arg.map(vd);
+          std::visit([&v](auto&& arg) {
+            arg.map(v);
           }, agg);
         }
       }
