@@ -17,6 +17,7 @@
 #include <variant>
 #include <vector>
 #include <cstdint>
+#include <type_traits>
 
 #include "sampling.h"
 #include "../datatype/date.h"
@@ -212,6 +213,8 @@ struct view {
   using iterator = BaseIterT;
   using size_type = BaseSizeT;
 
+  using is_proxy = std::true_type;
+
   view(IterProxyT srcIter) : source(std::forward<IterProxyT>(srcIter)) {} // TAKE OWNERSHIP
   ~view() = default;
 
@@ -281,6 +284,8 @@ struct filtered_iterator_proxy {
   using iterator = IterT;
   using size_type = SizeT;
   // using difference_type = typename Coll::difference_type;
+
+  using is_proxy = std::true_type;
 
   filtered_iterator_proxy(Coll& coll, Pred pred) : coll(coll), iter(std::move(std::begin(coll))), endIter(std::move(std::end(coll))), filter(pred) {
     // move forward to the first match (or end)
@@ -406,9 +411,27 @@ struct to_view {
   to_view() = default;
   ~to_view() = default;
 
+  // convert something with a proxy (likely a filtered iterator proxy) into a view
   template <typename IterProxyT>
   friend auto operator|(IterProxyT proxy,to_view view) -> herald::analysis::views::view<IterProxyT> {
     return herald::analysis::views::view<IterProxyT>(proxy);
+  }
+  
+  /// Convert an unfiltered source collection into a view
+  // template <typename Coll,
+  //           typename IterProxyT = iterator_proxy<Coll>, 
+  //           std::enable_if_t<!std::is_same_v<Coll,iterator_proxy> && !std::is_same_v<Coll,filtered_iterator_proxy>, bool> = true
+  //          >
+  // friend auto operator|(Coll coll,to_view view) -> herald::analysis::views::view<IterProxyT> {
+  //   return herald::analysis::views::view<IterProxyT>(iterator_proxy<Coll>(coll));
+  // }
+  
+  template <typename SampleT,
+            std::size_t ListSize,
+            typename IterProxyT = iterator_proxy<herald::analysis::sampling::SampleList<SampleT,ListSize>>
+           >
+  friend auto operator|(herald::analysis::sampling::SampleList<SampleT,ListSize> coll,to_view view) -> herald::analysis::views::view<IterProxyT> {
+    return herald::analysis::views::view<IterProxyT>(iterator_proxy<herald::analysis::sampling::SampleList<SampleT,ListSize>>(coll));
   }
 };
 

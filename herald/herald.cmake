@@ -12,6 +12,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/analysis/aggregates.h
   ${HERALD_BASE}/include/herald/analysis/distance.h
   ${HERALD_BASE}/include/herald/analysis/ranges.h
+  ${HERALD_BASE}/include/herald/analysis/risk.h
   ${HERALD_BASE}/include/herald/analysis/sampling.h
   ${HERALD_BASE}/include/herald/ble/ble_concrete.h
   ${HERALD_BASE}/include/herald/ble/ble_coordinator.h
