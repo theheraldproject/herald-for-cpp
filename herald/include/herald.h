@@ -79,8 +79,10 @@
 #include "herald/ble/ble_concrete.h"
 
 // analysis namespace
-#include "herald/analysis/analysis.h"
+#include "herald/analysis/aggregates.h"
+#include "herald/analysis/distance.h"
 #include "herald/analysis/ranges.h"
+#include "herald/analysis/sampling.h"
 
 // payload namespace
 #include "herald/payload/payload_data_supplier.h"

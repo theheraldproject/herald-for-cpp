@@ -176,6 +176,128 @@ TEST_CASE("ranges-filter-multi-rssisamples", "[ranges][filter][multi][rssisample
   }
 }
 
+TEST_CASE("ranges-filter-multi-summarise", "[ranges][filter][multi][summarise][rssi]") {
+  SECTION("ranges-filter-multi-summarise") {
+    herald::analysis::views::in_range valid(-99,-10);
+    herald::analysis::views::less_than strong(-59);
+    
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,20> sl;
+    sl.push(1234,-9);
+    sl.push(1244,-60);
+    sl.push(1265,-58);
+    sl.push(1282,-62);
+    sl.push(1282,-68);
+    sl.push(1282,-68);
+    sl.push(1294,-100);
+
+    using namespace herald::analysis::aggregates;
+    auto values = sl 
+                | herald::analysis::views::filter(valid) 
+                | herald::analysis::views::filter(strong)
+                | herald::analysis::views::to_view();
+
+    auto summary = values 
+                 | summarise<Mean,Mode,Variance>();
+
+    auto mean = summary.get<Mean>();
+    auto mode = summary.get<Mode>();
+    auto var = summary.get<Variance>();
+
+    REQUIRE(mean == -64.5); // note conversion from RSSI -> int then aggregate -> float
+    REQUIRE(mode == -68);
+    REQUIRE(var == 17); // Happens to be exact, but you may need take in to account floating point inaccuracy in the tail 
+  }
+}
+
+TEST_CASE("ranges-filter-multi-since-summarise", "[ranges][filter][multi][since][summarise][rssi]") {
+  SECTION("ranges-filter-multi-since-summarise") {
+    herald::analysis::views::in_range valid(-99,-10);
+    herald::analysis::views::less_than strong(-59);
+    herald::analysis::views::since afterPoint(herald::datatype::Date{1245});
+    
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,20> sl;
+    sl.push(1234,-9);
+    sl.push(1244,-60);
+    sl.push(1265,-58);
+    sl.push(1282,-62);
+    sl.push(1282,-68);
+    sl.push(1282,-68);
+    sl.push(1294,-100);
+
+    using namespace herald::analysis::aggregates;
+    auto values = sl 
+                | herald::analysis::views::filter(afterPoint)
+                | herald::analysis::views::filter(valid) 
+                | herald::analysis::views::filter(strong)
+                | herald::analysis::views::to_view();
+
+    auto summary = values 
+                 | summarise<Mean,Mode,Variance>();
+
+    auto mean = summary.get<Mean>();
+    auto mode = summary.get<Mode>();
+    auto var = summary.get<Variance>();
+
+    REQUIRE(mean == -66); // note conversion from RSSI -> int then aggregate -> float
+    REQUIRE(mode == -68);
+    REQUIRE(var == 12); // Happens to be exact, but you may need take in to account floating point inaccuracy in the tail 
+  }
+}
+
+TEST_CASE("ranges-distance-aggregate", "[ranges][distance][filter][multi][since][summarise][rssi][aggregate]") {
+  SECTION("ranges-distance-aggregate") {
+    herald::analysis::views::in_range valid(-99,-10);
+    herald::analysis::views::less_than strong(-59);
+    herald::analysis::views::since afterPoint(herald::datatype::Date{1245});
+    
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,20> sl;
+    sl.push(1234,-9);
+    sl.push(1244,-60);
+    sl.push(1265,-58);
+    sl.push(1282,-62);
+    sl.push(1282,-68);
+    sl.push(1282,-68);
+    sl.push(1294,-100);
+
+    using namespace herald::analysis::aggregates;
+    auto values = sl 
+                | herald::analysis::views::filter(afterPoint)
+                | herald::analysis::views::filter(valid) 
+                | herald::analysis::views::filter(strong)
+                | herald::analysis::views::to_view();
+
+    auto summary = values // is an r-value here
+                 | summarise<Mean,Mode,Variance>();
+
+    auto mean = summary.get<Mean>();
+    auto mode = summary.get<Mode>();
+    auto var = summary.get<Variance>();
+    auto sd = std::sqrt(var);
+
+    // See second diagram at https://vmware.github.io/herald/bluetooth/distance
+    // i.e. https://vmware.github.io/herald/images/distance-rssi-regression.png
+    herald::analysis::algorithms::distance::FowlerBasic to_distance(-50, -24);
+
+    auto distance = sl 
+                | herald::analysis::views::filter(afterPoint)
+                | herald::analysis::views::filter(valid) 
+                | herald::analysis::views::filter(strong)
+                  //values 
+                  | herald::analysis::views::filter(
+                      herald::analysis::views::in_range(
+                        mean - 2*sd, 
+                        mean + 2*sd
+                      )
+                    )
+                  | herald::analysis::views::to_view() // returns an l-value
+                  | aggregate<herald::analysis::algorithms::distance::FowlerBasic>(to_distance); // TODO convenience method for this
+    
+    auto agg = distance.get<herald::analysis::algorithms::distance::FowlerBasic>();
+    auto d = agg.reduce();
+    REQUIRE((d > 5.623 && d < 5.624)); // double rounding
+  }
+}
+
 // TEST_CASE("analysis-rssi-distance", "[analysis][rssi]") {
 //   SECTION("analysis-rssi-distance") {
 //     std::array<int,100> rssiList;
