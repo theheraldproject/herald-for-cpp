@@ -123,9 +123,9 @@ struct iterator_proxy {
   using base_value_type = ValT;
   using base_size_type = SizeT;
 
-  iterator_proxy(Coll& coll) : iter(std::move(std::begin(coll))), endIter(std::move(std::end(coll))) {}
-  iterator_proxy(iterator_proxy&& other) : iter(std::move(other.iter)), endIter(std::move(other.endIter)) {}
-  iterator_proxy(const iterator_proxy& other) : iter(other.iter), endIter(other.endIter) {}
+  iterator_proxy(Coll& coll) : coll(coll), iter(std::move(std::begin(coll))), endIter(std::move(std::end(coll))) {}
+  iterator_proxy(iterator_proxy&& other) : coll(other.coll), iter(std::move(other.iter)), endIter(std::move(other.endIter)) {}
+  iterator_proxy(const iterator_proxy& other) : coll(other.coll), iter(other.iter), endIter(other.endIter) {}
   ~iterator_proxy() = default;
 
   auto operator*() -> const ValT& {
@@ -173,7 +173,12 @@ struct iterator_proxy {
     return endIter == iter;
   }
 
+  Coll& collection() const {
+    return coll;
+  }
+
 private:
+  Coll& coll;
   IterT iter;
   IterT endIter;
 };
@@ -430,72 +435,12 @@ struct to_view {
             std::size_t ListSize,
             typename IterProxyT = iterator_proxy<herald::analysis::sampling::SampleList<SampleT,ListSize>>
            >
-  friend auto operator|(herald::analysis::sampling::SampleList<SampleT,ListSize> coll,to_view view) -> herald::analysis::views::view<IterProxyT> {
+  friend auto operator|(herald::analysis::sampling::SampleList<SampleT,ListSize>& coll,to_view view) -> herald::analysis::views::view<IterProxyT> {
     return herald::analysis::views::view<IterProxyT>(iterator_proxy<herald::analysis::sampling::SampleList<SampleT,ListSize>>(coll));
   }
 };
 
-/*
-// FILTER - FUNCTION - Takes a Range (via |) and a predicate(via ()), produces a view that filters as it goes
-template <typename Func>
-struct view {
-  view(Func f) : func(f) {}
-  ~view() = default;
-
-  template <typename Rng>
-  friend auto operator|(Rng range, view<Func> vw) -> {
-    auto rngIter = range.cbegin();
-    while
-  }
-
-private:
-  Func func;
-};
-*/
-
-
-
-/*
-template <typename Pred>
-struct filter {
-public:
-  filter(const Pred& pred) : mPred(pred) {}
-  ~filter() = default;
-
-  template <typename VT>
-  bool operator()(const VT& value) {
-    return mPred(value); // calls predicate's call operator() -> bool
-  }
-
-private:
-  Pred mPred;
-};
-*/
-
-
-
-/*
-struct filter_fn {
-public:
-  filter_fn() = default;
-  ~filter_fn() = default;
-
-  template <typename Rng, typename Pred>
-  auto operator()(const Rng& inRange, const Pred& ff) const -> Rng
-  {
-    return RangeIterator<Rng,Pred>(inRange,Pred);
-  }
-
-  template <typename Rng, typename Pred>
-  friend constexpr auto operator|(const Rng& inRange, const Pred& pred) -> Rng
-  {
-
-  }
-};
-*/
-
 } // end namespace views
-
 }
 }
 

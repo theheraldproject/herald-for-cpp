@@ -17,6 +17,66 @@ TEST_CASE("sample-basic", "[sample][basic]") {
   }
 }
 
+TEST_CASE("sample-from-parts", "[sample][basic]") {
+  SECTION("sample-from-parts") {
+    herald::analysis::sampling::Sample s(herald::datatype::Date(1234), herald::datatype::RSSI(-55));
+    herald::analysis::sampling::Sample s2(s.taken, s.value);
+
+    REQUIRE(s2.taken.secondsSinceUnixEpoch() == 1234);
+    REQUIRE(s2.value == -55);
+  }
+}
+
+TEST_CASE("sample-from-parts-deep", "[sample][basic]") {
+  SECTION("sample-from-parts-deep") {
+    herald::analysis::sampling::Sample s(herald::datatype::Date(1234), herald::datatype::RSSI(-55));
+    herald::analysis::sampling::Sample s2(herald::datatype::Date{s.taken.secondsSinceUnixEpoch()}, s.value);
+
+    REQUIRE(s2.taken.secondsSinceUnixEpoch() == 1234);
+    REQUIRE(s2.value == -55);
+  }
+}
+
+TEST_CASE("sample-copy-ctor", "[sample][copy][ctor]") {
+  SECTION("sample-copy-ctor") {
+    const herald::analysis::sampling::Sample s(herald::datatype::Date(1234), herald::datatype::RSSI(-55));
+    herald::analysis::sampling::Sample s2(s); // copy ctor
+
+    REQUIRE(s2.taken.secondsSinceUnixEpoch() == 1234);
+    REQUIRE(s2.value == -55);
+  }
+}
+
+TEST_CASE("sample-copy-assign", "[sample][copy][assign]") {
+  SECTION("sample-copy-assign") {
+    const herald::analysis::sampling::Sample s(herald::datatype::Date(1234), herald::datatype::RSSI(-55));
+    herald::analysis::sampling::Sample s2 = s; // copy assign
+
+    REQUIRE(s2.taken.secondsSinceUnixEpoch() == 1234);
+    REQUIRE(s2.value == -55);
+  }
+}
+
+TEST_CASE("sample-move-ctor", "[sample][move][ctor]") {
+  SECTION("sample-move-ctor") {
+    herald::analysis::sampling::Sample s(herald::datatype::Date(1234), herald::datatype::RSSI(-55));
+    herald::analysis::sampling::Sample s2(std::move(s)); // move ctor
+
+    REQUIRE(s2.taken.secondsSinceUnixEpoch() == 1234);
+    REQUIRE(s2.value == -55);
+  }
+}
+
+TEST_CASE("sample-move-assign", "[sample][move][assign]") {
+  SECTION("sample-move-assign") {
+    herald::analysis::sampling::Sample s(herald::datatype::Date(1234), herald::datatype::RSSI(-55));
+    herald::analysis::sampling::Sample s2 = std::move(s); // move assign
+
+    REQUIRE(s2.taken.secondsSinceUnixEpoch() == 1234);
+    REQUIRE(s2.value == -55);
+  }
+}
+
 TEST_CASE("samplelist-empty", "[samplelist][empty]") {
   SECTION("samplelist-empty") {
     herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;

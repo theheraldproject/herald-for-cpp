@@ -18,12 +18,15 @@ namespace risk {
 
 using namespace herald::analysis::aggregates;
 
+/// A Basic sample but non scientific risk aggregation model.
+/// Similar in function to the Oxford Risk Model, but without its calibration values and scaling.
+/// NOT FOR PRODUCTION EPIDEMIOLOGICAL USE - SAMPLE ONLY!!!
 struct RiskAggregationBasic {
   static constexpr int runs = 1;
 
   RiskAggregationBasic(double timeScale,double distanceScale,double minimumDistanceClamp,double minimumRiskScoreAtClamp,double logScale = 3.3598856662 ) 
     : run(1), timeScale(timeScale), distanceScale(distanceScale), minimumDistanceClamp(minimumDistanceClamp), 
-      minimumRiskScoreAtClamp(minimumRiskScoreAtClamp), logScale(logScale), nMinusOne(-1.0), n(-1.0), timeMinusOne(0), time(0)
+      minimumRiskScoreAtClamp(minimumRiskScoreAtClamp), logScale(logScale), nMinusOne(-1.0), n(-1.0), timeMinusOne(0), time(0), riskScore(0)
   {
     ; // no other set up
   }
@@ -40,18 +43,12 @@ struct RiskAggregationBasic {
     }
   }
 
-  template <typename ValT,
-            typename SampleT = typename ValT::value_type
-           >
-  void map(ValT value) {
-    using T = std::decay<ValT>;
-    if constexpr (std::is_same_v<T,herald::analysis::sampling::Sample<SampleT>>) { // Note: May need to be Sample<double>
-      // is a valid type for evaluation
-      nMinusOne = n;
-      timeMinusOne = time;
-      n = value.value;
-      time = value.taken;
-    }
+  template <typename SampleT>
+  void map(const herald::analysis::sampling::Sample<SampleT>& value) {
+    nMinusOne = n;
+    timeMinusOne = time;
+    n = value.value;
+    time = value.taken.secondsSinceUnixEpoch();
   }
 
   double reduce() {
