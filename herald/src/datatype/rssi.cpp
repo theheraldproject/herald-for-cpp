@@ -73,6 +73,13 @@ RSSI::intValue() const noexcept {
   return mImpl->value;
 }
 
+RSSI::operator long() const noexcept {
+  return mImpl->value;
+}
+
+RSSI::operator double() const noexcept {
+  return (double)mImpl->value;
+}
 
 
 

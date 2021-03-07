@@ -31,6 +31,9 @@ public:
   bool operator>(const RSSI& other) const noexcept;
   bool operator>=(const RSSI& other) const noexcept;
 
+  operator long() const noexcept;
+  operator double() const noexcept;
+
   std::size_t hashCode() const noexcept;
 
   operator std::string() const noexcept;
