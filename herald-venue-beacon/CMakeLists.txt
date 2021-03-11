@@ -5,6 +5,8 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+set(NO_BUILD_TYPE_WARNING ON)
+
 # Zephyr build environment variables set here
 #set(ENV{BOARD} nrf52840dongle_nrf52840) # nRF52840 USB dongle
 #set(ENV{BOARD} nrf52dk_nrf52832) # nRF52832 USB dongle

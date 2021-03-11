@@ -17,6 +17,7 @@ namespace datatype {
 class Data::Impl {
 public:
   Impl();
+  Impl(std::size_t reserveLength);
   ~Impl() = default;
 
   std::vector<std::byte> data;
@@ -24,6 +25,8 @@ public:
 
 // DATA PIMPL DECLARATIONS
 Data::Impl::Impl() : data() { }
+
+Data::Impl::Impl(std::size_t reserveLength) : data(reserveLength) { }
 
 
 
@@ -47,19 +50,17 @@ Data::Data(Data&& other)
 
 // TODO consider adding offset versions of the below two constructors
 
-Data::Data(const std::byte* value, std::size_t length) : mImpl(std::make_unique<Impl>()) {
-  mImpl->data.reserve(length);
+Data::Data(const std::byte* value, std::size_t length) : mImpl(std::make_unique<Impl>(length)) {
   for (std::size_t i = 0;i < length; i++) {
-    mImpl->data.push_back(value[i]);
+    mImpl->data[i] = value[i];
   }
 }
 
 Data::Data(const std::uint8_t* value, std::size_t length) : 
-  mImpl(std::make_unique<Impl>()) {
+  mImpl(std::make_unique<Impl>(length)) {
   
-  mImpl->data.reserve(length);
   for (std::size_t i = 0;i < length; i++) {
-    mImpl->data.push_back(std::byte(value[i]));
+    mImpl->data[i] = std::byte(value[i]);
   }
 }
 
@@ -71,11 +72,14 @@ Data::Data(const Data& from) : mImpl(std::make_unique<Impl>()) {
   mImpl->data = from.mImpl->data; // copy ctor
 }
 
-Data::Data(std::byte repeating, std::size_t count) : mImpl(std::make_unique<Impl>()) {
-  mImpl->data.reserve(count);
+Data::Data(std::byte repeating, std::size_t count) : mImpl(std::make_unique<Impl>(count)) {
   for (std::size_t i = 0;i < count; i++) {
-    mImpl->data.push_back(repeating);
+    mImpl->data[i] = repeating;
   }
+}
+
+Data::Data(std::size_t reserveLength) : mImpl(std::make_unique<Impl>(reserveLength)) {
+  ;
 }
 
 Data&
@@ -285,6 +289,16 @@ Data::reversed() const
     std::back_inserter(result.mImpl->data)
   );
   return result;
+}
+
+void
+Data::assign(const Data& other) {
+  if (other.size() > mImpl->data.size()) {
+    mImpl->data.reserve(other.size());
+  }
+  for (std::size_t pos = 0; pos < other.size();++pos) {
+    mImpl->data[pos] = other.mImpl->data[pos];
+  }
 }
 
 void

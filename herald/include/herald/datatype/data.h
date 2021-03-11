@@ -22,6 +22,7 @@ public:
   Data(std::vector<std::byte> value);
   Data(const Data& from); // copy ctor
   Data(std::byte repeating, std::size_t count);
+  Data(std::size_t reserveLength);
   // Data(Base64String from); // use Base64String.from(std::string).decode() instead
   Data& operator=(const Data& other);
   ~Data();
@@ -34,6 +35,9 @@ public:
   Data subdata(std::size_t offset) const;
   Data subdata(std::size_t offset, std::size_t length) const;
   std::byte at(std::size_t index) const;
+  /// Assigns the data in-place, reserving the size required if the current size is too small.
+  /// Avoids reallocation of memory on a copy.
+  void assign(const Data& other);
   void append(const Data& data, std::size_t offset, std::size_t length);
   void append(const std::uint8_t* data, std::size_t offset, std::size_t length);
   void appendReversed(const Data& data, std::size_t offset, std::size_t length);
