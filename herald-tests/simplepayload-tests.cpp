@@ -82,42 +82,57 @@ TEST_CASE("payload-simple-matchingkeys", "[payload][simple][matchingkeys]") {
     herald::payload::simple::K k1;
     herald::payload::simple::K k2;
     herald::payload::simple::K k3;
+    
 
     // Generate matching keys based on the same secret key
-    const std::vector<herald::payload::simple::MatchingKey>& km1 = k1.matchingKeys(ks1);
-    const std::vector<herald::payload::simple::MatchingKey>& km2 = k2.matchingKeys(ks2);
-    const std::vector<herald::payload::simple::MatchingKey>& km3 = k3.matchingKeys(ks3);
+    // const std::vector<herald::payload::simple::MatchingKey>& km1 = k1.matchingKeys(ks1);
+    // const std::vector<herald::payload::simple::MatchingKey>& km2 = k2.matchingKeys(ks2);
+    // const std::vector<herald::payload::simple::MatchingKey>& km3 = k3.matchingKeys(ks3);
 
-    REQUIRE(km1.size() == 2001);
-    REQUIRE(km2.size() == 2001);
-    REQUIRE(km3.size() == 2001);
+    // REQUIRE(km1.size() == 2001);
+    // REQUIRE(km2.size() == 2001);
+    // REQUIRE(km3.size() == 2001);
+    
+
+    auto mk10 = k1.matchingKey(ks1,0);
+    auto mk11 = k1.matchingKey(ks1,1);
+    auto mk20 = k2.matchingKey(ks2,0);
+    auto mk21 = k2.matchingKey(ks2,1);
+    auto mk30 = k3.matchingKey(ks3,0);
+    auto mk31 = k3.matchingKey(ks3,1);
 
     // matching key is 32 bytes
-    REQUIRE(km1.front().size() == 32);
-    REQUIRE(km2.front().size() == 32);
-    REQUIRE(km3.front().size() == 32);
+    REQUIRE(mk10.size() == 32);
+    REQUIRE(mk20.size() == 32);
+    REQUIRE(mk30.size() == 32);
 
     // ensure subsequent matching keys vary
-    REQUIRE(km1[0] != km1[1]);
-    REQUIRE(km2[0] != km2[1]);
-    REQUIRE(km3[0] != km3[1]);
+    REQUIRE(mk10 != mk11);
+    REQUIRE(mk20 != mk21);
+    REQUIRE(mk30 != mk31);
 
-    REQUIRE(km1[2] != km1[100]);
-    REQUIRE(km2[2] != km2[100]);
-    REQUIRE(km3[2] != km3[100]);
+    auto mk12 = k1.matchingKey(ks1,2);
+    auto mk1100 = k1.matchingKey(ks1,100);
+    auto mk22 = k2.matchingKey(ks2,2);
+    auto mk2100 = k2.matchingKey(ks2,100);
+    auto mk32 = k3.matchingKey(ks3,2);
+    auto mk3100 = k3.matchingKey(ks3,100);
+    REQUIRE(mk12 != mk1100);
+    REQUIRE(mk22 != mk2100);
+    REQUIRE(mk32 != mk3100);
 
     // ensure equal sequences' matching keys are equal
-    REQUIRE(km1.front() == km2.front());
-    REQUIRE(km3.front() != km2.front());
+    REQUIRE(mk10 == mk20);
+    REQUIRE(mk30 != mk20);
 
-    bool km12eq = (km1 == km2);
-    bool km13ne = (km1 != km3);
-    bool km32ne = (km3 != km2);
-    // same secret for matching
-    REQUIRE(km12eq);
-    // different keys yield different results
-    REQUIRE(km13ne);
-    REQUIRE(km32ne);
+    // bool km12eq = (km1 == km2);
+    // bool km13ne = (km1 != km3);
+    // bool km32ne = (km3 != km2);
+    // // same secret for matching
+    // REQUIRE(km12eq);
+    // // different keys yield different results
+    // REQUIRE(km13ne);
+    // REQUIRE(km32ne);
   }
 }
 
@@ -131,40 +146,54 @@ TEST_CASE("payload-simple-contactkeys", "[payload][simple][contactkeys]") {
     }
 
     herald::payload::simple::K k1;
-    const std::vector<herald::payload::simple::MatchingKey>& km1 = k1.matchingKeys(ks1);
+    // const std::vector<herald::payload::simple::MatchingKey>& km1 = k1.matchingKeys(ks1);
 
     // generate contact keys based on the same matching key
-    const std::vector<herald::payload::simple::ContactKey> kc1 = k1.contactKeys(km1[0]);
-    const std::vector<herald::payload::simple::ContactKey> kc2 = k1.contactKeys(km1[0]);
-    // Now generate a contact key based on a different matching key
-    const std::vector<herald::payload::simple::ContactKey> kc3 = k1.contactKeys(km1[1]);
+    // const std::vector<herald::payload::simple::ContactKey> kc1 = k1.contactKey(0);
+    // const std::vector<herald::payload::simple::ContactKey> kc2 = k1.contactKey(0);
+    // // Now generate a contact key based on a different matching key
+    // const std::vector<herald::payload::simple::ContactKey> kc3 = k1.contactKey(1);
 
     // 241 contact keys per day (key 241 is not used)
-    REQUIRE(kc1.size() == 241);
-    REQUIRE(kc2.size() == 241);
-    REQUIRE(kc3.size() == 241);
+    // REQUIRE(kc1.size() == 241);
+    // REQUIRE(kc2.size() == 241);
+    // REQUIRE(kc3.size() == 241);
+
+    auto ck10 = k1.contactKey(ks1,0,0);
+    auto ck11 = k1.contactKey(ks1,0,1);
+    auto ck20 = k1.contactKey(ks1,0,0);
+    auto ck21 = k1.contactKey(ks1,0,1);
+    auto ck30 = k1.contactKey(ks1,1,0);
+    auto ck31 = k1.contactKey(ks1,1,1);
 
     // contact keys are 32 bytes
-    REQUIRE(kc1.front().size() == 32);
-    REQUIRE(kc2.front().size() == 32);
-    REQUIRE(kc3.front().size() == 32);
+    REQUIRE(ck10.size() == 32);
+    REQUIRE(ck20.size() == 32);
+    REQUIRE(ck30.size() == 32);
 
-    bool kc1eq2 = (kc1 == kc2);
-    bool kc1ne3 = (kc1 != kc3);
-    bool kc3ne2 = (kc3 != kc2);
+    // bool kc1eq2 = (kc1 == kc2);
+    // bool kc1ne3 = (kc1 != kc3);
+    // bool kc3ne2 = (kc3 != kc2);
 
-    REQUIRE(kc1eq2);
-    REQUIRE(kc1ne3);
-    REQUIRE(kc3ne2);
+    // REQUIRE(kc1eq2);
+    // REQUIRE(kc1ne3);
+    // REQUIRE(kc3ne2);
 
-    // All keys during the same day are different
-    for (int i = 0;i < 239;i++) {
-      for (int j = (i + 1); j < 240; j++) {
-        REQUIRE(kc1[i] != kc1[j]);
-        REQUIRE(kc2[i] != kc2[j]);
-        REQUIRE(kc3[i] != kc3[j]);
-      }
-    }
+    // // All keys during the same day are different
+    // for (int i = 0;i < 239;i++) {
+    //   for (int j = (i + 1); j < 240; j++) {
+    //     REQUIRE(kc1[i] != kc1[j]);
+    //     REQUIRE(kc2[i] != kc2[j]);
+    //     REQUIRE(kc3[i] != kc3[j]);
+    //   }
+    // }
+    REQUIRE(ck10 != ck11);
+    REQUIRE(ck20 != ck21);
+    REQUIRE(ck30 != ck31);
+    REQUIRE(ck10 == ck20);
+    REQUIRE(ck30 != ck31);
+    REQUIRE(ck31 != ck11);
+    REQUIRE(ck21 == ck11);
   }
 }
 
@@ -178,13 +207,16 @@ TEST_CASE("payload-simple-contactid", "[payload][simple][contactid]") {
     }
 
     herald::payload::simple::K k1;
-    const std::vector<herald::payload::simple::MatchingKey>& km1 = k1.matchingKeys(ks1);
-    const std::vector<herald::payload::simple::ContactKey> kc1 = k1.contactKeys(km1[0]);
+    // const std::vector<herald::payload::simple::MatchingKey>& km1 = k1.matchingKeys(ks1);
+    // const std::vector<herald::payload::simple::ContactKey> kc1 = k1.contactKeys(km1[0]);
 
     // generate contact identifiers
-    herald::payload::simple::ContactIdentifier ic1 = k1.contactIdentifier(kc1[0]);
-    herald::payload::simple::ContactIdentifier ic2 = k1.contactIdentifier(kc1[0]);
-    herald::payload::simple::ContactIdentifier ic3 = k1.contactIdentifier(kc1[1]);
+    // herald::payload::simple::ContactIdentifier ic1 = k1.contactIdentifier(kc1[0]);
+    // herald::payload::simple::ContactIdentifier ic2 = k1.contactIdentifier(kc1[0]);
+    // herald::payload::simple::ContactIdentifier ic3 = k1.contactIdentifier(kc1[1]);
+    herald::payload::simple::ContactIdentifier ic1 = k1.contactIdentifier(ks1,0,0);
+    herald::payload::simple::ContactIdentifier ic2 = k1.contactIdentifier(ks1,0,0);
+    herald::payload::simple::ContactIdentifier ic3 = k1.contactIdentifier(ks1,1,1);
 
     REQUIRE(ic1.size() == 16);
     REQUIRE(ic2.size() == 16);

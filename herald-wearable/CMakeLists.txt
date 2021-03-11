@@ -93,6 +93,7 @@ add_compile_options(--no-undefined -ffunction-sections -fdata-sections -s -fno-e
 target_sources(app PRIVATE
   ${HERALD_SOURCES}
   ${HERALD_SOURCES_ZEPHYR}
-  ${HERALD_SOURCES_TINYCRYPT}
+  #${HERALD_SOURCES_TINYCRYPT}
+  ${HERALD_SOURCES_MBEDTLS}
   src/main.cpp
 )

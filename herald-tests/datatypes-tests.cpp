@@ -15,7 +15,7 @@
 #include <unordered_set>
 #include <vector>
 
-#include "tests.h" // Only one file should include this. Others should be catch.hpp.
+#include "catch.hpp"
 
 #include "herald/herald.h"
 
