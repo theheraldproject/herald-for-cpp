@@ -34,18 +34,18 @@ public:
   const TimeInterval epoch;
 
   // instance data members (lazy populated)
-  std::vector<MatchingKey> matchingKeySet;
-  std::size_t lastSecretKeyHash;
+  // std::vector<MatchingKey> matchingKeySet;
+  // std::size_t lastSecretKeyHash;
 };
 
 K::Impl::Impl(int keyLength, int daysFor, int periodsInDay)
-  : keyLength(keyLength), daysFor(daysFor), periodsInDay(periodsInDay), epoch(K::getEpoch()), matchingKeySet(), lastSecretKeyHash(0)
+  : keyLength(keyLength), daysFor(daysFor), periodsInDay(periodsInDay), epoch(K::getEpoch())
 {
   ;
 }
 
 K::Impl::Impl(int keyLength, int daysFor, int periodsInDay, TimeInterval epochBeginning)
-  : keyLength(keyLength), daysFor(daysFor), periodsInDay(periodsInDay), epoch(epochBeginning), matchingKeySet(), lastSecretKeyHash(0)
+  : keyLength(keyLength), daysFor(daysFor), periodsInDay(periodsInDay), epoch(epochBeginning)
 {
   ;
 }
@@ -96,75 +96,124 @@ K::period(Date at) const noexcept {
   return (seconds * mImpl->periodsInDay) / 86400; // more accurate
 }
 
-const std::vector<MatchingKey>&
-K::matchingKeys(const SecretKey& secretKey) noexcept {
-  if (0 == mImpl->matchingKeySet.size()) {
-    // lazy initialisation
-    std::vector<MatchingKeySeed> matchingKeySeed(mImpl->daysFor + 1);
-    matchingKeySeed.reserve(mImpl->daysFor + 1);
-    matchingKeySeed[mImpl->daysFor] = MatchingKeySeed(F::h(secretKey));
-    for (int i = mImpl->daysFor - 1;i >=0; i--) {
-      matchingKeySeed[i] = MatchingKeySeed(F::h(F::t(matchingKeySeed[i + 1])));
-    }
-
-    mImpl->matchingKeySet.reserve(mImpl->daysFor + 1);
-    for (int i = 0;i <= mImpl->daysFor;i++) {
-      mImpl->matchingKeySet.emplace_back();
-    }
-    
-    // matching key on day 0 is derived from matching key seed on day 0 and day -1
-    MatchingKeySeed minusOne(F::h(F::t(matchingKeySeed[0])));
-    mImpl->matchingKeySet[0] = MatchingKey(F::h(F::xorData(matchingKeySeed[0],minusOne)));
-    
-    // Matching key for day i is the hash of the matching key seed for day i xor i-1
-    for (int i = 1; i <= mImpl->daysFor;i++) {
-      mImpl->matchingKeySet[i] = MatchingKey(F::h(F::xorData(matchingKeySeed[i], matchingKeySeed[i - 1])));
-    }
-    // TODO set sk hash in this class to cache result
-  } else {
-    // TODO verify that the hash of the sk is the same as before
+/// Low memory version of the key generator - generates key for a specified day
+/// This saves memory use on Zephyr at the cost of CPU utilisation
+MatchingKey
+K::matchingKey(const SecretKey& secretKey, const int dayIdxFor) noexcept {
+  // lazy initialisation
+  MatchingKeySeed last(F::h(secretKey));
+  MatchingKeySeed newSeed(32);
+  for (int i = mImpl->daysFor - 1;i >=dayIdxFor; i--) {
+    newSeed.assign(F::h(F::t(last)));
+    last.assign(newSeed);
   }
-  return mImpl->matchingKeySet;
+  // At this point newSeed is the same as last, and last holds the seed for day dayIdxFor
+  
+  // matching key on day 0 is derived from matching key seed on day dayIdxFor and day dayIdxFor-1
+  MatchingKeySeed minusOne(F::h(F::t(last)));
+
+  return MatchingKey(F::h(F::xorData(last,minusOne)));
 }
 
-const std::vector<ContactKey>
-K::contactKeys(const MatchingKey& matchingKey) noexcept {
+
+
+ContactKey
+K::contactKey(const SecretKey& secretKey, const int dayFor, const int periodFor) noexcept {
   const int n = mImpl->periodsInDay;
 
-  std::vector<ContactKeySeed> contactKeySeed;
-  contactKeySeed.reserve(n + 1);
+  auto mk(matchingKey(secretKey,dayFor));
 
-  for (int i = 0;i <= n;i++) {
-    contactKeySeed.emplace_back();
+  ContactKeySeed last(F::h(mk));
+  ContactKeySeed lastMinusOne(32);
+  for (int j = n - 1;j >= periodFor;j--) {
+    lastMinusOne.assign(F::h(F::t(last)));
+    last.assign(lastMinusOne);
   }
-
-  contactKeySeed[n].append(F::h(matchingKey));
-  for (int j = n - 1;j >= 0;j--) {
-    contactKeySeed[j].append(F::h(F::t(contactKeySeed[j + 1])));
-  }
-
-  std::vector<ContactKey> contactKey;
-  contactKey.reserve(n + 1);
-
-  for (int i = 0;i <= n;i++) {
-    contactKey.emplace_back();
-  }
-  
-  for (int j = 1;j <= n;j++) {
-    contactKey[j].append(F::h(F::xorData(contactKeySeed[j],contactKeySeed[j - 1])));
-  }
+  // we now have lastMinusOne = contactKeySeed at periodFor
 
   // Day 0 key now
-  ContactKeySeed minusOne(F::h(F::t(contactKeySeed[0])));
-  contactKey[0].append(F::h(F::xorData(contactKeySeed[0], minusOne)));
+  ContactKeySeed minusOne(F::h(F::t(last)));
 
-  return contactKey;
+  return ContactKey(F::h(F::xorData(last, minusOne)));
 }
 
-const ContactIdentifier
-K::contactIdentifier(const ContactKey& contactKey) noexcept {
-  return ContactIdentifier(F::t(contactKey, 16));
+ContactIdentifier
+K::contactIdentifier(const SecretKey& secretKey, const int dayFor,const int periodFor) noexcept {
+  auto ck(contactKey(secretKey,dayFor,periodFor));
+  return ContactIdentifier(F::t(ck, 16));
 }
+
+// NOTE I'm keeping the old functions here in case we need to use a caching version on another platform
+
+// const std::vector<MatchingKey>&
+// K::matchingKeys(const SecretKey& secretKey) noexcept {
+//   if (0 == mImpl->matchingKeySet.size()) {
+//     // lazy initialisation
+//     std::vector<MatchingKeySeed> matchingKeySeed(mImpl->daysFor + 1);
+//     matchingKeySeed.reserve(mImpl->daysFor + 1);
+//     matchingKeySeed[mImpl->daysFor] = MatchingKeySeed(F::h(secretKey));
+//     for (int i = mImpl->daysFor - 1;i >=0; i--) {
+//       matchingKeySeed[i].append(F::h(F::t(matchingKeySeed[i + 1])));
+//     }
+
+//     mImpl->matchingKeySet.reserve(mImpl->daysFor + 1);
+//     for (int i = 0;i <= mImpl->daysFor;i++) {
+//       mImpl->matchingKeySet.emplace_back();
+//     }
+    
+//     // matching key on day 0 is derived from matching key seed on day 0 and day -1
+//     MatchingKeySeed minusOne(F::h(F::t(matchingKeySeed[0])));
+//     mImpl->matchingKeySet[0].append(F::h(F::xorData(matchingKeySeed[0],minusOne)));
+    
+//     // Matching key for day i is the hash of the matching key seed for day i xor i-1
+//     for (int i = 1; i <= mImpl->daysFor;i++) {
+//       mImpl->matchingKeySet[i].append(F::h(F::xorData(matchingKeySeed[i], matchingKeySeed[i - 1])));
+//     }
+//     // TODO set sk hash in this class to cache result
+//   } else {
+//     // TODO verify that the hash of the sk is the same as before
+//   }
+//   return mImpl->matchingKeySet;
+// }
+
+// const std::vector<ContactKey>
+// K::contactKeys(const MatchingKey& matchingKey) noexcept {
+//   const int n = mImpl->periodsInDay;
+
+//   std::vector<ContactKeySeed> contactKeySeed;
+//   contactKeySeed.reserve(n + 1);
+
+//   for (int i = 0;i <= n;i++) {
+//     contactKeySeed.emplace_back();
+//   }
+
+//   contactKeySeed[n].append(F::h(matchingKey));
+//   for (int j = n - 1;j >= 0;j--) {
+//     contactKeySeed[j].append(F::h(F::t(contactKeySeed[j + 1])));
+//   }
+
+//   std::vector<ContactKey> contactKey;
+//   contactKey.reserve(n + 1);
+
+//   for (int i = 0;i <= n;i++) {
+//     contactKey.emplace_back();
+//   }
+  
+//   for (int j = 1;j <= n;j++) {
+//     contactKey[j].append(F::h(F::xorData(contactKeySeed[j],contactKeySeed[j - 1])));
+//   }
+
+//   // Day 0 key now
+//   ContactKeySeed minusOne(F::h(F::t(contactKeySeed[0])));
+//   contactKey[0].append(F::h(F::xorData(contactKeySeed[0], minusOne)));
+
+//   return contactKey;
+// }
+
+// const ContactIdentifier
+// K::contactIdentifier(const ContactKey& contactKey) noexcept {
+//   return ContactIdentifier(F::t(contactKey, 16));
+// }
 
 
 }

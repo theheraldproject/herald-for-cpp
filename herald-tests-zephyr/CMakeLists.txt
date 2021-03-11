@@ -4,6 +4,7 @@ set(CMAKE_VERBOSE_MAKEFILE ON)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
 
 set(NO_BUILD_TYPE_WARNING ON)
 
@@ -25,9 +26,9 @@ endif()
 set(BASE_CONFIG ../config/zephyr)
 set(OVERLAY_CONFIG
   ${BASE_CONFIG}/base.conf
+  ${BASE_CONFIG}/receiver.conf
   ${BASE_CONFIG}/transmitter.conf
 )
-# Note: No receiver.conf in this project
 
 if($ENV{BOARD} MATCHES .*nrf5340.*)
   set(OVERLAY_CONFIG 
@@ -57,37 +58,74 @@ else()
   )
 endif()
 
+
 # Generic Zephyr build command below
 cmake_minimum_required(VERSION 3.13.1)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
-project(herald-venue-beacon VERSION 1.2.0 LANGUAGES CXX)
+project(herald-wearable VERSION 1.2.0 LANGUAGES CXX)
+
 # NOTE: Don't include C library as it bloats the binary beyond DFU max load size (i.e. beyond half of the available flash)
 
 set(HERALD_TARGET zephyr)
 
+
 # WARNING DO NOT USE THE ZEPHYR DEFAULT EXTERNAL PROJECT INCLUDE METHOD
 # IT DOES NOT PROVIDE ZEPHYR BUILD SETTINGS CORRECTLY WHEN CROSS COMPILING ON WINDOWS
 
+
+# Include Herald core library
 set(HERALD_BASE ${CMAKE_CURRENT_SOURCE_DIR}/../herald)
 include(../herald/herald.cmake) # include sources and headers
 
 message("HERALD HEADERS: ${HERALD_HEADERS}")
 
-include_directories(../herald/include)
+include_directories(
+  ..
+  ../herald/include
+)
 
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   add_definitions(-DHERALD_LOG_LEVEL=4 -DCONFIG_APP_LOG_LEVEL=4)
 else()
-  add_definitions(-DCONFIG_APP_LOG_LEVEL=1)
+  add_definitions(-DHERALD_LOG_LEVEL=1 -DCONFIG_APP_LOG_LEVEL=1)
 endif()
 #HERALD_LOG_LEVEL 4 = debug, 3 = info, 2 = warn / errors (Zephyr LOG_WARN), 1 = info contacts log only (Zephyr LOG_ERR)
 
 # gcc arm does not warn about missing defs until runtime
-add_compile_options(--no-undefined -ffunction-sections -fdata-sections -s -fno-exception -fno-rtti -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
-
+# NOTE: Catch2 uses exceptions, so we enable -fexceptions
+add_compile_options(--no-undefined -fexceptions -ffunction-sections -fdata-sections -s -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
 
 target_sources(app PRIVATE
   ${HERALD_SOURCES}
   ${HERALD_SOURCES_ZEPHYR}
+  ${HERALD_SOURCES_TINYCRYPT}
+  # ${HERALD_SOURCES_MBEDTLS}
+  # Now tests source
+  # root with main
+	../herald-tests/datatypes-tests.cpp
+	
+	# Low level
+	# ../herald-tests/sensorlogger-tests.cpp # Don't run this on Zephyr
+	../herald-tests/errorcontactlog-tests.cpp
+	../herald-tests/data-tests.cpp
+	../herald-tests/blemacaddress-tests.cpp
+	../herald-tests/targetidentifier-tests.cpp
+
+  # mid level
+	../herald-tests/beaconpayload-tests.cpp
+	../herald-tests/extendeddata-tests.cpp
+	../herald-tests/fixedpayload-tests.cpp
+	../herald-tests/simplepayload-tests.cpp
+	../herald-tests/bledevice-tests.cpp
+	../herald-tests/sample-tests.cpp
+	../herald-tests/ranges-tests.cpp
+
+  # high level
+	../herald-tests/advertparser-tests.cpp
+	../herald-tests/bledatabase-tests.cpp
+	../herald-tests/blecoordinator-tests.cpp
+	../herald-tests/coordinator-tests.cpp
+
+  # now main func
   src/main.cpp
 )

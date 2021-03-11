@@ -35,12 +35,21 @@ public:
 
   int period(Date at) const noexcept;
 
-  const std::vector<MatchingKey>& matchingKeys(const SecretKey& secretKey) noexcept;
 
-  const std::vector<ContactKey> contactKeys(const MatchingKey& matchingKey) noexcept;
+  MatchingKey matchingKey(const SecretKey& secretKey, const int dayFor) noexcept;
 
-  const ContactIdentifier contactIdentifier(const ContactKey& contactKey) noexcept;
+  ContactKey contactKey(const SecretKey& secretKey, const int dayFor, const int periodFor) noexcept;
 
+  ContactIdentifier contactIdentifier(const SecretKey& secretKey, const int dayFor, const int periodFor) noexcept;
+
+  // NOTE I'm keeping the old functions here in case we need to use a caching version on another platform
+
+  // const std::vector<MatchingKey>& matchingKeys(const SecretKey& secretKey) noexcept;
+
+  // const std::vector<ContactKey> contactKeys(const MatchingKey& matchingKey) noexcept;
+
+  // const ContactIdentifier contactIdentifier(const ContactKey& contactKey) noexcept;
+  
 private:
   class Impl;
   std::unique_ptr<Impl> mImpl;
