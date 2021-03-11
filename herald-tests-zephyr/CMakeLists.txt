@@ -98,14 +98,14 @@ add_compile_options(--no-undefined -fexceptions -ffunction-sections -fdata-secti
 target_sources(app PRIVATE
   ${HERALD_SOURCES}
   ${HERALD_SOURCES_ZEPHYR}
-  #${HERALD_SOURCES_TINYCRYPT}
-  ${HERALD_SOURCES_MBEDTLS}
+  ${HERALD_SOURCES_TINYCRYPT}
+  # ${HERALD_SOURCES_MBEDTLS}
   # Now tests source
   # root with main
 	../herald-tests/datatypes-tests.cpp
 	
 	# Low level
-	../herald-tests/sensorlogger-tests.cpp
+	# ../herald-tests/sensorlogger-tests.cpp # Don't run this on Zephyr
 	../herald-tests/errorcontactlog-tests.cpp
 	../herald-tests/data-tests.cpp
 	../herald-tests/blemacaddress-tests.cpp
@@ -118,7 +118,7 @@ target_sources(app PRIVATE
 	../herald-tests/simplepayload-tests.cpp
 	../herald-tests/bledevice-tests.cpp
 	../herald-tests/sample-tests.cpp
-	# ../herald-tests/ranges-tests.cpp # BUS FAULT
+	../herald-tests/ranges-tests.cpp
 
   # high level
 	../herald-tests/advertparser-tests.cpp

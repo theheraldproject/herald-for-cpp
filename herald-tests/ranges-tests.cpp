@@ -13,13 +13,13 @@ TEST_CASE("ranges-iterator-proxy", "[ranges][iterator][proxy]") {
   SECTION("ranges-iterator-proxy") {
     herald::analysis::views::in_range<int> workingAge(18,65);
 
-    std::vector<int> ages;
-    ages.push_back(12);
-    ages.push_back(14);
-    ages.push_back(19);
-    ages.push_back(45);
-    ages.push_back(66);
-    herald::analysis::views::iterator_proxy<std::vector<int>> proxy(ages);
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<int>,5> ages;
+    ages.push(10,12);
+    ages.push(20,14);
+    ages.push(30,19);
+    ages.push(40,45);
+    ages.push(50,66);
+    herald::analysis::views::iterator_proxy proxy(ages);
 
     REQUIRE(!proxy.ended());
     REQUIRE(*proxy == 12);
@@ -40,12 +40,12 @@ TEST_CASE("ranges-filter-typed", "[ranges][typed]") {
   SECTION("ranges-filter-typed") {
     herald::analysis::views::in_range<int> workingAge(18,65);
 
-    std::vector<int> ages;
-    ages.push_back(12);
-    ages.push_back(14);
-    ages.push_back(19);
-    ages.push_back(45);
-    ages.push_back(66);
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<int>,5> ages;
+    ages.push(10,12);
+    ages.push(20,14);
+    ages.push(30,19);
+    ages.push(40,45);
+    ages.push(50,66);
 
     herald::analysis::views::filter<herald::analysis::views::in_range<int>> workingAgeFilter(workingAge);
 
@@ -64,12 +64,12 @@ TEST_CASE("ranges-filter-generic", "[ranges][generic]") {
   SECTION("ranges-filter-generic") {
     herald::analysis::views::in_range workingAge(18,65);
     
-    std::vector<int> ages;
-    ages.push_back(12);
-    ages.push_back(14);
-    ages.push_back(19);
-    ages.push_back(45);
-    ages.push_back(66);
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<int>,5> ages;
+    ages.push(10,12);
+    ages.push(20,14);
+    ages.push(30,19);
+    ages.push(40,45);
+    ages.push(50,66);
 
     auto workingAges = ages 
                      | herald::analysis::views::filter(workingAge) 
@@ -92,12 +92,12 @@ TEST_CASE("ranges-filter-multi", "[ranges][filter][multi]") {
     herald::analysis::views::in_range workingAge(18,65);
     herald::analysis::views::greater_than over21(21);
     
-    std::vector<int> ages;
-    ages.push_back(12);
-    ages.push_back(14);
-    ages.push_back(19);
-    ages.push_back(45);
-    ages.push_back(66);
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<int>,5> ages;
+    ages.push(10,12);
+    ages.push(20,14);
+    ages.push(30,19);
+    ages.push(40,45);
+    ages.push(50,66);
 
     auto workingAges = ages 
                      | herald::analysis::views::filter(workingAge) 
@@ -300,78 +300,78 @@ TEST_CASE("ranges-distance-aggregate", "[ranges][distance][filter][multi][since]
 }
 
 // Risk aggregation example implementation
-TEST_CASE("ranges-risk-aggregate", "[ranges][risk][aggregate][no-filter]") {
-  SECTION("ranges-risk-aggregate") {
-    // First we simulate a list of actual distance samples over time, using a vector of pairs
-    std::vector<std::pair<herald::datatype::Date,double>> sourceDistances;
-    sourceDistances.emplace_back(1235,5.5);
-    sourceDistances.emplace_back(1240,4.7);
-    sourceDistances.emplace_back(1245,3.9);
-    sourceDistances.emplace_back(1250,3.2);
-    sourceDistances.emplace_back(1255,2.2);
-    sourceDistances.emplace_back(1260,1.9);
-    sourceDistances.emplace_back(1265,1.0);
-    sourceDistances.emplace_back(1270,1.3);
-    sourceDistances.emplace_back(1275,2.0);
-    sourceDistances.emplace_back(1280,2.2);
+// TEST_CASE("ranges-risk-aggregate", "[ranges][risk][aggregate][no-filter]") {
+//   SECTION("ranges-risk-aggregate") {
+//     // First we simulate a list of actual distance samples over time, using a vector of pairs
+//     std::vector<std::pair<herald::datatype::Date,double>> sourceDistances;
+//     sourceDistances.emplace_back(1235,5.5);
+//     sourceDistances.emplace_back(1240,4.7);
+//     sourceDistances.emplace_back(1245,3.9);
+//     sourceDistances.emplace_back(1250,3.2);
+//     sourceDistances.emplace_back(1255,2.2);
+//     sourceDistances.emplace_back(1260,1.9);
+//     sourceDistances.emplace_back(1265,1.0);
+//     sourceDistances.emplace_back(1270,1.3);
+//     sourceDistances.emplace_back(1275,2.0);
+//     sourceDistances.emplace_back(1280,2.2);
 
-    // The below would be in your aggregate handling code...
-    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<double>, 2> distanceList;
+//     // The below would be in your aggregate handling code...
+//     herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<double>, 2> distanceList;
 
-    // For n distances we maintain n-1 distance-risks in a list, and continuously add to it
-    // (i.e. we don't recalculate risk over all previous time - too much data)
-    // Instead we keep a distance-time number for this known 'contact' which lasts up to 15 minutes.
-    // (i.e. when the mac address changes in Bluetooth)
-    // We would then store that single risk-time number against that single contact ID - much less data!
-    double timeScale = 1.0; // default is 1 second
-    double distanceScale = 1.0; // default is 1 metre, not scaled
-    double minimumDistanceClamp = 1.0; // As per Oxford Risk Model, anything < 1m ...
-    double minimumRiskScoreAtClamp = 1.0; // ...equals a risk of 1.0, ...
-    // double logScale = 1.0; // ... and falls logarithmically after that
-    // NOTE: The above values are pick for testing and may not be epidemiologically accurate!
-    herald::analysis::algorithms::risk::RiskAggregationBasic riskScorer(timeScale,distanceScale,minimumDistanceClamp,minimumRiskScoreAtClamp);
+//     // For n distances we maintain n-1 distance-risks in a list, and continuously add to it
+//     // (i.e. we don't recalculate risk over all previous time - too much data)
+//     // Instead we keep a distance-time number for this known 'contact' which lasts up to 15 minutes.
+//     // (i.e. when the mac address changes in Bluetooth)
+//     // We would then store that single risk-time number against that single contact ID - much less data!
+//     double timeScale = 1.0; // default is 1 second
+//     double distanceScale = 1.0; // default is 1 metre, not scaled
+//     double minimumDistanceClamp = 1.0; // As per Oxford Risk Model, anything < 1m ...
+//     double minimumRiskScoreAtClamp = 1.0; // ...equals a risk of 1.0, ...
+//     // double logScale = 1.0; // ... and falls logarithmically after that
+//     // NOTE: The above values are pick for testing and may not be epidemiologically accurate!
+//     herald::analysis::algorithms::risk::RiskAggregationBasic riskScorer(timeScale,distanceScale,minimumDistanceClamp,minimumRiskScoreAtClamp);
 
-    using namespace herald::analysis::aggregates;
+//     using namespace herald::analysis::aggregates;
     
-    // this does nothing other than initialise our riskSlice reference
-    auto riskSlice = distanceList
-                    // no filters or any other iterator-proxy style class here...
-                    | herald::analysis::views::to_view() // TODO add a helper in aggregate so this isn't needed
-                    | aggregate<herald::analysis::algorithms::risk::RiskAggregationBasic>(riskScorer); // moves riskScorer in to aggregate instance
+//     // this does nothing other than initialise our riskSlice reference
+//     auto riskSlice = distanceList
+//                     // no filters or any other iterator-proxy style class here...
+//                     | herald::analysis::views::to_view() // TODO add a helper in aggregate so this isn't needed
+//                     | aggregate<herald::analysis::algorithms::risk::RiskAggregationBasic>(riskScorer); // moves riskScorer in to aggregate instance
 
-    // Now generate a sequence of Risk Scores over time
-    double interScore = 0.0;
-    double firstNonZeroInterScore = 0.0;
-    for (auto&[when,distance] : sourceDistances) {
-      // A new distance has been calculated!
-      distanceList.push(when,distance);
-      // Let's see if we have a new risk score!
-      riskSlice = distanceList
-                // no filters or any other iterator-proxy style class here...
-                | herald::analysis::views::to_view() // TODO add a helper in aggregate so this isn't needed
-                | riskSlice;
-      // Add to our exposure risk for THIS contact
-      // Note: We're NOT resetting over time, as the riskScorer will hold our total risk exposure from us.
-      //       We could instead extract this slice, store it in a counter, and reset the risk Scorer if
-      //       we needed to alter the value somehow or add the risk slices themselves to a new list.
-      //       Instead, we only do this for each contact in total (i.e. up to 15 minutes per riskScorer).
-      auto& agg = riskSlice.get<herald::analysis::algorithms::risk::RiskAggregationBasic>();
-      interScore = agg.reduce();
-      if (firstNonZeroInterScore == 0.0 && interScore > 0) {
-        firstNonZeroInterScore = interScore;
-      }
-      std::cout << "RiskAggregationBasic inter score: " << interScore << " address of agg: " << &agg << std::endl;
-    }
+//     // Now generate a sequence of Risk Scores over time
+//     double interScore = 0.0;
+//     double firstNonZeroInterScore = 0.0;
+//     for (auto&[when,distance] : sourceDistances) {
+//       // A new distance has been calculated!
+//       distanceList.push(when,distance);
+//       // Let's see if we have a new risk score!
+//       riskSlice = distanceList
+//                 // no filters or any other iterator-proxy style class here...
+//                 | herald::analysis::views::to_view() // TODO add a helper in aggregate so this isn't needed
+//                 | riskSlice;
+//       // Add to our exposure risk for THIS contact
+//       // Note: We're NOT resetting over time, as the riskScorer will hold our total risk exposure from us.
+//       //       We could instead extract this slice, store it in a counter, and reset the risk Scorer if
+//       //       we needed to alter the value somehow or add the risk slices themselves to a new list.
+//       //       Instead, we only do this for each contact in total (i.e. up to 15 minutes per riskScorer).
+//       auto& agg = riskSlice.get<herald::analysis::algorithms::risk::RiskAggregationBasic>();
+//       interScore = agg.reduce();
+//       if (firstNonZeroInterScore == 0.0 && interScore > 0) {
+//         firstNonZeroInterScore = interScore;
+//       }
+//       std::cout << "RiskAggregationBasic inter score: " << interScore << " address of agg: " << &agg << std::endl;
+//     }
 
-    // Now we have the total for our 'whole contact duration', not scaled for how far in the past it is
-    auto& agg = riskSlice.get<herald::analysis::algorithms::risk::RiskAggregationBasic>();
-    double riskScore = agg.reduce();
-    std::cout << "RiskAggregationBasic final score: " << riskScore << " address of agg: " << &agg << std::endl;
-    REQUIRE(interScore > 0.0); // final inter score should be non zero
-    REQUIRE(riskScore > 0.0); // final score should be non zero
-    REQUIRE(riskScore > firstNonZeroInterScore); // should be additive over time too
-  }
-}
+//     // Now we have the total for our 'whole contact duration', not scaled for how far in the past it is
+//     auto& agg = riskSlice.get<herald::analysis::algorithms::risk::RiskAggregationBasic>();
+//     double riskScore = agg.reduce();
+//     std::cout << "RiskAggregationBasic final score: " << riskScore << " address of agg: " << &agg << std::endl;
+//     REQUIRE(interScore > 0.0); // final inter score should be non zero
+//     REQUIRE(riskScore > 0.0); // final score should be non zero
+//     REQUIRE(riskScore > firstNonZeroInterScore); // should be additive over time too
+//   }
+// }
 
 // TODO Given a list of risk-distance numbers, and the approximate final time of that contact, calculate
 //      a risk score when the risk of infection drops off linearly over 14 days. (like COVID-19)
