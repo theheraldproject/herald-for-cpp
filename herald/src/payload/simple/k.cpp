@@ -96,6 +96,55 @@ K::period(Date at) const noexcept {
   return (seconds * mImpl->periodsInDay) / 86400; // more accurate
 }
 
+/// Low memory version of the key generator - generates key for a specified day
+/// This saves memory use on Zephyr at the cost of CPU utilisation
+MatchingKey
+K::matchingKey(const SecretKey& secretKey, const int dayIdxFor) noexcept {
+  // lazy initialisation
+  MatchingKeySeed last(F::h(secretKey));
+  MatchingKeySeed newSeed(32);
+  for (int i = mImpl->daysFor - 1;i >=dayIdxFor; i--) {
+    newSeed.assign(F::h(F::t(last)));
+    last.assign(newSeed);
+  }
+  // At this point newSeed is the same as last, and last holds the seed for day dayIdxFor
+  
+  // matching key on day 0 is derived from matching key seed on day dayIdxFor and day dayIdxFor-1
+  MatchingKeySeed minusOne(F::h(F::t(last)));
+
+  return MatchingKey(F::h(F::xorData(last,minusOne)));
+}
+
+
+
+ContactKey
+K::contactKey(const SecretKey& secretKey, const int dayFor, const int periodFor) noexcept {
+  const int n = mImpl->periodsInDay;
+
+  auto mk(matchingKey(secretKey,dayFor));
+
+  ContactKeySeed last(F::h(mk));
+  ContactKeySeed lastMinusOne(32);
+  for (int j = n - 1;j >= periodFor;j--) {
+    lastMinusOne.assign(F::h(F::t(last)));
+    last.assign(lastMinusOne);
+  }
+  // we now have lastMinusOne = contactKeySeed at periodFor
+
+  // Day 0 key now
+  ContactKeySeed minusOne(F::h(F::t(last)));
+
+  return ContactKey(F::h(F::xorData(last, minusOne)));
+}
+
+ContactIdentifier
+K::contactIdentifier(const SecretKey& secretKey, const int dayFor,const int periodFor) noexcept {
+  auto ck(contactKey(secretKey,dayFor,periodFor));
+  return ContactIdentifier(F::t(ck, 16));
+}
+
+// NOTE I'm keeping the old functions here in case we need to use a caching version on another platform
+
 // const std::vector<MatchingKey>&
 // K::matchingKeys(const SecretKey& secretKey) noexcept {
 //   if (0 == mImpl->matchingKeySet.size()) {
@@ -126,28 +175,6 @@ K::period(Date at) const noexcept {
 //   }
 //   return mImpl->matchingKeySet;
 // }
-
-/// Low memory version of the key generator - generates keys between specified dates (inclusive)
-/// Generates for just the first day now (for verification this fixes the memory issue)
-/// TODO In future, it will generate them for between specified dates.
-const MatchingKey
-K::matchingKey(const SecretKey& secretKey, const int dayIdxFor) noexcept {
-  // lazy initialisation
-  MatchingKeySeed last;	
-  MatchingKeySeed newSeed(F::h(secretKey));
-  for (int i = mImpl->daysFor - 1;i >=dayIdxFor; i--) {
-    newSeed.append(F::h(F::t(last)));
-    last.clear();
-    last.append(newSeed);
-    newSeed.clear();
-  }
-  // At this point newSeed is empty and last holds the seed for day dayIdxFor
-  
-  // matching key on day 0 is derived from matching key seed on day dayIdxFor and day dayIdxFor-1
-  MatchingKeySeed minusOne(F::h(F::t(last)));
-
-  return MatchingKey(F::h(F::xorData(last,minusOne)));
-}
 
 // const std::vector<ContactKey>
 // K::contactKeys(const MatchingKey& matchingKey) noexcept {
@@ -183,38 +210,10 @@ K::matchingKey(const SecretKey& secretKey, const int dayIdxFor) noexcept {
 //   return contactKey;
 // }
 
-const ContactKey
-K::contactKey(const SecretKey& secretKey, const int dayFor, const int periodFor) noexcept {
-  const int n = mImpl->periodsInDay;
-
-  auto mk = matchingKey(secretKey,dayFor);
-
-  ContactKeySeed last(F::h(mk));
-  ContactKeySeed lastMinusOne;
-  for (int j = n - 1;j >= periodFor;j--) {
-    lastMinusOne.clear();
-    lastMinusOne.append(F::h(F::t(last)));
-    last.clear();
-    last.append(lastMinusOne);
-  }
-  // we now have lastMinusOne = contactKeySeed at periodFor
-
-  // Day 0 key now
-  ContactKeySeed minusOne(F::h(F::t(last)));
-
-  return ContactKey(F::h(F::xorData(last, minusOne)));
-}
-
 // const ContactIdentifier
 // K::contactIdentifier(const ContactKey& contactKey) noexcept {
 //   return ContactIdentifier(F::t(contactKey, 16));
 // }
-
-const ContactIdentifier
-K::contactIdentifier(const SecretKey& secretKey, const int dayFor,const int periodFor) noexcept {
-  auto ck = contactKey(secretKey,dayFor,periodFor);
-  return ContactIdentifier(F::t(ck, 16));
-}
 
 
 }

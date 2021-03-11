@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
+set(NO_BUILD_TYPE_WARNING ON)
 
 # Zephyr build environment variables set here
 #set(ENV{BOARD} nrf52840dongle_nrf52840) # nRF52840 USB dongle
@@ -101,29 +102,29 @@ target_sources(app PRIVATE
   ${HERALD_SOURCES_MBEDTLS}
   # Now tests source
   # root with main
-	# ../herald-tests/datatypes-tests.cpp
+	../herald-tests/datatypes-tests.cpp
 	
 	# Low level
-	# ../herald-tests/sensorlogger-tests.cpp
-	# ../herald-tests/errorcontactlog-tests.cpp
-	# ../herald-tests/data-tests.cpp
-	# ../herald-tests/blemacaddress-tests.cpp
-	# ../herald-tests/targetidentifier-tests.cpp
+	../herald-tests/sensorlogger-tests.cpp
+	../herald-tests/errorcontactlog-tests.cpp
+	../herald-tests/data-tests.cpp
+	../herald-tests/blemacaddress-tests.cpp
+	../herald-tests/targetidentifier-tests.cpp
 
   # mid level
-	# ../herald-tests/beaconpayload-tests.cpp
-	# ../herald-tests/extendeddata-tests.cpp
-	# ../herald-tests/fixedpayload-tests.cpp
+	../herald-tests/beaconpayload-tests.cpp
+	../herald-tests/extendeddata-tests.cpp
+	../herald-tests/fixedpayload-tests.cpp
 	../herald-tests/simplepayload-tests.cpp
-	# ../herald-tests/bledevice-tests.cpp
-	# ../herald-tests/sample-tests.cpp
+	../herald-tests/bledevice-tests.cpp
+	../herald-tests/sample-tests.cpp
 	# ../herald-tests/ranges-tests.cpp # BUS FAULT
 
   # high level
-	# ../herald-tests/advertparser-tests.cpp
-	# ../herald-tests/bledatabase-tests.cpp
-	# ../herald-tests/blecoordinator-tests.cpp
-	# ../herald-tests/coordinator-tests.cpp
+	../herald-tests/advertparser-tests.cpp
+	../herald-tests/bledatabase-tests.cpp
+	../herald-tests/blecoordinator-tests.cpp
+	../herald-tests/coordinator-tests.cpp
 
   # now main func
   src/main.cpp
