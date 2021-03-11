@@ -35,11 +35,17 @@ public:
 
   int period(Date at) const noexcept;
 
-  const std::vector<MatchingKey>& matchingKeys(const SecretKey& secretKey) noexcept;
+  // const std::vector<MatchingKey>& matchingKeys(const SecretKey& secretKey) noexcept;
 
-  const std::vector<ContactKey> contactKeys(const MatchingKey& matchingKey) noexcept;
+  // const std::vector<ContactKey> contactKeys(const MatchingKey& matchingKey) noexcept;
 
-  const ContactIdentifier contactIdentifier(const ContactKey& contactKey) noexcept;
+  // const ContactIdentifier contactIdentifier(const ContactKey& contactKey) noexcept;
+
+  const MatchingKey matchingKey(const SecretKey& secretKey, const int dayFor) noexcept;
+
+  const ContactKey contactKey(const SecretKey& secretKey, const int dayFor, const int periodFor) noexcept;
+
+  const ContactIdentifier contactIdentifier(const SecretKey& secretKey, const int dayFor, const int periodFor) noexcept;
 
 private:
   class Impl;

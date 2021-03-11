@@ -86,7 +86,7 @@ SHA256::digest(const Data& with) noexcept
       // less than 32 bytes remain
       read = with.size() - idx;
     }
-    for (std::size_t ci = 0; ci < read;ci++) {
+    for (std::size_t ci = 0; ci < read;++ci) {
       with.uint8(idx + ci, temp); // read one byte at a time
       buffer[ci] = (unsigned char)temp;
     }
@@ -97,6 +97,7 @@ SHA256::digest(const Data& with) noexcept
   }
   
   mbedtls_sha256_finish(&ctx2, output);
+  mbedtls_sha256_free(&ctx2);
 
   return Data((std::uint8_t*)output,32);
 }

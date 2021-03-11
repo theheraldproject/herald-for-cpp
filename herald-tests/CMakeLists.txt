@@ -25,6 +25,9 @@ add_executable(herald-tests
 	bledatabase-tests.cpp
 	blecoordinator-tests.cpp
 	coordinator-tests.cpp
+
+	# main test file
+	main.cpp
 )
 
 include_directories(${herald_SOURCE_DIR})
