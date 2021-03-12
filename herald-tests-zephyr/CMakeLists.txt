@@ -98,8 +98,12 @@ add_compile_options(--no-undefined -fexceptions -ffunction-sections -fdata-secti
 target_sources(app PRIVATE
   ${HERALD_SOURCES}
   ${HERALD_SOURCES_ZEPHYR}
-  ${HERALD_SOURCES_TINYCRYPT}
-  # ${HERALD_SOURCES_MBEDTLS}
+  # Simple Payload - Choose ONE
+  # Option 1: MBED TLS
+  ${HERALD_SOURCES_MBEDTLS}
+  # Option 2: TinyCrypt
+  # ${HERALD_SOURCES_TINYCRYPT}
+
   # Now tests source
   # root with main
 	../herald-tests/datatypes-tests.cpp

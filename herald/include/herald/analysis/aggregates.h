@@ -156,6 +156,82 @@ struct aggregate {
     addAggregate<Aggs...>(configuredAggregates...);
   }
   ~aggregate() = default;
+  
+  template <typename SampleListT,
+            typename SampleT = typename std::remove_cv<typename SampleListT::value_type>::type,
+            typename ValT = typename std::remove_cv<typename SampleT::value_type>::type,
+            std::size_t MaxSize = SampleListT::max_size
+           >
+  friend auto operator|(SampleListT& from, aggregate<Aggs...> me) -> aggregate<Aggs...> {
+    // determine number of runs
+    int maxRuns = 1;
+    for (auto& agg : me.aggregates) {
+      std::visit([&maxRuns](auto&& arg) {
+        if (arg.runs > maxRuns) {
+          maxRuns = arg.runs;
+        }
+      }, agg);
+    }
+
+    // loop over all incoming data, calling each aggregate each time
+    for (int run = 1;run <= maxRuns;run++) {
+      for (auto& agg : me.aggregates) {
+        std::visit([&run](auto&& arg) {
+          arg.beginRun(run);
+          std::cout << "Beggining run " << run << std::endl;
+        }, agg);
+      }
+
+      for (auto& v : from) {
+        for (auto& agg : me.aggregates) {
+          std::visit([&v](auto&& arg) {
+            std::cout << "Sample taken: " << v.taken.secondsSinceUnixEpoch() << std::endl;
+            arg.map(v);
+          }, agg);
+        }
+      }
+    }
+
+    // return me so we can then do get<Agg>()
+    return me;
+  }
+  
+  template <typename Coll, typename Pred>
+  friend auto operator|(herald::analysis::views::filtered_iterator_proxy<Coll,Pred> from, aggregate<Aggs...> me) -> aggregate<Aggs...> {
+    // determine number of runs
+    int maxRuns = 1;
+    for (auto& agg : me.aggregates) {
+      std::visit([&maxRuns](auto&& arg) {
+        if (arg.runs > maxRuns) {
+          maxRuns = arg.runs;
+        }
+      }, agg);
+    }
+
+    // loop over all incoming data, calling each aggregate each time
+    for (int run = 1;run <= maxRuns;run++) {
+      for (auto& agg : me.aggregates) {
+        std::visit([&run](auto&& arg) {
+          arg.beginRun(run);
+          std::cout << "Beggining run " << run << std::endl;
+        }, agg);
+      }
+
+      while (!from.ended()) {
+        auto& v = *from;
+        for (auto& agg : me.aggregates) {
+          std::visit([&v](auto&& arg) {
+            std::cout << "Sample taken: " << v.taken.secondsSinceUnixEpoch() << std::endl;
+            arg.map(v);
+          }, agg);
+        }
+        ++from;
+      }
+    }
+
+    // return me so we can then do get<Agg>()
+    return me;
+  }
 
   template <typename ValT>
   friend auto operator|(herald::analysis::views::view<ValT> from, aggregate<Aggs...> me) -> aggregate<Aggs...> {
