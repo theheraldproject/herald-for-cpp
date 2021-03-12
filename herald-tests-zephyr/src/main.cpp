@@ -82,6 +82,14 @@ void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf) {
   // Always return to allow main thread to proceed (Don't halt via k_fatal_halt like the default)
 }
 
+void _exit(int status)
+{
+  LOG_ERR("FAILURE: exit called with status %d", status);
+  while (1) {
+    ;
+  }
+}
+
 void herald_entry() {
   LOG_DBG("Catch thread entry");
   try {
