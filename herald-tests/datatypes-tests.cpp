@@ -337,7 +337,27 @@ TEST_CASE("datatypes-uuid-random","[randomness][uuid][basic][datatypes]") {
     herald::datatype::RandomnessGenerator gen(std::move(rnd));
     auto randomV4 = herald::datatype::UUID::random(gen);
     std::string str = randomV4.string();
-    std::cout << "UUID v4 random value: " << str << std::endl;
+    INFO("UUID v4 random value: " << str);
     REQUIRE(str != std::string("00000000-0000-4000-8000-000000000000")); // v4 variant 1
+  }
+}
+
+
+
+
+TEST_CASE("datatypes-memory-use","[datatypes][memory]") {
+
+  SECTION("datatypes-memory-use") {
+    // TODO always output sizes to a CSV report file
+
+    using namespace herald::datatype;
+    Base64String b64 = Base64String::encode(Data(std::byte(2),8));
+    INFO("Base64String size for 8 chars: " << sizeof(b64));
+    REQUIRE(sizeof(b64) <= 16); // 8 chars plus 64 bit size
+    Data d{std::byte(1),32};
+    INFO("Data size for 32 bytes: " << sizeof(d));
+    REQUIRE(sizeof(d) <= 40);
+
+    // TODO other types here
   }
 }

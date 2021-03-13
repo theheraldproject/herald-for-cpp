@@ -103,7 +103,7 @@ TEST_CASE("datatypes-data-from-uint8array", "[datatypes][data][ctor][from-uint8a
     herald::datatype::Data d{bytes, 4};
 
     std::string hs = d.hexEncodedString();
-    std::cout << "Data: uint8array as hexString: expected: 00010203, got: " << hs << std::endl;
+    INFO("Data: uint8array as hexString: expected: 00010203, got: " << hs);
 
     REQUIRE(d.size() == 4);
     REQUIRE("00010203" == hs);
@@ -164,7 +164,7 @@ TEST_CASE("datatypes-data-ctor-fromhexstring", "[datatypes][data][ctor][fromhexs
     const std::string hex = "00010ff0ffcc";
     herald::datatype::Data d = herald::datatype::Data::fromHexEncodedString(hex);
     const std::string finalhex = d.hexEncodedString();
-    std::cout << "Data: fromHexEncodedString: from: " << hex << ", to: " << finalhex << std::endl;
+    INFO("Data: fromHexEncodedString: from: " << hex << ", to: " << finalhex);
 
     REQUIRE(d.size() == 6);
     REQUIRE(d.at(0) == std::byte(0));
@@ -265,7 +265,7 @@ TEST_CASE("datatypes-data-description", "[datatypes][data][description]") {
     herald::datatype::Data d{bytes, 4};
 
     std::string hex = d.description();
-    std::cout << "Data: description output: " << hex << std::endl;
+    INFO("Data: description output: " << hex);
     REQUIRE(hex.size() > 0);
     // NOTE: No requirements on format for this method - DO NOT rely on it
   }
@@ -277,12 +277,12 @@ TEST_CASE("datatypes-data-hexencodedstring", "[datatypes][data][hexencodedstring
     herald::datatype::Data d{bytes, 4};
 
     std::string hex = d.hexEncodedString();
-    std::cout << "Data: hexEncodedString (std::string) output: " << hex << std::endl;
+    INFO("Data: hexEncodedString (std::string) output: " << hex);
     REQUIRE(8 == hex.size());
     REQUIRE("00010203" == hex);
 
     std::string hexrev = d.reversed().hexEncodedString();
-    std::cout << "Data: hexEncodedString (std::string) reversed output: " << hexrev << std::endl;
+    INFO("Data: hexEncodedString (std::string) reversed output: " << hexrev);
     REQUIRE(8 == hexrev.size());
     REQUIRE("03020100" == hexrev);
   }
