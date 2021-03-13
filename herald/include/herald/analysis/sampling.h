@@ -17,6 +17,12 @@ namespace sampling {
 
 using namespace herald::datatype;
 
+/// The unique ID of a source instance that has been sampled. 
+/// E.g. 64 bit hash of some unique identifier in the source physical realm 
+/// (unknown to the analysis engine)
+using SampledID = std::size_t;
+
+/// The Sample taken from an object with ID of type SampledID
 template <typename ValT>
 struct Sample {
   using value_type = ValT;
@@ -98,30 +104,23 @@ struct SampleList {
 
   static constexpr std::size_t max_size = MaxSize;
 
-  SampleList() : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {};
+  SampleList() : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {}
   SampleList(const SampleList&) = delete; // no shallow copies allowed
+
+  // Creates a list from static initialiser list elements
+  template <typename... Inits>
+  SampleList(Inits... initialiserElements) : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {
+    appendData(initialiserElements);
+  }
   ~SampleList() = default;
 
+  void push(Sample<SampleValueT> sample) {
+    incrementNewest();
+    data[newestPosition] = sample;
+  }
+
   void push(Date taken, SampleValueT val) {
-    if (SIZE_MAX == newestPosition) {
-      newestPosition = 0;
-      oldestPosition = 0;
-    } else {
-      if (newestPosition == (oldestPosition - 1)) {
-        ++oldestPosition;
-        if (oldestPosition == data.size()) {
-          oldestPosition = 0;
-        }
-      }
-      ++newestPosition;
-    }
-    if (newestPosition == data.size()) {
-      // just gone past the end of the container
-      newestPosition = 0;
-      if (0 == oldestPosition) {
-        ++oldestPosition; // erases oldest if not already removed
-      }
-    }
+    incrementNewest();
     data[newestPosition] = SampleT{taken,val};
   }
 
@@ -185,6 +184,39 @@ private:
   std::array<SampleT,MaxSize> data;
   std::size_t oldestPosition;
   std::size_t newestPosition;
+
+  void incrementNewest() {
+    if (SIZE_MAX == newestPosition) {
+      newestPosition = 0;
+      oldestPosition = 0;
+    } else {
+      if (newestPosition == (oldestPosition - 1)) {
+        ++oldestPosition;
+        if (oldestPosition == data.size()) {
+          oldestPosition = 0;
+        }
+      }
+      ++newestPosition;
+    }
+    if (newestPosition == data.size()) {
+      // just gone past the end of the container
+      newestPosition = 0;
+      if (0 == oldestPosition) {
+        ++oldestPosition; // erases oldest if not already removed
+      }
+    }
+  }
+
+  template <typename Inits>
+  void appendData(Inits first) {
+    push(first);
+  }
+
+  template <typename... Inits>
+  void appendData(Inits first, Inits second, Inits... initialiserElements) {
+    push(first);
+    appendData(second, initialiserElements...);
+  }
 };
 
 template <typename SampleListT,

@@ -10,7 +10,8 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/sensor_delegate.h
   ${HERALD_BASE}/include/herald/sensor.h
   ${HERALD_BASE}/include/herald/analysis/aggregates.h
-  ${HERALD_BASE}/include/herald/analysis/distance.h
+  ${HERALD_BASE}/include/herald/analysis/runner.h
+  ${HERALD_BASE}/include/herald/analysis/distance_conversion.h
   ${HERALD_BASE}/include/herald/analysis/ranges.h
   ${HERALD_BASE}/include/herald/analysis/risk.h
   ${HERALD_BASE}/include/herald/analysis/sampling.h
@@ -38,6 +39,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/bluetooth_state.h
   ${HERALD_BASE}/include/herald/datatype/data.h
   ${HERALD_BASE}/include/herald/datatype/date.h
+  ${HERALD_BASE}/include/herald/datatype/distance.h
   ${HERALD_BASE}/include/herald/datatype/encounter.h
   ${HERALD_BASE}/include/herald/datatype/error_code.h
   ${HERALD_BASE}/include/herald/datatype/immediate_send_data.h
@@ -91,6 +93,7 @@ set(HERALD_SOURCES
 	${HERALD_BASE}/src/datatype/base64_string.cpp
 	${HERALD_BASE}/src/datatype/data.cpp
 	${HERALD_BASE}/src/datatype/date.cpp
+	${HERALD_BASE}/src/datatype/distance.cpp
 	${HERALD_BASE}/src/datatype/encounter.cpp
 	${HERALD_BASE}/src/datatype/immediate_send_data.cpp
 	${HERALD_BASE}/src/datatype/location.cpp
