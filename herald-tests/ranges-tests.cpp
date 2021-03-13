@@ -377,13 +377,13 @@ TEST_CASE("ranges-risk-aggregate", "[ranges][risk][aggregate][no-filter]") {
       if (firstNonZeroInterScore == 0.0 && interScore > 0) {
         firstNonZeroInterScore = interScore;
       }
-      std::cout << "RiskAggregationBasic inter score: " << interScore << " address of agg: " << &agg << std::endl;
+      INFO("RiskAggregationBasic inter score: " << interScore << " address of agg: " << &agg);
     }
 
     // Now we have the total for our 'whole contact duration', not scaled for how far in the past it is
     auto& agg = riskSlice.get<herald::analysis::algorithms::risk::RiskAggregationBasic>();
     double riskScore = agg.reduce();
-    std::cout << "RiskAggregationBasic final score: " << riskScore << " address of agg: " << &agg << std::endl;
+    INFO("RiskAggregationBasic final score: " << riskScore << " address of agg: " << &agg);
     REQUIRE(interScore > 0.0); // final inter score should be non zero
     REQUIRE(riskScore > 0.0); // final score should be non zero
     REQUIRE(riskScore > firstNonZeroInterScore); // should be additive over time too

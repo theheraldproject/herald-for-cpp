@@ -8,7 +8,7 @@
 #include <map>
 #include <variant>
 #include <vector>
-#include <iostream>
+// #include <iostream>
 
 #include "ranges.h"
 
@@ -178,14 +178,14 @@ struct aggregate {
       for (auto& agg : me.aggregates) {
         std::visit([&run](auto&& arg) {
           arg.beginRun(run);
-          std::cout << "Beggining run " << run << std::endl;
+          // std::cout << "Beggining run " << run << std::endl;
         }, agg);
       }
 
       for (auto& v : from) {
         for (auto& agg : me.aggregates) {
           std::visit([&v](auto&& arg) {
-            std::cout << "Sample taken: " << v.taken.secondsSinceUnixEpoch() << std::endl;
+            // std::cout << "Sample taken: " << v.taken.secondsSinceUnixEpoch() << std::endl;
             arg.map(v);
           }, agg);
         }
@@ -213,7 +213,7 @@ struct aggregate {
       for (auto& agg : me.aggregates) {
         std::visit([&run](auto&& arg) {
           arg.beginRun(run);
-          std::cout << "Beggining run " << run << std::endl;
+          // std::cout << "Beggining run " << run << std::endl;
         }, agg);
       }
 
@@ -221,7 +221,7 @@ struct aggregate {
         auto& v = *from;
         for (auto& agg : me.aggregates) {
           std::visit([&v](auto&& arg) {
-            std::cout << "Sample taken: " << v.taken.secondsSinceUnixEpoch() << std::endl;
+            // std::cout << "Sample taken: " << v.taken.secondsSinceUnixEpoch() << std::endl;
             arg.map(v);
           }, agg);
         }
@@ -250,14 +250,14 @@ struct aggregate {
       for (auto& agg : me.aggregates) {
         std::visit([&run](auto&& arg) {
           arg.beginRun(run);
-          std::cout << "Beggining run " << run << std::endl;
+          // std::cout << "Beggining run " << run << std::endl;
         }, agg);
       }
 
       for (auto& v : from) {
         for (auto& agg : me.aggregates) {
           std::visit([&v](auto&& arg) {
-            std::cout << "Sample taken: " << v.taken.secondsSinceUnixEpoch() << std::endl;
+            // std::cout << "Sample taken: " << v.taken.secondsSinceUnixEpoch() << std::endl;
             arg.map(v);
           }, agg);
         }
