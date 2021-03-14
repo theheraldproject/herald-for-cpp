@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -14,10 +14,16 @@ namespace herald {
 
 using namespace herald::datatype;
 
-/**
- * Only implemented in final version to allow TimeInterval and other
- * potentially platform specific implementation details to be overridden
- */
+///
+/// \brief Generic abstraction of a particular local proximate device type.
+/// 
+/// Could be a Bluetooth Low Energy device (BLEDevice) or some other technology.
+/// 
+/// Only implemented in final version to allow TimeInterval and other
+/// potentially platform specific implementation details to be overridden.
+///
+/// \sa herald::ble::BLEDevice
+///
 class Device {
 public:
   Device() = default;

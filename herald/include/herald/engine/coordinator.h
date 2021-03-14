@@ -11,35 +11,41 @@
 #include <memory>
 
 namespace herald {
+
+/// \brief Engine classes provide for task scheduling, including complex inter-dependent tasks.
 namespace engine {
 
-/**
- * Coordinates all connection and activities used across all sensors within Herald
- * 
- * Responsible for:-
- * - Determining Sensor capabilities and requirements around connections and activities
- * 
- * Manages:- 
- * - Nothing, but coordinates activities throughout Herald Sensor networks on behalf of Sensor Array
- * 
- * Is managed by:-
- * - Sensor Array
- */
+///
+/// \brief Coordinates all connection and activities used across all sensors within Herald
+/// 
+/// Responsible for:-
+///
+/// - Determining Sensor capabilities and requirements around connections and Activity instances
+/// 
+/// Manages:- 
+///
+/// - Nothing, but coordinates activities throughout Herald Sensor networks on behalf of SensorArray
+/// 
+/// Is managed by:-
+///
+/// - SensorArray
+///
 class Coordinator {
 public:
+  /// Default constructor. Receives a configured platform-specific context instance.
   Coordinator(std::shared_ptr<Context> context);
   ~Coordinator();
 
-  /** Introspect and include in iteration planning **/
+  /// Introspect and include in iteration planning
   void add(std::shared_ptr<Sensor> sensor);
-  /** Remove from iteration planning **/
+  /// Remove from iteration planning
   void remove(std::shared_ptr<Sensor> sensor);
 
-  /** Prepares for iterations to be called (may pre-emptively make calls) **/
+  /// Prepares for iterations to be called (may pre-emptively make calls)
   void start();
-  /** Execute an iteration of activity, according to settings **/
+  /// Execute an iteration of activity, according to settings
   void iteration();
-  /** Closes out any existing connections/activities **/
+  /// Closes out any existing connections/activities
   void stop();
 
 private:

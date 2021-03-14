@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -103,3 +103,8 @@
 #include "herald/payload/extended/extended_data.h"
 
 // service namespace
+
+/// \brief The main Herald Proximity namespace in C++
+namespace herald {
+
+}
