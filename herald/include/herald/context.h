@@ -21,11 +21,13 @@ class SensorLoggingSink; // fwd decl
 
 using namespace herald::data;
 
-/**
- * Some platforms require global configuration or static configuration that
- * doesn't map well on to C++ idioms. This class provides an extension capability
- * to allow this linking.
- */
+///
+/// \brief High level abstraction to access platform-specific implemented primitives.
+/// 
+/// Some platforms require global configuration or static configuration that
+/// doesn't map well on to C++ idioms. This class provides an extension capability
+/// to allow this linking.
+///
 class Context {
 public:
   Context() = default;
@@ -35,9 +37,9 @@ public:
   virtual std::shared_ptr<BluetoothStateManager> getBluetoothStateManager() = 0;
 };
 
-/**
- * Default context that just sends logging to stdout
- */
+///
+/// \brief Default context that just sends logging to stdout
+///
 class DefaultContext : public Context {
 public:
   DefaultContext() = default;

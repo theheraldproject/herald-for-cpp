@@ -19,6 +19,7 @@ namespace herald {
   
 using namespace datatype;
 
+/// \brief Base interface for classes wishing to implement callbacks for core low-level Herald proximity and presence events.
 class SensorDelegate {
 public:
   SensorDelegate() = default;

@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -11,6 +11,8 @@
 
 namespace herald {
 
+/// \brief Default implementation that provides implementations for each delegate callback.
+/// \sa SensorDelegate
 class DefaultSensorDelegate : public SensorDelegate {
 public:
   DefaultSensorDelegate();

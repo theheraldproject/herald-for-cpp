@@ -21,9 +21,19 @@ namespace herald {
 using namespace datatype;
 using namespace payload;
 
+/// \brief Manages all Sensors and sensor delegates for Herald
+///
+/// This is the Core logic and runtime class for all of Herald.
+/// It is platform independent and Sensor technology independent.
+/// On C++ this class does NOT use threads. It is instead up to
+/// the platform developer to call the iteration(TimeInterval)
+/// function from whichever scheduling or threading tools are
+/// available on each platform. In Zephyr RTOS, for example,
+/// This is a simple 250ms delay within a special Herald-only
+/// Zephyr kernel thread.
 class SensorArray : public Sensor {
 public:
-  /// Takes ownership of payloadDataSupplier (std::move)
+  /// \brief Takes ownership of payloadDataSupplier (std::move)
   SensorArray(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
   ~SensorArray();
 
@@ -39,7 +49,7 @@ public:
   void stop() override;
   std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() override;
 
-  // Scheduling activities from external OS thread wakes - Since v1.2-beta3
+  /// \brief Scheduling activities from external OS thread wakes - Since v1.2-beta3
   void iteration(const TimeInterval sinceLastCompleted);
 
 private:

@@ -27,6 +27,7 @@ namespace herald {
 
 using namespace herald::ble;
 
+/// \brief Internal zephyr namespace DO NOT USE - API MAY CHANGE WITHOUT WARNING
 namespace zephyrinternal {
   class Advertiser {
   public:
@@ -42,9 +43,9 @@ namespace zephyrinternal {
   };
 }
 
-/*
- * Zephyr context class - holds state generic across our application for a particular device.
- */
+///
+/// \brief Holds generic state across our application for any Zephyr RTOS device.
+///
 class ZephyrContext : public Context, public BluetoothStateManager, public std::enable_shared_from_this<ZephyrContext> {
 public:
   ZephyrContext();
@@ -77,6 +78,7 @@ private:
 // Other zephyr internal-but-public API base classes
 namespace zephyrinternal {
 
+/// \brief INTERNAL utility class to allow Zephyr C API to call callbacks in the Zephyr internal Context Impl class.
 class Callbacks {
 public:
   Callbacks() = default;
