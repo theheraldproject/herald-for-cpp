@@ -9,6 +9,9 @@
 
 #include "aggregates.h"
 #include "ranges.h"
+#include "runner.h"
+#include "sampling.h"
+#include "../datatype/distance.h"
 
 namespace herald {
 namespace analysis {
@@ -16,6 +19,8 @@ namespace algorithms {
 namespace distance {
 
 using namespace herald::analysis::aggregates;
+using namespace herald::analysis::sampling;
+using namespace herald::datatype;
 
 struct FowlerBasic {
   static constexpr int runs = 1;
@@ -51,24 +56,24 @@ private:
 };
 
 struct FowlerBasicAnalyser {
-  FowlerBasicAnalyser(long interval, double intercept, double coefficient) : interval(interval), basic(intercept, coefficient) {}
+  FowlerBasicAnalyser(long interval, double intercept, double coefficient) : interval(interval), basic(intercept, coefficient), lastRan(0) {}
   ~FowlerBasicAnalyser() = default;
 
-  template <std::size_t SrcSz, std::size_t DstSz>
-  void analyse(const SampleList<Sample<RSSI>,SrcSz>& src, SampleList<Sample<Distance>,DstSz>& dst) {
+  template <std::size_t SrcSz>
+  void analyse(Date timeNow, const SampleList<Sample<RSSI>,SrcSz>& src, analysis::AnalysisDelegate<Distance>& dst) {
+    if (lastRan + interval > timeNow) return; // interval guard
+
     basic.reset();
-    
+
     herald::analysis::views::in_range valid(-99,-10);
 
-    using namespace herald::analysis::aggregates;
     auto values = src 
                 | herald::analysis::views::filter(valid) 
                 | herald::analysis::views::to_view();
 
     auto summary = values
-                | summarise<Mean,Mode,Variance>();
+                 | summarise<Mode,Variance>();
 
-    auto mean = summary.get<Mean>();
     auto mode = summary.get<Mode>();
     auto var = summary.get<Variance>();
     auto sd = std::sqrt(var);
@@ -83,17 +88,18 @@ struct FowlerBasicAnalyser {
                     )
                   | aggregate(basic); // type actually <herald::analysis::algorithms::distance::FowlerBasic>
     
-    auto agg = distance.get<herald::analysis::algorithms::distance::FowlerBasic>();
+    auto agg = distance.get<FowlerBasic>();
     auto d = agg.reduce();
 
     Date latestTime = values.latest();
 
-    dst.push(latestTime,Distance(d));
+    dst.newSample(Sample<Distance>(latestTime,Distance(d)));
   }
 
 private:
   long interval;
   FowlerBasic basic;
+  Date lastRan;
 };
 
 }

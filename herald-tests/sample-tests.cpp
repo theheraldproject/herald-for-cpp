@@ -494,3 +494,57 @@ TEST_CASE("samplelist-iterator-cleared", "[samplelist][iterator][cleared]") {
 }
 
 // Now handle other container functionality required
+
+TEST_CASE("sample-init-list", "[sample][initialiser][list]") {
+  SECTION("sample-init-list") {
+    herald::analysis::sampling::Sample<herald::datatype::RSSI> sample{10,-55};
+    REQUIRE(sample.taken.secondsSinceUnixEpoch() == 10);
+    REQUIRE(sample.value == -55);
+  }
+}
+
+TEST_CASE("samplelist-init-list", "[samplelist][initialiser][list]") {
+  SECTION("samplelist-init-list") {
+    herald::analysis::sampling::Sample<herald::datatype::RSSI> sample1{10,-55};
+    herald::analysis::sampling::Sample<herald::datatype::RSSI> sample2{20,-65};
+    herald::analysis::sampling::Sample<herald::datatype::RSSI> sample3{30,-75};
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,3> sl{sample1,sample2,sample3};
+    REQUIRE(sl[0].taken.secondsSinceUnixEpoch() == 10);
+    REQUIRE(sl[0].value == -55);
+    REQUIRE(sl[1].taken.secondsSinceUnixEpoch() == 20);
+    REQUIRE(sl[1].value == -65);
+    REQUIRE(sl[2].taken.secondsSinceUnixEpoch() == 30);
+    REQUIRE(sl[2].value == -75);
+  }
+}
+
+TEST_CASE("samplelist-init-list-deduced", "[samplelist][initialiser][list][deduced]") {
+  SECTION("samplelist-init-list-deduced") {
+    herald::analysis::sampling::Sample<herald::datatype::RSSI> sample1{10,-55};
+    herald::analysis::sampling::Sample<herald::datatype::RSSI> sample2{20,-65};
+    herald::analysis::sampling::Sample<herald::datatype::RSSI> sample3{30,-75};
+    herald::analysis::sampling::SampleList sl{sample1,sample2,sample3}; // full type is deduced
+    REQUIRE(sl[0].taken.secondsSinceUnixEpoch() == 10);
+    REQUIRE(sl[0].value == -55);
+    REQUIRE(sl[1].taken.secondsSinceUnixEpoch() == 20);
+    REQUIRE(sl[1].value == -65);
+    REQUIRE(sl[2].taken.secondsSinceUnixEpoch() == 30);
+    REQUIRE(sl[2].value == -75);
+  }
+}
+
+TEST_CASE("samplelist-init-list-alldeduced", "[samplelist][initialiser][list][alldeduced]") {
+  SECTION("samplelist-init-list-alldeduced") {
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,3> sl{
+      herald::analysis::sampling::Sample<herald::datatype::RSSI>{10,-55},
+      herald::analysis::sampling::Sample<herald::datatype::RSSI>{20,-65},
+      herald::analysis::sampling::Sample<herald::datatype::RSSI>{30,-75}
+    };
+    REQUIRE(sl[0].taken.secondsSinceUnixEpoch() == 10);
+    REQUIRE(sl[0].value == -55);
+    REQUIRE(sl[1].taken.secondsSinceUnixEpoch() == 20);
+    REQUIRE(sl[1].value == -65);
+    REQUIRE(sl[2].taken.secondsSinceUnixEpoch() == 30);
+    REQUIRE(sl[2].value == -75);
+  }
+}
