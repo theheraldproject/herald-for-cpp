@@ -11,16 +11,23 @@ using namespace herald::datatype;
 
 template <std::size_t Sz>
 struct DummyRSSISource {
-  DummyRssiSource(const std::size_t srcDeviceKey, const SampleList<Sample<RSSI>,Sz>& data) : key(srcDeviceKey), data(data) {};
+  using value_type = Sample<RSSI>; // allows AnalysisRunner to introspect this class at compile time
+
+  DummyRSSISource(const std::size_t srcDeviceKey, SampleList<Sample<RSSI>,Sz>&& data) : key(srcDeviceKey), data(std::move(data)) {};
   ~DummyRSSISource() = default;
 
-  void run(AnalysisRunner& runner) {
+  template <typename RunnerT>
+  void run(int timeTo, RunnerT& runner) {
     // get reference to target list
-    auto& devList = runner.list<RSSI>(key);
+    // auto& devList = runner.list<RSSI>(key);
     // push through data at default rate
     for (auto& v: data) {
-      devList.push(v.taken,v.value); // copy data over (It's unusual taking a SampleList and sending to a SampleList)
+      // devList.push(v.taken,v.value); // copy data over (It's unusual taking a SampleList and sending to a SampleList)
+      if (v.taken.secondsSinceUnixEpoch() <= timeTo) {
+        runner.newSample<20>(key,v);
+      }
     }
+    runner.run(timeTo);
   }
 
 private:
@@ -33,7 +40,7 @@ struct DummyDistanceDelegate {
   ~DummyDistanceDelegate() = default;
 
   // Detected methods by AnalysisRunner
-  void newSampleArrived(SampledID sampled, Sample<Distance> sample) {
+  void newSample(SampledID sampled, Sample<Distance> sample) {
     lastSampledID = sampled;
     distances.push(sample);
   }
@@ -66,17 +73,26 @@ private:
 /// [Value] So I don't miss any information, and have accurate, regular, samples
 TEST_CASE("analysisrunner-basic", "[analysisrunner][basic]") {
   SECTION("analysisrunner-basic") {
-    SampleList<Sample<RSSI>,10> srcData{{10,-55},{20,-55},{30,-55},{40,-55},{50,-55},{60,-55},{70,-55},{80,-55},{90,-55},{100,-55}};
-    DummyRSSISource src(srcData);
+    SampleList<Sample<RSSI>,10> srcData{
+      Sample<RSSI>{10,-55},Sample<RSSI>{20,-55},Sample<RSSI>{30,-55},Sample<RSSI>{40,-55},Sample<RSSI>{50,-55},
+      Sample<RSSI>{60,-55},Sample<RSSI>{70,-55},Sample<RSSI>{80,-55},Sample<RSSI>{90,-55},Sample<RSSI>{100,-55}
+    };
+    DummyRSSISource src(1234,std::move(srcData));
 
     herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
 
-    herald::analysis::AnalysisRunner runner(distanceAnalyser); // std::moves and takes ownership
+    herald::analysis::AnalysisRunner<RSSI,Distance> runner; // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
 
     DummyDistanceDelegate myDelegate;
-    runner.add(myDelegate);
+    runner.add(distanceAnalyser); // so it picks up new data items
+    runner.add(myDelegate); // so we receive the relevant output
 
-    runner.run();
+    // run at different times and ensure that it only actually runs three times (sample size == 3)
+    src.run(20,runner);
+    src.run(40,runner);
+    src.run(60,runner);
+    src.run(80,runner);
+    src.run(95,runner);
 
     auto& samples = myDelegate.samples();
     REQUIRE(samples.size() == 3); // didn't reach 4x30 seconds, so no tenth sample

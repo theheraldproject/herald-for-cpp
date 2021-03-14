@@ -5,10 +5,11 @@
 #ifndef SAMPLING_H
 #define SAMPLING_H
 
+#include "../datatype/date.h"
+
 #include <array>
 #include <cstdint>
-
-#include "../datatype/date.h"
+#include <type_traits>
 
 namespace herald {
 namespace analysis {
@@ -34,6 +35,8 @@ struct Sample {
   Sample(Date sampled, ValT v) : taken(Date{sampled.secondsSinceUnixEpoch()}), value(v) {}
   Sample(const Sample& other) : taken(Date{other.taken.secondsSinceUnixEpoch()}), value(other.value) {} // copy ctor
   Sample(Sample&& other) : taken(std::move(other.taken)), value(std::move(other.value)) {} // move ctor
+  template <typename... Args>
+  Sample(int secondsSinceEpoch,Args... args) : taken(Date(secondsSinceEpoch)), value(ValT(args...)) {} // initialiser list constructor
   ~Sample() = default;
 
   Sample& operator=(Sample&& other) {
@@ -106,12 +109,17 @@ struct SampleList {
 
   SampleList() : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {}
   SampleList(const SampleList&) = delete; // no shallow copies allowed
+  SampleList(SampleList&& other) : data(std::move(other.data)), oldestPosition(other.oldestPosition), newestPosition(other.newestPosition) {} // move ctor
 
-  // Creates a list from static initialiser list elements
-  template <typename... Inits>
-  SampleList(Inits... initialiserElements) : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {
-    appendData(initialiserElements);
+  // Creates a list from static initialiser list elements, using deduction guide
+  template <typename... MultiSampleT>
+  SampleList(MultiSampleT... initialiserElements) : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {
+    appendData(initialiserElements...);
   }
+  // This one requires specified final type, but deduces constructor to use
+  // SampleList(SampleT... initialiserElements) : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {
+  //   appendData(initialiserElements...);
+  // }
   ~SampleList() = default;
 
   void push(Sample<SampleValueT> sample) {
@@ -207,17 +215,22 @@ private:
     }
   }
 
-  template <typename Inits>
-  void appendData(Inits first) {
-    push(first);
+  template <typename LastT>
+  void appendData(LastT last) {
+    push(last);
   }
 
-  template <typename... Inits>
-  void appendData(Inits first, Inits second, Inits... initialiserElements) {
+  template <typename FirstT, typename SecondT, typename... Inits>
+  void appendData(FirstT first, SecondT second, Inits... initialiserElements) {
     push(first);
     appendData(second, initialiserElements...);
   }
 };
+// Deduction guides
+template <typename... ValT, typename CommonValT = typename std::common_type_t<ValT...>, typename CommonValTValue = typename CommonValT::value_type>
+SampleList(ValT... valueList) -> SampleList<CommonValT,sizeof...(valueList),CommonValTValue>;
+// template<typename SampleValueT>
+// SampleList(Sample<SampleValueT>... valueList) -> SampleList<Sample<SampleValueT>,sizeof...(valueList),SampleValueT>; // TODO figure out guide when we know it's a Sample<ValT>
 
 template <typename SampleListT,
           typename ValT> // from fwd decl =>  = typename SampleListT::value_type

@@ -4,6 +4,8 @@
 
 #include "herald/datatype/distance.h"
 
+#include <functional>
+
 namespace herald {
 namespace datatype {
 
