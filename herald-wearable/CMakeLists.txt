@@ -12,6 +12,7 @@ set(NO_BUILD_TYPE_WARNING ON)
 # Zephyr build environment variables set here
 #set(ENV{BOARD} nrf52840dongle_nrf52840) # nRF52840 USB dongle
 #set(ENV{BOARD} nrf52dk_nrf52832) # nRF52832 USB dongle
+#set(ENV{BOARD} nrf52833dk_nrf52833) # nRF52833 DK
 #set(ENV{BOARD} nrf5340dk_nrf5340_cpuapp) # nRF5340 DK using secure app core
 # Detect if already set. If not, default to latest nRF DK board (5340)
 if(DEFINED ENV{BOARD})
@@ -45,6 +46,11 @@ elseif($ENV{BOARD} MATCHES .*nrf52832.*)
   set(OVERLAY_CONFIG 
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf52832.conf
+  )
+elseif($ENV{BOARD} MATCHES .*nrf52833.*)
+  set(OVERLAY_CONFIG 
+    ${OVERLAY_CONFIG} 
+    ${BASE_CONFIG}/nrf52833.conf
   )
 endif()
 if(CMAKE_BUILD_TYPE MATCHES Debug)
