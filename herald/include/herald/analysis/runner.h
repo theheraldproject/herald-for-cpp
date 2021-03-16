@@ -15,21 +15,19 @@ namespace analysis {
 
 using namespace sampling;
 
-// FWD Alias Declaration, not definition
-template <typename Destination, typename ValT>
+/// \brief Base Interface definition for classes that receive newSample callbacks from AnalysisRunner
 struct AnalysisDelegate {
-  AnalysisDelegate(Destination& dst) : destination(dst) {}
-  ~AnalysisDelegate() = default;
+  AnalysisDelegate() = default;
+  virtual ~AnalysisDelegate() = default;
 
+  template <typename ValT>
   void newSample(SampledID sampled, Sample<ValT> sample);
 
   template <typename RunnerT>
   void setDestination(RunnerT& runner);
-
-  Destination& destination;
 };
 
-/// Manages a set of lists for a particular Sample Value Type
+/// \brief Manages a set of lists for a particular Sample Value Type
 template <typename ValT, std::size_t Size>
 struct ListManager {
   using value_type = ValT;
@@ -37,8 +35,8 @@ struct ListManager {
   ListManager() = default;
   ~ListManager() = default;
 
-  auto& list(const SampledID sampled) {
-    return lists.emplace(sampled).first;
+  decltype(auto) list(const SampledID sampled) {
+    return lists.try_emplace(lists.end(),sampled,{}).first;
   }
 
   void remove(const SampledID listFor) {
@@ -49,13 +47,13 @@ private:
   std::map<SampledID,SampleList<Sample<ValT>,Size>> lists;
 };
 
-/// A fixed size set that holds exactly one instance of the std::variant for each
+/// \brief A fixed size set that holds exactly one instance of the std::variant for each
 /// of the specified ValTs value types.
 template <typename... ValTs>
 struct VariantSet {
   static constexpr std::size_t Size = sizeof...(ValTs);
 
-  VariantSet() = default;
+  VariantSet() : variants({ValTs()...}) {}; // Instantiate each type instance in the array
   ~VariantSet() = default;
 
   /// CAN THROW std::bad_variant_access
@@ -87,6 +85,11 @@ private:
 ///   // this ValueSource will call runner.newSample(Sample<ValT> sample)
 /// };
 
+/// \brief Manages all sample lists, sources, sinks, and analysis instances for all data generated within a system
+///
+/// This class can be used 'live' against real sensors, or statically with reference data. 
+/// This is achieved by ensuring the run(Date) method takes in the Date for the time of evaluation rather
+/// than using the current Date.
 template <typename... SourceTypes>
 struct AnalysisRunner {
   // using valueTypes = (typename SourceTypes::value_type)...;
@@ -100,7 +103,7 @@ struct AnalysisRunner {
   template <typename ValT, std::size_t Size>
   void newSample(SampledID sampled, sampling::Sample<ValT> sample) {
     // incoming sample. Pass to correct list
-    lists.get<ListManager<ValT,Size>>().list(sampled).push(sample);
+    lists.template get<ListManager<ValT,Size>>().list(sampled).second.push(sample);
   }
 
   /// Run the relevant analyses given the current time point
@@ -109,17 +112,21 @@ struct AnalysisRunner {
     // TODO performance enhancement - 'dirty' sample lists only (ones with new data)
     for (auto& listManager : lists) {
       using ValT = listManager::value_type;
-      for (auth& delegate : notifiables) {
-        if constexpr (std::is_same_v<ValT,delegate::value_type>) { // SHOULD BE RUNNERS NOT DELEGATES
-          delegate.
-        }
+      for (auto& delegate : notifiables) {
+        // if constexpr (std::is_same_v<ValT,delegate::value_type>) { // SHOULD BE RUNNERS NOT DELEGATES
+          //delegate.
+        // }
       }
     }
   }
 
-  template <typename Destination, typename SrcT> // TODO restrict this to one of the SourceTypes... types
-  void add(Destination& delegate) {
-    notifiables.push_back(std::variant<AnalysisDelegate<Destination, SourceTypes>...>(delegate));
+  void add(std::shared_ptr<AnalysisDelegate> delegate) {
+    notifiables.push_back(delegate);
+  }
+
+  template <typename AnalyserT>
+  void addAnalyser(AnalyserT& analyser) {
+    // TODO fill this out and call its analyse() function when required
   }
 
   // /// callback from analysis data source
@@ -131,58 +138,20 @@ struct AnalysisRunner {
 private:
   // TODO make sizes a parameterised list derived from template parameters
   VariantSet<ListManager<SourceTypes,25>...> lists; // exactly one per value type
-  std::vector<std::variant<AnalysisDelegate<SourceTypes>...>> notifiables; // more than one per value type
-  std::vector< // runners
+  std::vector<std::shared_ptr<AnalysisDelegate>> notifiables; // more than one per value type
+  //std::vector< // runners
 
-  template <typename FirstT>
-  void registerRunner(FirstT first) {
-    first.setDestination(*this);
-  }
+  // template <typename FirstT>
+  // void registerRunner(FirstT first) {
+  //   first.setDestination(*this);
+  // }
 
-  template <typename FirstT, typename SecondT, typename... RestT>
-  void registerRunner(FirstT first,SecondT second,RestT... rest) {
-    first.setDestination(*this);
-    registerRunner(second,rest...);
-  }
+  // template <typename FirstT, typename SecondT, typename... RestT>
+  // void registerRunner(FirstT first,SecondT second,RestT... rest) {
+  //   first.setDestination(*this);
+  //   registerRunner(second,rest...);
+  // }
 };
-
-
-
-
-
-
-
-
-
-// template <typename... AnalyserT>
-// class AnalysisRunner {
-// public:
-//   static constexpr std::size_t Size = sizeof...(AnalyserT);
-
-//   AnalysisRunner(AnalyserT... analyserList) : analysers() {
-//     analysers.push(std::move(analyserList...));
-//   }
-//   ~AnalysisRunner() = default;
-
-//   // Public methods here
-//   template <typename ValT>
-//   void add(AnalysisDelegate<ValT> delegate) {
-
-//   }
-
-//   void run() {
-
-//   }
-
-//   // template <typename SampleT>
-//   SampleList<SampleT>& list(sampling::SampledID sampled) {
-
-//   }
-
-// private:
-//   std::array<std::variant<AnalyserT...>,Size> analysers;
-//   std::map<
-// };
 
 }
 }

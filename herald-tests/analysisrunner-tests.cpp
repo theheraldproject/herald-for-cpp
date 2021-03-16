@@ -24,7 +24,7 @@ struct DummyRSSISource {
     for (auto& v: data) {
       // devList.push(v.taken,v.value); // copy data over (It's unusual taking a SampleList and sending to a SampleList)
       if (v.taken.secondsSinceUnixEpoch() <= timeTo) {
-        runner.newSample<20>(key,v);
+        runner.template newSample<RSSI,20>(key,v);
       }
     }
     runner.run(timeTo);
@@ -35,14 +35,24 @@ private:
   SampleList<Sample<RSSI>,Sz> data;
 };
 
-struct DummyDistanceDelegate {
-  DummyDistanceDelegate() = default;
-  ~DummyDistanceDelegate() = default;
+struct DummyDistanceDelegate : public herald::analysis::AnalysisDelegate {
+  DummyDistanceDelegate() : AnalysisDelegate() {};
+  ~DummyDistanceDelegate() {};
 
   // Detected methods by AnalysisRunner
   void newSample(SampledID sampled, Sample<Distance> sample) {
     lastSampledID = sampled;
     distances.push(sample);
+  }
+
+  template <typename ValT>
+  void newSample(SampledID sampled, Sample<ValT> sample) {
+    ; // general handler - specialisation above handles Distance samples
+  }
+
+  template <typename RunnerT>
+  void setDestination(RunnerT& runner) {
+    // TODO in real life you'd care about this
   }
 
   void reset() {
@@ -83,8 +93,8 @@ TEST_CASE("analysisrunner-basic", "[analysisrunner][basic]") {
 
     herald::analysis::AnalysisRunner<RSSI,Distance> runner; // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
 
-    DummyDistanceDelegate myDelegate;
-    runner.add(distanceAnalyser); // so it picks up new data items
+    std::shared_ptr<DummyDistanceDelegate> myDelegate = std::make_shared<DummyDistanceDelegate>();
+    runner.addAnalyser(distanceAnalyser); // so it picks up new data items
     runner.add(myDelegate); // so we receive the relevant output
 
     // run at different times and ensure that it only actually runs three times (sample size == 3)
@@ -94,7 +104,7 @@ TEST_CASE("analysisrunner-basic", "[analysisrunner][basic]") {
     src.run(80,runner);
     src.run(95,runner);
 
-    auto& samples = myDelegate.samples();
+    auto& samples = myDelegate->samples();
     REQUIRE(samples.size() == 3); // didn't reach 4x30 seconds, so no tenth sample
     REQUIRE(samples[0].taken.secondsSinceUnixEpoch() == 30);
     REQUIRE(samples[0].value != 0.0);

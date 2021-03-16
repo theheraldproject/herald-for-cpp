@@ -60,7 +60,7 @@ struct FowlerBasicAnalyser {
   ~FowlerBasicAnalyser() = default;
 
   template <std::size_t SrcSz>
-  void analyse(Date timeNow, const SampleList<Sample<RSSI>,SrcSz>& src, analysis::AnalysisDelegate<Distance>& dst) {
+  void analyse(Date timeNow, const SampleList<Sample<RSSI>,SrcSz>& src, std::shared_ptr<analysis::AnalysisDelegate>& dst) {
     if (lastRan + interval > timeNow) return; // interval guard
 
     basic.reset();
