@@ -137,8 +137,8 @@ struct AnalysisRunner {
 
 private:
   // TODO make sizes a parameterised list derived from template parameters
-  VariantSet<ListManager<SourceTypes,25>...> lists; // exactly one per value type
-  std::vector<std::shared_ptr<AnalysisDelegate>> notifiables; // more than one per value type
+  VariantSet<ListManager<SourceTypes,25>...> lists; // exactly one list manager per value type
+  std::vector<std::shared_ptr<AnalysisDelegate>> notifiables; // more than one delegate per value type
   //std::vector< // runners
 
   // template <typename FirstT>

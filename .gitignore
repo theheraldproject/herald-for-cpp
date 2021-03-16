@@ -5,3 +5,4 @@ Output
 *.so
 *.a
 **/.DS_Store
+**/build-*

@@ -26,10 +26,11 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/services/bas.h>
 
-
+#ifdef CC3XX_BACKEND
 // Cryptocell - nRF52840/nRF9160/nRF53x only. See prj.conf too to enable this Hardware
 #include <nrf_cc3xx_platform.h>
 #include <nrf_cc3xx_platform_entropy.h>
+#endif
 
 #include <utility>
 
@@ -126,6 +127,7 @@ public:
 	}
 };
 
+#ifdef CC3XX_BACKEND
 void cc3xx_init() {
   // START IMPLEMENTORS GUIDANCE - EXAMPLE CODE NOT NEEDED TO COPY IN TO IN YOUR DEMO APP
   // NOTE TO IMPLEMENTORS: Please remember to use a hardware security module where present.
@@ -159,6 +161,7 @@ void cc3xx_init() {
 	}
 	// END IMPLEMENTORS GUIDANCE
 }
+#endif
 
 void herald_entry() {
 	LOG_DBG("Herald entry");
@@ -219,7 +222,12 @@ void herald_entry() {
 	size_t buflen = 2048;
 	uint8_t* buf = new uint8_t[buflen];
 	size_t olen = 0;
+	
+#ifdef CC3XX_BACKEND
 	int success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); 
+#else
+	int success = 1;
+#endif
 	if (0 == success) {
 		sk.clear();
 		sk.append(buf, 0, buflen);
@@ -336,7 +344,9 @@ void main(void)
 	LOG_DBG("Const char* param test: %s","some string param");
 	LOG_DBG("int param test: %d",1234);
 
+#ifdef CC3XX_BACKEND
 	cc3xx_init();
+#endif
 
 	// Start herald entry on a new thread in case of errors, or needing to do something on the main thread
 	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 4096,
