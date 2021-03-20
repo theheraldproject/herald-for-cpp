@@ -10,54 +10,54 @@ namespace herald {
 namespace datatype {
 
 // PIMPL DEFINITION
-class Encounter::Impl {
-public:
-  Impl();
-  Impl(Proximity didMeasure, PayloadData withPayload, Date timestamp);
-  ~Impl() = default;
+// class Encounter::Impl {
+// public:
+//   Impl();
+//   Impl(Proximity didMeasure, PayloadData withPayload, Date timestamp);
+//   ~Impl() = default;
 
-  Date date;
-  Proximity proximity;
-  PayloadData payloadData;
-  bool valid;
-};
+//   Date date;
+//   Proximity proximity;
+//   PayloadData payloadData;
+//   bool valid;
+// };
 
 
-// PIMPL DECLARATIONS
-Encounter::Impl::Impl()
-  : date(), proximity(), payloadData(), valid(false)
-{
-  ;
-}
+// // PIMPL DECLARATIONS
+// Encounter::Impl::Impl()
+//   : date(), proximity(), payloadData(), valid(false)
+// {
+//   ;
+// }
 
-Encounter::Impl::Impl(Proximity didMeasure, PayloadData withPayload, Date timestamp)
-  : date(timestamp), proximity(didMeasure), payloadData(withPayload), valid(true)
-{
-  ;
-}
+// Encounter::Impl::Impl(Proximity didMeasure, PayloadData withPayload, Date timestamp)
+//   : date(timestamp), proximity(didMeasure), payloadData(withPayload), valid(true)
+// {
+//   ;
+// }
 
 // ENCOUNTER DECLARATIONS
 
 Encounter::Encounter(Proximity didMeasure, PayloadData withPayload, Date timestamp)
-  : mImpl(std::make_unique<Impl>(didMeasure,withPayload,timestamp))
+  : date(timestamp), prox(didMeasure), payloadData(withPayload), valid(true)
 {
   ;
 }
 
 Encounter::Encounter(Proximity didMeasure, PayloadData withPayload)
-  : mImpl(std::make_unique<Impl>(didMeasure,withPayload,Date()))
+  : date(Date()), prox(didMeasure), payloadData(withPayload), valid(true)
 {
   ;
 }
 
 Encounter::Encounter(const std::string csvRow)
-  : mImpl(std::make_unique<Impl>())
+  : date(), prox(), payloadData(), valid(false)
 {
   ;
   // TODO parse the csv
 }
 
-Encounter::~Encounter() {}
+Encounter::~Encounter() = default;
 
 
 std::string
@@ -67,25 +67,25 @@ Encounter::csvString() const {
 
 bool
 Encounter::isValid() const {
-  return mImpl->valid;
+  return valid;
 }
 
 const Proximity&
 Encounter::proximity() const
 {
-  return mImpl->proximity;
+  return prox;
 }
 
 const PayloadData&
 Encounter::payload() const
 {
-  return mImpl->payloadData;
+  return payloadData;
 }
 
 const Date&
 Encounter::timestamp() const
 {
-  return mImpl->date;
+  return date;
 }
 
 } // end namespace

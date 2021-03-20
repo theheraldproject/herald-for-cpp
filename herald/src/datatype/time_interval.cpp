@@ -7,18 +7,18 @@
 namespace herald {
 namespace datatype {
 
-class TimeInterval::Impl {
-public:
-  Impl();
-  Impl(long secondsSinceUnixEpoch);
-  ~Impl() = default;
+// class TimeInterval::Impl {
+// public:
+//   Impl();
+//   Impl(long secondsSinceUnixEpoch);
+//   ~Impl() = default;
 
-  long seconds;
-};
+//   long seconds;
+// };
 
-TimeInterval::Impl::Impl() : seconds(0) { }
+// TimeInterval::Impl::Impl() : seconds(0) { }
 
-TimeInterval::Impl::Impl(long secondsSinceUnixEpoch) : seconds(secondsSinceUnixEpoch) { }
+// TimeInterval::Impl::Impl(long secondsSinceUnixEpoch) : seconds(secondsSinceUnixEpoch) { }
 
 
 
@@ -46,27 +46,27 @@ TimeInterval::zero() {
 
 
 TimeInterval::TimeInterval(long seconds)
- : mImpl(std::make_unique<Impl>(seconds))
+ : secs(seconds)
 {
   ;
 }
 
 TimeInterval::TimeInterval(const Date& date)
- : mImpl(std::make_unique<Impl>())
+ : secs(date.secondsSinceUnixEpoch())
 {
-  mImpl->seconds = date.secondsSinceUnixEpoch();
+  ;
 }
 
 TimeInterval::TimeInterval(const Date& from, const Date& to)
- : mImpl(std::make_unique<Impl>())
+ : secs(to.secondsSinceUnixEpoch() - from.secondsSinceUnixEpoch())
 {
-  mImpl->seconds = to.secondsSinceUnixEpoch() - from.secondsSinceUnixEpoch();
+  ;
 }
 
 TimeInterval::TimeInterval(const TimeInterval& other)
-  : mImpl(std::make_unique<Impl>())
+  : secs(other.secs)
 {
-  mImpl->seconds = other.mImpl->seconds;
+  ;
 }
 
 TimeInterval::~TimeInterval() {}
@@ -75,49 +75,49 @@ TimeInterval::~TimeInterval() {}
 TimeInterval&
 TimeInterval::operator=(const TimeInterval& other) noexcept
 {
-  mImpl->seconds = other.mImpl->seconds;
+  secs = other.secs;
   return *this;
 }
 
 TimeInterval
 TimeInterval::operator*(const TimeInterval& other) noexcept {
-  return TimeInterval(mImpl->seconds * other.mImpl->seconds);
+  return TimeInterval(secs * other.secs);
 }
 
 TimeInterval
 TimeInterval::operator+(const TimeInterval& other) noexcept {
-  return TimeInterval(mImpl->seconds + other.mImpl->seconds);
+  return TimeInterval(secs + other.secs);
 }
 
 TimeInterval&
 TimeInterval::operator+=(const TimeInterval& other) noexcept {
-  mImpl->seconds += other.mImpl->seconds;
+  secs += other.secs;
   return *this;
 }
 
 TimeInterval
 TimeInterval::operator-(const TimeInterval& other) noexcept {
-  return TimeInterval(mImpl->seconds - other.mImpl->seconds);
+  return TimeInterval(secs - other.secs);
 }
 
 TimeInterval&
 TimeInterval::operator-=(const TimeInterval& other) noexcept {
-  mImpl->seconds -= other.mImpl->seconds;
+  secs -= other.secs;
   return *this;
 }
 
 TimeInterval
 TimeInterval::operator*(double multiplier) noexcept
 {
-  auto output = mImpl->seconds * multiplier;
-  return TimeInterval(static_cast<decltype(mImpl->seconds)>(output));
+  auto output = secs * multiplier;
+  return TimeInterval(static_cast<decltype(secs)>(output));
 }
 
 TimeInterval&
 TimeInterval::operator*=(double multiplier) noexcept
 {
-  auto output = mImpl->seconds * multiplier;
-  mImpl->seconds = static_cast<decltype(mImpl->seconds)>(output);
+  auto output = secs * multiplier;
+  secs = static_cast<decltype(secs)>(output);
   return *this;
 }
 
@@ -127,8 +127,8 @@ TimeInterval::operator/(double divisor) noexcept
   if (0 == divisor) {
     return *this;
   }
-  auto output = mImpl->seconds / divisor;
-  return TimeInterval(static_cast<decltype(mImpl->seconds)>(output));
+  auto output = secs / divisor;
+  return TimeInterval(static_cast<decltype(secs)>(output));
 }
 
 TimeInterval&
@@ -137,8 +137,8 @@ TimeInterval::operator/=(double divisor) noexcept
   if (0 == divisor) {
     return *this;
   }
-  auto output = mImpl->seconds / divisor;
-  mImpl->seconds = static_cast<decltype(mImpl->seconds)>(output);
+  auto output = secs / divisor;
+  secs = static_cast<decltype(secs)>(output);
   return *this;
 }
 
@@ -150,57 +150,57 @@ TimeInterval::operator long() const noexcept {
 bool
 TimeInterval::operator>(const TimeInterval& other) const noexcept
 {
-  return mImpl->seconds > other.mImpl->seconds;
+  return secs > other.secs;
 }
 
 bool
 TimeInterval::operator>=(const TimeInterval& other) const noexcept
 {
-  return mImpl->seconds >= other.mImpl->seconds;
+  return secs >= other.secs;
 }
 
 bool
 TimeInterval::operator<(const TimeInterval& other) const noexcept
 {
-  return mImpl->seconds < other.mImpl->seconds;
+  return secs < other.secs;
 }
 
 bool
 TimeInterval::operator<=(const TimeInterval& other) const noexcept
 {
-  return mImpl->seconds <= other.mImpl->seconds;
+  return secs <= other.secs;
 }
 
 bool
 TimeInterval::operator==(const TimeInterval& other) const noexcept
 {
-  return mImpl->seconds == other.mImpl->seconds;
+  return secs == other.secs;
 }
 
 bool
 TimeInterval::operator!=(const TimeInterval& other) const noexcept
 {
-  return mImpl->seconds != other.mImpl->seconds;
+  return secs != other.secs;
 }
 
 long
 TimeInterval::millis() const noexcept {
-  if (LONG_MAX == mImpl->seconds) {
+  if (LONG_MAX == secs) {
     return LONG_MAX;
   }
-  return mImpl->seconds * 1000;
+  return secs * 1000;
 }
 
 long
 TimeInterval::seconds() const noexcept {
-  return mImpl->seconds;
+  return secs;
 }
 
 TimeInterval::operator std::string() const noexcept {
-  if (mImpl->seconds == LONG_MAX) {
+  if (secs == LONG_MAX) {
     return "never";
   }
-  return std::to_string(mImpl->seconds);
+  return std::to_string(secs);
 }
 
 

@@ -58,8 +58,7 @@ public:
   operator long() const noexcept; // returns SECONDS not millis
 
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
+  long secs;
 };
 
 } // end namespace

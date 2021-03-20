@@ -9,38 +9,38 @@
 namespace herald {
 namespace datatype {
 
-class RSSI::Impl {
-public:
-  Impl();
-  ~Impl() = default;
+// class RSSI::Impl {
+// public:
+//   Impl();
+//   ~Impl() = default;
 
-  int value;
-};
+//   int value;
+// };
 
-RSSI::Impl::Impl() : value(0) { }
+// RSSI::Impl::Impl() : value(0) { }
 
 RSSI::RSSI()
- : mImpl(std::make_unique<Impl>())
+ : value(0)
 {
   ;
 }
 
 RSSI::RSSI(int value)
- : mImpl(std::make_unique<Impl>())
+ : value(value)
 {
-  mImpl->value = value;
+  ;
 }
 
 RSSI::RSSI(const RSSI& other)
- : mImpl(std::make_unique<Impl>())
+ : value(other.value)
 {
-  mImpl->value = other.mImpl->value;
+  ;
 }
 
 RSSI::RSSI(RSSI&& other)
- : mImpl(std::make_unique<Impl>())
+ : value(other.value)
 {
-  mImpl->value = other.mImpl->value;
+  ;
 }
 
 RSSI::~RSSI() {}
@@ -48,37 +48,37 @@ RSSI::~RSSI() {}
 RSSI&
 RSSI::operator=(const RSSI& other)
 {
-  mImpl->value = other.mImpl->value;
+  value = other.value;
   return *this;
 }
 
 RSSI&
 RSSI::operator=(RSSI&& other)
 {
-  mImpl->value = other.mImpl->value;
+  value = other.value;
   return *this;
 }
 
 std::size_t
 RSSI::hashCode() const noexcept {
-  return std::hash<int>{}(mImpl->value);
+  return std::hash<int>{}(value);
 }
 
 RSSI::operator std::string() const noexcept {
-  return "RSSI{value=" + std::to_string(mImpl->value) + "}";
+  return "RSSI{value=" + std::to_string(value) + "}";
 }
 
 int
 RSSI::intValue() const noexcept {
-  return mImpl->value;
+  return value;
 }
 
 RSSI::operator long() const noexcept {
-  return mImpl->value;
+  return value;
 }
 
 RSSI::operator double() const noexcept {
-  return (double)mImpl->value;
+  return (double)value;
 }
 
 
@@ -86,49 +86,49 @@ RSSI::operator double() const noexcept {
 bool
 RSSI::operator==(const int other) const noexcept
 {
-  return mImpl->value == other;
+  return value == other;
 }
 
 bool
 RSSI::operator!=(const int other) const noexcept
 {
-  return mImpl->value != other;
+  return value != other;
 }
 
 bool
 RSSI::operator==(const RSSI& other) const noexcept
 {
-  return mImpl->value == other.mImpl->value;
+  return value == other.value;
 }
 
 bool
 RSSI::operator!=(const RSSI& other) const noexcept
 {
-  return mImpl->value != other.mImpl->value;
+  return value != other.value;
 }
 
 bool
 RSSI::operator<(const RSSI& other) const noexcept
 {
-  return mImpl->value < other.mImpl->value;
+  return value < other.value;
 }
 
 bool
 RSSI::operator<=(const RSSI& other) const noexcept
 {
-  return mImpl->value <= other.mImpl->value;
+  return value <= other.value;
 }
 
 bool
 RSSI::operator>(const RSSI& other) const noexcept
 {
-  return mImpl->value > other.mImpl->value;
+  return value > other.value;
 }
 
 bool
 RSSI::operator>=(const RSSI& other) const noexcept
 {
-  return mImpl->value >= other.mImpl->value;
+  return value >= other.value;
 }
 
 

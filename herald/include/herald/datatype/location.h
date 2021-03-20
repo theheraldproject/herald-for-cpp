@@ -14,17 +14,28 @@
 namespace herald {
 namespace datatype {
 
+template <typename LocationReferenceT>
 class Location {
 public:
-  Location(std::shared_ptr<LocationReference> value, Date start, Date end);
+  Location(LocationReferenceT&& value, Date&& start, Date&& end)
+    : mValue(std::move(value)),mStart(std::move(start)),mEnd(std::move(end))
+  {};
   ~Location();
 
-  std::string description() const;
-  operator std::string() const noexcept;
+  std::string description() const {
+    return mValue->description() + ":[from=" + ((std::string)mStart) + ",to=" + ((std::string)mEnd) + "]";
+  }
+  
+  operator std::string() const noexcept {
+    return description();
+  }
 
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl; // PIMPL IDIOM
+  // class Impl;
+  // std::unique_ptr<Impl> mImpl; // PIMPL IDIOM
+  LocationReferenceT mValue;
+  Date mStart;
+  Date mEnd;
 };
 
 } // end namespace

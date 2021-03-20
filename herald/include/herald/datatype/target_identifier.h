@@ -36,8 +36,7 @@ public:
   operator Data() const;
 
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
+  Data value;
 
 };
 
