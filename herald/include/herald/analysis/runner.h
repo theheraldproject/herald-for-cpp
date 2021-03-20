@@ -10,101 +10,47 @@
 #include <variant>
 #include <array>
 
+// debug only
+// #include <iostream>
+
 namespace herald {
 namespace analysis {
 
 using namespace sampling;
 
-/// \brief Base Interface definition for classes that receive newSample callbacks from AnalysisRunner
-struct AnalysisDelegate {
-  AnalysisDelegate() = default;
-  virtual ~AnalysisDelegate() = default;
-
-  template <typename ValT>
-  void newSample(SampledID sampled, Sample<ValT> sample);
-
-  template <typename RunnerT>
-  void setDestination(RunnerT& runner);
-};
-
 /// \brief Manages a set of lists for a particular Sample Value Type
-template <typename ValT, std::size_t Size, std::size_t MaxLists>
+template <typename ValT, std::size_t Size>
 struct ListManager {
   using value_type = ValT;
+  static constexpr std::size_t max_size = Size;
 
-  ListManager() noexcept : lists(), nextPos(0) {};
-  ListManager(ListManager&& other) : lists(std::move(other.lists)), nextPos(other.nextPos) {}; // move ctor
+  ListManager() = default;
   ~ListManager() = default;
 
   SampleList<Sample<ValT>,Size>& list(const SampledID sampled) {
-    for (auto& entry : lists) {
-      if (entry.key() == sampled) {
-        return entry.value();
-      }
-    }
-    auto& val = lists[nextPos++];
-    return val.emplace(sampled);
+    auto iter = lists.try_emplace(sampled).first;
+    return lists.at(sampled);
   }
 
   void remove(const SampledID listFor) {
-    // lists.erase(listFor);
-    // TODO delete value and re-use its allocation space
+    lists.erase(listFor);
   }
 
   const std::size_t size() const {
-    return nextPos;
+    return lists.size();
+  }
+
+  decltype(auto) begin() {
+    return lists.begin();
+  }
+
+  decltype(auto) end() {
+    return lists.end();
   }
 
 private:
-  template <typename Key>
-  struct ListManagerEntry {
-    ListManagerEntry() : mKey(), mValue() {}
-    ~ListManagerEntry() = default;
-
-    SampleList<Sample<ValT>,Size>& emplace(const Key k) {
-      mKey = k;
-      return value();
-    }
-
-    const Key key() const {
-      return mKey;
-    }
-
-    SampleList<Sample<ValT>,Size>& value() {
-      return mValue;
-    }
-
-  private:
-    Key mKey;
-    SampleList<Sample<ValT>,Size> mValue;
-  };
-
-  std::array<ListManagerEntry<SampledID>,MaxLists> lists;
-  int nextPos;
+  std::map<SampledID,SampleList<Sample<ValT>,Size>> lists;
 };
-// template <typename ValT, std::size_t Size>
-// struct ListManager {
-//   using value_type = ValT;
-
-//   ListManager() = default;
-//   ~ListManager() = default;
-
-//   SampleList<Sample<ValT>,Size>& list(const SampledID sampled) {
-//     auto iter = lists.try_emplace(sampled).first;
-//     return lists.at(sampled);
-//   }
-
-//   void remove(const SampledID listFor) {
-//     lists.erase(listFor);
-//   }
-
-//   const std::size_t size() const {
-//     return lists.size();
-//   }
-
-// private:
-//   std::map<SampledID,SampleList<Sample<ValT>,Size>> lists;
-// };
 
 /// \brief A fixed size set that holds exactly one instance of the std::variant for each
 /// of the specified ValTs value types.
@@ -132,6 +78,14 @@ struct VariantSet {
     return variants.size();
   }
 
+  decltype(auto) begin() {
+    return variants.begin();
+  }
+
+  decltype(auto) end() {
+    return variants.end();
+  }
+
 private:
   std::array<std::variant<ValTs...>,Size> variants;
   template <typename LastT>
@@ -146,87 +100,191 @@ private:
   }
 };
 
-/// The below is an example ValueSource...
-/// template <typename ValT>
-/// struct ExValueSource {
-///   using value_type = ValT;
-/// 
-///   template <typename RunnerT>
-///   void setDestination(RunnerT& runner) {
-///     // save reference
-///   }
-/// 
-///   // At some predetermined point external to the analyser runner
-///   // this ValueSource will call runner.newSample(Sample<ValT> sample)
-/// };
+/// \brief Convenience wrapper for all AnalysisDelegate types used by the analysis API
+template <typename... DelegateTypes>
+struct AnalysisDelegateManager {
+  AnalysisDelegateManager(DelegateTypes... dts) : delegates() {
+    addDelegates(0,dts...);
+  }
+  ~AnalysisDelegateManager() = default;
+
+  template <typename ValT>
+  void notify(SampledID sampled, Sample<ValT> sample) {
+    for (auto& delegateV : delegates) {
+      std::visit([sampled,sample](auto&& arg) {
+        using noref = typename std::remove_reference<decltype(arg)>::type;
+        if constexpr (std::is_same_v<ValT,typename noref::value_type>) {
+          ((decltype(arg))arg).newSample(sampled,sample); // cast to call derived class function
+        }
+      }, delegateV);
+    }
+  }
+
+  /// CAN THROW std::bad_variant_access
+  template <typename DelegateT>
+  DelegateT& get() {
+    for (auto& v : delegates) {
+      if (auto pval = std::get_if<DelegateT>(&v)) {
+        return *pval;
+      }
+    }
+    throw std::bad_variant_access();
+  }
+
+private:
+  std::array<std::variant<DelegateTypes...>,sizeof...(DelegateTypes)> delegates;
+
+  template <typename LastT>
+  constexpr void addDelegates(int nextPos,LastT&& last) {
+    delegates[nextPos] = (std::move(last));
+  }
+
+  template <typename FirstT, typename SecondT, typename... RestT>
+  constexpr void addDelegates(int nextPos,FirstT&& first, SecondT&& second, RestT&&... rest) {
+    delegates[nextPos] = std::move(first);
+    ++nextPos;
+    addDelegates(nextPos,second,rest...);
+  }
+};
+
+/// \brief Convenience wrapper for all AnalysisProvider types used by the analysis API
+template <typename... ProviderTypes>
+struct AnalysisProviderManager {
+  AnalysisProviderManager(ProviderTypes... prvs) : providers() {
+    addProviders(0, prvs...);
+  }
+  ~AnalysisProviderManager() = default;
+
+  template <typename InputValT, std::size_t SrcSz, typename SourceType, std::size_t ListSize, typename CallableForNewSample>
+  bool analyse(Date timeNow, SampledID sampled, SampleList<Sample<InputValT>,SrcSz>& src, ListManager<SourceType,ListSize>& lists, CallableForNewSample& callable) {
+    bool generated = false;
+    for (auto& providerV : providers) {
+      std::visit([&timeNow,&sampled,&src,&lists,&generated,&callable](auto&& arg) {
+        using noref = typename std::remove_reference<decltype(arg)>::type;
+        // Ensure our calee supports the types we have
+        if constexpr (std::is_same_v<InputValT, typename noref::input_value_type>) {
+          auto& listRef = lists.list(sampled);
+          generated = generated | ((decltype(arg))arg).analyse(timeNow,sampled,src,listRef,callable);
+        }
+      }, providerV);
+    }
+    return generated;
+  }
+
+  /// CAN THROW std::bad_variant_access
+  template <typename ProviderT>
+  ProviderT& get() {
+    for (auto& v : providers) {
+      if (auto pval = std::get_if<ProviderT>(&v)) {
+        return *pval;
+      }
+    }
+    throw std::bad_variant_access();
+  }
+
+  template <typename InputT,typename OutputT>
+  constexpr bool hasMatchingAnalyser() noexcept {
+    bool match = false;
+    for (auto& providerV : providers) {
+      std::visit([&match] (auto&& provider) {
+        using InputValT = typename InputT::value_type;
+        using InT = typename std::remove_reference_t<decltype(provider)>::input_value_type;
+        using OutT = typename std::remove_reference_t<decltype(provider)>::output_value_type;
+        // std::cout << "  Provider being checked " << typeid(provider).name() << std::endl;
+        // InT inInstance;
+        // OutT outInstance;
+        // std::cout << "    In type " << typeid(inInstance).name() << ", out type " << typeid(outInstance).name() << std::endl;
+        // InputValT inputInstance;
+        // OutputT outputInstance;
+        // std::cout << "    Input type " << typeid(inputInstance).name() << ", output type " << typeid(outputInstance).name() << std::endl;
+        if constexpr (std::is_same_v<InputValT,InT> && std::is_same_v<OutputT,OutT>) {
+          match = true;
+          // std::cout << "  MATCHED!" << std::endl;
+        }
+      }, providerV);
+    }
+    return match;
+  }
+
+private:
+  std::array<std::variant<ProviderTypes...>,sizeof...(ProviderTypes)> providers;
+
+  template <typename LastT>
+  constexpr void addProviders(int nextPos, LastT&& last) {
+    providers[nextPos] = std::move(last);
+  }
+
+  template <typename FirstT, typename SecondT, typename... RestT>
+  constexpr void addProviders(int nextPos, FirstT&& first, SecondT&& second, RestT&&... rest) {
+    providers[nextPos] = std::move(first);
+    ++nextPos;
+    addProviders(nextPos,second,rest...);
+  }
+};
 
 /// \brief Manages all sample lists, sources, sinks, and analysis instances for all data generated within a system
 ///
 /// This class can be used 'live' against real sensors, or statically with reference data. 
 /// This is achieved by ensuring the run(Date) method takes in the Date for the time of evaluation rather
 /// than using the current Date.
-// template <typename... SourceTypes>
-// struct AnalysisRunner {
-//   // using valueTypes = (typename SourceTypes::value_type)...;
+template <typename AnalysisDelegateManagerT, typename AnalysisProviderManagerT, typename... SourceTypes> // TODO derive SourceTypes from providers and delegates // TODO parameterise type lengths somehow (traits template?)
+struct AnalysisRunner {
+  static constexpr std::size_t ListSize = 25; // TODO make this external somehow for each type (trait?)
+  // using valueTypes = (typename SourceTypes::value_type)...;
 
-//   AnalysisRunner(/*SourceTypes&... sources*/) : lists(), notifiables() {
-//     // registerRunner(sources...);
-//   }
-//   ~AnalysisRunner() = default;
+  AnalysisRunner(AnalysisDelegateManagerT& adm, AnalysisProviderManagerT& provds) : lists(), delegates(adm), runners(provds) {}
+  ~AnalysisRunner() = default;
 
-//   /// We are an analysis delegate ourselves - this is used by Source types, and by producers (analysis runners)
-//   template <typename ValT, std::size_t Size>
-//   void newSample(SampledID sampled, sampling::Sample<ValT> sample) {
-//     // incoming sample. Pass to correct list
-//     lists.template get<ListManager<ValT,Size>>().list(sampled)->second.push(sample);
-//   }
+  /// We are an analysis delegate ourselves - this is used by Source types, and by producers (analysis runners)
+  template <typename ValT>
+  void newSample(SampledID sampled, sampling::Sample<ValT> sample) {
+    // incoming sample. Pass to correct list
+    lists.template get<ListManager<ValT,ListSize>>().list(sampled).push(sample); // TODO get ListSize dynamically
+    // inform delegates
+    delegates.notify(sampled,sample);
+  }
 
-//   /// Run the relevant analyses given the current time point
-//   void run(Date timeNow) {
-//     // call analyse(dateNow,srcList,dstDelegate) for all delegates with the correct list each, for each sampled
-//     // TODO performance enhancement - 'dirty' sample lists only (ones with new data)
-//     for (auto& listManager : lists) {
-//       using ValT = listManager::value_type;
-//       for (auto& delegate : notifiables) {
-//         // if constexpr (std::is_same_v<ValT,delegate::value_type>) { // SHOULD BE RUNNERS NOT DELEGATES
-//           //delegate.
-//         // }
-//       }
-//     }
-//   }
+  template <typename ValT>
+  void operator()(SampledID sampled,sampling::Sample<ValT> sample) {
+    newSample(sampled,sample);
+  }
 
-//   void add(std::shared_ptr<AnalysisDelegate> delegate) {
-//     notifiables.push_back(delegate);
-//   }
+  /// Run the relevant analyses given the current time point
+  void run(Date timeNow) {
+    // call analyse(dateNow,srcList,dstDelegate) for all delegates with the correct list each, for each sampled
+    // TODO performance enhancement - 'dirty' sample lists only (ones with new data)
+    for (auto& listManager : lists) { // For each input list
+      std::visit([timeNow,this] (auto&& arg) { // Visit each of our list managers (that may be used as an output list)
+        for (auto& mgrPair : arg) { // For each output list instance // arg = ListManager<SampleList<InputValueT>,SrcSz>
+          // Derived Input type and size from 'list' input list
+          
+          auto& sampled = mgrPair.first;
+          auto& list = mgrPair.second;
 
-//   template <typename AnalyserT>
-//   void addAnalyser(AnalyserT& analyser) {
-//     // TODO fill this out and call its analyse() function when required
-//   }
+          for (auto& outputListManagerV : lists) {
+            std::visit([timeNow, &list, &sampled, this] (auto&& outputListManager) { // Visit each of our list managers (that may be used as an output list)
+              using InputValT = typename std::remove_reference_t<decltype(list)>::value_type;
+              using LMValT = typename std::remove_reference_t<decltype(outputListManager)>::value_type;
+              // std::cout << "Trying to call analysers for source type " << typeid(list).name() << " to output type " << typeid(outputListManager).name() << std::endl;
 
-//   // /// callback from analysis data source
-//   // template <typename ValT>
-//   // SampleList<Sample<ValT>>& list(const SampledID sampled) {
-//   //   return lists.get<ValT>().list(sampled);
-//   // }
+              // Check for presence of an analyser that converts from InputValT to LMValT
+              if (runners.template hasMatchingAnalyser<InputValT,LMValT>()) {
+                // std::cout << "Found matching analyser!" << std::endl;
+                /*bool newDataGenerated =*/ runners.template analyse(timeNow,sampled,list,outputListManager, *this); // <InputValT,InputSz,LMValT,LMSz>
+              }
+            }, outputListManagerV);
+          }
+        }
+      }, listManager);
+    }
+  }
 
-// private:
-//   // TODO make sizes a parameterised list derived from template parameters
-//   VariantSet<ListManager<SourceTypes,25>...> lists; // exactly one list manager per value type
-//   std::vector<std::shared_ptr<AnalysisDelegate>> notifiables; // more than one delegate per value type
-//   //std::vector< // runners
-
-//   // template <typename FirstT>
-//   // void registerRunner(FirstT first) {
-//   //   first.setDestination(*this);
-//   // }
-
-//   // template <typename FirstT, typename SecondT, typename... RestT>
-//   // void registerRunner(FirstT first,SecondT second,RestT... rest) {
-//   //   first.setDestination(*this);
-//   //   registerRunner(second,rest...);
-//   // }
-// };
+private:
+  // TODO make sizes a parameterised list derived from template parameters
+  VariantSet<ListManager<SourceTypes,ListSize>...> lists; // exactly one list manager per value type
+  AnalysisDelegateManagerT& delegates;
+  AnalysisProviderManagerT& runners;
+};
 
 }
 }

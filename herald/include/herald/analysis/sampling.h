@@ -111,6 +111,13 @@ struct SampleList {
   SampleList(const SampleList&) = delete; // no shallow copies allowed
   SampleList(SampleList&& other) noexcept : data(std::move(other.data)), oldestPosition(other.oldestPosition), newestPosition(other.newestPosition) {} // move ctor
 
+  SampleList& operator=(SampleList&& other) noexcept {
+    std::swap(data,other.data);
+    oldestPosition = other.oldestPosition;
+    newestPosition = other.newestPosition;
+    return *this;
+  }
+
   // Creates a list from static initialiser list elements, using deduction guide
   template <typename... MultiSampleT>
   SampleList(MultiSampleT... initialiserElements) : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {
@@ -177,6 +184,13 @@ struct SampleList {
   void clear() {
     oldestPosition = SIZE_MAX;
     newestPosition = SIZE_MAX;
+  }
+
+  // SampleT latest() {
+  //   return data[newestPosition];
+  // }
+  Date latest() {
+    return data[newestPosition].taken;
   }
 
   SampleIterator<SampleList<SampleT,MaxSize>> begin() {
