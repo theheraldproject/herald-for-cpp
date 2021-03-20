@@ -140,8 +140,9 @@ ErrorStreamContactLogger::sensor(SensorType sensor, const Proximity& didMeasure,
   // HERR(mImpl->timestamp() + "," + str(sensor) + "," + mImpl->csv((std::string)fromTarget) + ",,,3,,," + mImpl->csv((std::string)didMeasure));
 }
 
+template <typename LocationT>
 void
-ErrorStreamContactLogger::sensor(SensorType sensor, const Location& didVisit)
+ErrorStreamContactLogger::sensor(SensorType sensor, const Location<LocationT>& didVisit)
 {
   // std::string s = mImpl->timestamp();
   // s += ",";

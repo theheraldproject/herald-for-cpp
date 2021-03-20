@@ -13,7 +13,8 @@
 #include "sampling.h"
 #include "../datatype/distance.h"
 
-#include <iostream>
+// Debug only
+// #include <iostream>
 
 namespace herald {
 namespace analysis {
@@ -77,7 +78,7 @@ struct FowlerBasicAnalyser {
   template <std::size_t SrcSz,std::size_t DstSz, typename CallableForNewSample>
   bool analyse(Date timeNow, SampledID sampled, SampleList<Sample<RSSI>,SrcSz>& src, SampleList<Sample<Distance>,DstSz>& dst, CallableForNewSample& callable) {
     if (lastRan + interval >= timeNow) return false; // interval guard
-    std::cout << "RUNNING FOWLER BASIC ANALYSIS at " << timeNow.secondsSinceUnixEpoch() << std::endl;
+    // std::cout << "RUNNING FOWLER BASIC ANALYSIS at " << timeNow.secondsSinceUnixEpoch() << std::endl;
 
     basic.reset();
 
@@ -110,7 +111,7 @@ struct FowlerBasicAnalyser {
 
     Date latestTime = values.latest();
     lastRan = latestTime; // TODO move this logic to the caller not the analysis provider
-    std::cout << "Latest value at time: " << latestTime.secondsSinceUnixEpoch() << std::endl;
+    // std::cout << "Latest value at time: " << latestTime.secondsSinceUnixEpoch() << std::endl;
 
     Sample<Distance> newSample((Date)latestTime,Distance(d));
     dst.push(newSample);

@@ -9,7 +9,7 @@
 #include "randomness.h"
 
 #include <string>
-#include <memory>
+#include <array>
 
 namespace herald {
 namespace datatype {
@@ -42,8 +42,8 @@ public:
   std::string string() const noexcept;
 
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
+  std::array<value_type, 16> mData = { {0}};
+  bool mValid;
 
   UUID(std::array<value_type, 16> data, bool isValid) noexcept;
 };

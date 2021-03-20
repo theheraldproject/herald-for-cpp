@@ -7,6 +7,7 @@
 #include "herald/herald.h"
 
 #include <utility>
+#include <iostream>
 
 using namespace herald::analysis::sampling;
 using namespace herald::datatype;
@@ -189,5 +190,8 @@ TEST_CASE("analysisrunner-basic", "[analysisrunner][basic]") {
     REQUIRE(samples[0].value != 0.0);
     REQUIRE(samples[1].taken.secondsSinceUnixEpoch() == 80);
     REQUIRE(samples[1].value != 0.0);
+
+    // Let's see the total memory in use...
+    std::cout << "AnalysisRunner::RAM = " << sizeof(runner) << std::endl;
   }
 }

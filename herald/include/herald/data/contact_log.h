@@ -25,7 +25,8 @@ public:
   void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) override;
   void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) override;
   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) override;
-  void sensor(SensorType sensor, const Location& didVisit) override;
+  template <typename LocationT>
+  void sensor(SensorType sensor, const Location<LocationT>& didVisit);
   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) override;
   void sensor(SensorType sensor, const SensorState& didUpdateState) override;
 
