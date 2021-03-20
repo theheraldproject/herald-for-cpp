@@ -231,6 +231,14 @@ struct view {
     return source.end();
   }
 
+  // auto latest() -> BaseValT {
+  //   //return source.latest();
+  //   return *(source.end() - 1);
+  // }
+  Date latest() {
+    return (*(source.end() - 1)).taken;
+  }
+
   template <typename IterT>
   bool operator==(const IterT& other) {
     return other == source;

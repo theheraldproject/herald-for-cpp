@@ -13,6 +13,8 @@
 #include "sampling.h"
 #include "../datatype/distance.h"
 
+#include <iostream>
+
 namespace herald {
 namespace analysis {
 namespace algorithms {
@@ -56,12 +58,26 @@ private:
 };
 
 struct FowlerBasicAnalyser {
+  using input_value_type = RSSI;
+  using output_value_type = Distance;
+
+  /// default constructor required for array instantiation in manager AnalysisProviderManager
+  FowlerBasicAnalyser() : interval(10), basic(-11,-0.4), lastRan(0) {}
   FowlerBasicAnalyser(long interval, double intercept, double coefficient) : interval(interval), basic(intercept, coefficient), lastRan(0) {}
   ~FowlerBasicAnalyser() = default;
 
-  template <std::size_t SrcSz>
-  void analyse(Date timeNow, const SampleList<Sample<RSSI>,SrcSz>& src, std::shared_ptr<analysis::AnalysisDelegate>& dst) {
-    if (lastRan + interval > timeNow) return; // interval guard
+  // Generic
+  // TODO consider removing this annoyance somehow...
+  template <typename SrcT, std::size_t SrcSz,typename DstT, std::size_t DstSz, typename CallableForNewSample>
+  bool analyse(Date timeNow, SampledID sampled, SampleList<Sample<SrcT>,SrcSz>& src, SampleList<Sample<DstT>,DstSz>& dst, CallableForNewSample& callable) {
+    return false; // no op - compiled out
+  }
+
+  // Specialisation
+  template <std::size_t SrcSz,std::size_t DstSz, typename CallableForNewSample>
+  bool analyse(Date timeNow, SampledID sampled, SampleList<Sample<RSSI>,SrcSz>& src, SampleList<Sample<Distance>,DstSz>& dst, CallableForNewSample& callable) {
+    if (lastRan + interval >= timeNow) return false; // interval guard
+    std::cout << "RUNNING FOWLER BASIC ANALYSIS at " << timeNow.secondsSinceUnixEpoch() << std::endl;
 
     basic.reset();
 
@@ -74,11 +90,11 @@ struct FowlerBasicAnalyser {
     auto summary = values
                  | summarise<Mode,Variance>();
 
-    auto mode = summary.get<Mode>();
-    auto var = summary.get<Variance>();
+    auto mode = summary.template get<Mode>();
+    auto var = summary.template get<Variance>();
     auto sd = std::sqrt(var);
 
-    auto distance = sl 
+    auto distance = src 
                   | herald::analysis::views::filter(valid) 
                   | herald::analysis::views::filter(
                       herald::analysis::views::in_range(
@@ -88,16 +104,22 @@ struct FowlerBasicAnalyser {
                     )
                   | aggregate(basic); // type actually <herald::analysis::algorithms::distance::FowlerBasic>
     
-    auto agg = distance.get<FowlerBasic>();
+    auto agg = distance.template get<FowlerBasic>();
     auto d = agg.reduce();
 
-    Date latestTime = values.latest();
 
-    dst.newSample(Sample<Distance>(latestTime,Distance(d)));
+    Date latestTime = values.latest();
+    lastRan = latestTime; // TODO move this logic to the caller not the analysis provider
+    std::cout << "Latest value at time: " << latestTime.secondsSinceUnixEpoch() << std::endl;
+
+    Sample<Distance> newSample((Date)latestTime,Distance(d));
+    dst.push(newSample);
+    callable(sampled,newSample);
+    return true;
   }
 
 private:
-  long interval;
+  TimeInterval interval;
   FowlerBasic basic;
   Date lastRan;
 };
