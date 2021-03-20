@@ -14,25 +14,25 @@ mkdir build-52833
 
 cd build-5340
 export BOARD=nrf5340dk_nrf5340_cpuapp
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j 32
 cd ..
 
 cd build-52840
 export BOARD=nrf52840dongle_nrf52840
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j 32
 cd ..
 
 cd build-52832
 export BOARD=nrf52dk_nrf52832
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j 32
 cd ..
 
 cd build-52833
 export BOARD=nrf52833dk_nrf52833
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j 32
 cd ..
 
@@ -46,25 +46,25 @@ mkdir build-52833
 
 cd build-5340
 export BOARD=nrf5340dk_nrf5340_cpuapp
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j 32
 cd ..
 
 cd build-52840
 export BOARD=nrf52840dongle_nrf52840
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j 32
 cd ..
 
 cd build-52832
 export BOARD=nrf52dk_nrf52832
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j 32
 cd ..
 
 cd build-52833
 export BOARD=nrf52833dk_nrf52833
-cmake ..
+cmake -DCMAKE_BUILD_TYPE=Release ..
 make -j 32
 cd ..
 

@@ -112,7 +112,8 @@ public:
 	}
 
   /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
-  void sensor(SensorType sensor, const Location& didVisit) override {
+	template <typename LocationT>
+  void sensor(SensorType sensor, const Location<LocationT>& didVisit) {
 		LOG_DBG("sensor didVisit");
 	}
 
