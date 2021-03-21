@@ -1,0 +1,35 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "gnu-debugger",
+      "request": "launch",
+      "name": "GNU debugger",
+      "program": "${workspaceFolder}/build/zephyr/zephyr.elf",
+      "toolchain": "C:/gnuarmemb/bin", // was "${config:arm-none-eabi.bin}"
+      "client": "arm-none-eabi-gdb.exe",
+      "server": "JLinkGDBServer",
+      "windows": {
+        "server": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      },
+      "serverArgs": [
+        "-device", "NRF5340_XXAA_APP",
+        "-if", "SWD",
+        "-speed", "4000"
+      ],
+      "serverHost": "localhost",
+      "serverPort": 2331,
+      "customVariables": [
+        "port0",
+        "port1",
+        "port2",
+      ],
+      "autoRun": false,
+      "debugOutput": false //,
+      //"preLaunchTask": "build firmware"
+    }
+  ]
+}
