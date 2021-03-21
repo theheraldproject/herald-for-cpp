@@ -52,6 +52,36 @@ private:
   SampleList<Sample<Distance>,25> distances;
 };
 
+class DummyLogger : public herald::data::SensorLoggingSink {
+public:
+  DummyLogger(std::string sub,std::string cat) : subsystem(sub), category(cat), value() {}
+  ~DummyLogger() = default;
+
+  void log(herald::data::SensorLoggerLevel level, std::string message) override {
+    value = subsystem + "," + category + "," + message;
+  }
+
+  std::string subsystem;
+  std::string category;
+  std::string value;
+};
+
+class DummyContext : public herald::Context {
+public:
+  DummyContext() = default;
+  ~DummyContext() = default;
+
+  std::shared_ptr<herald::ble::BluetoothStateManager> getBluetoothStateManager() override { return nullptr;}
+
+  std::shared_ptr<herald::data::SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, 
+    const std::string& categoryFor) override
+  { 
+    lastLogger = std::make_shared<DummyLogger>(subsystemFor,categoryFor);
+    return lastLogger;
+  }
+
+  std::shared_ptr<DummyLogger> lastLogger;
+};
 
 /// [Who]   As a DCT app developer
 /// [What]  I want to link my live application data to an analysis runner easily
@@ -100,5 +130,62 @@ TEST_CASE("analysissensor-rssi-basic", "[analysissensor][rssi][basic]") {
     // Let's see the total memory in use...
     std::cout << "AnalysisRunner::RAM = " << sizeof(runner) << std::endl;
     std::cout << "SensorDelegateRSSISource::RAM = " << sizeof(*src) << std::endl;
+  }
+}
+
+
+
+TEST_CASE("analysissensor-output", "[sensorlogger][analysissensor][output]") {
+  SECTION("analysissensor-output") {
+    std::shared_ptr<DummyContext> ctx = std::make_shared<DummyContext>();
+    //herald::data::SensorLogger logger(ctx,"testout","analysissensor");
+    herald::analysis::LoggingAnalysisDelegate<Distance> lad(ctx); // The subject of this test
+    std::cout << "LoggingAnalysisDelegate::RAM = " << sizeof(lad) << std::endl;
+
+    
+    Proximity p1{.unit = ProximityMeasurementUnit::RSSI, .value = -55};
+    Proximity p2{.unit = ProximityMeasurementUnit::RSSI, .value = -56};
+    Proximity p3{.unit = ProximityMeasurementUnit::RSSI, .value = -57};
+    Proximity p4{.unit = ProximityMeasurementUnit::RSSI, .value = -58};
+
+    herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
+
+    DummyDistanceDelegate myDelegate;
+    herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate), std::move(lad)); // NOTE: myDelegate MOVED FROM and no longer accessible
+    herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
+
+    herald::analysis::AnalysisRunner<
+      herald::analysis::AnalysisDelegateManager<DummyDistanceDelegate,herald::analysis::LoggingAnalysisDelegate<Distance>>,
+      herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
+      RSSI,Distance
+    > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
+
+    std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
+    PayloadData payload(std::byte(5),4);
+    TargetIdentifier id(Data(std::byte(3),16));
+    src->sensor(SensorType::BLE, p1, id, payload);
+    src->sensor(SensorType::BLE, p2, id, payload);
+    runner.run(Date()); // In an app, use a Coordinator task
+    src->sensor(SensorType::BLE, p3, id, payload);
+    src->sensor(SensorType::BLE, p4, id, payload);
+    runner.run(Date()); // In an app, use a Coordinator task
+
+    auto& delegateRef = adm.get<DummyDistanceDelegate>();
+    REQUIRE(delegateRef.lastSampled() != 0);
+
+    auto& samples = delegateRef.samples();
+    REQUIRE(samples.size() == 1); // Only 1 because time will run in 'real time' as its a sensor source (dynamic date)
+    REQUIRE(samples[0].taken.secondsSinceUnixEpoch() != 0);
+    REQUIRE(samples[0].value != 0.0);
+
+    auto lastMsg = ctx->lastLogger->value;
+    REQUIRE(lastMsg != ""); // must have logged something...
+    std::cout << "Last log message: " << lastMsg << std::endl;
+
+    // Let's see the total memory in use...
+    std::cout << "AnalysisRunner::RAM = " << sizeof(runner) << std::endl;
+    std::cout << "SensorDelegateRSSISource::RAM = " << sizeof(src.get()) << std::endl;
+
+
   }
 }

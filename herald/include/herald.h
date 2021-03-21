@@ -81,10 +81,11 @@
 
 // analysis namespace
 #include "herald/analysis/aggregates.h"
-#include "herald/analysis/runner.h"
 #include "herald/analysis/distance_conversion.h"
+#include "herald/analysis/logging_analysis_delegate.h"
 #include "herald/analysis/ranges.h"
 #include "herald/analysis/risk.h"
+#include "herald/analysis/runner.h"
 #include "herald/analysis/sampling.h"
 #include "herald/analysis/sensor_source.h"
 

@@ -191,68 +191,68 @@ void herald_entry() {
 
 	// TESTING ONLY
 	// IF IN TESTING / DEBUG, USE A FIXED PAYLOAD (SO YOU CAN TRACK IT OVER TIME)
-	// std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
-	// std::uint8_t uniqueId[8];	
-  // // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
-	// auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
-	// if (hwInfoAvailable > 0) {
-	// 	LOG_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
-	// 	clientId = *uniqueId;
-	// } else {
-	// 	LOG_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
-	// }
-	// LOG_DBG("Final clientID: %d", clientId);
+	std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
+	std::uint8_t uniqueId[8];	
+  // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
+	auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
+	if (hwInfoAvailable > 0) {
+		LOG_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
+		clientId = *uniqueId;
+	} else {
+		LOG_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
+	}
+	LOG_DBG("Final clientID: %d", clientId);
 
-	// std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
-	// 	countryCode,
-	// 	stateCode,
-	// 	clientId
-	// );
+	std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
+		countryCode,
+		stateCode,
+		clientId
+	);
 	// END TESTING ONLY
 
 	// PRODUCTION ONLY
-	LOG_DBG("Before simple");
-	k_sleep(K_SECONDS(2));
-	// Use the simple payload, or secured payload, that implements privacy features to prevent user tracking
-	herald::payload::simple::K k;
-	// NOTE: You should store a secret key for a period of days and pass the value for the correct epoch in to here instead of sk
+// 	LOG_DBG("Before simple");
+// 	k_sleep(K_SECONDS(2));
+// 	// Use the simple payload, or secured payload, that implements privacy features to prevent user tracking
+// 	herald::payload::simple::K k;
+// 	// NOTE: You should store a secret key for a period of days and pass the value for the correct epoch in to here instead of sk
 	
-	// Note: Using the CC310 to do this. You can use RandomnessSource.h random sources instead if you wish, but CC310 is more secure.
-	herald::payload::simple::SecretKey sk(std::byte(0x00),2048); // fallback - you should do something different.
+// 	// Note: Using the CC310 to do this. You can use RandomnessSource.h random sources instead if you wish, but CC310 is more secure.
+// 	herald::payload::simple::SecretKey sk(std::byte(0x00),2048); // fallback - you should do something different.
 	
-	size_t buflen = 2048;
-	uint8_t* buf = new uint8_t[buflen];
-	size_t olen = 0;
+// 	size_t buflen = 2048;
+// 	uint8_t* buf = new uint8_t[buflen];
+// 	size_t olen = 0;
 	
-#ifdef CC3XX_BACKEND
-	int success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); 
-#else
-	int success = 1;
-#endif
-	if (0 == success) {
-		sk.clear();
-		sk.append(buf, 0, buflen);
-		LOG_DBG("Have applied CC3xx generated data to secret key");
-	} else {
-		LOG_DBG("Could not generate 2048 bytes of randomness required for SimplePayload Secret Key. Falling back to fixed generic secret key.");
-	}
+// #ifdef CC3XX_BACKEND
+// 	int success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); 
+// #else
+// 	int success = 1;
+// #endif
+// 	if (0 == success) {
+// 		sk.clear();
+// 		sk.append(buf, 0, buflen);
+// 		LOG_DBG("Have applied CC3xx generated data to secret key");
+// 	} else {
+// 		LOG_DBG("Could not generate 2048 bytes of randomness required for SimplePayload Secret Key. Falling back to fixed generic secret key.");
+// 	}
 
-	// verify secret key
-	for (int i = 0;i < 2048;i+=64) {
-		Data t = sk.subdata(i,64);
-		LOG_DBG("Got 64 bytes from secret key from %d",i);
-	}
+// 	// verify secret key
+// 	for (int i = 0;i < 2048;i+=64) {
+// 		Data t = sk.subdata(i,64);
+// 		LOG_DBG("Got 64 bytes from secret key from %d",i);
+// 	}
 
-	LOG_DBG("About to create Payload data supplier");
-	k_sleep(K_SECONDS(2));
+// 	LOG_DBG("About to create Payload data supplier");
+// 	k_sleep(K_SECONDS(2));
 
-	std::shared_ptr<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1> pds = std::make_shared<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1>(
-		ctx,
-		countryCode,
-		stateCode,
-		sk,
-		k
-	);
+// 	std::shared_ptr<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1> pds = std::make_shared<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1>(
+// 		ctx,
+// 		countryCode,
+// 		stateCode,
+// 		sk,
+// 		k
+// 	);
 	// END PRODUCTION ONLY
 	LOG_DBG("Have created Payload data supplier");
 	k_sleep(K_SECONDS(2));
@@ -298,6 +298,22 @@ void herald_entry() {
 	// 3. Create and add a Logging sensor delegate to enable testing of discovery
 
 
+	// 4. Now create a live analysis pipeline and enable RSSI to be sent to it for distance estimation
+	herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
+
+	herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance> myDelegate(ctx);
+	herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
+	herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
+
+	herald::analysis::AnalysisRunner<
+		herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance>>,
+		herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
+		RSSI,Distance
+	> runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
+
+	std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
+	sa->add(src);
+
 	
 	LOG_DBG("Starting sensor array");
 	k_sleep(K_SECONDS(2));
@@ -318,6 +334,7 @@ void herald_entry() {
 		
 		if (0 == iter % (5000 / delay)) {
 			LOG_DBG("herald thread still running. Iteration: %d", iter);
+			runner.run(Date()); // Note: You may want to do this less or more regularly depending on your requirements
 		}
 
 		last = now;
