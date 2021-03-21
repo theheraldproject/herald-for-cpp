@@ -37,9 +37,10 @@ public:
   /// \brief Returns the Base64 encoding of this class as a std::string
   std::string encoded() const noexcept; // Return base64 string representation (copy of, not reference to)
 private:
-  /// \brief PIMPL Idiom - hidden internal class for Base64String for ABI compatibility
-  class Impl;
-  std::unique_ptr<Impl> mImpl; // PIMPL IDIOM
+  // /// \brief PIMPL Idiom - hidden internal class for Base64String for ABI compatibility
+  // class Impl;
+  // std::unique_ptr<Impl> mImpl; // PIMPL IDIOM
+  std::string value; // Base64 encoded, and guarded
 };
 
 } // end namespace

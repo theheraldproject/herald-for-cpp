@@ -1,19 +1,6 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
-
-#include <memory>
-#include <array>
-#include <deque>
-#include <forward_list>
-#include <list>
-#include <map>
-#include <queue>
-#include <set>
-#include <stack>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
 #include "catch.hpp"
 
@@ -44,33 +31,6 @@ TEST_CASE("datatypes-proximity-basics", "[datatypes][proximity][basics]") {
 
 
 
-TEST_CASE("datatypes-payloaddata-basics", "[datatypes][payloaddata][basics]") {
-  SECTION("datatypes-payloaddata-basics") {
-    herald::datatype::PayloadData payload{}; // empty default ctor
-
-    REQUIRE(payload.size() == 0);
-
-    
-    herald::datatype::PayloadData payload2{std::byte('a'), 6}; // repeating byte ctor
-
-    REQUIRE(payload2.size() == 6);
-    REQUIRE(payload2.at(0) == std::byte('a'));
-    REQUIRE(payload2.at(5) == std::byte('a'));
-
-    const char* charArray = "wotcha";
-    std::byte byteArray[6];
-    for (int i = 0;i < 6;i++) {
-      byteArray[i] = std::byte(charArray[i]);
-    }
-    herald::datatype::PayloadData payload3{byteArray, 4};
-
-    REQUIRE(payload3.size() == 4);
-    REQUIRE(payload3.at(0) == std::byte('w'));
-    REQUIRE(payload3.at(3) == std::byte('c'));
-  }
-}
-
-
 
 
 
@@ -94,36 +54,6 @@ TEST_CASE("datatypes-encounter-basics", "[datatypes][encounter][basics]") {
 
 
 
-
-
-TEST_CASE("datatypes-immediatesenddata-basics", "[datatypes][immediatesenddata][basics]") {
-  SECTION("datatypes-immediatesenddata-basics") {
-    herald::datatype::Data d{std::byte('f'),8};
-    herald::datatype::ImmediateSendData isd(d);
-
-    REQUIRE(isd.size() == 8);
-    REQUIRE(isd.at(0) == std::byte('f'));
-    REQUIRE(isd.at(7) == std::byte('f'));
-  }
-}
-
-
-TEST_CASE("datatypes-date-basics", "[datatypes][date][basics]") {
-  SECTION("datatypes-date-basics") {
-    herald::datatype::Date d(1608483600); // long ctor
-
-    REQUIRE(d.secondsSinceUnixEpoch() == 1608483600);
-    REQUIRE(d.iso8601DateTime() == std::string("2020-12-20T17:00:00Z"));
-    REQUIRE(((std::string)d) == std::string("2020-12-20T17:00:00Z"));
-
-    herald::datatype::Date d2(d); // copy ctor
-    REQUIRE(d2.secondsSinceUnixEpoch() == 1608483600);
-    REQUIRE(d2.iso8601DateTime() == std::string("2020-12-20T17:00:00Z"));
-    REQUIRE(((std::string)d2) == std::string("2020-12-20T17:00:00Z"));
-
-    // TODO Default constructor producing 'now'
-  }
-}
 
 
 
@@ -188,18 +118,6 @@ TEST_CASE("datatypes-rssi-ctor-copy", "[datatypes][rssi][ctor][copy]") {
 
 
 
-TEST_CASE("datatypes-payloadsharingdata-basics", "[datatypes][payloadsharingdata][ctor][basics]") {
-  SECTION("datatypes-payloadsharingdata-basics") {
-    herald::datatype::PayloadSharingData psd{{11},{std::byte('g'),4}};
-
-    REQUIRE(psd.rssi.intValue() == 11);
-    REQUIRE(psd.data.size() == 4);
-    REQUIRE(psd.data.at(3) == std::byte('g'));
-  }
-}
-
-
-
 
 
 TEST_CASE("datatypes-placename-basics", "[datatypes][placename][ctor][basics]") {
@@ -215,149 +133,23 @@ TEST_CASE("datatypes-placename-basics", "[datatypes][placename][ctor][basics]") 
 
 
 
-TEST_CASE("datatypes-timeinterval-basics", "[datatypes][timeinterval][ctor][basics]") {
-  SECTION("datatypes-timeinterval-basics") {
-    herald::datatype::TimeInterval ti{1200};
-
-    REQUIRE(ti.millis() == 1'200'000);
-
-    auto t2 = herald::datatype::TimeInterval::never();
-    REQUIRE(t2.millis() == LONG_MAX);
-    REQUIRE(((std::string)t2) == std::string("never"));
-
-    auto t3 = herald::datatype::TimeInterval::minutes(20);
-    REQUIRE(t3.millis() == 20 * 60 * 1000);
-
-    auto t4 = herald::datatype::TimeInterval::seconds(20);
-    REQUIRE(t4.millis() == 20 * 1000);
-
-    auto t5 = herald::datatype::TimeInterval::zero();
-    REQUIRE(t5.millis() == 0);
-
-    herald::datatype::Date d1{1000};
-    herald::datatype::Date d2{1200};
-    herald::datatype::TimeInterval t6(d1,d2);
-
-    REQUIRE(t6.millis() == 200 * 1000);
-    REQUIRE(((std::string)t6) == std::string("200"));
-
-    REQUIRE(t5 < ti);
-    REQUIRE(t5 < t2);
-    REQUIRE(t5 < t3);
-    REQUIRE(!(t5 > t3));
-    REQUIRE(t5 < t4);
-  }
-}
-
-
-TEST_CASE("datatypes-timeinterval-date", "[datatypes][timeinterval][ctor][date]") {
-  SECTION("datatypes-timeinterval-date") {
-    herald::datatype::Date earlier{1200};
-    herald::datatype::Date now{1500};
-
-    herald::datatype::TimeInterval difference{earlier,now};
-    REQUIRE(difference.seconds() == 300);
-
-    herald::datatype::TimeInterval reverseDifference{now,earlier};
-    REQUIRE(reverseDifference.seconds() == -300);
-
-    herald::datatype::Date advanced = earlier + difference;
-    REQUIRE(advanced == now);
-  }
-}
-
-
-TEST_CASE("datatypes-timeinterval-daterelative", "[datatypes][timeinterval][ctor][daterelative]") {
-  SECTION("datatypes-timeinterval-daterelative") {
-    herald::datatype::Date now;
-    herald::datatype::TimeInterval threeHundred(300);
-    herald::datatype::Date earlier = now - threeHundred;
-
-    herald::datatype::TimeInterval difference{earlier,now};
-    REQUIRE(difference.seconds() == 300);
-
-    herald::datatype::TimeInterval reverseDifference{now,earlier};
-    REQUIRE(reverseDifference.seconds() == -300);
-
-    herald::datatype::Date advanced = earlier + difference;
-    REQUIRE(advanced == now);
-  }
-}
 
 
 
 
-// TEST_CASE("datatypes-uuid-basics", "[datatypes][uuid][ctor][basics]") {
-//   SECTION("datatypes-uuid-basics") {
-//     auto uuid1 = herald::datatype::UUID::random();
-//     REQUIRE(uuid1.valid());
-//     REQUIRE(uuid1.string().size() == 36); // 4 hyphens, 16 hex bytes = 36 characters
+// TEST_CASE("datatypes-memory-use","[datatypes][memory]") {
+
+//   SECTION("datatypes-memory-use") {
+//     // TODO always output sizes to a CSV report file
+
+//     using namespace herald::datatype;
+//     Base64String b64 = Base64String::encode(Data(std::byte(2),8));
+//     INFO("Base64String size for 8 chars: " << sizeof(b64));
+//     REQUIRE(sizeof(b64) <= 40); // std::string of ~12 chars plus 64 bit size
+//     Data d{std::byte(1),32};
+//     INFO("Data size for 32 bytes: " << sizeof(d));
+//     REQUIRE(sizeof(d) <= 40);
+
+//     // TODO other types here
 //   }
 // }
-
-
-TEST_CASE("random-allzeros","[randomness][allzeros][basic][datatypes]") {
-
-  SECTION("random-allzeros-basic") {
-    herald::datatype::AllZerosNotRandom rnd;
-    REQUIRE(rnd.nextInt() == 0);
-    REQUIRE(rnd.nextDouble() == 0);
-    std::vector<std::byte> zeros;
-    for (int i = 0;i < 4;i++) {
-      zeros.push_back(std::byte(0));
-    }
-    herald::datatype::Data expected(zeros);
-    herald::datatype::Data toFill;
-    rnd.nextBytes(4, toFill);
-    REQUIRE(toFill == expected);
-  }
-}
-
-
-
-
-TEST_CASE("datatypes-uuid-notrandom","[randomness][uuid][basic][datatypes]") {
-
-  SECTION("datatypes-uuid-notrandom") {
-    std::unique_ptr<herald::datatype::AllZerosNotRandom> rnd = std::make_unique<herald::datatype::AllZerosNotRandom>();
-    herald::datatype::RandomnessGenerator gen(std::move(rnd));
-    auto emptyV4 = herald::datatype::UUID::random(gen);
-    REQUIRE(emptyV4.string() == std::string("00000000-0000-4000-8000-000000000000")); // v4 variant 1
-  }
-}
-
-
-
-
-TEST_CASE("datatypes-uuid-random","[randomness][uuid][basic][datatypes]") {
-
-  SECTION("datatypes-uuid-random") {
-    std::unique_ptr<herald::datatype::IntegerDistributedRandomSource> rnd = 
-      std::make_unique<herald::datatype::IntegerDistributedRandomSource>();
-    herald::datatype::RandomnessGenerator gen(std::move(rnd));
-    auto randomV4 = herald::datatype::UUID::random(gen);
-    std::string str = randomV4.string();
-    INFO("UUID v4 random value: " << str);
-    REQUIRE(str != std::string("00000000-0000-4000-8000-000000000000")); // v4 variant 1
-  }
-}
-
-
-
-
-TEST_CASE("datatypes-memory-use","[datatypes][memory]") {
-
-  SECTION("datatypes-memory-use") {
-    // TODO always output sizes to a CSV report file
-
-    using namespace herald::datatype;
-    Base64String b64 = Base64String::encode(Data(std::byte(2),8));
-    INFO("Base64String size for 8 chars: " << sizeof(b64));
-    REQUIRE(sizeof(b64) <= 16); // 8 chars plus 64 bit size
-    Data d{std::byte(1),32};
-    INFO("Data size for 32 bytes: " << sizeof(d));
-    REQUIRE(sizeof(d) <= 40);
-
-    // TODO other types here
-  }
-}

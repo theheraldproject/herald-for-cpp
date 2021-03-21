@@ -116,7 +116,7 @@ void main(void)
   LOG_DBG("Initialising catch");
   k_sleep(K_SECONDS(2));
 
-	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 8192,
+	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 16384,
 			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
 			-1, K_USER,
 			K_SECONDS(4));

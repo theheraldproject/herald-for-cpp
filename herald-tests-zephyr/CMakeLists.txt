@@ -106,32 +106,41 @@ target_sources(app PRIVATE
 
   # Now tests source
   # root with main
-	#../herald-tests/datatypes-tests.cpp
-  # ^^^ FIX THIS FROM DYING ALL THE TIME -> MAY NEED TO REWRITE DATA CLASS - SEE STL STRING TRICK
+	#../herald-tests/datatypes-tests.cpp # Passes when split out on 21 Mar 2021
+	#../herald-tests/datetime-tests.cpp # Passes when split out on 21 Mar 2021
+	#../herald-tests/randomuuid-tests.cpp # FAILS silently 21 Mar 2021
 	
 	# Low level
-	# ../herald-tests/sensorlogger-tests.cpp # Don't run this on Zephyr
+	#../herald-tests/sensorlogger-tests.cpp # Passes on its own 21 Mar 2021
+	#../herald-tests/data-tests.cpp # Passes on its own 21 Mar 2021
+	#../herald-tests/datatypesdataderived-tests.cpp # Passes on its own 21 Mar 2021
+  # These three passed together on 21 Mar 2021
 	#../herald-tests/errorcontactlog-tests.cpp
-	#../herald-tests/data-tests.cpp
 	#../herald-tests/blemacaddress-tests.cpp
 	#../herald-tests/targetidentifier-tests.cpp
 
   # mid level
-	../herald-tests/analysisrunner-tests.cpp
-	#../herald-tests/analysissensor-tests.cpp
+	#../herald-tests/analysisrunner-tests.cpp # Passes on its own 21 Mar 2021
+	#../herald-tests/analysissensor-tests.cpp # Passes on its own 21 Mar 2021
+  # These three passed together on 21 Mar 2021
 	#../herald-tests/beaconpayload-tests.cpp
 	#../herald-tests/extendeddata-tests.cpp
 	#../herald-tests/fixedpayload-tests.cpp
-	#../herald-tests/simplepayload-tests.cpp
-	#../herald-tests/bledevice-tests.cpp
-	#../herald-tests/sample-tests.cpp
-	#../herald-tests/ranges-tests.cpp
+	#../herald-tests/simplepayload-tests.cpp # Passes on its own 21 Mar 2021
+	#../herald-tests/bledevice-tests.cpp # SILENTLY FAILS on its own 21 Mar 2021
+	#../herald-tests/sample-tests.cpp # Passes on its own 21 Mar 2021 (May require hci reflash too)
+	#../herald-tests/ranges-tests.cpp # FAILS on its own 21 Mar 2021 - Breaks the programmer! Also hard faults.
 
   # high level
-	#../herald-tests/advertparser-tests.cpp
-	#../herald-tests/bledatabase-tests.cpp
-	#../herald-tests/blecoordinator-tests.cpp
-	#../herald-tests/coordinator-tests.cpp
+  # These four passed together on 21 Mar 2021
+	../herald-tests/advertparser-tests.cpp
+	../herald-tests/bledatabase-tests.cpp
+	../herald-tests/blecoordinator-tests.cpp
+	../herald-tests/coordinator-tests.cpp
+
+  # NOTE: All tests that passed individually on 21 Mar 2021 also passed all together in 15 seconds
+  #       This means that the issue is the individual tests, not catch or zephyr specifically, and not RAM issues.
+  #       All together they used 707KB on Flash for the merged.hex file on a nRF5340dk build done on Windows 10.
 
   # now main func
   src/main.cpp
