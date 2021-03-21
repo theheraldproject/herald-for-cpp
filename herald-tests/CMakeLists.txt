@@ -1,13 +1,16 @@
 cmake_minimum_required(VERSION 3.12)
 
 add_executable(herald-tests
-  # root with main
+  # base data types
 	datatypes-tests.cpp
+	datetime-tests.cpp
+	randomuuid-tests.cpp
 	
 	# Low level
 	sensorlogger-tests.cpp
 	errorcontactlog-tests.cpp
 	data-tests.cpp
+	datatypesdataderived-tests.cpp
 	blemacaddress-tests.cpp
 	targetidentifier-tests.cpp
 

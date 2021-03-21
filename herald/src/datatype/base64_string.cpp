@@ -12,15 +12,15 @@ namespace herald {
 namespace datatype {
 
 // IMPL DEFINITION
-class Base64String::Impl {
-public:
-  Impl();
-  ~Impl() = default;
+// class Base64String::Impl {
+// public:
+//   Impl();
+//   ~Impl() = default;
 
-  std::string value; // Base64 encoded, and guarded
-};
+//   std::string value; // Base64 encoded, and guarded
+// };
 
-Base64String::Impl::Impl() { }
+// Base64String::Impl::Impl() { }
 
 
 const std::string base64_chars = 
@@ -45,19 +45,19 @@ Base64String::from(const std::string& original, Base64String& toInitialise) noex
   if (!ok) {
     return false;
   }
-  toInitialise.mImpl->value = original;
+  toInitialise.value = original;
   return true;
 }
 
-Base64String::Base64String() : mImpl(std::make_unique<Impl>()) { }
+Base64String::Base64String() : value() { }
 
 Base64String::Base64String(Base64String&& other)
- : mImpl(std::make_unique<Impl>())
-{ 
-  mImpl->value = std::move(other.mImpl->value);
+ : value(std::move(other.value))
+{
+  ;
 }
 
-Base64String::~Base64String() { }
+Base64String::~Base64String() = default;
 
 Base64String 
 Base64String::encode(const Data& from) noexcept {
@@ -135,22 +135,22 @@ Base64String::encode(const Data& from) noexcept {
   //   buffer.append("=");
   // }
 
-  Base64String value;
-  value.mImpl->value = std::move(ret);
-  return value;
+  Base64String nvalue;
+  nvalue.value = std::move(ret);
+  return nvalue;
 }
 
 Data
 Base64String::decode() const noexcept {
-  std::size_t in_len = mImpl->value.size();
+  std::size_t in_len = value.size();
   int i = 0;
   int j = 0;
   int in_ = 0;
   char char_array_4[4], char_array_3[3];
   std::vector<std::byte> ret;
 
-  while (in_len-- && ( mImpl->value[in_] != '=') && is_base64(mImpl->value[in_])) {
-    char_array_4[i++] = mImpl->value[in_]; in_++;
+  while (in_len-- && ( value[in_] != '=') && is_base64(value[in_])) {
+    char_array_4[i++] = value[in_]; in_++;
     if (i ==4) {
       for (i = 0; i <4; i++)
         char_array_4[i] = (char)base64_chars.find(char_array_4[i]);
@@ -186,7 +186,7 @@ Base64String::decode() const noexcept {
 
 std::string
 Base64String::encoded() const noexcept {
-  return mImpl->value; // copy ctor
+  return value; // copy ctor
 }
 
 
