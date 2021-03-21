@@ -94,6 +94,7 @@ cp ../herald-venue-beacon/build-5340/hci_rpmsg/zephyr/zephyr.hex nrf5340dk/heral
 cp ../herald-venue-beacon/build-52840/zephyr/zephyr.hex nrf52840dk/herald-venue-beacon/
 cp ../herald-venue-beacon/build-52832/zephyr/zephyr.hex nrf52832dk/herald-venue-beacon/
 cp ../herald-venue-beacon/build-52833/zephyr/zephyr.hex nrf52833dk/herald-venue-beacon/
+ls -la nrf*/*/*.hex
 tar cjf zephyr-binaries.tar.gz nrf*
 cd ..
 
