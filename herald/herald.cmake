@@ -15,6 +15,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/analysis/ranges.h
   ${HERALD_BASE}/include/herald/analysis/risk.h
   ${HERALD_BASE}/include/herald/analysis/sampling.h
+  ${HERALD_BASE}/include/herald/analysis/sensor_source.h
   ${HERALD_BASE}/include/herald/ble/ble_concrete.h
   ${HERALD_BASE}/include/herald/ble/ble_coordinator.h
   ${HERALD_BASE}/include/herald/ble/ble_database_delegate.h

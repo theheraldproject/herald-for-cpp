@@ -86,6 +86,7 @@
 #include "herald/analysis/ranges.h"
 #include "herald/analysis/risk.h"
 #include "herald/analysis/sampling.h"
+#include "herald/analysis/sensor_source.h"
 
 // payload namespace
 #include "herald/payload/payload_data_supplier.h"

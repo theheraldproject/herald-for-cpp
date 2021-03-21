@@ -20,6 +20,7 @@ add_executable(herald-tests
 	sample-tests.cpp
 	ranges-tests.cpp
 	analysisrunner-tests.cpp
+	analysissensor-tests.cpp
 
   # high level
 	advertparser-tests.cpp
