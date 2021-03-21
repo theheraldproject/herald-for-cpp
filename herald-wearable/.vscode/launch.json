@@ -7,9 +7,9 @@
     {
       "type": "gnu-debugger",
       "request": "launch",
-      "name": "GNU debugger",
+      "name": "Debug - NRF5340_XXAA_APP - Launch",
       "program": "${workspaceFolder}/build/zephyr/zephyr.elf",
-      "toolchain": "C:/gnuarmemb/bin", // was "${config:arm-none-eabi.bin}"
+      "toolchain": "${config:armToolchainPath}/bin",
       "client": "arm-none-eabi-gdb.exe",
       "server": "JLinkGDBServer",
       "windows": {

@@ -299,20 +299,20 @@ void herald_entry() {
 
 
 	// 4. Now create a live analysis pipeline and enable RSSI to be sent to it for distance estimation
-	// herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
+	herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
 
-	// herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance> myDelegate(ctx);
-	// herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
-	// herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
+	herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance> myDelegate(ctx);
+	herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
+	herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
 
-	// herald::analysis::AnalysisRunner<
-	// 	herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance>>,
-	// 	herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
-	// 	RSSI,Distance
-	// > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
+	herald::analysis::AnalysisRunner<
+		herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance>>,
+		herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
+		RSSI,Distance
+	> runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
 
-	// std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
-	// sa->add(src);
+	std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
+	sa->add(src);
 
 	
 	LOG_DBG("Starting sensor array");
