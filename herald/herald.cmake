@@ -10,10 +10,11 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/sensor_delegate.h
   ${HERALD_BASE}/include/herald/sensor.h
   ${HERALD_BASE}/include/herald/analysis/aggregates.h
-  ${HERALD_BASE}/include/herald/analysis/runner.h
   ${HERALD_BASE}/include/herald/analysis/distance_conversion.h
+  ${HERALD_BASE}/include/herald/analysis/logging_analysis_delegate.h
   ${HERALD_BASE}/include/herald/analysis/ranges.h
   ${HERALD_BASE}/include/herald/analysis/risk.h
+  ${HERALD_BASE}/include/herald/analysis/runner.h
   ${HERALD_BASE}/include/herald/analysis/sampling.h
   ${HERALD_BASE}/include/herald/analysis/sensor_source.h
   ${HERALD_BASE}/include/herald/ble/ble_concrete.h

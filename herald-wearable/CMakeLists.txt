@@ -96,7 +96,7 @@ endif()
 #HERALD_LOG_LEVEL 4 = debug, 3 = info, 2 = warn / errors (Zephyr LOG_WARN), 1 = info contacts log only (Zephyr LOG_ERR)
 
 # gcc arm does not warn about missing defs until runtime
-add_compile_options(--no-undefined -ffunction-sections -fdata-sections -s -fno-exception -fno-rtti -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
+add_compile_options(--no-undefined -ffunction-sections -fdata-sections -s -fexceptions -fno-rtti -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
 
 target_sources(app PRIVATE
   ${HERALD_SOURCES}
