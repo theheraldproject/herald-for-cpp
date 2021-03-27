@@ -79,6 +79,8 @@ set(HERALD_HEADERS
 
 )
 set(HERALD_HEADERS_ZEPHYR 
+  ${HERALD_BASE}/include/herald/ble/zephyr/concrete_ble_receiver.h
+  ${HERALD_BASE}/include/herald/ble/zephyr/concrete_ble_transmitter.h
   ${HERALD_BASE}/include/herald/data/zephyr/zephyr_logging_sink.h
   ${HERALD_BASE}/include/herald/zephyr_context.h
 )

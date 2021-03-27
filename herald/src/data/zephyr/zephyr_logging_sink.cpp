@@ -2,15 +2,12 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#include "herald/data/sensor_logger.h"
+#include "herald/data/zephyr/zephyr_logging_sink.h"
 
 #include <string>
 
 namespace herald {
 namespace data {
-
-ZephyrLoggingSink::ZephyrLoggingSink() = default;
-ZephyrLoggingSink::~ZephyrLoggingSink() = default;
 
 void
 ZephyrLoggingSink::log(const std::string& subsystem,const std::string& category,

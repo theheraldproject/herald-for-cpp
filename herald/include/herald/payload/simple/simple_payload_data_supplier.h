@@ -11,7 +11,7 @@
 #include "../extended/extended_data.h"
 #include "../../context.h"
 #include "../../datatype/payload_timestamp.h"
-#include "herald/data/sensor_logger.h"
+#include "../../data/sensor_logger.h"
 
 #include <optional>
 #include <cstdint>

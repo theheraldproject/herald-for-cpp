@@ -67,7 +67,7 @@
 
 #if HERALD_LOG_LEVEL == 0
 
-#define HLOGGER /* No logger instance */
+#define HLOGGER(_ctxT) /* No logger instance */
 #define HLOGGERINIT(...) /* No logger init */
 #define HDBG(...) /* No debug log */
 #define HERR(...) /* No error log */
@@ -80,7 +80,7 @@
 
 #else
 
-#define HLOGGER /* No logger instance */
+#define HLOGGER(_ctxT) /* No logger instance */
 #define HLOGGERINIT(...) /* No logger init */
 #define HDBG(...) /* No debug log */
 #define HERR(...) /* No error log */

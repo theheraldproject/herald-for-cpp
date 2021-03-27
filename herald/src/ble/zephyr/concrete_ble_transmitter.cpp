@@ -73,17 +73,18 @@ namespace zephyrinternal {
   }
 }
 
-class ConcreteBLETransmitter::Impl {
+template <typename ContextT>
+class ConcreteBLETransmitter<ContextT>::Impl {
 public:
-  Impl(Context& ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+  Impl(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
   ~Impl();
 
   void startAdvertising();
   void stopAdvertising();
 
-  Context& m_context;
-  std::shared_ptr<BluetoothStateManager> m_stateManager;
+  ContextT& m_context;
+  BluetoothStateManager& m_stateManager;
   std::shared_ptr<PayloadDataSupplier> m_pds;
   std::shared_ptr<BLEDatabase> m_db;
 
@@ -91,7 +92,7 @@ public:
 
   bool isAdvertising;
 
-  HLOGGER;
+  HLOGGER(ContextT);
 };
 
 /* Herald Service Variables */
@@ -217,8 +218,9 @@ static struct bt_data ad[] = {
 // #endif
 
 
-ConcreteBLETransmitter::Impl::Impl(
-  Context& ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+template <typename ContextT>
+ConcreteBLETransmitter<ContextT>::Impl::Impl(
+  ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase)
   : m_context(ctx),
     m_stateManager(bluetoothStateManager),
@@ -232,13 +234,15 @@ ConcreteBLETransmitter::Impl::Impl(
   latestPds = m_pds.get();
 }
 
-ConcreteBLETransmitter::Impl::~Impl()
+template <typename ContextT>
+ConcreteBLETransmitter<ContextT>::Impl::~Impl()
 {
   latestPds = NULL;
 }
 
+template <typename ContextT>
 void
-ConcreteBLETransmitter::Impl::startAdvertising()
+ConcreteBLETransmitter<ContextT>::Impl::startAdvertising()
 {
   // HTDBG("startAdvertising called");
   if (!BLESensorConfiguration::advertisingEnabled) {
@@ -279,8 +283,9 @@ ConcreteBLETransmitter::Impl::startAdvertising()
   isAdvertising = true;
 }
 
+template <typename ContextT>
 void
-ConcreteBLETransmitter::Impl::stopAdvertising()
+ConcreteBLETransmitter<ContextT>::Impl::stopAdvertising()
 {
   // HTDBG("stopAdvertising called");
   if (!BLESensorConfiguration::advertisingEnabled) {
@@ -308,8 +313,9 @@ ConcreteBLETransmitter::Impl::stopAdvertising()
 
 
 
-ConcreteBLETransmitter::ConcreteBLETransmitter(
-  Context& ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+template <typename ContextT>
+ConcreteBLETransmitter<ContextT>::ConcreteBLETransmitter(
+  ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase)
   : mImpl(std::make_shared<Impl>(ctx,bluetoothStateManager,
       payloadDataSupplier,bleDatabase))
@@ -317,27 +323,31 @@ ConcreteBLETransmitter::ConcreteBLETransmitter(
   ;
 }
 
-ConcreteBLETransmitter::~ConcreteBLETransmitter()
+template <typename ContextT>
+ConcreteBLETransmitter<ContextT>::~ConcreteBLETransmitter()
 {
   // stop(); // stops using m_addr
 }
 
+template <typename ContextT>
 std::optional<std::shared_ptr<CoordinationProvider>>
-ConcreteBLETransmitter::coordinationProvider()
+ConcreteBLETransmitter<ContextT>::coordinationProvider()
 {
   return {};
 }
 
+template <typename ContextT>
 void
-ConcreteBLETransmitter::add(const std::shared_ptr<SensorDelegate>& delegate)
+ConcreteBLETransmitter<ContextT>::add(const std::shared_ptr<SensorDelegate>& delegate)
 {
   mImpl->delegates.push_back(delegate);
 }
 
 // 6. Implement any additional transmitter functionality, as required
 
+template <typename ContextT>
 void
-ConcreteBLETransmitter::start()
+ConcreteBLETransmitter<ContextT>::start()
 {
   HDBG("ConcreteBLETransmitter::start");
   if (!BLESensorConfiguration::advertisingEnabled) {
@@ -360,8 +370,9 @@ ConcreteBLETransmitter::start()
   mImpl->startAdvertising();
 }
 
+template <typename ContextT>
 void
-ConcreteBLETransmitter::stop()
+ConcreteBLETransmitter<ContextT>::stop()
 {
   HDBG("ConcreteBLETransmitter::stop");
   if (!BLESensorConfiguration::advertisingEnabled) {
