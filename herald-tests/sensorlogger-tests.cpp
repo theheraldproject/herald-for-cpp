@@ -15,7 +15,7 @@ TEST_CASE("sensorlogger-output-dbg", "[sensorlogger][output]") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
     herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    // using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     herald::data::SensorLogger logger(ctx.getLoggingSink(),"testout","mytest");
 
     HTDBG("Simple string");
@@ -54,7 +54,7 @@ TEST_CASE("sensorlogger-output-log", "[sensorlogger][output]") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
     herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    // using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     herald::data::SensorLogger logger(ctx.getLoggingSink(),"testout","mytest");
 
     HTLOG("Simple string");
@@ -88,7 +88,7 @@ TEST_CASE("sensorlogger-output-fault", "[sensorlogger][output]") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
     herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    // using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     herald::data::SensorLogger logger(ctx.getLoggingSink(),"testout","mytest");
 
     HTERR("Simple string");
@@ -123,7 +123,7 @@ TEST_CASE("sensorlogger-output-intrinsic", "[sensorlogger][output]") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
     herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    // using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     herald::data::SensorLogger logger(ctx.getLoggingSink(),"testout","mytest");
 
     int i = 37;
@@ -184,7 +184,7 @@ TEST_CASE("sensorlogger-bug-negativesuccess", "[sensorlogger][output][bug]") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
     herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    // using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     herald::data::SensorLogger logger(ctx.getLoggingSink(),"testout","mytest");
 
     int success = -22;
@@ -200,7 +200,7 @@ TEST_CASE("sensorlogger-bug-targetidatend", "[sensorlogger][output][bug]") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
     herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    // using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     herald::data::SensorLogger logger(ctx.getLoggingSink(),"testout","mytest");
 
     herald::datatype::TargetIdentifier t(herald::datatype::Data(std::byte(0x09),3));
@@ -217,7 +217,7 @@ TEST_CASE("sensorlogger-output-data", "[sensorlogger][output]") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
     herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    // using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     herald::data::SensorLogger logger(ctx.getLoggingSink(),"testout","mytest");
 
     herald::datatype::Data t(std::byte(0x09),3);
@@ -234,7 +234,7 @@ TEST_CASE("sensorlogger-output-targetidentifier", "[sensorlogger][output]") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
     herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    // using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     herald::data::SensorLogger logger(ctx.getLoggingSink(),"testout","mytest");
 
     herald::datatype::TargetIdentifier t(herald::datatype::Data(std::byte(0x09),3));

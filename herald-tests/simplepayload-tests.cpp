@@ -240,7 +240,7 @@ TEST_CASE("payload-simple-basic", "[payload][simple][basic]") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
     herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    // using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     std::uint16_t country = 826;
     std::uint16_t state = 4;
     herald::payload::simple::K k;
@@ -279,7 +279,7 @@ TEST_CASE("payload-simple-payloadbounds", "[payload][simple][payloadbounds]") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
     herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    // using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     std::uint16_t country = 826;
     std::uint16_t state = 4;
     herald::payload::simple::K k;
