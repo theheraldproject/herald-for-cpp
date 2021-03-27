@@ -23,31 +23,33 @@ using namespace datatype;
 using namespace payload;
 using namespace engine;
 
-class SensorArray::Impl {
+template <typename ContextT>
+class SensorArray<ContextT>::Impl {
 public:
-  Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
+  Impl(ContextT& ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
   ~Impl();
 
   // Initialised on entry to Impl constructor:-
-  std::shared_ptr<Context> mContext;
+  ContextT& mContext;
   std::shared_ptr<PayloadDataSupplier> mPayloadDataSupplier;
   std::vector<std::shared_ptr<Sensor>> mSensorArray;
 
-  std::shared_ptr<ConcreteBLESensor> concrete;
+  std::shared_ptr<ConcreteBLESensor<ContextT>> concrete;
 
-  Coordinator engine;
+  Coordinator<ContextT> engine;
 
   // Not initialised (and thus optional):-
   std::string deviceDescription;
 
-  HLOGGER;
+  HLOGGER(ContextT);
 };
 
-SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
+template <typename ContextT>
+SensorArray<ContextT>::Impl::Impl(ContextT& ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
   : mContext(ctx), 
     mPayloadDataSupplier(payloadDataSupplier),
     mSensorArray(),
-    concrete(std::make_shared<ConcreteBLESensor>(mContext, mContext->getBluetoothStateManager(),
+    concrete(std::make_shared<ConcreteBLESensor<ContextT>>(mContext, mContext.getBluetoothStateManager(),
       mPayloadDataSupplier)),
     engine(ctx),
     deviceDescription("")
@@ -71,7 +73,8 @@ SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDat
   //mLogger.info("DEVICE (payload={},description={})", "nil", deviceDescription);
 }
 
-SensorArray::Impl::~Impl()
+template <typename ContextT>
+SensorArray<ContextT>::Impl::~Impl()
 {
   ;
 }
@@ -82,66 +85,76 @@ SensorArray::Impl::~Impl()
 
 
 /// Takes ownership of payloadDataSupplier (std::move)
-SensorArray::SensorArray(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
+template <typename ContextT>
+SensorArray<ContextT>::SensorArray(ContextT& ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
   : mImpl(std::make_unique<Impl>(ctx,payloadDataSupplier))
 {
   ;
 }
 
-SensorArray::~SensorArray()
+template <typename ContextT>
+SensorArray<ContextT>::~SensorArray()
 {
   ;
 }
 
 // SENSOR ARRAY METHODS
+template <typename ContextT>
 bool
-SensorArray::immediateSend(Data data, const TargetIdentifier& targetIdentifier) {
+SensorArray<ContextT>::immediateSend(Data data, const TargetIdentifier& targetIdentifier) {
   return mImpl->concrete->immediateSend(data, targetIdentifier);
 }
 
+template <typename ContextT>
 bool
-SensorArray::immediateSendAll(Data data) {
+SensorArray<ContextT>::immediateSendAll(Data data) {
   return mImpl->concrete->immediateSendAll(data);
 }
 
+template <typename ContextT>
 std::optional<PayloadData>
-SensorArray::payloadData() {
+SensorArray<ContextT>::payloadData() {
   return mImpl->mPayloadDataSupplier->payload(PayloadTimestamp(),nullptr);
 }
 
 // SENSOR OVERRIDES 
+template <typename ContextT>
 void
-SensorArray::add(const std::shared_ptr<SensorDelegate>& delegate) {
+SensorArray<ContextT>::add(const std::shared_ptr<SensorDelegate>& delegate) {
   for (auto& sensor: mImpl->mSensorArray) {
     sensor->add(delegate);
   }
 }
 
+template <typename ContextT>
 void
-SensorArray::start() {
+SensorArray<ContextT>::start() {
   for (auto& sensor: mImpl->mSensorArray) {
     sensor->start();
   }
   mImpl->engine.start();
 }
 
+template <typename ContextT>
 void
-SensorArray::stop() {
+SensorArray<ContextT>::stop() {
   mImpl->engine.stop();
   for (auto& sensor: mImpl->mSensorArray) {
     sensor->stop();
   }
 }
 
+template <typename ContextT>
 std::optional<std::shared_ptr<CoordinationProvider>>
-SensorArray::coordinationProvider()
+SensorArray<ContextT>::coordinationProvider()
 {
   return {};
 }
 
 // Periodic actions
+template <typename ContextT>
 void
-SensorArray::iteration(const TimeInterval sinceLastCompleted)
+SensorArray<ContextT>::iteration(const TimeInterval sinceLastCompleted)
 {
   // TODO ensure this works for continuous evaluation with minimal overhead or battery
   mImpl->engine.iteration();

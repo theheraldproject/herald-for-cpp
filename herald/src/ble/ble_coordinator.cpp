@@ -16,12 +16,13 @@ namespace ble {
 
 using namespace herald::engine;
 
-class HeraldProtocolBLECoordinationProvider::Impl {
+template <typename ContextT>
+class HeraldProtocolBLECoordinationProvider<ContextT>::Impl {
 public:
-  Impl(std::shared_ptr<Context> ctx, std::shared_ptr<BLEDatabase> bledb,std::shared_ptr<HeraldProtocolV1Provider> provider);
+  Impl(ContextT& ctx, std::shared_ptr<BLEDatabase> bledb,std::shared_ptr<HeraldProtocolV1Provider> provider);
   ~Impl();
 
-  std::shared_ptr<Context> context; 
+  ContextT& context; 
   std::shared_ptr<BLEDatabase> db;
   std::shared_ptr<HeraldProtocolV1Provider> pp;
 
@@ -31,10 +32,11 @@ public:
   int breakEvery;
   int breakFor;
 
-  HLOGGER;
+  HLOGGER(ContextT);
 };
 
-HeraldProtocolBLECoordinationProvider::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<BLEDatabase> bledb,std::shared_ptr<HeraldProtocolV1Provider> provider)
+template <typename ContextT>
+HeraldProtocolBLECoordinationProvider<ContextT>::Impl::Impl(ContextT& ctx, std::shared_ptr<BLEDatabase> bledb,std::shared_ptr<HeraldProtocolV1Provider> provider)
   : context(ctx),
     db(bledb),
     pp(provider),
@@ -47,14 +49,17 @@ HeraldProtocolBLECoordinationProvider::Impl::Impl(std::shared_ptr<Context> ctx, 
   ;
 }
 
-HeraldProtocolBLECoordinationProvider::Impl::~Impl()
+template <typename ContextT>
+HeraldProtocolBLECoordinationProvider<ContextT>::Impl::~Impl()
 {
   ;
 }
 
 
 
-HeraldProtocolBLECoordinationProvider::HeraldProtocolBLECoordinationProvider(std::shared_ptr<Context> ctx, 
+template <typename ContextT>
+HeraldProtocolBLECoordinationProvider<ContextT>::HeraldProtocolBLECoordinationProvider(
+  ContextT& ctx, 
   std::shared_ptr<BLEDatabase> db, std::shared_ptr<HeraldProtocolV1Provider> provider)
   : mImpl(std::make_unique<Impl>(ctx,db,provider))
 {
@@ -62,14 +67,16 @@ HeraldProtocolBLECoordinationProvider::HeraldProtocolBLECoordinationProvider(std
 }
 
 
-HeraldProtocolBLECoordinationProvider::~HeraldProtocolBLECoordinationProvider()
+template <typename ContextT>
+HeraldProtocolBLECoordinationProvider<ContextT>::~HeraldProtocolBLECoordinationProvider()
 {
   ;
 }
 
 
+template <typename ContextT>
 std::vector<FeatureTag>
-HeraldProtocolBLECoordinationProvider::connectionsProvided()
+HeraldProtocolBLECoordinationProvider<ContextT>::connectionsProvided()
 {
   return std::vector<FeatureTag>(1,herald::engine::Features::HeraldBluetoothProtocolConnection);
 }
@@ -77,8 +84,9 @@ HeraldProtocolBLECoordinationProvider::connectionsProvided()
 // void
 // HeraldProtocolBLECoordinationProvider::provision(const std::vector<PrioritisedPrerequisite>& requested,
 //   const ConnectionCallback& connCallback)
+template <typename ContextT>
 std::vector<PrioritisedPrerequisite>
-HeraldProtocolBLECoordinationProvider::provision(
+HeraldProtocolBLECoordinationProvider<ContextT>::provision(
   const std::vector<PrioritisedPrerequisite>& requested)
 {
   if (requested.empty()) {
@@ -165,8 +173,9 @@ HeraldProtocolBLECoordinationProvider::provision(
 
 
 
+template <typename ContextT>
 std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>>
-HeraldProtocolBLECoordinationProvider::requiredConnections()
+HeraldProtocolBLECoordinationProvider<ContextT>::requiredConnections()
 {
 
   std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>> results;
@@ -302,8 +311,9 @@ HeraldProtocolBLECoordinationProvider::requiredConnections()
   return results;
 }
 
+template <typename ContextT>
 std::vector<Activity>
-HeraldProtocolBLECoordinationProvider::requiredActivities()
+HeraldProtocolBLECoordinationProvider<ContextT>::requiredActivities()
 {
   std::vector<Activity> results;
 

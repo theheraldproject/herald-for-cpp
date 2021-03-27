@@ -2,6 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
+#include "test-templates.h"
+
 #include "catch.hpp"
 
 #include "herald/herald.h"
@@ -50,37 +52,6 @@ struct DummyDistanceDelegate {
 private:
   SampledID lastSampledID;
   SampleList<Sample<Distance>,25> distances;
-};
-
-class DummyLogger : public herald::data::SensorLoggingSink {
-public:
-  DummyLogger(std::string sub,std::string cat) : subsystem(sub), category(cat), value() {}
-  ~DummyLogger() = default;
-
-  void log(herald::data::SensorLoggerLevel level, std::string message) override {
-    value = subsystem + "," + category + "," + message;
-  }
-
-  std::string subsystem;
-  std::string category;
-  std::string value;
-};
-
-class DummyContext : public herald::Context {
-public:
-  DummyContext() = default;
-  ~DummyContext() = default;
-
-  std::shared_ptr<herald::ble::BluetoothStateManager> getBluetoothStateManager() override { return nullptr;}
-
-  std::shared_ptr<herald::data::SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, 
-    const std::string& categoryFor) override
-  { 
-    lastLogger = std::make_shared<DummyLogger>(subsystemFor,categoryFor);
-    return lastLogger;
-  }
-
-  std::shared_ptr<DummyLogger> lastLogger;
 };
 
 /// [Who]   As a DCT app developer
@@ -137,9 +108,12 @@ TEST_CASE("analysissensor-rssi-basic", "[analysissensor][rssi][basic]") {
 
 TEST_CASE("analysissensor-output", "[sensorlogger][analysissensor][output]") {
   SECTION("analysissensor-output") {
-    std::shared_ptr<DummyContext> ctx = std::make_shared<DummyContext>();
+    DummyLoggingSink dls;
+    DummyBluetoothStateManager dbsm;
+    herald::Context ctx(dls,dbsm); // default context include
+    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     //herald::data::SensorLogger logger(ctx,"testout","analysissensor");
-    herald::analysis::LoggingAnalysisDelegate<Distance> lad(ctx); // The subject of this test
+    herald::analysis::LoggingAnalysisDelegate<CT,Distance> lad(ctx); // The subject of this test
     std::cout << "LoggingAnalysisDelegate::RAM = " << sizeof(lad) << std::endl;
 
     
@@ -155,7 +129,7 @@ TEST_CASE("analysissensor-output", "[sensorlogger][analysissensor][output]") {
     herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
 
     herald::analysis::AnalysisRunner<
-      herald::analysis::AnalysisDelegateManager<DummyDistanceDelegate,herald::analysis::LoggingAnalysisDelegate<Distance>>,
+      herald::analysis::AnalysisDelegateManager<DummyDistanceDelegate,herald::analysis::LoggingAnalysisDelegate<CT,Distance>>,
       herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
       RSSI,Distance
     > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
@@ -178,7 +152,7 @@ TEST_CASE("analysissensor-output", "[sensorlogger][analysissensor][output]") {
     REQUIRE(samples[0].taken.secondsSinceUnixEpoch() != 0);
     REQUIRE(samples[0].value != 0.0);
 
-    auto lastMsg = ctx->lastLogger->value;
+    auto lastMsg = dls.value;
     REQUIRE(lastMsg != ""); // must have logged something...
     std::cout << "Last log message: " << lastMsg << std::endl;
 

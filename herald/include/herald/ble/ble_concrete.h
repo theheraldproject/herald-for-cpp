@@ -39,9 +39,10 @@ public:
   BluetoothState state() override;
 };
 
-class ConcreteBLEDatabase : public BLEDatabase, public BLEDeviceDelegate, public std::enable_shared_from_this<ConcreteBLEDatabase>  {
+template <typename ContextT>
+class ConcreteBLEDatabase : public BLEDatabase, public BLEDeviceDelegate, public std::enable_shared_from_this<ConcreteBLEDatabase<ContextT>>  {
 public:
-  ConcreteBLEDatabase(std::shared_ptr<Context> context);
+  ConcreteBLEDatabase(ContextT& context);
   ConcreteBLEDatabase(const ConcreteBLEDatabase& from) = delete;
   ConcreteBLEDatabase(ConcreteBLEDatabase&& from) = delete;
   ~ConcreteBLEDatabase();
@@ -81,10 +82,11 @@ private:
 /**
  * Acts as the main object to control the receiver, transmitter, and database instances
  */
+template <typename ContextT>
 class ConcreteBLESensor : public BLESensor, public BLEDatabaseDelegate, 
-  public BluetoothStateManagerDelegate, public std::enable_shared_from_this<ConcreteBLESensor>  {
+  public BluetoothStateManagerDelegate, public std::enable_shared_from_this<ConcreteBLESensor<ContextT>>  {
 public:
-  ConcreteBLESensor(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+  ConcreteBLESensor(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
   ConcreteBLESensor(const ConcreteBLESensor& from) = delete;
   ConcreteBLESensor(ConcreteBLESensor&& from) = delete;
@@ -114,9 +116,10 @@ private:
   std::unique_ptr<Impl> mImpl; // unique as this is handled internally for all platforms by Herald
 };
 
-class ConcreteBLEReceiver : public BLEReceiver, public HeraldProtocolV1Provider, public std::enable_shared_from_this<ConcreteBLEReceiver> {
+template <typename ContextT>
+class ConcreteBLEReceiver : public BLEReceiver, public HeraldProtocolV1Provider, public std::enable_shared_from_this<ConcreteBLEReceiver<ContextT>> {
 public:
-  ConcreteBLEReceiver(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+  ConcreteBLEReceiver(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
   ConcreteBLEReceiver(const ConcreteBLEReceiver& from) = delete;
   ConcreteBLEReceiver(ConcreteBLEReceiver&& from) = delete;
@@ -156,9 +159,10 @@ private:
   std::shared_ptr<Impl> mImpl; // shared to allow static callbacks to be bound
 };
 
-class ConcreteBLETransmitter : public BLETransmitter, public std::enable_shared_from_this<ConcreteBLETransmitter> {
+template <typename ContextT>
+class ConcreteBLETransmitter : public BLETransmitter, public std::enable_shared_from_this<ConcreteBLETransmitter<ContextT>> {
 public:
-  ConcreteBLETransmitter(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+  ConcreteBLETransmitter(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
   ConcreteBLETransmitter(const ConcreteBLETransmitter& from) = delete;
   ConcreteBLETransmitter(ConcreteBLETransmitter&& from) = delete;

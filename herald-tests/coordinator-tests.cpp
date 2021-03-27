@@ -7,6 +7,8 @@
 #include <optional>
 #include <iostream>
 
+#include "test-templates.h"
+
 #include "catch.hpp"
 
 #include "herald/herald.h"
@@ -16,9 +18,10 @@
  * to test the iteration functionality of the core Coordinator class
  */
 
+template <typename ContextT>
 class MockSensor : public herald::ble::Sensor {
 public:
-  MockSensor(std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> provider) : cp(provider) {}
+  MockSensor(std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider<ContextT>> provider) : cp(provider) {}
   ~MockSensor() = default;
 
   
@@ -31,12 +34,13 @@ public:
     return std::optional<std::shared_ptr<herald::engine::CoordinationProvider>>(cp);
   }
 
-  std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> cp;
+  std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider<ContextT>> cp;
 };
 
+template <typename ContextT>
 class NoOpHeraldV1ProtocolProvider : public herald::ble::HeraldProtocolV1Provider {
 public:
-  NoOpHeraldV1ProtocolProvider(std::shared_ptr<herald::Context> context,std::shared_ptr<herald::ble::BLEDatabase> bledb)
+  NoOpHeraldV1ProtocolProvider(ContextT& context,std::shared_ptr<herald::ble::BLEDatabase> bledb)
     : ctx(context) 
       HLOGGERINIT(ctx,"TESTS","NoOpProvider")
   {}
@@ -103,13 +107,14 @@ public:
     return {};
   }
 
-  std::shared_ptr<herald::Context> ctx;
-  HLOGGER
+  ContextT& ctx;
+  HLOGGER(ContextT);
 };
 
+template <typename ContextT>
 class MockHeraldV1ProtocolProvider : public herald::ble::HeraldProtocolV1Provider {
 public:
-  MockHeraldV1ProtocolProvider(std::shared_ptr<herald::Context> context,std::shared_ptr<herald::ble::BLEDatabase> bledb)
+  MockHeraldV1ProtocolProvider(ContextT& context,std::shared_ptr<herald::ble::BLEDatabase> bledb)
     : ctx(context), db(bledb), hasIdentifiedOs(false), lastDeviceOS(), hasReadPayload(false), lastDevicePayload(),
       hasImmediateSend(false), lastImmediateSend(), hasImmediateSendAll(false), lastImmediateSendAll()
       HLOGGERINIT(ctx,"TESTS","MockHeraldV1ProtocolProvider")
@@ -211,7 +216,7 @@ public:
     return {};
   }
 
-  std::shared_ptr<herald::Context> ctx;
+  ContextT& ctx;
   std::shared_ptr<herald::ble::BLEDatabase> db;
   
   bool hasIdentifiedOs;
@@ -226,7 +231,7 @@ public:
   bool hasImmediateSendAll;
   std::optional<herald::datatype::TargetIdentifier> lastImmediateSendAll;
 
-  HLOGGER;
+  HLOGGER(ContextT);
 };
 
 
@@ -234,21 +239,23 @@ public:
 
 TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]") {
   // create our BLE coordinator
-  std::shared_ptr<herald::DefaultContext> ctx = 
-    std::make_shared<herald::DefaultContext>();
-  std::shared_ptr<herald::ble::ConcreteBLEDatabase> db = 
-    std::make_shared<herald::ble::ConcreteBLEDatabase>(ctx);
-  std::shared_ptr<MockHeraldV1ProtocolProvider> pp = 
-    std::make_shared<MockHeraldV1ProtocolProvider>(ctx,db);
-  std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider> coord =
-    std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider>(ctx,db,pp);
+  DummyLoggingSink dls;
+  DummyBluetoothStateManager dbsm;
+  herald::Context ctx(dls,dbsm); // default context include
+  using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+  std::shared_ptr<herald::ble::ConcreteBLEDatabase<CT>> db = 
+    std::make_shared<herald::ble::ConcreteBLEDatabase<CT>>(ctx);
+  std::shared_ptr<MockHeraldV1ProtocolProvider<CT>> pp = 
+    std::make_shared<MockHeraldV1ProtocolProvider<CT>>(ctx,db);
+  std::shared_ptr<herald::ble::HeraldProtocolBLECoordinationProvider<CT>> coord =
+    std::make_shared<herald::ble::HeraldProtocolBLECoordinationProvider<CT>>(ctx,db,pp);
 
   // Mock Sensor
-  std::shared_ptr<MockSensor> mockSensor = std::make_shared<MockSensor>(coord);
+  std::shared_ptr<MockSensor<CT>> mockSensor = std::make_shared<MockSensor<CT>>(coord);
 
   // register ble coordinator
-  std::shared_ptr<herald::engine::Coordinator> c = 
-    std::make_shared<herald::engine::Coordinator>(ctx);
+  std::shared_ptr<herald::engine::Coordinator<CT>> c = 
+    std::make_shared<herald::engine::Coordinator<CT>>(ctx);
   c->add(mockSensor); // registers the BLE coordinator
   c->start();
 

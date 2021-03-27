@@ -5,11 +5,11 @@
 // #include "herald/datatype/stdlib.h" // hashing of std::pair
 
 #include "herald/zephyr_context.h"
+#include "herald/data/zephyr/zephyr_logging_sink.h"
 #include "herald/data/sensor_logger.h"
 #include "herald/ble/bluetooth_state_manager.h"
 #include "herald/ble/bluetooth_state_manager_delegate.h"
 #include "herald/datatype/bluetooth_state.h"
-
 
 #include <memory>
 #include <iosfwd>
@@ -20,64 +20,11 @@
 #include <settings/settings.h>
 #include <bluetooth/bluetooth.h>
 
-// NOTE: Link Herald to the Zephyr logging system
-// Set HERALD_LOG_LEVEL=4 for debug in CMake using add_definitions(-DHERALD_LOG_LEVEL=4 )
-//   Defaults to 0 (OFF) - see zephyr_context.h
-#include <logging/log.h>
-
 namespace herald {
-
-// THE BELOW IS DONE IN EXACTLY ONE HERALD FILE
-LOG_MODULE_REGISTER(heraldlogger, HERALD_LOG_LEVEL);
 
 using namespace herald::data;
 using namespace herald::datatype;
 using namespace herald::ble;
-
-// HIDDEN LOGGING SINK IMPLEMENTATION FOR ZEPHYR
-
-class ZephyrLoggingSink : public SensorLoggingSink {
-public:
-  ZephyrLoggingSink(const std::string& subsystem, const std::string& category);
-  ~ZephyrLoggingSink();
-
-  void log(SensorLoggerLevel level, std::string message) override;
-
-private:
-  std::string m_subsystem;
-  std::string m_category;
-};
-
-
-
-ZephyrLoggingSink::ZephyrLoggingSink(const std::string& subsystem, const std::string& category)
-  : m_subsystem(subsystem), m_category(category)
-{
-  ;
-}
-
-ZephyrLoggingSink::~ZephyrLoggingSink() {
-  ;
-}
-
-void
-ZephyrLoggingSink::log(SensorLoggerLevel level, std::string message)
-{
-  // TODO be more specific? Filter here or in Zephyr?
-  std::string finalMessage = m_subsystem + "," + m_category + "," + message;
-  switch (level) {
-    case SensorLoggerLevel::debug:
-      LOG_DBG("%s",log_strdup(finalMessage.c_str()));
-      break;
-    case SensorLoggerLevel::fault:
-      LOG_ERR("%s",log_strdup(finalMessage.c_str()));
-      break;
-    default:
-      LOG_INF("%s",log_strdup(finalMessage.c_str()));
-      break;
-  }
-}
-
 
 
 // ADVERTISER SPECIFICATION
@@ -135,90 +82,44 @@ Advertiser::registerStartCallback(std::function<void()> cb)
 
 } // end namespace
 
-// HIDDEN CONTEXT IMPLEMENTATION FOR ZEPHYR
-
-
-class ZephyrContext::Impl {
-public:
-  Impl();
-  ~Impl();
-
-  // Any Zephyr RTOS specific global handles go here
-  bool enabled;
-
-  std::vector<std::shared_ptr<BluetoothStateManagerDelegate>> stateDelegates;
-
-  // pair is subsystem and category
-  std::map<std::pair<std::string,std::string>,
-           std::shared_ptr<ZephyrLoggingSink>> logSinks;
-
-  zephyrinternal::Advertiser advertiser;
-};
-
-ZephyrContext::Impl::Impl()
-  : enabled(false),
-    stateDelegates(),
-    logSinks(),
-    advertiser()
-{
-  ;
-}
-
-ZephyrContext::Impl::~Impl()
-{
-  ;
-}
-
-
-
-
 // ZEPHYR CONTEXT PUBLIC INTERFACE METHODS
 
 
 // Zephyr RTOS implementation of Context
-ZephyrContext::ZephyrContext()
-  : mImpl(std::make_unique<Impl>())
+ZephyrContextProvider::ZephyrContextProvider()
+  : sink(),
+    advertiser(),
+    stateDelegates(),
+    bluetoothEnabled(false)
 {
   ;
 }
 
-ZephyrContext::~ZephyrContext()
+ZephyrContextProvider::~Context() = default;
+
+ZephyrLoggingSink&
+ZephyrContextProvider::getLoggingSink()
 {
-  ;
+  return sink;
 }
 
-std::shared_ptr<SensorLoggingSink>
-ZephyrContext::getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor)
+BluetoothStateManager&
+ZephyrContextProvider::getBluetoothStateManager()
 {
-  std::pair<std::string,std::string> id(subsystemFor,categoryFor);
-  auto foundSinkIndex = mImpl->logSinks.find(id);
-  if (mImpl->logSinks.end() != foundSinkIndex) {
-    return foundSinkIndex->second;
-  }
-  std::shared_ptr<ZephyrLoggingSink> newSink = std::make_shared<ZephyrLoggingSink>(
-    subsystemFor, categoryFor
-  );
-  mImpl->logSinks.emplace(id, newSink);
-  return newSink;
-}
-
-std::shared_ptr<BluetoothStateManager>
-ZephyrContext::getBluetoothStateManager()
-{
-  return shared_from_this();
+  return *this
 }
 
 void
-ZephyrContext::add(std::shared_ptr<BluetoothStateManagerDelegate> delegate)
+ZephyrContextProvider::add(std::shared_ptr<BluetoothStateManagerDelegate> delegate)
 {
-  mImpl->stateDelegates.push_back(delegate);
+  stateDelegates.push_back(delegate);
 }
 
 BluetoothState
-ZephyrContext::state()
+ZephyrContextProvider::state()
 {
   // TODO support detection of Bluetooth being unsupported, and power cycling/resetting states
-  if (mImpl->enabled) {
+  if (bluetoothEnabled) {
     return BluetoothState::poweredOn;
   } else {
     return BluetoothState::poweredOff;
@@ -226,15 +127,15 @@ ZephyrContext::state()
 }
 
 zephyrinternal::Advertiser&
-ZephyrContext::getAdvertiser() noexcept
+ZephyrContextProvider::getAdvertiser() noexcept
 {
-  return mImpl->advertiser;
+  return advertiser;
 }
 
 int 
-ZephyrContext::enableBluetooth() noexcept
+ZephyrContextProvider::enableBluetooth() noexcept
 {
-  LOG_INF("ZephyrContext::enableBluetooth");
+  LOG_INF("Context::enableBluetooth");
   int success;
 
   // TODO determine if default Zephyr mac address rotation uses Nordic CC3xx, if present
@@ -272,9 +173,9 @@ ZephyrContext::enableBluetooth() noexcept
     LOG_INF("settings load returned");
   }
   if (0 == success) {
-    mImpl->enabled = true;
+    bluetoothEnabled = true;
 
-    for (auto delegate : mImpl->stateDelegates) {
+    for (auto delegate : stateDelegates) {
       delegate->bluetoothStateManager(BluetoothState::poweredOn);
     }
   } else {
@@ -285,25 +186,25 @@ ZephyrContext::enableBluetooth() noexcept
 }
 
 int 
-ZephyrContext::startBluetooth() noexcept
+ZephyrContextProvider::startBluetooth() noexcept
 {
-  if (!mImpl->enabled) {
+  if (!bluetoothEnabled) {
     return enableBluetooth();
   }
   return 0; // success
 }
 
 int 
-ZephyrContext::stopBluetooth() noexcept
+ZephyrContextProvider::stopBluetooth() noexcept
 {
-  for (auto delegate : mImpl->stateDelegates) {
+  for (auto delegate : stateDelegates) {
     delegate->bluetoothStateManager(BluetoothState::poweredOff);
   }
   return 0;
 }
 
 void
-ZephyrContext::periodicActions() noexcept
+ZephyrContextProvider::periodicActions() noexcept
 {
   // TODO periodic bluetooth actions
   // E.g. determine if we should rotate mac address (if not done for us?)

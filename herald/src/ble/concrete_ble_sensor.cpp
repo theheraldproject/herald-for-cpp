@@ -19,10 +19,11 @@ namespace ble {
 
 using namespace herald::datatype;
 
-class ConcreteBLESensor::Impl {
+template <typename ContextT>
+class ConcreteBLESensor<ContextT>::Impl {
 public:
-  Impl(std::shared_ptr<Context> ctx, 
-    std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+  Impl(ContextT& ctx, 
+    BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
   ~Impl();
 
@@ -30,22 +31,23 @@ public:
 
   // Data members hidden by PIMPL
 
-  std::shared_ptr<ConcreteBLEDatabase> database;
-  std::shared_ptr<BluetoothStateManager> stateManager;
-  std::shared_ptr<ConcreteBLETransmitter> transmitter;
-  std::shared_ptr<ConcreteBLEReceiver> receiver;
+  std::shared_ptr<ConcreteBLEDatabase<ContextT>> database;
+  BluetoothStateManager& stateManager;
+  std::shared_ptr<ConcreteBLETransmitter<ContextT>> transmitter;
+  std::shared_ptr<ConcreteBLEReceiver<ContextT>> receiver;
 
   std::vector<std::shared_ptr<SensorDelegate>> delegates;
   
-  std::shared_ptr<HeraldProtocolBLECoordinationProvider> coordinator;
+  std::shared_ptr<HeraldProtocolBLECoordinationProvider<ContextT>> coordinator;
 
   bool addedSelfAsDelegate;
 
-  HLOGGER;
+  HLOGGER(ContextT);
 };
 
-ConcreteBLESensor::Impl::Impl(std::shared_ptr<Context> ctx, 
-    std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+template <typename ContextT>
+ConcreteBLESensor<ContextT>::Impl::Impl(ContextT& ctx, 
+    BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
   : database(std::make_shared<ConcreteBLEDatabase>(ctx)), 
     stateManager(bluetoothStateManager),
@@ -56,14 +58,15 @@ ConcreteBLESensor::Impl::Impl(std::shared_ptr<Context> ctx,
       ctx, bluetoothStateManager, payloadDataSupplier, database)
     ),
     delegates(),
-    coordinator(std::make_shared<HeraldProtocolBLECoordinationProvider>(ctx, database, receiver)),
+    coordinator(std::make_shared<HeraldProtocolBLECoordinationProvider<ContextT>>(ctx, database, receiver)),
     addedSelfAsDelegate(false)
     HLOGGERINIT(ctx,"sensor","ConcreteBLESensor")
 {
   ;
 }
 
-ConcreteBLESensor::Impl::~Impl()
+template <typename ContextT>
+ConcreteBLESensor<ContextT>::Impl::~Impl()
 {
   ;
 }
@@ -73,21 +76,24 @@ ConcreteBLESensor::Impl::~Impl()
 
 
 
-ConcreteBLESensor::ConcreteBLESensor(std::shared_ptr<Context> ctx, 
-    std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+template <typename ContextT>
+ConcreteBLESensor<ContextT>::ConcreteBLESensor(ContextT& ctx, 
+    BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
   : mImpl(std::make_unique<Impl>(ctx,bluetoothStateManager,payloadDataSupplier))
 {
   ;
 }
 
-ConcreteBLESensor::~ConcreteBLESensor()
+template <typename ContextT>
+ConcreteBLESensor<ContextT>::~ConcreteBLESensor()
 {
   ;
 }
 
+template <typename ContextT>
 std::optional<std::shared_ptr<CoordinationProvider>>
-ConcreteBLESensor::coordinationProvider()
+ConcreteBLESensor<ContextT>::coordinationProvider()
 {
   // Only return this if we support scanning
   if (BLESensorConfiguration::scanningEnabled) {
@@ -98,21 +104,24 @@ ConcreteBLESensor::coordinationProvider()
   return {};
 }
 
+template <typename ContextT>
 bool
-ConcreteBLESensor::immediateSend(Data data, const TargetIdentifier& targetIdentifier)
+ConcreteBLESensor<ContextT>::immediateSend(Data data, const TargetIdentifier& targetIdentifier)
 {
   return mImpl->receiver->immediateSend(data,targetIdentifier);
 }
 
+template <typename ContextT>
 bool
-ConcreteBLESensor::immediateSendAll(Data data)
+ConcreteBLESensor<ContextT>::immediateSendAll(Data data)
 {
   return mImpl->receiver->immediateSendAll(data);
 }
 
 // Sensor overrides
+template <typename ContextT>
 void
-ConcreteBLESensor::add(const std::shared_ptr<SensorDelegate>& delegate)
+ConcreteBLESensor<ContextT>::add(const std::shared_ptr<SensorDelegate>& delegate)
 {
   mImpl->delegates.push_back(delegate);
   // add all delegates to receiver and transmitter too?
@@ -121,11 +130,12 @@ ConcreteBLESensor::add(const std::shared_ptr<SensorDelegate>& delegate)
   // TODO what about duplicates?
 }
 
+template <typename ContextT>
 void
-ConcreteBLESensor::start()
+ConcreteBLESensor<ContextT>::start()
 {
   if (!mImpl->addedSelfAsDelegate) {
-    mImpl->stateManager->add(shared_from_this()); // FAILS IF USED IN THE CTOR - DO NOT DO THIS FROM CTOR
+    mImpl->stateManager.add(shared_from_this()); // FAILS IF USED IN THE CTOR - DO NOT DO THIS FROM CTOR
     mImpl->database->add(shared_from_this());
     mImpl->addedSelfAsDelegate = true;
   }
@@ -136,8 +146,9 @@ ConcreteBLESensor::start()
   }
 }
 
+template <typename ContextT>
 void
-ConcreteBLESensor::stop()
+ConcreteBLESensor<ContextT>::stop()
 {
   mImpl->transmitter->stop();
   mImpl->receiver->stop();
@@ -146,17 +157,19 @@ ConcreteBLESensor::stop()
   }
 }
 
+template <typename ContextT>
 // Database overrides
 void
-ConcreteBLESensor::bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device)
+ConcreteBLESensor<ContextT>::bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device)
 {
   for (auto& delegate : mImpl->delegates) {
     delegate->sensor(SensorType::BLE, device->identifier()); // didDetect
   }
 }
 
+template <typename ContextT>
 void
-ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, 
+ConcreteBLESensor<ContextT>::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, 
   const BLEDeviceAttribute attribute)
 {
   switch (attribute) {
@@ -216,15 +229,17 @@ ConcreteBLESensor::bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device
   }
 }
 
+template <typename ContextT>
 void
-ConcreteBLESensor::bleDatabaseDidDelete(const std::shared_ptr<BLEDevice>& device)
+ConcreteBLESensor<ContextT>::bleDatabaseDidDelete(const std::shared_ptr<BLEDevice>& device)
 {
   ; // TODO just log this // TODO determine if to pass this on too
 }
 
 // Bluetooth state manager delegate overrides
+template <typename ContextT>
 void
-ConcreteBLESensor::bluetoothStateManager(BluetoothState didUpdateState)
+ConcreteBLESensor<ContextT>::bluetoothStateManager(BluetoothState didUpdateState)
 {
   if (BluetoothState::poweredOff == didUpdateState) {
     // stop();

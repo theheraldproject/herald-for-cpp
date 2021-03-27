@@ -37,6 +37,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/data/contact_log.h
   ${HERALD_BASE}/include/herald/data/payload_data_formatter.h
   ${HERALD_BASE}/include/herald/data/sensor_logger.h
+  ${HERALD_BASE}/include/herald/data/stdout_logging_sink.h
   ${HERALD_BASE}/include/herald/datatype/base64_string.h 
   ${HERALD_BASE}/include/herald/datatype/bluetooth_state.h
   ${HERALD_BASE}/include/herald/datatype/data.h
@@ -78,7 +79,11 @@ set(HERALD_HEADERS
 
 )
 set(HERALD_HEADERS_ZEPHYR 
+  ${HERALD_BASE}/include/herald/data/zephyr/zephyr_logging_sink.h
   ${HERALD_BASE}/include/herald/zephyr_context.h
+)
+set(HERALD_HEADERS_WINDOWS
+
 )
 set(HERALD_SOURCES
   ${HERALD_BASE}/src/ble/ble_mac_address.cpp
@@ -90,8 +95,8 @@ set(HERALD_SOURCES
   ${HERALD_BASE}/src/ble/filter/ble_advert_parser.cpp
   ${HERALD_BASE}/src/ble/filter/ble_advert_types.cpp
   ${HERALD_BASE}/src/data/concrete_payload_data_formatter.cpp
-  ${HERALD_BASE}/src/data/contact_log.cpp
   ${HERALD_BASE}/src/data/sensor_logger.cpp
+  ${HERALD_BASE}/src/data/stdout_logging_sink.cpp
 	${HERALD_BASE}/src/datatype/base64_string.cpp
 	${HERALD_BASE}/src/datatype/data.cpp
 	${HERALD_BASE}/src/datatype/date.cpp
@@ -115,11 +120,12 @@ set(HERALD_SOURCES
 	${HERALD_BASE}/src/payload/simple/simple_payload_data_supplier.cpp
 	${HERALD_BASE}/src/payload/extended/extended_data.cpp
   ${HERALD_BASE}/src/default_sensor_delegate.cpp
-  ${HERALD_BASE}/src/context.cpp
+  #${HERALD_BASE}/src/context.cpp
   ${HERALD_BASE}/src/sensor_array.cpp
 )
 set(HERALD_SOURCES_ZEPHYR
   ${HERALD_BASE}/src/ble/zephyr/concrete_ble_transmitter.cpp
+  ${HERALD_BASE}/src/data/zephyr/zephyr_logging_sink.cpp
   ${HERALD_BASE}/src/zephyr_context.cpp
 )
 set(HERALD_SOURCES_MBEDTLS

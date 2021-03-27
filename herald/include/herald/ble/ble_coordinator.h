@@ -18,9 +18,10 @@
 namespace herald {
 namespace ble {
 
+template <typename ContextT>
 class HeraldProtocolBLECoordinationProvider : public CoordinationProvider {
 public:
-  HeraldProtocolBLECoordinationProvider(std::shared_ptr<Context> ctx, std::shared_ptr<BLEDatabase> db, std::shared_ptr<HeraldProtocolV1Provider> provider);
+  HeraldProtocolBLECoordinationProvider(ContextT& ctx, std::shared_ptr<BLEDatabase> db, std::shared_ptr<HeraldProtocolV1Provider> provider);
   ~HeraldProtocolBLECoordinationProvider();
 
   // Overrides

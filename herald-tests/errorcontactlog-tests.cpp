@@ -2,6 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
+#include "test-templates.h"
+
 #include "catch.hpp"
 
 #include <string>
@@ -9,48 +11,60 @@
 
 #include "herald/herald.h"
 
-class DummyLogger : public herald::data::SensorLoggingSink {
-public:
-  DummyLogger(std::string sub,std::string cat) : subsystem(sub), category(cat), value() {}
-  ~DummyLogger() = default;
+// class LoggingSink {
+// public:
+//   LoggingSink() : subsystem(), category(), value() {}
+//   ~LoggingSink() = default;
 
-  void log(herald::data::SensorLoggerLevel level, std::string message) override {
-    // std::cout << "DummyLogger::log" << std::endl;
-    value = subsystem + "," + category + "," + message;
-  }
+//   void log(const std::string& sub,const std::string& cat,herald::data::SensorLoggerLevel level, std::string message) {
+//     // std::cout << "DummyLogger::log" << std::endl;
+//     value = sub + "," + cat + "," + message;
+//     subsystem = sub;
+//     category = cat;
+//   }
 
-  std::string subsystem;
-  std::string category;
-  std::string value;
-};
+//   std::string subsystem;
+//   std::string category;
+//   std::string value;
+// };
 
-class DummyContext : public herald::Context {
-public:
-  DummyContext() = default;
-  ~DummyContext() = default;
+// class DummyContext : public herald::BluetoothStateManager {
+// public:
+//   DummyContext() : sink() {};
+//   ~DummyContext() = default;
 
-  std::shared_ptr<herald::ble::BluetoothStateManager> getBluetoothStateManager() override { return nullptr;}
+//   herald::ble::BluetoothStateManager& getBluetoothStateManager() {
+//     return *this;
+//   }
 
-  std::shared_ptr<herald::data::SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, 
-    const std::string& categoryFor) override
-  {
-    // std::cout << "DummyContext::getLoggingSink" << std::endl;
-    lastLogger = std::make_shared<DummyLogger>(subsystemFor,categoryFor);
-    return lastLogger;
-  }
+//   LoggingSink& getLoggingSink()
+//   {
+//     return sink;
+//   }
 
-  std::shared_ptr<DummyLogger> lastLogger;
-};
+//   void add(std::shared_ptr<herald::BluetoothStateManagerDelegate> delegate) override {
+//     // ignore
+//   }
+
+//   herald::datatype::BluetoothState state() override {
+//     return herald::datatype::BluetoothState::poweredOn;
+//   }
+
+//   LoggingSink sink;
+// };
 
 TEST_CASE("errorcontactlogger-output-dbg", "[errorcontactlogger][output]") {
   SECTION("errorcontactlogger-output-dbg") {
-    std::shared_ptr<DummyContext> ctx = std::make_shared<DummyContext>();
+    DummyLoggingSink dls;
+    DummyBluetoothStateManager dbsm;
+    herald::Context ctx(dls,dbsm); // default context include
+    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
 
     // Create contact logger
     std::shared_ptr<herald::data::ConcretePayloadDataFormatter> pdf = 
       std::make_shared<herald::data::ConcretePayloadDataFormatter>();
-    std::shared_ptr<herald::data::ErrorStreamContactLogger> contacts = 
-      std::make_shared<herald::data::ErrorStreamContactLogger>(ctx, pdf);
+    std::shared_ptr<herald::data::ErrorStreamContactLogger<CT>> contacts = 
+      std::make_shared<herald::data::ErrorStreamContactLogger<CT>>(ctx, pdf);
 
     // test each method to check for output
     // didDetect
@@ -65,6 +79,6 @@ TEST_CASE("errorcontactlogger-output-dbg", "[errorcontactlogger][output]") {
     //  - Was due to SHARED LIBRARIES on Windows - need to add HERALD_LOG_LEVEL to
     //    TOP LEVEL CMakeLists.txt, not just herald-tests project.
 
-    REQUIRE(ctx->lastLogger->value.size() > 0);
+    REQUIRE(dls.value.size() > 0);
   }
 }

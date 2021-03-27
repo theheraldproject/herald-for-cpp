@@ -2,6 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
+#include "test-templates.h"
+
 #include "catch.hpp"
 
 #include "herald/herald.h"
@@ -235,8 +237,10 @@ TEST_CASE("payload-simple-contactid", "[payload][simple][contactid]") {
 
 TEST_CASE("payload-simple-basic", "[payload][simple][basic]") {
   SECTION("payload-simple-basic") {
-    std::shared_ptr<herald::DefaultContext> ctx = 
-      std::make_shared<herald::DefaultContext>();
+    DummyLoggingSink dls;
+    DummyBluetoothStateManager dbsm;
+    herald::Context ctx(dls,dbsm); // default context include
+    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     std::uint16_t country = 826;
     std::uint16_t state = 4;
     herald::payload::simple::K k;
@@ -272,8 +276,10 @@ TEST_CASE("payload-simple-basic", "[payload][simple][basic]") {
 
 TEST_CASE("payload-simple-payloadbounds", "[payload][simple][payloadbounds]") {
   SECTION("payload-simple-payloadbounds") {
-    std::shared_ptr<herald::DefaultContext> ctx = 
-      std::make_shared<herald::DefaultContext>();
+    DummyLoggingSink dls;
+    DummyBluetoothStateManager dbsm;
+    herald::Context ctx(dls,dbsm); // default context include
+    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
     std::uint16_t country = 826;
     std::uint16_t state = 4;
     herald::payload::simple::K k;

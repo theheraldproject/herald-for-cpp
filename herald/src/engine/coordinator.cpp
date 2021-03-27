@@ -21,22 +21,24 @@ namespace engine {
 
 using namespace herald::datatype;
 
-class Coordinator::Impl {
+template <typename ContextT>
+class Coordinator<ContextT>::Impl {
 public:
-  Impl(std::shared_ptr<Context> ctx);
+  Impl(ContextT& ctx);
   ~Impl();
 
-  std::shared_ptr<Context> context;
+  ContextT& context;
 
   std::vector<std::shared_ptr<CoordinationProvider>> providers;
   std::map<FeatureTag,std::shared_ptr<CoordinationProvider>> featureProviders;
 
   bool running;
 
-  HLOGGER;
+  HLOGGER(ContextT);
 };
 
-Coordinator::Impl::Impl(std::shared_ptr<Context> ctx)
+template <typename ContextT>
+Coordinator<ContextT>::Impl::Impl(ContextT& ctx)
   : context(ctx),
     providers(),
     running(false)
@@ -45,7 +47,8 @@ Coordinator::Impl::Impl(std::shared_ptr<Context> ctx)
   ;
 }
 
-Coordinator::Impl::~Impl()
+template <typename ContextT>
+Coordinator<ContextT>::Impl::~Impl()
 {
   ;
 }
@@ -53,21 +56,24 @@ Coordinator::Impl::~Impl()
 
 
 
-Coordinator::Coordinator(std::shared_ptr<Context> ctx)
+template <typename ContextT>
+Coordinator<ContextT>::Coordinator(ContextT& ctx)
   : mImpl(std::make_unique<Impl>(ctx))
 {
   ;
 }
 
-Coordinator::~Coordinator()
+template <typename ContextT>
+Coordinator<ContextT>::~Coordinator()
 {
   ;
 }
 
 
 /** Introspect and include in iteration planning **/
+template <typename ContextT>
 void
-Coordinator::add(std::shared_ptr<Sensor> sensor)
+Coordinator<ContextT>::add(std::shared_ptr<Sensor> sensor)
 {
   HDBG("Adding sensor");
   auto prov = sensor->coordinationProvider();
@@ -78,15 +84,17 @@ Coordinator::add(std::shared_ptr<Sensor> sensor)
 }
 
 /** Remove from iteration planning **/
+template <typename ContextT>
 void
-Coordinator::remove(std::shared_ptr<Sensor> sensor)
+Coordinator<ContextT>::remove(std::shared_ptr<Sensor> sensor)
 {
   // TODO support remove
 }
 
 /** Prepares for iterations to be called (may pre-emptively make calls) **/
+template <typename ContextT>
 void
-Coordinator::start()
+Coordinator<ContextT>::start()
 {
   HDBG("Start called");
   // Clear feature providers
@@ -103,8 +111,9 @@ Coordinator::start()
 }
 
 /** Execute an iteration of activity, according to settings **/
+template <typename ContextT>
 void
-Coordinator::iteration()
+Coordinator<ContextT>::iteration()
 {
   if (!mImpl->running) {
     HDBG("Coordinator not running. Returning from iteration having done nothing.");
@@ -220,8 +229,9 @@ Coordinator::iteration()
 }
 
 /** Closes out any existing connections/activities **/
+template <typename ContextT>
 void
-Coordinator::stop()
+Coordinator<ContextT>::stop()
 {
   mImpl->running = false;
   // No-op - done in other methods (for now)

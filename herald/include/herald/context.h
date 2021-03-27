@@ -5,21 +5,7 @@
 #ifndef HERALD_CONTEXT_H
 #define HERALD_CONTEXT_H
 
-#include "ble/bluetooth_state_manager.h"
-
-#include <iosfwd>
-#include <string>
-#include <memory>
-
 namespace herald {
-
-using namespace herald::ble;
-
-namespace data {
-class SensorLoggingSink; // fwd decl
-}
-
-using namespace herald::data;
 
 ///
 /// \brief High level abstraction to access platform-specific implemented primitives.
@@ -28,26 +14,75 @@ using namespace herald::data;
 /// doesn't map well on to C++ idioms. This class provides an extension capability
 /// to allow this linking.
 ///
-class Context {
-public:
-  Context() = default;
-  virtual ~Context() = default;
+// class Context {
+// public:
+//   Context() = default;
+//   ~Context() = default;
 
-  virtual std::shared_ptr<SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor) = 0;
-  virtual std::shared_ptr<BluetoothStateManager> getBluetoothStateManager() = 0;
-};
+//   template <typename SinkT>
+//   SensorLogger<SinkT,std::string,std::string> getLogger(const std::string& subsystemFor, const std::string& categoryFor);
+//   // virtual std::shared_ptr<SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor) = 0;
+//   BluetoothStateManager getBluetoothStateManager();
+// };
+
+//class Context; // fwd decl only here
+
 
 ///
 /// \brief Default context that just sends logging to stdout
 ///
-class DefaultContext : public Context {
-public:
-  DefaultContext() = default;
-  ~DefaultContext() = default;
+// class DefaultContext : public Context {
+// public:
+//   DefaultContext() = default;
+//   ~DefaultContext() = default;
 
-  std::shared_ptr<BluetoothStateManager> getBluetoothStateManager() override;
+//   std::shared_ptr<BluetoothStateManager> getBluetoothStateManager() override;
 
-  std::shared_ptr<SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor) override;
+//   std::shared_ptr<SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor) override;
+// };
+
+
+/// \brief Compile-time Context class, customisable via template traits. Provides generic access to OS system features.
+/// 
+/// Covers all cross-cutting concerns methods and helpers to prevent tight coupling between components
+/// Currently hard-coded to include Bluetooth relevant radio, but this should be abstracted in future to
+/// compile out if Bluetooth support is not needed
+template <typename LoggingSinkT,
+          typename BluetoothStateManagerT
+         >
+struct Context {
+  using logging_sink_type = LoggingSinkT;
+
+  Context(LoggingSinkT& sink,BluetoothStateManagerT& bsm) noexcept
+    : loggingSink(sink), bleStateManager(bsm) {}
+  Context(const Context& other) noexcept
+    : loggingSink(other.loggingSink), bleStateManager(other.bleStateManager)
+  {}
+  // Context(Context&& other)
+  //   : loggingSink(std::move(other.loggingSink)), bleStateManager(std::move(other.bleStateManager))
+  // {}
+  ~Context() = default;
+
+  
+  Context& operator=(Context& other) noexcept {
+    loggingSink = other.loggingSink;
+    bleStateManager = other.bleStateManager;
+    return *this;
+  }
+  
+  // \brief Returns a reference to this OS'/runtimes implementation of the LoggingSink
+  LoggingSinkT& getLoggingSink() {
+    return loggingSink;
+  }
+
+  // \brief Returns a reference to this OS'/runtimes implemetation of the Bluetooth State Manager
+  BluetoothStateManagerT& getBluetoothStateManager() {
+    return bleStateManager;
+  }
+
+private:
+  LoggingSinkT& loggingSink;
+  BluetoothStateManagerT& bleStateManager;
 };
 
 } // end namespace
