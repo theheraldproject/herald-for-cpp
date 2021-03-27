@@ -135,47 +135,47 @@ namespace {
         return;
       }
       os << c;
-      pos++;
+      ++pos;
     }
   }
  
-  // template<typename... Targs>
-  // void tprintf(std::stringstream& os, const std::string& format, std::uint8_t value, Targs... Fargs) // recursive variadic function
-  // {
-  //   std::size_t pos = 0;
-  //   for ( auto c : format ) {
-  //     if ( c == '{' ) {
-  //       os << std::uint16_t(value);
-  //       if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
-  //         tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
-  //       } else {
-  //         tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
-  //       }
-  //       return;
-  //     }
-  //     os << c;
-  //     pos++;
-  //   }
-  // }
+  template<typename... Targs>
+  void tprintf(std::stringstream& os, const std::string& format, std::uint8_t value, Targs... Fargs) // recursive variadic function
+  {
+    std::size_t pos = 0;
+    for ( auto c : format ) {
+      if ( c == '{' ) {
+        os << std::uint16_t(value);
+        if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
+          tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
+        } else {
+          tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
+        }
+        return;
+      }
+      os << c;
+      ++pos;
+    }
+  }
  
-  // template<typename... Targs>
-  // void tprintf(std::stringstream& os, const std::string& format, std::int8_t value, Targs... Fargs) // recursive variadic function
-  // {
-  //   std::size_t pos = 0;
-  //   for ( auto c : format ) {
-  //     if ( c == '{' ) {
-  //       os << std::int16_t(value);
-  //       if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
-  //         tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
-  //       } else {
-  //         tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
-  //       }
-  //       return;
-  //     }
-  //     os << c;
-  //     pos++;
-  //   }
-  // }
+  template<typename... Targs>
+  void tprintf(std::stringstream& os, const std::string& format, std::int8_t value, Targs... Fargs) // recursive variadic function
+  {
+    std::size_t pos = 0;
+    for ( auto c : format ) {
+      if ( c == '{' ) {
+        os << std::int16_t(value);
+        if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
+          tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
+        } else {
+          tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
+        }
+        return;
+      }
+      os << c;
+      ++pos;
+    }
+  }
  
   // template<typename... Targs>
   // void tprintf(std::stringstream& os, const std::string& format, const std::string& value, Targs... Fargs) // recursive variadic function
@@ -205,10 +205,15 @@ namespace {
     for ( auto c : format ) {
       if ( c == '{' ) {
         os << value;
+        if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
+          tprintf(os, format.substr(pos + 2)); // recursive call
+        } else {
+          tprintf(os, format.substr(pos + 1)); // recursive call
+        }
         return;
       }
       os << c;
-      pos++;
+      ++pos;
     }
   }
 
@@ -227,7 +232,7 @@ namespace {
         return;
       }
       os << c;
-      pos++;
+      ++pos;
     }
   }
 

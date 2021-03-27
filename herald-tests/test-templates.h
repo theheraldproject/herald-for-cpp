@@ -7,13 +7,15 @@
 
 #include "herald/herald.h"
 
+#include <iostream>
+
 struct DummyLoggingSink {
   DummyLoggingSink() : subsystem(), category(), value() {}
   ~DummyLoggingSink() = default;
 
   void log(const std::string& sub,const std::string& cat,herald::data::SensorLoggerLevel level, std::string message) {
-    // std::cout << "DummyLogger::log" << std::endl;
     value = sub + "," + cat + "," + message;
+    std::cout << "DummyLoggingSink::log: " << value << std::endl;
     subsystem = sub;
     category = cat;
   }
