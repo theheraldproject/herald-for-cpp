@@ -95,7 +95,7 @@ ZephyrContextProvider::ZephyrContextProvider()
   ;
 }
 
-ZephyrContextProvider::~Context() = default;
+ZephyrContextProvider::~ZephyrContextProvider() = default;
 
 ZephyrLoggingSink&
 ZephyrContextProvider::getLoggingSink()
@@ -106,7 +106,7 @@ ZephyrContextProvider::getLoggingSink()
 BluetoothStateManager&
 ZephyrContextProvider::getBluetoothStateManager()
 {
-  return *this
+  return *this;
 }
 
 void

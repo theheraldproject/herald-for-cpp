@@ -21,6 +21,9 @@
 
 #ifdef __ZEPHYR__
 #include "herald/zephyr_context.h"
+#include "herald/data/zephyr/zephyr_logging_sink.h"
+#include "herald/ble/zephyr/concrete_ble_transmitter.h"
+#include "herald/ble/zephyr/concrete_ble_receiver.h"
 #endif
 
 // Datatype namespace
@@ -53,6 +56,7 @@
 #include "herald/data/contact_log.h"
 #include "herald/data/payload_data_formatter.h"
 #include "herald/data/sensor_logger.h"
+#include "herald/data/stdout_logging_sink.h"
 
 // engine namespace
 #include "herald/engine/activities.h"
@@ -78,6 +82,7 @@
 #include "herald/ble/filter/ble_advert_parser.h"
 
 #include "herald/ble/ble_concrete.h"
+#include "herald/ble/ble_concrete_database.h"
 
 // analysis namespace
 #include "herald/analysis/aggregates.h"

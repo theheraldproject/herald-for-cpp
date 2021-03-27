@@ -333,9 +333,10 @@ namespace zephyrinternal {
 }
 
 
-class ConcreteBLEReceiver::Impl : public herald::zephyrinternal::Callbacks {
+template <typename ContextT>
+class ConcreteBLEReceiver<ContextT>::Impl : public herald::zephyrinternal::Callbacks {
 public:
-  Impl(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+  Impl(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, 
     std::shared_ptr<BLEDatabase> bleDatabase);
   ~Impl();
@@ -368,8 +369,8 @@ public:
   void stopScanning();
   void gatt_discover(struct bt_conn *conn);
       
-  std::shared_ptr<ZephyrContext> m_context;
-  std::shared_ptr<BluetoothStateManager> m_stateManager;
+  ContextT& m_context;
+  BluetoothStateManager& m_stateManager;
   std::shared_ptr<PayloadDataSupplier> m_pds;
   std::shared_ptr<BLEDatabase> db;
 
@@ -378,13 +379,14 @@ public:
   std::map<TargetIdentifier,ConnectedDeviceState> connectionStates;
   bool isScanning;
 
-  HLOGGER;
+  HLOGGER(ContextT);
 };
 
-ConcreteBLEReceiver::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+template <typename ContextT>
+ConcreteBLEReceiver<ContextT>::Impl::Impl(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
   std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, 
   std::shared_ptr<BLEDatabase> bleDatabase)
-  : m_context(std::static_pointer_cast<ZephyrContext>(ctx)), // Herald API guarantees this to be safe
+  : m_context(ctx), // Herald API guarantees this to be safe
     m_stateManager(bluetoothStateManager),
     m_pds(payloadDataSupplier),
     db(bleDatabase),
@@ -396,7 +398,8 @@ ConcreteBLEReceiver::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<Bl
   ;
 }
 
-ConcreteBLEReceiver::Impl::~Impl()
+template <typename ContextT>
+ConcreteBLEReceiver<ContextT>::Impl::~Impl()
 {
   ;
 }
@@ -424,8 +427,9 @@ ConcreteBLEReceiver::Impl::~Impl()
 //   return {};
 // }
 
+template <typename ContextT>
 ConnectedDeviceState&
-ConcreteBLEReceiver::Impl::findOrCreateState(const TargetIdentifier& forTarget)
+ConcreteBLEReceiver<ContextT>::Impl::findOrCreateState(const TargetIdentifier& forTarget)
 {
   auto iter = connectionStates.find(forTarget);
   if (connectionStates.end() != iter) {
@@ -435,8 +439,9 @@ ConcreteBLEReceiver::Impl::findOrCreateState(const TargetIdentifier& forTarget)
   // return connectionStates.find(forTarget)->second;
 }
 
+template <typename ContextT>
 ConnectedDeviceState&
-ConcreteBLEReceiver::Impl::findOrCreateStateByConnection(struct bt_conn *conn, bool remoteInstigated)
+ConcreteBLEReceiver<ContextT>::Impl::findOrCreateStateByConnection(struct bt_conn *conn, bool remoteInstigated)
 {
   for (auto& [key, value] : connectionStates) {
     if (value.connection == conn) {
@@ -453,8 +458,9 @@ ConcreteBLEReceiver::Impl::findOrCreateStateByConnection(struct bt_conn *conn, b
   return result.first->second;
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::Impl::removeState(const TargetIdentifier& forTarget)
+ConcreteBLEReceiver<ContextT>::Impl::removeState(const TargetIdentifier& forTarget)
 {
   auto iter = connectionStates.find(forTarget);
   if (connectionStates.end() != iter) {
@@ -462,8 +468,9 @@ ConcreteBLEReceiver::Impl::removeState(const TargetIdentifier& forTarget)
   }
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::Impl::stopScanning()
+ConcreteBLEReceiver<ContextT>::Impl::stopScanning()
 {
   if (isScanning) {
     isScanning = false;
@@ -471,8 +478,9 @@ ConcreteBLEReceiver::Impl::stopScanning()
   }
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::Impl::startScanning()
+ConcreteBLEReceiver<ContextT>::Impl::startScanning()
 {
   if (isScanning) {
     return;
@@ -486,8 +494,9 @@ ConcreteBLEReceiver::Impl::startScanning()
   isScanning = true;
 }
   
+template <typename ContextT>
 void
-ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
+ConcreteBLEReceiver<ContextT>::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
   struct net_buf_simple *buf)
 {  
   // identify device by both MAC and potential pseudoDeviceAddress
@@ -514,8 +523,9 @@ ConcreteBLEReceiver::Impl::scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_
   device->rssi(RSSI(rssi));
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::Impl::gatt_discover(struct bt_conn *conn)
+ConcreteBLEReceiver<ContextT>::Impl::gatt_discover(struct bt_conn *conn)
 {
   HTDBG("Attempting GATT service discovery");
   int err;
@@ -531,15 +541,17 @@ ConcreteBLEReceiver::Impl::gatt_discover(struct bt_conn *conn)
   HTDBG("Service discovery succeeded... now do something with it in the callback!");
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::Impl::le_param_updated(struct bt_conn *conn, uint16_t interval,
+ConcreteBLEReceiver<ContextT>::Impl::le_param_updated(struct bt_conn *conn, uint16_t interval,
             uint16_t latency, uint16_t timeout)
 {
   HTDBG("le param updated called");
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::Impl::connected(struct bt_conn *conn, uint8_t err)
+ConcreteBLEReceiver<ContextT>::Impl::connected(struct bt_conn *conn, uint8_t err)
 {
   HTDBG("**************** Zephyr connection callback. Mac of connected:");
 
@@ -589,8 +601,9 @@ ConcreteBLEReceiver::Impl::connected(struct bt_conn *conn, uint8_t err)
 
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::Impl::disconnected(struct bt_conn *conn, uint8_t reason)
+ConcreteBLEReceiver<ContextT>::Impl::disconnected(struct bt_conn *conn, uint8_t reason)
 {
   HTDBG("********** Zephyr disconnection callback. Mac of disconnected:");
 
@@ -623,8 +636,9 @@ ConcreteBLEReceiver::Impl::disconnected(struct bt_conn *conn, uint8_t reason)
 
 // Discovery callbacks
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
+ConcreteBLEReceiver<ContextT>::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
 				   void *context)
 {
 	HTDBG("The GATT discovery procedure succeeded");
@@ -704,8 +718,9 @@ ConcreteBLEReceiver::Impl::discovery_completed_cb(struct bt_gatt_dm *dm,
   device->services(serviceList);
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::Impl::discovery_service_not_found_cb(struct bt_conn *conn,
+ConcreteBLEReceiver<ContextT>::Impl::discovery_service_not_found_cb(struct bt_conn *conn,
 					   void *context)
 {
 	HTDBG("The service could not be found during the discovery. Ignoring device:");
@@ -718,8 +733,9 @@ ConcreteBLEReceiver::Impl::discovery_service_not_found_cb(struct bt_conn *conn,
   device->ignore(true);
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::Impl::discovery_error_found_cb(struct bt_conn *conn,
+ConcreteBLEReceiver<ContextT>::Impl::discovery_error_found_cb(struct bt_conn *conn,
 				     int err,
 				     void *context)
 {
@@ -728,27 +744,27 @@ ConcreteBLEReceiver::Impl::discovery_error_found_cb(struct bt_conn *conn,
   // TODO decide if we should ignore the device here, or just keep trying
 }
 
+template <typename ContextT>
 uint8_t
-ConcreteBLEReceiver::Impl::gatt_read_cb(struct bt_conn *conn, uint8_t err,
+ConcreteBLEReceiver<ContextT>::Impl::gatt_read_cb(struct bt_conn *conn, uint8_t err,
               struct bt_gatt_read_params *params,
               const void *data, uint16_t length)
-  {
-    // Fetch state for this element
-    ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
-    if (NULL == data) {
-      HTDBG("Finished reading CHAR read payload:-");
-      HTDBG(state.readPayload.hexEncodedString());
-      
-      // Set final read payload (triggers success callback on observer)
-      db->device(state.target)->payloadData(state.readPayload);
+{
+  // Fetch state for this element
+  ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
+  if (NULL == data) {
+    HTDBG("Finished reading CHAR read payload:-");
+    HTDBG(state.readPayload.hexEncodedString());
+    
+    // Set final read payload (triggers success callback on observer)
+    db->device(state.target)->payloadData(state.readPayload);
 
-      return 0;
-    }
-
-    state.readPayload.append((const uint8_t*)data,0,length);
-    return length;
+    return 0;
   }
 
+  state.readPayload.append((const uint8_t*)data,0,length);
+  return length;
+}
 
 
 
@@ -756,32 +772,38 @@ ConcreteBLEReceiver::Impl::gatt_read_cb(struct bt_conn *conn, uint8_t err,
 
 
 
-ConcreteBLEReceiver::ConcreteBLEReceiver(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+
+template <typename ContextT>
+ConcreteBLEReceiver<ContextT>::ConcreteBLEReceiver(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
   std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase)
   : mImpl(std::make_shared<Impl>(ctx,bluetoothStateManager,payloadDataSupplier,bleDatabase))
 {
   ;
 }
 
-ConcreteBLEReceiver::~ConcreteBLEReceiver()
+template <typename ContextT>
+ConcreteBLEReceiver<ContextT>::~ConcreteBLEReceiver()
 {
   ;
 }
 
+template <typename ContextT>
 std::optional<std::shared_ptr<CoordinationProvider>>
-ConcreteBLEReceiver::coordinationProvider()
+ConcreteBLEReceiver<ContextT>::coordinationProvider()
 {
   return {}; // we don't provide this, ConcreteBLESensor provides this. We provide HeraldV1ProtocolProvider
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::add(const std::shared_ptr<SensorDelegate>& delegate)
+ConcreteBLEReceiver<ContextT>::add(const std::shared_ptr<SensorDelegate>& delegate)
 {
   mImpl->delegates.push_back(delegate);
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::start()
+ConcreteBLEReceiver<ContextT>::start()
 {
   HDBG("ConcreteBLEReceiver::start");
   if (!BLESensorConfiguration::scanningEnabled) {
@@ -810,8 +832,9 @@ ConcreteBLEReceiver::start()
   HDBG("ConcreteBLEReceiver::start completed successfully");
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::stop()
+ConcreteBLEReceiver<ContextT>::stop()
 {
   HDBG("ConcreteBLEReceiver::stop");
   if (!BLESensorConfiguration::scanningEnabled) {
@@ -829,14 +852,16 @@ ConcreteBLEReceiver::stop()
 }
 
 
+template <typename ContextT>
 bool
-ConcreteBLEReceiver::immediateSend(Data data, const TargetIdentifier& targetIdentifier)
+ConcreteBLEReceiver<ContextT>::immediateSend(Data data, const TargetIdentifier& targetIdentifier)
 {
   return false; // TODO implement this
 }
 
+template <typename ContextT>
 bool
-ConcreteBLEReceiver::immediateSendAll(Data data)
+ConcreteBLEReceiver<ContextT>::immediateSendAll(Data data)
 {
   return false; // TODO implement this
 }
@@ -847,8 +872,9 @@ ConcreteBLEReceiver::immediateSendAll(Data data)
 // void
 // ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget, const HeraldConnectionCallback& connCallback)
 // {
+template <typename ContextT>
 bool
-ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
+ConcreteBLEReceiver<ContextT>::openConnection(const TargetIdentifier& toTarget)
 {
   HDBG("openConnection");
 
@@ -1060,8 +1086,9 @@ ConcreteBLEReceiver::openConnection(const TargetIdentifier& toTarget)
 //   callback(activity,{});
 // }
 
+template <typename ContextT>
 bool
-ConcreteBLEReceiver::closeConnection(const TargetIdentifier& toTarget)
+ConcreteBLEReceiver<ContextT>::closeConnection(const TargetIdentifier& toTarget)
 {
   HDBG("closeConnection call for ADDR:-");
   ConnectedDeviceState& state = mImpl->findOrCreateState(toTarget);
@@ -1087,8 +1114,9 @@ ConcreteBLEReceiver::closeConnection(const TargetIdentifier& toTarget)
   return true; // remote instigated the connection - keep it open and inform caller
 }
 
+template <typename ContextT>
 void
-ConcreteBLEReceiver::restartScanningAndAdvertising()
+ConcreteBLEReceiver<ContextT>::restartScanningAndAdvertising()
 {
   // Print out current list of devices and their info
   if (!mImpl->connectionStates.empty()) {
@@ -1147,8 +1175,9 @@ ConcreteBLEReceiver::restartScanningAndAdvertising()
   mImpl->m_context->getAdvertiser().startAdvertising();
 }
 
+template <typename ContextT>
 std::optional<Activity>
-ConcreteBLEReceiver::serviceDiscovery(Activity activity)
+ConcreteBLEReceiver<ContextT>::serviceDiscovery(Activity activity)
 {
   auto currentTargetOpt = std::get<1>(activity.prerequisites.front());
   if (!currentTargetOpt.has_value()) {
@@ -1181,20 +1210,23 @@ ConcreteBLEReceiver::serviceDiscovery(Activity activity)
   return {};
 }
 
+template <typename ContextT>
 std::optional<Activity>
-ConcreteBLEReceiver::readPayload(Activity activity)
+ConcreteBLEReceiver<ContextT>::readPayload(Activity activity)
 {
   return {};
 }
 
+template <typename ContextT>
 std::optional<Activity>
-ConcreteBLEReceiver::immediateSend(Activity activity)
+ConcreteBLEReceiver<ContextT>::immediateSend(Activity activity)
 {
   return {};
 }
 
+template <typename ContextT>
 std::optional<Activity>
-ConcreteBLEReceiver::immediateSendAll(Activity activity)
+ConcreteBLEReceiver<ContextT>::immediateSendAll(Activity activity)
 {
   return {};
 }

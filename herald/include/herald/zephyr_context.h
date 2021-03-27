@@ -13,6 +13,7 @@
   #define CONFIG_HERALD_LOG_LEVEL 0
 #endif
 
+#include "data/zephyr/zephyr_logging_sink.h"
 #include "data/sensor_logger.h"
 
 #include <memory>
@@ -28,6 +29,7 @@
 namespace herald {
 
 using namespace herald::ble;
+using namespace herald::data;
 
 /// \brief Internal zephyr namespace DO NOT USE - API MAY CHANGE WITHOUT WARNING
 namespace zephyrinternal {
