@@ -31,10 +31,11 @@ using namespace payload;
 /// available on each platform. In Zephyr RTOS, for example,
 /// This is a simple 250ms delay within a special Herald-only
 /// Zephyr kernel thread.
+template <typename ContextT>
 class SensorArray : public Sensor {
 public:
   /// \brief Takes ownership of payloadDataSupplier (std::move)
-  SensorArray(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
+  SensorArray(ContextT& ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
   ~SensorArray();
 
   // SENSOR ARRAY METHODS

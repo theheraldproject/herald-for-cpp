@@ -32,21 +32,23 @@ struct last_updated_descending {
 
 
 
-class ConcreteBLEDatabase::Impl {
+template <typename ContextT>
+class ConcreteBLEDatabase<ContextT>::Impl {
 public:
-  Impl(std::shared_ptr<Context> context);
+  Impl(ContextT& context);
   ~Impl();
 
   void assignAdvertData(std::shared_ptr<BLEDevice>& newDevice, std::vector<BLEAdvertSegment>&& toMove, const std::vector<BLEAdvertManufacturerData>& manuData);
 
-  std::shared_ptr<Context> ctx;
+  ContextT& ctx;
   std::vector<std::shared_ptr<BLEDatabaseDelegate>> delegates;
   std::vector<std::shared_ptr<BLEDevice>> devices;
 
-  HLOGGER;
+  HLOGGER(ContextT);
 };
 
-ConcreteBLEDatabase::Impl::Impl(std::shared_ptr<Context> context) 
+template <typename ContextT>
+ConcreteBLEDatabase<ContextT>::Impl::Impl(ContextT& context) 
   : ctx(context),
     delegates(),
     devices()
@@ -55,13 +57,15 @@ ConcreteBLEDatabase::Impl::Impl(std::shared_ptr<Context> context)
   ;
 }
 
-ConcreteBLEDatabase::Impl::~Impl()
+template <typename ContextT>
+ConcreteBLEDatabase<ContextT>::Impl::~Impl()
 {
   ;
 }
 
+template <typename ContextT>
 void
-ConcreteBLEDatabase::Impl::assignAdvertData(std::shared_ptr<BLEDevice>& newDevice, std::vector<BLEAdvertSegment>&& toMove, const std::vector<BLEAdvertManufacturerData>& manuData)
+ConcreteBLEDatabase<ContextT>::Impl::assignAdvertData(std::shared_ptr<BLEDevice>& newDevice, std::vector<BLEAdvertSegment>&& toMove, const std::vector<BLEAdvertManufacturerData>& manuData)
 {
   newDevice->advertData(std::move(toMove));
 
@@ -132,27 +136,31 @@ ConcreteBLEDatabase::Impl::assignAdvertData(std::shared_ptr<BLEDevice>& newDevic
 
 
 
-ConcreteBLEDatabase::ConcreteBLEDatabase(std::shared_ptr<Context> context)
+template <typename ContextT>
+ConcreteBLEDatabase<ContextT>::ConcreteBLEDatabase(ContextT& context)
   : mImpl(std::make_unique<Impl>(context))
 {
   ;
 }
 
-ConcreteBLEDatabase::~ConcreteBLEDatabase()
+template <typename ContextT>
+ConcreteBLEDatabase<ContextT>::~ConcreteBLEDatabase()
 {
   ;
 }
 
 // BLE Database overrides
 
+template <typename ContextT>
 void
-ConcreteBLEDatabase::add(const std::shared_ptr<BLEDatabaseDelegate>& delegate)
+ConcreteBLEDatabase<ContextT>::add(const std::shared_ptr<BLEDatabaseDelegate>& delegate)
 {
   mImpl->delegates.push_back(delegate);
 }
 
+template <typename ContextT>
 std::shared_ptr<BLEDevice>
-ConcreteBLEDatabase::device(const PayloadData& payloadData)
+ConcreteBLEDatabase<ContextT>::device(const PayloadData& payloadData)
 {
   auto results = matches([&payloadData](const std::shared_ptr<BLEDevice>& d) {
     auto payload = d->payloadData();
@@ -174,8 +182,9 @@ ConcreteBLEDatabase::device(const PayloadData& payloadData)
 }
 
 
+template <typename ContextT>
 std::shared_ptr<BLEDevice>
-ConcreteBLEDatabase::device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/)
+ConcreteBLEDatabase<ContextT>::device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/)
 {
   // Check by MAC first
   TargetIdentifier targetIdentifier((Data)mac);
@@ -242,8 +251,9 @@ ConcreteBLEDatabase::device(const BLEMacAddress& mac, const Data& advert/*, cons
   return newDevice;
 }
 
+template <typename ContextT>
 std::shared_ptr<BLEDevice>
-ConcreteBLEDatabase::device(const BLEMacAddress& mac, const BLEMacAddress& pseudo)
+ConcreteBLEDatabase<ContextT>::device(const BLEMacAddress& mac, const BLEMacAddress& pseudo)
 {
   auto samePseudo = matches([&pseudo](const std::shared_ptr<BLEDevice>& d) {
     return d->pseudoDeviceAddress() == pseudo;
@@ -276,14 +286,16 @@ ConcreteBLEDatabase::device(const BLEMacAddress& mac, const BLEMacAddress& pseud
   return newDevice;
 }
 
+template <typename ContextT>
 std::shared_ptr<BLEDevice>
-ConcreteBLEDatabase::device(const BLEMacAddress& mac)
+ConcreteBLEDatabase<ContextT>::device(const BLEMacAddress& mac)
 {
   return device(TargetIdentifier((Data)mac));
 }
 
+template <typename ContextT>
 std::shared_ptr<BLEDevice>
-ConcreteBLEDatabase::device(const TargetIdentifier& targetIdentifier)
+ConcreteBLEDatabase<ContextT>::device(const TargetIdentifier& targetIdentifier)
 {
   auto results = matches([&targetIdentifier](const std::shared_ptr<BLEDevice>& d) {
     return d->identifier() == targetIdentifier;
@@ -301,14 +313,16 @@ ConcreteBLEDatabase::device(const TargetIdentifier& targetIdentifier)
   return newDevice;
 }
 
+template <typename ContextT>
 std::size_t
-ConcreteBLEDatabase::size() const
+ConcreteBLEDatabase<ContextT>::size() const
 {
   return mImpl->devices.size();
 }
 
+template <typename ContextT>
 std::vector<std::shared_ptr<BLEDevice>>
-ConcreteBLEDatabase::matches(
+ConcreteBLEDatabase<ContextT>::matches(
   const std::function<bool(std::shared_ptr<BLEDevice>&)>& matcher) const
 {
   std::vector<std::shared_ptr<BLEDevice>> results;
@@ -322,8 +336,9 @@ ConcreteBLEDatabase::matches(
 }
 
 /// Cannot name a function delete in C++. remove is common.
+template <typename ContextT>
 void
-ConcreteBLEDatabase::remove(const TargetIdentifier& targetIdentifier)
+ConcreteBLEDatabase<ContextT>::remove(const TargetIdentifier& targetIdentifier)
 {
   auto found = std::find_if(mImpl->devices.begin(),mImpl->devices.end(),
     [&targetIdentifier](std::shared_ptr<BLEDevice>& d) -> bool {
@@ -340,8 +355,9 @@ ConcreteBLEDatabase::remove(const TargetIdentifier& targetIdentifier)
 }
 
 // BLE Device Delegate overrides
+template <typename ContextT>
 void
-ConcreteBLEDatabase::device(const std::shared_ptr<BLEDevice>& device, const BLEDeviceAttribute didUpdate)
+ConcreteBLEDatabase<ContextT>::device(const std::shared_ptr<BLEDevice>& device, const BLEDeviceAttribute didUpdate)
 {
   // TODO update any internal DB state as necessary (E.g. deletion)
   for (auto& delegate : mImpl->delegates) {

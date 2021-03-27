@@ -30,10 +30,11 @@ namespace engine {
 ///
 /// - SensorArray
 ///
+template <typename ContextT>
 class Coordinator {
 public:
   /// Default constructor. Receives a configured platform-specific context instance.
-  Coordinator(std::shared_ptr<Context> context);
+  Coordinator(ContextT& context);
   ~Coordinator();
 
   /// Introspect and include in iteration planning

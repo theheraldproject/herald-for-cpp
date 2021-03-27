@@ -91,7 +91,7 @@ include_directories(../herald/include)
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   add_definitions(-DHERALD_LOG_LEVEL=4 -DCONFIG_APP_LOG_LEVEL=4)
 else()
-  add_definitions(-DHERALD_LOG_LEVEL=1 -DCONFIG_APP_LOG_LEVEL=1)
+  add_definitions(-DHERALD_LOG_LEVEL=0 -DCONFIG_APP_LOG_LEVEL=0)
 endif()
 #HERALD_LOG_LEVEL 4 = debug, 3 = info, 2 = warn / errors (Zephyr LOG_WARN), 1 = info contacts log only (Zephyr LOG_ERR)
 

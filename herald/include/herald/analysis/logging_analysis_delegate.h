@@ -17,7 +17,7 @@ namespace analysis {
 using namespace sampling;
 
 /// \brief Logs any given type of sample to the Herald logging subsystem as a Debug message
-template <typename ValT>
+template <typename ContextT, typename ValT>
 struct LoggingAnalysisDelegate {
 
   using value_type = ValT;
@@ -28,7 +28,7 @@ struct LoggingAnalysisDelegate {
   {
   }
 
-  LoggingAnalysisDelegate(std::shared_ptr<Context> ctx)
+  LoggingAnalysisDelegate(ContextT& ctx)
     : ctx(ctx)
     HLOGGERINIT(ctx,"herald","LoggingAnalysisDelegate")
   {
@@ -57,8 +57,8 @@ struct LoggingAnalysisDelegate {
   }
 
 private:
-  std::shared_ptr<Context> ctx;
-  HLOGGER;
+  ContextT& ctx;
+  HLOGGER(ContextT);
 
 };
 

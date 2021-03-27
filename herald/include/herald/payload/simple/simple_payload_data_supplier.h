@@ -11,6 +11,7 @@
 #include "../extended/extended_data.h"
 #include "../../context.h"
 #include "../../datatype/payload_timestamp.h"
+#include "herald/data/sensor_logger.h"
 
 #include <optional>
 #include <cstdint>
@@ -30,23 +31,88 @@ public:
   virtual ~SimplePayloadDataSupplier() = default;
 };
 
+template <typename ContextT>
 class ConcreteSimplePayloadDataSupplierV1 : public SimplePayloadDataSupplier {
 public:
-  ConcreteSimplePayloadDataSupplierV1(std::shared_ptr<Context> context, std::uint16_t countryCode, std::uint16_t stateCode, 
-    SecretKey sk, K k);
-  ConcreteSimplePayloadDataSupplierV1(std::shared_ptr<Context> context, std::uint16_t countryCode, std::uint16_t stateCode, 
-    SecretKey sk, K k, ConcreteExtendedDataV1 ext);
+  ConcreteSimplePayloadDataSupplierV1(ContextT& context, std::uint16_t countryCode, std::uint16_t stateCode, 
+    SecretKey sk, K k)
+  : SimplePayloadDataSupplier(),
+    ctx(context), country(countryCode), state(stateCode), secretKey(sk), k(k), 
+    commonPayloadHeader(), extended(), day(-1), contactIdentifiers()
+    HLOGGERINIT(ctx, "Sensor", "ConcreteSimplePayloadDataSupplierV1")
+  {
+    commonPayloadHeader.append(std::uint8_t(0x10)); // Simple payload V1
+    commonPayloadHeader.append(country);
+    commonPayloadHeader.append(state);
+
+    HTDBG("About to call matching keys");
+    // matchingKeys = k.matchingKeys(sk);
+    HTDBG("Completed matching keys call");
+  }
+  ConcreteSimplePayloadDataSupplierV1(ContextT& context, std::uint16_t countryCode, std::uint16_t stateCode, 
+    SecretKey sk, K k, ConcreteExtendedDataV1 ext)
+  : SimplePayloadDataSupplier(),
+    ctx(context), country(countryCode), state(stateCode), secretKey(sk), k(k), 
+    commonPayloadHeader(), extended(ext), day(-1), contactIdentifiers()
+    HLOGGERINIT(ctx, "Sensor", "ConcreteSimplePayloadDataSupplierV1")
+  {
+    commonPayloadHeader.append(std::uint8_t(0x10)); // Simple payload V1
+    commonPayloadHeader.append(country);
+    commonPayloadHeader.append(state);
+  }
   ConcreteSimplePayloadDataSupplierV1(const ConcreteSimplePayloadDataSupplierV1& from) = delete; // copy ctor deletion
   ConcreteSimplePayloadDataSupplierV1(ConcreteSimplePayloadDataSupplierV1&& from) = delete; // move ctor deletion
-  ~ConcreteSimplePayloadDataSupplierV1();
+  ~ConcreteSimplePayloadDataSupplierV1() = default;
 
-  std::optional<PayloadData> legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override;
-  std::optional<PayloadData> payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override;
-  std::vector<PayloadData> payload(const Data& data) override;
+  std::optional<PayloadData> legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override {
+    return {};
+  }
+
+  std::optional<PayloadData> payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override {
+    
+    const int day = k.day(timestamp.value);
+    const int period = k.period(timestamp.value);
+
+    auto cid = k.contactIdentifier(secretKey,day,period);
+
+    PayloadData p(commonPayloadHeader);
+    // length
+    if (extended.hasData()) {
+      p.append(std::uint16_t(2 + extended.payload().value().size()));
+    } else {
+      p.append(std::uint16_t(2));
+    }
+    // contact id
+    p.append(cid);
+    // extended data
+    if (extended.hasData()) {
+      p.append(extended.payload().value());
+    }
+
+    return std::optional<PayloadData>{p};
+  }
+
+  std::vector<PayloadData> payload(const Data& data) override {
+    return std::vector<PayloadData>();
+  }
 
 private:
-  class Impl; // fwd decl
-  std::unique_ptr<Impl> mImpl; // PIMPL idiom
+  ContextT& ctx;
+  const uint16_t country;
+  const uint16_t state;
+  const SecretKey secretKey;
+  K k;
+
+  PayloadData commonPayloadHeader;
+  // std::vector<MatchingKey> matchingKeys;
+
+  ConcreteExtendedDataV1 extended;
+
+  // cached day/period info
+  int day;
+  std::vector<ContactIdentifier> contactIdentifiers;
+
+  HLOGGER(ContextT);
 };
 
 }

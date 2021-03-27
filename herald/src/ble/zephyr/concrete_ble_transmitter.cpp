@@ -75,14 +75,14 @@ namespace zephyrinternal {
 
 class ConcreteBLETransmitter::Impl {
 public:
-  Impl(std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+  Impl(Context& ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
   ~Impl();
 
   void startAdvertising();
   void stopAdvertising();
 
-  std::shared_ptr<ZephyrContext> m_context;
+  Context& m_context;
   std::shared_ptr<BluetoothStateManager> m_stateManager;
   std::shared_ptr<PayloadDataSupplier> m_pds;
   std::shared_ptr<BLEDatabase> m_db;
@@ -218,9 +218,9 @@ static struct bt_data ad[] = {
 
 
 ConcreteBLETransmitter::Impl::Impl(
-  std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+  Context& ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase)
-  : m_context(std::static_pointer_cast<ZephyrContext>(ctx)), // Herald API guarantees this to be safe
+  : m_context(ctx),
     m_stateManager(bluetoothStateManager),
     m_pds(payloadDataSupplier),
     m_db(bleDatabase),
@@ -309,7 +309,7 @@ ConcreteBLETransmitter::Impl::stopAdvertising()
 
 
 ConcreteBLETransmitter::ConcreteBLETransmitter(
-  std::shared_ptr<Context> ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
+  Context& ctx, std::shared_ptr<BluetoothStateManager> bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase)
   : mImpl(std::make_shared<Impl>(ctx,bluetoothStateManager,
       payloadDataSupplier,bleDatabase))
