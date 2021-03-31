@@ -45,7 +45,7 @@ enum class BLEDeviceState : int {
 
 class BLEDevice : public Device, public std::enable_shared_from_this<BLEDevice> {
 public:
-  BLEDevice(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> delegate, const Date& created = Date());
+  BLEDevice(TargetIdentifier identifier, BLEDeviceDelegate& delegate, const Date& created = Date());
   BLEDevice(const BLEDevice& other); // copy ctor
   BLEDevice(BLEDevice&& other) = delete; // remove move constructor
   ~BLEDevice();

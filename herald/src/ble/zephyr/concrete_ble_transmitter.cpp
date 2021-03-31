@@ -4,6 +4,7 @@
 
 #include "herald/zephyr_context.h"
 #include "herald/ble/ble_concrete.h"
+#include "herald/ble/zephyr/concrete_ble_transmitter.h"
 #include "herald/ble/ble_database.h"
 #include "herald/ble/ble_receiver.h"
 #include "herald/ble/ble_sensor.h"

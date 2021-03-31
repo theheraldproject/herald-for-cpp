@@ -97,7 +97,7 @@ public:
     }
   }
 
-  std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() override {
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
     return {};
   }
 

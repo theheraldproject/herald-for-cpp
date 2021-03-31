@@ -72,7 +72,7 @@ public:
     featureProviders.clear();
     // Fetch feature providers
     for (auto prov: providers) {
-      auto myFeatures = prov->connectionsProvided();
+      auto myFeatures = prov.get().connectionsProvided();
       for (auto feature : myFeatures) {
         featureProviders.emplace(feature,prov);
       }
@@ -90,7 +90,7 @@ public:
     HTDBG("################# ITERATION #################");
     // HTDBG("Entered iteration");
     // Create empty list of required prereqs per provider
-    std::map<std::shared_ptr<CoordinationProvider>,std::vector<PrioritisedPrerequisite>> assignPrereqs;
+    std::map<std::reference_wrapper<CoordinationProvider>,std::vector<PrioritisedPrerequisite>> assignPrereqs;
     for (auto& prov : providers) {
       assignPrereqs.emplace(prov,std::vector<PrioritisedPrerequisite>());
     }
@@ -100,7 +100,7 @@ public:
     std::vector<PrioritisedPrerequisite> connsRequired;
     // Loop over providers and ask for feature pre-requisites
     for (auto& prov : providers) {
-      auto myConns = prov->requiredConnections();
+      auto myConns = prov.get().requiredConnections();
       std::copy(myConns.begin(),myConns.end(),
         std::back_insert_iterator<std::vector<PrioritisedPrerequisite>>(connsRequired));
     }
@@ -141,7 +141,7 @@ public:
       // fut.get(); // waits for callback // TODO wait with timeout
 
       // FOR OTHER PLATFORMS (E.g. ZEPHYR):-
-      std::vector<PrioritisedPrerequisite> myProvisioned = prov.first->provision(prov.second);
+      std::vector<PrioritisedPrerequisite> myProvisioned = prov.first.get().provision(prov.second);
       std::copy(myProvisioned.begin(),myProvisioned.end(),
         std::back_insert_iterator<std::vector<PrioritisedPrerequisite>>(provisioned));
     }
@@ -150,7 +150,7 @@ public:
 
     // For each which are now present, ask for activities (in descending priority order)
     for (auto& prov : providers) {
-      auto maxActs = prov->requiredActivities();
+      auto maxActs = prov.get().requiredActivities();
       // TODO sort by descending priority before actioning
       for (auto& act : maxActs) {
         std::string san("Activity ");
@@ -203,16 +203,16 @@ public:
 private:
   ContextT& context;
 
-  std::vector<std::shared_ptr<CoordinationProvider>> providers;
-  std::map<FeatureTag,std::shared_ptr<CoordinationProvider>> featureProviders;
+  std::vector<std::reference_wrapper<CoordinationProvider>> providers;
+  std::map<FeatureTag,std::reference_wrapper<CoordinationProvider>> featureProviders;
 
   bool running;
 
   HLOGGER(ContextT);
 };
 
-/** Comparator for less than (use in maps) **/
-bool operator<(const std::shared_ptr<CoordinationProvider>& first, const std::shared_ptr<CoordinationProvider>& second);
+// /** Comparator for less than (use in maps) **/
+bool operator<(const std::reference_wrapper<CoordinationProvider> first, const std::reference_wrapper<CoordinationProvider> second);
 
 }
 }
