@@ -66,7 +66,7 @@ public:
     transmitter(ctx, bluetoothStateManager, payloadDataSupplier, database),
     receiver(ctx, bluetoothStateManager, payloadDataSupplier, database),
     delegates(),
-    coordinator(std::make_shared<HeraldProtocolBLECoordinationProvider<ContextT>>(ctx, database, receiver)),
+    coordinator(ctx, database, receiver),
     addedSelfAsDelegate(false)
     HLOGGERINIT(ctx,"sensor","ConcreteBLESensor")
   {
@@ -77,11 +77,12 @@ public:
   ~ConcreteBLESensor() = default;
 
   // Coordination overrides - Since v1.2-beta3
-  std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() override {
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
     // Only return this if we support scanning
     if (BLESensorConfiguration::scanningEnabled) {
       HTDBG("Providing a BLECoordinationProvider");
-      return std::optional<std::shared_ptr<CoordinationProvider>>(coordinator);
+      //return std::optional<std::reference_wrapper<CoordinationProvider>>(std::static_cast<CoordinationProvider>(coordinator));
+      return coordinator;
     }
     HTDBG("Scanning not supported - so not returning a BLECoordinationProvider");
     return {};
@@ -222,7 +223,7 @@ private:
 
   std::vector<std::shared_ptr<SensorDelegate>> delegates;
   
-  std::shared_ptr<HeraldProtocolBLECoordinationProvider<ContextT>> coordinator;
+  HeraldProtocolBLECoordinationProvider<ContextT,ConcreteBLEDatabase<ContextT>,ReceiverT> coordinator;
 
   bool addedSelfAsDelegate;
 

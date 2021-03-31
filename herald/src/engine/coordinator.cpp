@@ -9,9 +9,9 @@
 namespace herald {
 namespace engine {
 
-bool operator<(const std::shared_ptr<CoordinationProvider>& first, const std::shared_ptr<CoordinationProvider>& second)
+bool operator<(const std::reference_wrapper<CoordinationProvider> first, const std::reference_wrapper<CoordinationProvider> second)
 {
-  return &(*first) < &(*second); // simple memory address comparator of item pointed TO
+  return &(first.get()) < &(second.get()); // use reference_wrapper's call operator to fetch the underlying reference
 }
 
 }

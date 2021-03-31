@@ -23,11 +23,11 @@
 namespace herald {
 namespace ble {
 
-template <typename ContextT>
+template <typename ContextT, typename BLEDBT, typename ProviderT>
 class HeraldProtocolBLECoordinationProvider : public CoordinationProvider {
 public:
-  HeraldProtocolBLECoordinationProvider(ContextT& ctx, std::shared_ptr<BLEDatabase> bledb, 
-    std::shared_ptr<HeraldProtocolV1Provider> provider) 
+  HeraldProtocolBLECoordinationProvider(ContextT& ctx, BLEDBT& bledb, 
+    ProviderT& provider) 
   : context(ctx),
     db(bledb),
     pp(provider),
@@ -69,7 +69,7 @@ public:
         // We can't disconnect from 'all', so check for target
         if (optTarget.has_value()) {
           // Ignoring closed true/false result
-          pp->closeConnection(optTarget.value());
+          pp.closeConnection(optTarget.value());
         }
       }
     }
@@ -99,7 +99,7 @@ public:
       // });
       // fut.get(); // TODO FIND OUT HOW TO DO THIS FUTURE WAITING FUNCTIONALITY
 
-      lastConnectionSuccessful = pp->openConnection(optTarget.value());
+      lastConnectionSuccessful = pp.openConnection(optTarget.value());
 
       // If successful, add to provisioned list
       if (lastConnectionSuccessful) {
@@ -143,7 +143,7 @@ public:
       iterationsSinceBreak < (breakEvery + breakFor) ) {
       HTDBG("###### Skipping connections - giving advertising & scanning a chance");
       // if (iterationsSinceBreak == breakEvery) { // incase it fails
-        pp->restartScanningAndAdvertising();
+        pp.restartScanningAndAdvertising();
       // }
       return results;
     } else if (iterationsSinceBreak == (breakEvery + breakFor) ) {
@@ -152,7 +152,7 @@ public:
     }
 
     // Remove expired devices
-    auto expired = db->matches([/*this*/] (const std::shared_ptr<BLEDevice>& device) -> bool {
+    auto expired = db.matches([/*this*/] (const std::shared_ptr<BLEDevice>& device) -> bool {
       auto interval = device->timeIntervalSinceLastUpdate();
       bool notZero = interval != TimeInterval::zero();
       bool isOld = interval > TimeInterval::minutes(15);
@@ -166,7 +166,7 @@ public:
       return notZero && isOld;
     });
     for (auto& exp : expired) {
-      db->remove(exp->identifier());
+      db.remove(exp->identifier());
       HTDBG("Removing expired device with ID: ");
       HTDBG((std::string)exp->identifier());
       HTDBG("time since last update:-");
@@ -174,7 +174,7 @@ public:
     }
 
     // Allow updates from ignored (for a time) status, to retry status
-    auto tempIgnoredOS = db->matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
+    auto tempIgnoredOS = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
       return device->operatingSystem() == BLEDeviceOperatingSystem::ignore;
     });
     for (auto& device : tempIgnoredOS) {
@@ -184,7 +184,7 @@ public:
 
 
     // Add all targets in database that are not known
-    auto newConns = db->matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
+    auto newConns = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
       return !device->ignore() &&
         (
           !device->hasService(BLESensorConfiguration::serviceUUID)
@@ -208,7 +208,7 @@ public:
     if (newConns.size() > 0) {
       // print debug info about the BLE Database
       HTDBG("BLE DATABASE CURRENT CONTENTS:-");
-      auto allDevices = db->matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
+      auto allDevices = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
         return true;
       });
       for (auto& device : allDevices) {
@@ -262,7 +262,7 @@ public:
       }
     } else {
       // restart scanning when no connection activity is expected
-      pp->restartScanningAndAdvertising();
+      pp.restartScanningAndAdvertising();
     }
 
     return results;
@@ -283,21 +283,21 @@ public:
   // TODO is IOS and needs payload sharing
 
   
-  // auto state0Devices = db->matches([](std::shared_ptr<BLEDevice> device) -> bool {
+  // auto state0Devices = db.matches([](std::shared_ptr<BLEDevice> device) -> bool {
   //   return !device->ignore() && !device->pseudoDeviceAddress().has_value();
   // });
-  auto state1Devices = db->matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
+  auto state1Devices = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
     return !device->ignore() && 
            !device->receiveOnly() &&
            !device->hasService(BLESensorConfiguration::serviceUUID);
   });
-  auto state2Devices = db->matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
+  auto state2Devices = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
     return !device->ignore() && 
            !device->receiveOnly() &&
             device->hasService(BLESensorConfiguration::serviceUUID) &&
            !device->payloadData().has_value(); // TODO check for Herald transferred payload data (not legacy)
   });
-  auto state4Devices = db->matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
+  auto state4Devices = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
     return !device->ignore() && 
            !device->receiveOnly() &&
             device->hasService(BLESensorConfiguration::serviceUUID) &&
@@ -325,7 +325,7 @@ public:
       // }
       .executor = [this](const Activity activity) -> std::optional<Activity> {
         // fill this out
-        pp->serviceDiscovery(activity);
+        pp.serviceDiscovery(activity);
         return {};
       }
     });
@@ -349,7 +349,7 @@ public:
       // }
       .executor = [this](const Activity activity) -> std::optional<Activity> {
         // fill this out
-       pp->readPayload(activity);
+       pp.readPayload(activity);
        return {};
       }
     });
@@ -377,7 +377,7 @@ public:
       // }
       .executor = [this](const Activity activity) -> std::optional<Activity> {
         // fill this out
-        pp->immediateSend(activity);
+        pp.immediateSend(activity);
         return {};
       }
     });
@@ -389,8 +389,8 @@ public:
 
 private:
   ContextT& context; 
-  std::shared_ptr<BLEDatabase> db;
-  std::shared_ptr<HeraldProtocolV1Provider> pp;
+  BLEDBT& db;
+  ProviderT& pp;
 
   std::vector<PrioritisedPrerequisite> previouslyProvisioned;
 

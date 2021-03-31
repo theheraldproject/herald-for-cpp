@@ -30,7 +30,7 @@ TEST_CASE("ble-device-ctor", "[ble][device][ctor]") {
   SECTION("ble-device-ctor") {
     herald::datatype::Data d{std::byte(9),6};
     herald::datatype::TargetIdentifier id{d};
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     herald::ble::BLEDevice device(id,delegate);
 
     REQUIRE(device.identifier() == id);
@@ -62,7 +62,7 @@ TEST_CASE("ble-device-update-state", "[ble][device][update][state]") {
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -70,10 +70,10 @@ TEST_CASE("ble-device-update-state", "[ble][device][update][state]") {
     device->state(s);
 
     REQUIRE(device->state() == s);
-    REQUIRE(delegate->callbackCalled);
-    std::shared_ptr<herald::ble::BLEDevice> dev = delegate->dev.value();
+    REQUIRE(delegate.callbackCalled);
+    std::shared_ptr<herald::ble::BLEDevice> dev = delegate.dev.value();
     REQUIRE(dev == device);
-    REQUIRE(delegate->attr.value() == herald::ble::BLEDeviceAttribute::state);
+    REQUIRE(delegate.attr.value() == herald::ble::BLEDeviceAttribute::state);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu >= herald::datatype::TimeInterval::seconds(0));
@@ -89,7 +89,7 @@ TEST_CASE("ble-device-update-os", "[ble][device][update][os]") {
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -100,10 +100,10 @@ TEST_CASE("ble-device-update-os", "[ble][device][update][os]") {
     REQUIRE(device->operatingSystem() == s);
 
     // delegates
-    REQUIRE(delegate->callbackCalled);
-    std::shared_ptr<herald::ble::BLEDevice> dev = delegate->dev.value();
+    REQUIRE(delegate.callbackCalled);
+    std::shared_ptr<herald::ble::BLEDevice> dev = delegate.dev.value();
     REQUIRE(dev == device);
-    REQUIRE(delegate->attr.value() == herald::ble::BLEDeviceAttribute::operatingSystem);
+    REQUIRE(delegate.attr.value() == herald::ble::BLEDeviceAttribute::operatingSystem);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu >= herald::datatype::TimeInterval::seconds(0));
@@ -119,7 +119,7 @@ TEST_CASE("ble-device-update-payload", "[ble][device][update][payload]") {
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -133,10 +133,10 @@ TEST_CASE("ble-device-update-payload", "[ble][device][update][payload]") {
     REQUIRE(device->payloadData().value() == payload);
 
     // delegates
-    REQUIRE(delegate->callbackCalled);
-    std::shared_ptr<herald::ble::BLEDevice> dev = delegate->dev.value();
+    REQUIRE(delegate.callbackCalled);
+    std::shared_ptr<herald::ble::BLEDevice> dev = delegate.dev.value();
     REQUIRE(dev == device);
-    REQUIRE(delegate->attr.value() == herald::ble::BLEDeviceAttribute::payloadData);
+    REQUIRE(delegate.attr.value() == herald::ble::BLEDeviceAttribute::payloadData);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu >= herald::datatype::TimeInterval::seconds(0));
@@ -155,7 +155,7 @@ TEST_CASE("ble-device-update-immediatesenddata", "[ble][device][update][immediat
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -168,10 +168,10 @@ TEST_CASE("ble-device-update-immediatesenddata", "[ble][device][update][immediat
     REQUIRE(device->immediateSendData().value() == isd);
 
     // delegates
-    REQUIRE(delegate->callbackCalled);
-    std::shared_ptr<herald::ble::BLEDevice> dev = delegate->dev.value();
+    REQUIRE(delegate.callbackCalled);
+    std::shared_ptr<herald::ble::BLEDevice> dev = delegate.dev.value();
     REQUIRE(dev == device);
-    REQUIRE(delegate->attr.value() == herald::ble::BLEDeviceAttribute::immediateSendData);
+    REQUIRE(delegate.attr.value() == herald::ble::BLEDeviceAttribute::immediateSendData);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu >= herald::datatype::TimeInterval::seconds(0));
@@ -187,7 +187,7 @@ TEST_CASE("ble-device-update-rssi", "[ble][device][update][rssi]") {
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -199,10 +199,10 @@ TEST_CASE("ble-device-update-rssi", "[ble][device][update][rssi]") {
     REQUIRE(device->rssi().value() == rssi);
 
     // delegates
-    REQUIRE(delegate->callbackCalled);
-    std::shared_ptr<herald::ble::BLEDevice> dev = delegate->dev.value();
+    REQUIRE(delegate.callbackCalled);
+    std::shared_ptr<herald::ble::BLEDevice> dev = delegate.dev.value();
     REQUIRE(dev == device);
-    REQUIRE(delegate->attr.value() == herald::ble::BLEDeviceAttribute::rssi);
+    REQUIRE(delegate.attr.value() == herald::ble::BLEDeviceAttribute::rssi);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu >= herald::datatype::TimeInterval::seconds(0));
@@ -218,7 +218,7 @@ TEST_CASE("ble-device-update-txpower", "[ble][device][update][txpower]") {
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -230,10 +230,10 @@ TEST_CASE("ble-device-update-txpower", "[ble][device][update][txpower]") {
     REQUIRE(device->txPower().value() == tx);
 
     // delegates
-    REQUIRE(delegate->callbackCalled);
-    std::shared_ptr<herald::ble::BLEDevice> dev = delegate->dev.value();
+    REQUIRE(delegate.callbackCalled);
+    std::shared_ptr<herald::ble::BLEDevice> dev = delegate.dev.value();
     REQUIRE(dev == device);
-    REQUIRE(delegate->attr.value() == herald::ble::BLEDeviceAttribute::txPower);
+    REQUIRE(delegate.attr.value() == herald::ble::BLEDeviceAttribute::txPower);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu >= herald::datatype::TimeInterval::seconds(0));
@@ -249,7 +249,7 @@ TEST_CASE("ble-device-update-pseudo", "[ble][device][update][pseudo]") {
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -262,7 +262,7 @@ TEST_CASE("ble-device-update-pseudo", "[ble][device][update][pseudo]") {
     REQUIRE(device->pseudoDeviceAddress().value() == pseudo);
 
     // delegates
-    REQUIRE(!delegate->callbackCalled);
+    REQUIRE(!delegate.callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu != herald::datatype::TimeInterval::never()); // pseudo address counts as update
@@ -277,7 +277,7 @@ TEST_CASE("ble-device-update-receiveOnly", "[ble][device][update][receiveOnly]")
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -288,7 +288,7 @@ TEST_CASE("ble-device-update-receiveOnly", "[ble][device][update][receiveOnly]")
     REQUIRE(device->receiveOnly() == true);
 
     // delegates
-    REQUIRE(!delegate->callbackCalled);
+    REQUIRE(!delegate.callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu == herald::datatype::TimeInterval::zero());
@@ -303,7 +303,7 @@ TEST_CASE("ble-device-update-ignore", "[ble][device][update][ignore]") {
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -314,7 +314,7 @@ TEST_CASE("ble-device-update-ignore", "[ble][device][update][ignore]") {
     REQUIRE(device->ignore() == true);
 
     // delegates
-    REQUIRE(!delegate->callbackCalled);
+    REQUIRE(!delegate.callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu == herald::datatype::TimeInterval::zero());
@@ -329,7 +329,7 @@ TEST_CASE("ble-device-update-payloadchar", "[ble][device][update][payloadchar]")
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -343,7 +343,7 @@ TEST_CASE("ble-device-update-payloadchar", "[ble][device][update][payloadchar]")
     REQUIRE(device->payloadCharacteristic().value() == uuid);
 
     // delegates
-    REQUIRE(!delegate->callbackCalled);
+    REQUIRE(!delegate.callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu == herald::datatype::TimeInterval::zero());
@@ -358,7 +358,7 @@ TEST_CASE("ble-device-update-signalchar", "[ble][device][update][signalchar]") {
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -372,7 +372,7 @@ TEST_CASE("ble-device-update-signalchar", "[ble][device][update][signalchar]") {
     REQUIRE(device->signalCharacteristic().value() == uuid);
 
     // delegates
-    REQUIRE(!delegate->callbackCalled);
+    REQUIRE(!delegate.callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu == herald::datatype::TimeInterval::zero());
@@ -387,7 +387,7 @@ TEST_CASE("ble-device-invalidate-chars", "[ble][device][update][invalidatechars]
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -412,7 +412,7 @@ TEST_CASE("ble-device-invalidate-chars", "[ble][device][update][invalidatechars]
     REQUIRE(device->payloadCharacteristic().has_value() == false);
 
     // delegates
-    REQUIRE(!delegate->callbackCalled);
+    REQUIRE(!delegate.callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu == herald::datatype::TimeInterval::zero());
@@ -429,7 +429,7 @@ TEST_CASE("ble-device-register-rssi", "[ble][device][register][rssi]") {
     herald::datatype::Date now;
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
-    std::shared_ptr<DummyBLEDeviceDelegate> delegate = std::make_shared<DummyBLEDeviceDelegate>();
+    DummyBLEDeviceDelegate delegate;
     std::shared_ptr<herald::ble::BLEDevice> device =
       std::make_shared<herald::ble::BLEDevice>(id,delegate,createdAt);
 
@@ -442,7 +442,7 @@ TEST_CASE("ble-device-register-rssi", "[ble][device][register][rssi]") {
     REQUIRE(device->timeIntervalSinceLastWriteRssi() < herald::datatype::TimeInterval::never());
 
     // delegates
-    REQUIRE(!delegate->callbackCalled);
+    REQUIRE(!delegate.callbackCalled);
 
     herald::datatype::TimeInterval lu = device->timeIntervalSinceLastUpdate();
     REQUIRE(lu >= herald::datatype::TimeInterval::seconds(0));

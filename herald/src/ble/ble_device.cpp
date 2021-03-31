@@ -23,7 +23,7 @@ using namespace herald::ble::filter;
 
 class BLEDevice::Impl {
 public:
-  Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> del, const Date& createdAt);
+  Impl(TargetIdentifier identifier, BLEDeviceDelegate& del, const Date& createdAt);
   Impl(const Impl& other); // copy ctor
   Impl(Impl&& other) = delete;
   ~Impl();
@@ -32,7 +32,7 @@ public:
   Impl operator=(Impl&& other) = delete;
 
   TargetIdentifier id;
-  std::shared_ptr<BLEDeviceDelegate> delegate;
+  BLEDeviceDelegate& delegate;
 
   // Data holders
   Date created;
@@ -67,7 +67,7 @@ public:
   int connectRepeatedFailures;
 };
 
-BLEDevice::Impl::Impl(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> del, const Date& createdAt)
+BLEDevice::Impl::Impl(TargetIdentifier identifier, BLEDeviceDelegate& del, const Date& createdAt)
   : id(identifier),
     delegate(del),
     created(createdAt),
@@ -170,7 +170,7 @@ BLEDevice::Impl::operator=(const Impl& other)
 
 
 
-BLEDevice::BLEDevice(TargetIdentifier identifier, std::shared_ptr<BLEDeviceDelegate> delegate,
+BLEDevice::BLEDevice(TargetIdentifier identifier, BLEDeviceDelegate& delegate,
   const Date& createdAt)
   : Device(),
     mImpl(std::make_unique<Impl>(identifier,delegate,createdAt))
@@ -340,7 +340,7 @@ BLEDevice::state(BLEDeviceState newState)
   if (changed) {
     mImpl->state.emplace(newState);
     mImpl->lastUpdated.emplace(); // Constructs Date as now
-    mImpl->delegate->device(shared_from_this(), BLEDeviceAttribute::state);
+    mImpl->delegate.device(shared_from_this(), BLEDeviceAttribute::state);
   }
 }
 
@@ -377,7 +377,7 @@ BLEDevice::operatingSystem(BLEDeviceOperatingSystem newOS)
   bool changed = !mImpl->os.has_value() || mImpl->os.value() != newOS;
   if (changed) {
     mImpl->os.emplace(newOS);
-    mImpl->delegate->device(shared_from_this(), BLEDeviceAttribute::operatingSystem);
+    mImpl->delegate.device(shared_from_this(), BLEDeviceAttribute::operatingSystem);
   }
 }
 
@@ -395,7 +395,7 @@ BLEDevice::payloadData(PayloadData newPayloadData)
     mImpl->payload.emplace(newPayloadData);
     mImpl->lastUpdated.emplace(); // Constructs Date as now
     mImpl->payloadUpdated = Date();
-    mImpl->delegate->device(shared_from_this(), BLEDeviceAttribute::payloadData);
+    mImpl->delegate.device(shared_from_this(), BLEDeviceAttribute::payloadData);
   }
 }
 
@@ -412,7 +412,7 @@ BLEDevice::immediateSendData(ImmediateSendData toSend)
   if (changed) {
     mImpl->immediateSendData.emplace(toSend);
     mImpl->lastUpdated.emplace(); // Constructs Date as now
-    mImpl->delegate->device(shared_from_this(), BLEDeviceAttribute::immediateSendData);
+    mImpl->delegate.device(shared_from_this(), BLEDeviceAttribute::immediateSendData);
   }
 }
 
@@ -435,7 +435,7 @@ BLEDevice::rssi(RSSI newRSSI)
   if (changed) {
     mImpl->rssi.emplace(newRSSI);
     mImpl->lastUpdated.emplace(); // Constructs Date as now
-    mImpl->delegate->device(shared_from_this(), BLEDeviceAttribute::rssi);
+    mImpl->delegate.device(shared_from_this(), BLEDeviceAttribute::rssi);
   }
 }
 
@@ -452,7 +452,7 @@ BLEDevice::txPower(BLETxPower newPower)
   if (changed) {
     mImpl->txPower.emplace(newPower);
     mImpl->lastUpdated.emplace(); // Constructs Date as now
-    mImpl->delegate->device(shared_from_this(), BLEDeviceAttribute::txPower);
+    mImpl->delegate.device(shared_from_this(), BLEDeviceAttribute::txPower);
   }
 }
 

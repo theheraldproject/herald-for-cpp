@@ -42,7 +42,7 @@ struct last_updated_descending {
 };
 
 template <typename ContextT>
-class ConcreteBLEDatabase : public BLEDatabase, public BLEDeviceDelegate, public std::enable_shared_from_this<ConcreteBLEDatabase<ContextT>>  {
+class ConcreteBLEDatabase : public BLEDatabase, public BLEDeviceDelegate /*, public std::enable_shared_from_this<ConcreteBLEDatabase<ContextT>>*/  {
 public:
   ConcreteBLEDatabase(ContextT& context)
   : ctx(context),
@@ -179,7 +179,7 @@ public:
       return results.front(); // TODO ensure we send back the latest, not just the first match
     }
     std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
-      TargetIdentifier(payloadData), this->shared_from_this());
+      TargetIdentifier(payloadData), *this); //this->shared_from_this());
     devices.push_back(newDevice);
     for (auto delegate : delegates) {
       delegate->bleDatabaseDidCreate(newDevice);
@@ -195,7 +195,7 @@ public:
     }
     HTDBG("New target identified: {}",(std::string)targetIdentifier);
     std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
-      targetIdentifier, this->shared_from_this());
+      targetIdentifier, *this);// this->shared_from_this());
     devices.push_back(newDevice);
     for (auto delegate : delegates) {
       delegate->bleDatabaseDidCreate(newDevice);

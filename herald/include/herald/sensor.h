@@ -26,7 +26,7 @@ public:
   virtual void stop() = 0;
 
   /// \brief For complex sensor coordination support, if required - Since v1.2-beta3
-  virtual std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() = 0;
+  virtual std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() = 0;
 };
 
 
