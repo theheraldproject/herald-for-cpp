@@ -21,6 +21,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <functional>
 
 namespace herald {
   
@@ -71,21 +72,21 @@ public:
   }
 
   /// \brief Adds a new sensor to the array, and add its coordination provider to the engine
-  void add(const std::shared_ptr<Sensor>& sensor) {
-    mSensorArray.push_back(sensor); // adds in links to BLE transmitter, receiver
+  void add(Sensor& sensor) {
+    mSensorArray.emplace_back(sensor); // adds in links to BLE transmitter, receiver
     engine.add(sensor);
   }
 
   // SENSOR OVERRIDES 
   void add(const std::shared_ptr<SensorDelegate>& delegate) override {
     for (auto& sensor: mSensorArray) {
-      sensor->add(delegate);
+      sensor.get().add(delegate);
     }
   }
 
   void start() override {
     for (auto& sensor: mSensorArray) {
-      sensor->start();
+      sensor.get().start();
     }
     engine.start();
   }
@@ -93,7 +94,7 @@ public:
   void stop() override {
     engine.stop();
     for (auto& sensor: mSensorArray) {
-      sensor->stop();
+      sensor.get().stop();
     }
   }
 
@@ -111,7 +112,7 @@ private:
   // Initialised on entry to Impl constructor:-
   ContextT& mContext;
   std::shared_ptr<PayloadDataSupplier> mPayloadDataSupplier;
-  std::vector<std::shared_ptr<Sensor>> mSensorArray;
+  std::vector<std::reference_wrapper<Sensor>> mSensorArray;
 
   Coordinator<ContextT> engine;
 
