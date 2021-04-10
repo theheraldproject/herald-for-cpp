@@ -117,8 +117,9 @@ TEST_CASE("blecoordinator-ctor", "[coordinator][ctor][basic]") {
   SECTION("blecoordinator-ctor") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
-    herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
     herald::ble::ConcreteBLEDatabase<CT> db(ctx);
     NoOpHeraldV1ProtocolProvider pp(ctx,db);
     herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);
@@ -143,8 +144,9 @@ TEST_CASE("blecoordinator-unseen-device", "[coordinator][unseen-device][basic]")
   SECTION("blecoordinator-unseen-device") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
-    herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
     herald::ble::ConcreteBLEDatabase<CT> db(ctx);
     NoOpHeraldV1ProtocolProvider pp(ctx,db);
     herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);
@@ -175,8 +177,9 @@ TEST_CASE("blecoordinator-android-no-id", "[coordinator][android-no-id][basic]")
   SECTION("blecoordinator-android-no-id") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
-    herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
     herald::ble::ConcreteBLEDatabase<CT> db(ctx);
     NoOpHeraldV1ProtocolProvider pp(ctx,db);
     herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);
@@ -212,8 +215,9 @@ TEST_CASE("blecoordinator-two-mixed-no-id", "[coordinator][two-mixed-no-id][basi
   SECTION("blecoordinator-two-mixed-no-id") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
-    herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
     herald::ble::ConcreteBLEDatabase<CT> db(ctx);
     NoOpHeraldV1ProtocolProvider pp(ctx,db);
     herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);
@@ -255,8 +259,9 @@ TEST_CASE("blecoordinator-got-os-and-id", "[coordinator][got-os-and-id][basic]")
   SECTION("blecoordinator-got-os-and-id") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
-    herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
     herald::ble::ConcreteBLEDatabase<CT> db(ctx);
     NoOpHeraldV1ProtocolProvider pp(ctx,db);
     herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);
@@ -286,8 +291,9 @@ TEST_CASE("blecoordinator-got-two-at-different-states", "[coordinator][got-two-a
   SECTION("blecoordinator-got-two-at-different-states") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
-    herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
     herald::ble::ConcreteBLEDatabase<CT> db(ctx);
     NoOpHeraldV1ProtocolProvider pp(ctx,db);
     herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);
@@ -329,8 +335,9 @@ TEST_CASE("blecoordinator-got-immediate-send-targeted", "[coordinator][got-immed
   SECTION("blecoordinator-got-immediate-send-targeted") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
-    herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
     herald::ble::ConcreteBLEDatabase<CT> db(ctx);
     NoOpHeraldV1ProtocolProvider pp(ctx,db);
     herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);
@@ -362,8 +369,9 @@ TEST_CASE("blecoordinator-got-three-at-different-states", "[coordinator][got-thr
   SECTION("blecoordinator-got-three-at-different-states") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
-    herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
     herald::ble::ConcreteBLEDatabase<CT> db(ctx);
     NoOpHeraldV1ProtocolProvider pp(ctx,db);
     herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);

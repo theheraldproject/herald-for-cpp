@@ -27,7 +27,7 @@ public:
   BLEDatabase() = default;
   virtual ~BLEDatabase() = default;
 
-  virtual void add(const std::shared_ptr<BLEDatabaseDelegate>& delegate) = 0;
+  virtual void add(BLEDatabaseDelegate& delegate) = 0;
 
   virtual std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/) = 0;
 
