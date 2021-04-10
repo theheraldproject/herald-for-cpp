@@ -38,18 +38,18 @@ int16(const Data& data, std::size_t index, bool& success) {
 // HEADER PUBLIC METHODS
 
 std::optional<Data>
-encodeWriteRssi(const RSSI& rssi) noexcept {
+encodeWriteRssi(const BLESensorConfiguration& config,const RSSI& rssi) noexcept {
   int r = rssi.intValue();
   std::vector<std::byte> vec(3);
-  vec.push_back(BLESensorConfiguration::signalCharacteristicActionWriteRSSI);
+  vec.push_back(config.signalCharacteristicActionWriteRSSI);
   vec.push_back(std::byte(r)); // force least significant bit
   vec.push_back(std::byte(r >> 8)); // msb
   return std::optional<Data>(Data(std::move(vec))); // constructs the optional with a value
 }
 
 std::optional<RSSI>
-decodeWriteRSSI(const Data& data) noexcept {
-  if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWriteRSSI) {
+decodeWriteRSSI(const BLESensorConfiguration& config,const Data& data) noexcept {
+  if (signalDataActionCode(data) != config.signalCharacteristicActionWriteRSSI) {
     return {};
   }
   if (data.size() != 3) {
@@ -64,10 +64,10 @@ decodeWriteRSSI(const Data& data) noexcept {
 }
 
 std::optional<Data>
-encodeWritePayload(const PayloadData& payloadData) noexcept {
+encodeWritePayload(const BLESensorConfiguration& config,const PayloadData& payloadData) noexcept {
   int r = (int)payloadData.size();
   std::vector<std::byte> vec(3 + r);
-  vec.push_back(BLESensorConfiguration::signalCharacteristicActionWritePayload);
+  vec.push_back(config.signalCharacteristicActionWritePayload);
   vec.push_back(std::byte(r)); // force least significant bit
   vec.push_back(std::byte(r >> 8)); // msb
   Data d(std::move(vec));
@@ -76,8 +76,8 @@ encodeWritePayload(const PayloadData& payloadData) noexcept {
 }
 
 std::optional<PayloadData>
-decodeWritePayload(const Data& data) noexcept {
-  if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWritePayload) {
+decodeWritePayload(const BLESensorConfiguration& config,const Data& data) noexcept {
+  if (signalDataActionCode(data) != config.signalCharacteristicActionWritePayload) {
     return {};
   }
   if (data.size() < 3) {
@@ -88,18 +88,18 @@ decodeWritePayload(const Data& data) noexcept {
   if (!success) {
     return {};
   }
-  if (data.size() != (3 + payloadDataCount)) {
+  if (data.size() != (3 + std::size_t(payloadDataCount))) {
     return {};
   }
   return std::optional<PayloadData>(PayloadData(data.subdata(3))); // constructs the optional with a value
 }
 
 std::optional<Data>
-encodeWritePayloadSharing(const PayloadSharingData& payloadSharingData) noexcept {
+encodeWritePayloadSharing(const BLESensorConfiguration& config,const PayloadSharingData& payloadSharingData) noexcept {
   int r = payloadSharingData.rssi.intValue();
   int r2 = (int)payloadSharingData.data.size();
   std::vector<std::byte> vec(5 + r2);
-  vec.push_back(BLESensorConfiguration::signalCharacteristicActionWritePayloadSharing);
+  vec.push_back(config.signalCharacteristicActionWritePayloadSharing);
   vec.push_back(std::byte(r)); // force least significant bit
   vec.push_back(std::byte(r >> 8)); // msb
   vec.push_back(std::byte(r2)); // force least significant bit
@@ -110,8 +110,8 @@ encodeWritePayloadSharing(const PayloadSharingData& payloadSharingData) noexcept
 }
 
 std::optional<PayloadSharingData>
-decodeWritePayloadSharing(const Data& data) noexcept {
-  if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWritePayloadSharing) {
+decodeWritePayloadSharing(const BLESensorConfiguration& config,const Data& data) noexcept {
+  if (signalDataActionCode(data) != config.signalCharacteristicActionWritePayloadSharing) {
     return {};
   }
   if (data.size() < 5) {
@@ -126,7 +126,7 @@ decodeWritePayloadSharing(const Data& data) noexcept {
   if (!success) {
     return {};
   }
-  if (data.size() != (5 + payloadDataCount)) {
+  if (data.size() != (5 + std::size_t(payloadDataCount))) {
     return {};
   }
   Data d = data.subdata(5);
@@ -136,10 +136,10 @@ decodeWritePayloadSharing(const Data& data) noexcept {
 }
 
 std::optional<Data>
-encodeImmediateSend(const ImmediateSendData& immediateSendData) noexcept {
+encodeImmediateSend(const BLESensorConfiguration& config,const ImmediateSendData& immediateSendData) noexcept {
   int r = (int)immediateSendData.size();
   std::vector<std::byte> vec(3 + r);
-  vec.push_back(BLESensorConfiguration::signalCharacteristicActionWriteImmediate);
+  vec.push_back(config.signalCharacteristicActionWriteImmediate);
   vec.push_back(static_cast<std::byte>(r)); // force least significant bit
   vec.push_back(static_cast<std::byte>(r >> 8)); // msb
   Data d(std::move(vec));
@@ -148,8 +148,8 @@ encodeImmediateSend(const ImmediateSendData& immediateSendData) noexcept {
 }
 
 std::optional<ImmediateSendData>
-decodeImmediateSend(const Data& data) noexcept {
-  if (signalDataActionCode(data) != BLESensorConfiguration::signalCharacteristicActionWriteImmediate) {
+decodeImmediateSend(const BLESensorConfiguration& config,const Data& data) noexcept {
+  if (signalDataActionCode(data) != config.signalCharacteristicActionWriteImmediate) {
     return {};
   }
   if (data.size() < 3) {
@@ -160,25 +160,25 @@ decodeImmediateSend(const Data& data) noexcept {
   if (!success) {
     return {};
   }
-  if (data.size() != (3 + payloadDataCount)) {
+  if (data.size() != (3 + std::size_t(payloadDataCount))) {
     return {};
   }
   return std::optional<ImmediateSendData>(ImmediateSendData(data.subdata(3))); // constructs the optional with a value
 }
 
 SignalCharacteristicDataType
-detect(const Data& data) noexcept {
-  switch (signalDataActionCode(data)) {
-    case BLESensorConfiguration::signalCharacteristicActionWriteRSSI:
-      return SignalCharacteristicDataType::rssi;
-    case BLESensorConfiguration::signalCharacteristicActionWritePayload:
-      return SignalCharacteristicDataType::payload;
-    case BLESensorConfiguration::signalCharacteristicActionWritePayloadSharing:
-      return SignalCharacteristicDataType::payloadSharing;
-    case BLESensorConfiguration::signalCharacteristicActionWriteImmediate:
-      return SignalCharacteristicDataType::immediateSend;
-    default:
-      return SignalCharacteristicDataType::unknown;
+detect(const BLESensorConfiguration& config,const Data& data) noexcept {
+  auto val = signalDataActionCode(data);
+  if (config.signalCharacteristicActionWriteRSSI == val) {
+    return SignalCharacteristicDataType::rssi;
+  } else if (config.signalCharacteristicActionWritePayload == val) {
+    return SignalCharacteristicDataType::payload;
+  } else if (config.signalCharacteristicActionWritePayloadSharing == val) {
+    return SignalCharacteristicDataType::payloadSharing;
+  } else if (config.signalCharacteristicActionWriteImmediate == val) {
+    return SignalCharacteristicDataType::immediateSend;
+  } else {
+    return SignalCharacteristicDataType::unknown;
   }
 }
 

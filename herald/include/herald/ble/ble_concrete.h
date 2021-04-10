@@ -71,7 +71,8 @@ class ConcreteBLESensor : public BLESensor, public BLEDatabaseDelegate,
 public:
   ConcreteBLESensor(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
-  : database(ctx), 
+  : m_context(ctx),
+    database(ctx), 
     stateManager(bluetoothStateManager),
     transmitter(ctx, bluetoothStateManager, payloadDataSupplier, database),
     receiver(ctx, bluetoothStateManager, payloadDataSupplier, database),
@@ -89,7 +90,7 @@ public:
   // Coordination overrides - Since v1.2-beta3
   std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
     // Only return this if we support scanning
-    if (BLESensorConfiguration::scanningEnabled) {
+    if (m_context.getSensorConfiguration().scanningEnabled) {
       HTDBG("Providing a BLECoordinationProvider");
       //return std::optional<std::reference_wrapper<CoordinationProvider>>(std::static_cast<CoordinationProvider>(coordinator));
       return coordinator;
@@ -226,6 +227,7 @@ private:
 
   // Data members hidden by PIMPL
 
+  ContextT& m_context;
   ConcreteBLEDatabase<ContextT> database;
   BluetoothStateManager& stateManager;
   ConcreteBLETransmitter<ContextT,ConcreteBLEDatabase<ContextT>> transmitter;
