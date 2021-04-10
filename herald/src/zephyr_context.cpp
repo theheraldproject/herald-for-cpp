@@ -126,7 +126,7 @@ ZephyrContextProvider::state()
   }
 }
 
-zephyrinternal::Advertiser&
+herald::zephyrinternal::Advertiser&
 ZephyrContextProvider::getAdvertiser() noexcept
 {
   return advertiser;

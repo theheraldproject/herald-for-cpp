@@ -46,6 +46,35 @@ public:
   void start() override {}
   void stop() override {}
 
+  // Herald V1 Protocol Provider methods
+  bool openConnection(const TargetIdentifier& toTarget) override {
+    return false;
+  }
+
+  bool closeConnection(const TargetIdentifier& toTarget) override {
+    return true;
+  }
+
+  void restartScanningAndAdvertising() override {
+    ;
+  }
+
+  std::optional<Activity> serviceDiscovery(Activity) override {
+    return {};
+  }
+
+  std::optional<Activity> readPayload(Activity) override {
+    return {};
+  }
+  
+  std::optional<Activity> immediateSend(Activity) override {
+    return {};
+  }
+  
+  std::optional<Activity> immediateSendAll(Activity) override {
+    return {};
+  }
+  
 };
 
 }

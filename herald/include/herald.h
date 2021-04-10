@@ -23,7 +23,11 @@
 #include "herald/zephyr_context.h"
 #include "herald/data/zephyr/zephyr_logging_sink.h"
 #include "herald/ble/zephyr/concrete_ble_transmitter.h"
+#ifdef CONFIG_BT_SCAN
 #include "herald/ble/zephyr/concrete_ble_receiver.h"
+#else
+#include "herald/ble/default/concrete_ble_receiver.h"
+#endif
 #endif
 
 // Datatype namespace

@@ -24,7 +24,11 @@
 
 // Include the relevant concrete BLE Receiver here
 #ifdef __ZEPHYR__
+#ifdef CONFIG_BT_SCAN
 #include "zephyr/concrete_ble_receiver.h"
+#else
+#include "default/concrete_ble_receiver.h"
+#endif
 #include "zephyr/concrete_ble_transmitter.h"
 // TODO other platforms here
 #else
