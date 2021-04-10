@@ -69,7 +69,7 @@ public:
   // Zephyr OS specific methods
   int enableBluetooth() noexcept;
 
-  zephyrinternal::Advertiser& getAdvertiser() noexcept;
+  herald::zephyrinternal::Advertiser& getAdvertiser() noexcept;
 
   int startBluetooth() noexcept;
   int stopBluetooth() noexcept;
@@ -79,7 +79,7 @@ public:
 private:
   ZephyrLoggingSink sink;
 
-  zephyrinternal::Advertiser advertiser;
+  herald::zephyrinternal::Advertiser advertiser;
 
   std::vector<std::reference_wrapper<BluetoothStateManagerDelegate>> stateDelegates;
 
