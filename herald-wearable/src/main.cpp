@@ -68,7 +68,7 @@
 #endif
 
 struct k_thread herald_thread;
-K_THREAD_STACK_DEFINE(herald_stack, 9192); // TODO reduce this down
+K_THREAD_STACK_DEFINE(herald_stack, 2048); // Was 9192
 
 using namespace herald;
 using namespace herald::data;
