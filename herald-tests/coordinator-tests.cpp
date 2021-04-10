@@ -181,7 +181,8 @@ public:
     HTDBG("serviceDiscovery called");
     auto device = db.device(std::get<1>(act.prerequisites.front()).value());
     std::vector<herald::datatype::UUID> heraldServiceList;
-    heraldServiceList.push_back(herald::ble::BLESensorConfiguration::serviceUUID);
+    herald::ble::BLESensorConfiguration cfg;
+    heraldServiceList.push_back(cfg.serviceUUID);
     device->services(heraldServiceList);
     device->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
     hasIdentifiedOs = true;
@@ -254,7 +255,7 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
   >;
 
   // Mock Sensor
-  std::shared_ptr<MockSensor<CPT>> mockSensor = std::make_shared<MockSensor<CPT>>(coord);
+  MockSensor<CPT> mockSensor(coord);
 
   // register ble coordinator
   herald::engine::Coordinator<CT> c(ctx);
