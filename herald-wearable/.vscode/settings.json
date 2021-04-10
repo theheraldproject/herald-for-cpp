@@ -61,5 +61,8 @@
     "streambuf": "cpp",
     "thread": "cpp",
     "cinttypes": "cpp"
+  },
+  "cmake.configureEnvironment": {
+    "BOARD": "nrf52833dk_nrf52833"
   }
 }

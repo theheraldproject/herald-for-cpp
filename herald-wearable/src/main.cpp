@@ -39,6 +39,8 @@
 #include <drivers/gpio.h>
 #include <drivers/hwinfo.h>
 
+#include <inttypes.h>
+
 #include <logging/log.h>
 namespace applogging {
   LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
@@ -183,9 +185,9 @@ void herald_entry() {
 	
 	// IMPLEMENTORS GUIDANCE - USING HERALD
 	// First initialise the Zephyr Context - this links Herald to any Zephyr OS specific constructs or callbacks
-	herald::ZephyrContextProvider zcp;
-	herald::Context ctx(zcp.getLoggingSink(),zcp.getBluetoothStateManager());
-	using CT = Context<ZephyrLoggingSink,BluetoothStateManager>;
+	ZephyrContextProvider zcp;
+	Context ctx(zcp,zcp.getLoggingSink(),zcp.getBluetoothStateManager());
+	using CT = Context<ZephyrContextProvider,ZephyrLoggingSink,BluetoothStateManager>;
 
   // Now prepare your device's Herald identity payload - this is what gets sent to other devices when they request it
 	//   SECURITY: Depending on the payload provider, this could be static and in the clear or varying over time. 
@@ -206,7 +208,7 @@ void herald_entry() {
 	} else {
 		APP_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
 	}
-	APP_DBG("Final clientID: %d", clientId);
+	APP_DBG("Final clientID: %" PRIu64 "", clientId);
 
 	std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
 		countryCode,
@@ -263,13 +265,13 @@ void herald_entry() {
 	k_sleep(K_SECONDS(2));
 
 
-	auto sink = ctx.getLoggingSink();
+	auto& sink = ctx.getLoggingSink();
 	sink.log("subsys1","cat1",SensorLoggerLevel::debug,"Here's some info for you");
 	auto payload = pds->payload(PayloadTimestamp(),nullptr);
 	sink.log("subsys1","cat1",SensorLoggerLevel::debug,"I've got some payload data");
 	sink.log("subsys1","cat1",SensorLoggerLevel::debug,payload->hexEncodedString());
 	
-	auto sink2 = ctx.getLoggingSink();
+	auto& sink2 = ctx.getLoggingSink();
 	sink2.log("subsys2","cat2",SensorLoggerLevel::debug,"Here's some more info for you");
 
 	// LOGGING LEVEL TESTING
@@ -289,7 +291,7 @@ void herald_entry() {
 	
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
 	SensorArray sa(ctx,pds);
-	ConcreteBLESensor<CT,ConcreteBLETransmitter<CT>,ConcreteBLEReceiver<CT>> ble(ctx,ctx.getBluetoothStateManager(),pds);
+	ConcreteBLESensor<CT> ble(ctx,ctx.getBluetoothStateManager(),pds);
 
 	// Add contacts.log delegate
 	// CURRENTLY BREAKS ZEPHYR - DON'T KNOW WHY YET - LOGGING SUBSYSTEM ISSUE
@@ -305,20 +307,22 @@ void herald_entry() {
 
 
 	// 4. Now create a live analysis pipeline and enable RSSI to be sent to it for distance estimation
-	// herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
+#ifdef HERALD_ANALYSIS_ENABLED
+	herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
 
-	// herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance> myDelegate(ctx);
-	// herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
-	// herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
+	herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance> myDelegate(ctx);
+	herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
+	herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
 
-	// herald::analysis::AnalysisRunner<
-	// 	herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance>>,
-	// 	herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
-	// 	RSSI,Distance
-	// > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
+	herald::analysis::AnalysisRunner<
+		herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance>>,
+		herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
+		RSSI,Distance
+	> runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
 
-	// std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
-	// sa->add(src);
+	std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
+	sa->add(src);
+#endif
 
 	
 	APP_DBG("Starting sensor array");
@@ -373,6 +377,7 @@ void main(void)
 #endif
 
 	// Start herald entry on a new thread in case of errors, or needing to do something on the main thread
+	[[maybe_unused]]
 	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 4096,
 			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
 			-1, K_USER,

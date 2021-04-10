@@ -60,8 +60,8 @@ public:
 
   // BLE Database overrides
 
-  void add(const std::shared_ptr<BLEDatabaseDelegate>& delegate) override {
-    delegates.push_back(delegate);
+  void add(BLEDatabaseDelegate& delegate) override {
+    delegates.emplace_back(delegate);
   }
 
   // Creation overrides
@@ -157,8 +157,8 @@ public:
     newDevice->registerDiscovery(Date());
 
     devices.push_back(newDevice);
-    for (auto delegate : delegates) {
-      delegate->bleDatabaseDidCreate(newDevice);
+    for (auto& delegate : delegates) {
+      delegate.get().bleDatabaseDidCreate(newDevice);
     }
     return newDevice;
   }
@@ -181,8 +181,8 @@ public:
     std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
       TargetIdentifier(payloadData), *this); //this->shared_from_this());
     devices.push_back(newDevice);
-    for (auto delegate : delegates) {
-      delegate->bleDatabaseDidCreate(newDevice);
+    for (auto& delegate : delegates) {
+      delegate.get().bleDatabaseDidCreate(newDevice);
     }
     return newDevice;
   }
@@ -197,8 +197,8 @@ public:
     std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
       targetIdentifier, *this);// this->shared_from_this());
     devices.push_back(newDevice);
-    for (auto delegate : delegates) {
-      delegate->bleDatabaseDidCreate(newDevice);
+    for (auto& delegate : delegates) {
+      delegate.get().bleDatabaseDidCreate(newDevice);
     }
     return newDevice;
   }
@@ -233,7 +233,7 @@ public:
       std::shared_ptr<BLEDevice> toRemove = *found;
       devices.erase(found);
       for (auto& delegate : delegates) {
-        delegate->bleDatabaseDidDelete(toRemove);
+        delegate.get().bleDatabaseDidDelete(toRemove);
       }
     }
   }
@@ -244,7 +244,7 @@ public:
   void device(const std::shared_ptr<BLEDevice>& device, BLEDeviceAttribute didUpdate) override {
     // TODO update any internal DB state as necessary (E.g. deletion)
     for (auto& delegate : delegates) {
-      delegate->bleDatabaseDidUpdate(device, didUpdate); // TODO verify this is the right onward call
+      delegate.get().bleDatabaseDidUpdate(device, didUpdate); // TODO verify this is the right onward call
     }
   }
 
@@ -318,7 +318,7 @@ private:
   }
 
   ContextT& ctx;
-  std::vector<std::shared_ptr<BLEDatabaseDelegate>> delegates;
+  std::vector<std::reference_wrapper<BLEDatabaseDelegate>> delegates;
   std::vector<std::shared_ptr<BLEDevice>> devices;
 
   HLOGGER(ContextT);

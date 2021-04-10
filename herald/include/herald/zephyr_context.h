@@ -50,7 +50,9 @@ namespace zephyrinternal {
 ///
 /// \brief Holds generic state across our application for any Zephyr RTOS device.
 /// 
-/// Provides a solid class that holds information and types to be pass to Context
+/// Provides a solid class that holds information and types to be pass to Context.
+///
+/// Also acts as the Zephyr PlatformT in Context.
 ///
 class ZephyrContextProvider : BluetoothStateManager {
 public:
@@ -61,7 +63,7 @@ public:
   BluetoothStateManager& getBluetoothStateManager();
 
   // Bluetooth State Manager override methods
-  void add(std::shared_ptr<BluetoothStateManagerDelegate> delegate) override;
+  void add(BluetoothStateManagerDelegate& delegate) override;
   BluetoothState state() override;
 
   // Zephyr OS specific methods
@@ -79,7 +81,7 @@ private:
 
   zephyrinternal::Advertiser advertiser;
 
-  std::vector<std::shared_ptr<BluetoothStateManagerDelegate>> stateDelegates;
+  std::vector<std::reference_wrapper<BluetoothStateManagerDelegate>> stateDelegates;
 
   bool bluetoothEnabled;
 };

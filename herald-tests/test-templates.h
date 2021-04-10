@@ -30,7 +30,7 @@ public:
   DummyBluetoothStateManager() = default;
   ~DummyBluetoothStateManager() = default;
   
-  void add(std::shared_ptr<herald::ble::BluetoothStateManagerDelegate> delegate) override {
+  void add(herald::ble::BluetoothStateManagerDelegate& delegate) override {
     ; // no op
   }
 

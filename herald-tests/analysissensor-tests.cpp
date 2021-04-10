@@ -110,8 +110,9 @@ TEST_CASE("analysissensor-output", "[sensorlogger][analysissensor][output]") {
   SECTION("analysissensor-output") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
-    herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
     //herald::data::SensorLogger logger(ctx,"testout","analysissensor");
     herald::analysis::LoggingAnalysisDelegate<CT,Distance> lad(ctx); // The subject of this test
     std::cout << "LoggingAnalysisDelegate::RAM = " << sizeof(lad) << std::endl;

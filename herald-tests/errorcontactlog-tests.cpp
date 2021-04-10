@@ -57,9 +57,10 @@ TEST_CASE("errorcontactlogger-output-dbg", "[errorcontactlogger][output]") {
   SECTION("errorcontactlogger-output-dbg") {
     DummyLoggingSink dls;
     DummyBluetoothStateManager dbsm;
-    herald::Context ctx(dls,dbsm); // default context include
-    using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
-
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
+    
     // Create contact logger
     std::shared_ptr<herald::data::ConcretePayloadDataFormatter> pdf = 
       std::make_shared<herald::data::ConcretePayloadDataFormatter>();

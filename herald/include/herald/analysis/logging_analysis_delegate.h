@@ -22,11 +22,11 @@ struct LoggingAnalysisDelegate {
 
   using value_type = ValT;
   
-  LoggingAnalysisDelegate() 
-    : ctx(nullptr)
-    HLOGGERINIT(nullptr,"herald","LoggingAnalysisDelegate")
-  {
-  }
+  // LoggingAnalysisDelegate() 
+  //   : ctx(nullptr)
+  //   HLOGGERINIT(nullptr,"herald","LoggingAnalysisDelegate")
+  // {
+  // }
 
   LoggingAnalysisDelegate(ContextT& ctx)
     : ctx(ctx)

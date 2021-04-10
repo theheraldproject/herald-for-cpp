@@ -16,7 +16,8 @@
         "server": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
       },
       "serverArgs": [
-        "-device", "NRF5340_XXAA_APP",
+        //"-device", "NRF5340_XXAA_APP",
+        "-device", "NRF52833_XXAA",
         "-if", "SWD",
         "-speed", "4000"
       ],

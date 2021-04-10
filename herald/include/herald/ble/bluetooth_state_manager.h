@@ -21,7 +21,7 @@ public:
   BluetoothStateManager() = default;
   virtual ~BluetoothStateManager() = default;
 
-  virtual void add(std::shared_ptr<BluetoothStateManagerDelegate> delegate) = 0;
+  virtual void add(BluetoothStateManagerDelegate& delegate) = 0;
   virtual BluetoothState state() = 0;
 };
 

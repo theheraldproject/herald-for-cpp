@@ -22,6 +22,16 @@
 #include "ble_coordinator.h"
 #include "../datatype/bluetooth_state.h"
 
+// Include the relevant concrete BLE Receiver here
+#ifdef __ZEPHYR__
+#include "zephyr/concrete_ble_receiver.h"
+#include "zephyr/concrete_ble_transmitter.h"
+// TODO other platforms here
+#else
+#include "default/concrete_ble_receiver.h"
+#include "default/concrete_ble_transmitter.h"
+#endif
+
 #include <memory>
 #include <vector>
 #include <algorithm>
@@ -55,9 +65,9 @@ using namespace herald::payload;
 /**
  * Acts as the main object to control the receiver, transmitter, and database instances
  */
-template <typename ContextT, typename TransmitterT, typename ReceiverT>
+template <typename ContextT>
 class ConcreteBLESensor : public BLESensor, public BLEDatabaseDelegate, 
-  public BluetoothStateManagerDelegate, public std::enable_shared_from_this<ConcreteBLESensor<ContextT,TransmitterT,ReceiverT>>  {
+  public BluetoothStateManagerDelegate /*, public std::enable_shared_from_this<ConcreteBLESensor<ContextT,TransmitterT,ReceiverT>>*/  {
 public:
   ConcreteBLESensor(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
@@ -107,8 +117,8 @@ public:
 
   void start() override {
     if (!addedSelfAsDelegate) {
-      stateManager.add(this->shared_from_this()); // FAILS IF USED IN THE CTOR - DO NOT DO THIS FROM CTOR
-      database.add(this->shared_from_this());
+      stateManager.add(*this); // FAILS IF USED IN THE CTOR - DO NOT DO THIS FROM CTOR
+      database.add(*this);
       addedSelfAsDelegate = true;
     }
     transmitter.start();
@@ -216,14 +226,18 @@ private:
 
   // Data members hidden by PIMPL
 
-  ConcreteBLEDatabase<ContextT>& database;
+  ConcreteBLEDatabase<ContextT> database;
   BluetoothStateManager& stateManager;
-  TransmitterT& transmitter;
-  ReceiverT& receiver;
+  ConcreteBLETransmitter<ContextT,ConcreteBLEDatabase<ContextT>> transmitter;
+  ConcreteBLEReceiver<ContextT,ConcreteBLEDatabase<ContextT>> receiver;
 
   std::vector<std::shared_ptr<SensorDelegate>> delegates;
   
-  HeraldProtocolBLECoordinationProvider<ContextT,ConcreteBLEDatabase<ContextT>,ReceiverT> coordinator;
+  HeraldProtocolBLECoordinationProvider<
+    ContextT,
+    ConcreteBLEDatabase<ContextT>,
+    ConcreteBLEReceiver<ContextT,ConcreteBLEDatabase<ContextT>>
+  > coordinator;
 
   bool addedSelfAsDelegate;
 

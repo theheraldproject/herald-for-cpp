@@ -9,7 +9,6 @@
 #include "../ble_receiver.h"
 #include "../ble_sensor.h"
 #include "../ble_transmitter.h"
-#include "../ble_concrete.h"
 #include "../ble_protocols.h"
 #include "../bluetooth_state_manager.h"
 #include "../ble_device_delegate.h"
@@ -21,10 +20,22 @@
 #include "../ble_coordinator.h"
 #include "../../datatype/bluetooth_state.h"
 
+// nRF Connect SDK includes
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/hci.h>
+#include <bluetooth/hci_vs.h>
+#include <sys/util.h>
+#include <sys/byteorder.h>
+#include <bluetooth/conn.h>
+#include <bluetooth/uuid.h>
+#include <bluetooth/gatt.h>
+
+// C++17 includes
 #include <memory>
 #include <vector>
 #include <algorithm>
 #include <optional>
+#include <cstring>
 
 namespace herald {
 namespace ble {
@@ -33,28 +44,216 @@ using namespace herald::datatype;
 using namespace herald::ble::filter;
 using namespace herald::payload;
 
-// TODO zephyr internal functions called by template
+static PayloadDataSupplier* latestPds = NULL;
 
-template <typename ContextT>
-class ConcreteBLETransmitter : public BLETransmitter, public std::enable_shared_from_this<ConcreteBLETransmitter<ContextT>> {
+// zephyr internal functions called by template
+
+/* Herald Service Variables */
+static struct bt_uuid_128 herald_uuid = BT_UUID_INIT_128(
+	0x9b, 0xfd, 0x5b, 0xd6, 0x72, 0x45, 0x1e, 0x80, 0xd3, 0x42, 0x46, 0x47, 0xaf, 0x32, 0x81, 0x42
+);
+static struct bt_uuid_128 herald_char_signal_uuid = BT_UUID_INIT_128(
+	0x11, 0x1a, 0x82, 0x80, 0x9a, 0xe0, 0x24, 0x83, 0x7a, 0x43, 0x2e, 0x09, 0x13, 0xb8, 0x17, 0xf6
+);
+static struct bt_uuid_128 herald_char_payload_uuid = BT_UUID_INIT_128(
+	0xe7, 0x33, 0x89, 0x8f, 0xe3, 0x43, 0x21, 0xa1, 0x29, 0x48, 0x05, 0x8f, 0xf8, 0xc0, 0x98, 0x3e
+);
+
+namespace zephyrinternal {
+  static void get_tx_power(uint8_t handle_type, uint16_t handle, int8_t *tx_pwr_lvl);
+
+  
+  static ssize_t read_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    void *buf, uint16_t len, uint16_t offset);
+  static ssize_t write_vnd(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    const void *buf, uint16_t len, uint16_t offset,
+    uint8_t flags);
+  static ssize_t read_payload(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    void *buf, uint16_t len, uint16_t offset);
+  static ssize_t write_payload(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+    const void *buf, uint16_t len, uint16_t offset,
+    uint8_t flags);
+}
+
+// Define kernel memory statically so we definitely have it
+BT_GATT_SERVICE_DEFINE(herald_svc,
+  BT_GATT_PRIMARY_SERVICE(&herald_uuid),
+  BT_GATT_CHARACTERISTIC(&herald_char_signal_uuid.uuid,
+            BT_GATT_CHRC_WRITE,
+            BT_GATT_PERM_WRITE,
+            zephyrinternal::read_vnd,zephyrinternal::write_vnd, nullptr),
+  BT_GATT_CHARACTERISTIC(&herald_char_payload_uuid.uuid,
+            BT_GATT_CHRC_READ,
+            BT_GATT_PERM_READ,
+            zephyrinternal::read_payload, zephyrinternal::write_payload, nullptr)
+);
+static auto bp = BT_LE_ADV_CONN_NAME; // No TxPower support
+/*
+static auto bp = BT_LE_ADV_PARAM(BT_LE_ADV_OPT_CONNECTABLE | \
+ 					    BT_LE_ADV_OPT_USE_NAME, \
+ 					    BT_GAP_ADV_FAST_INT_MIN_2, \
+ 					    BT_GAP_ADV_FAST_INT_MAX_2, \
+               BT_LE_ADV_OPT_USE_TX_POWER, \
+               NULL); // txpower - REQUIRES EXT ADV OPT on Zephyr (experimental)
+*/
+static struct bt_data ad[] = {
+	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
+  // BT_DATA_BYTES(BT_DATA_TX_POWER, 0x00 ), // See https://github.com/vmware/herald-for-cpp/issues/26
+	BT_DATA_BYTES(BT_DATA_UUID16_ALL, 
+					BT_UUID_16_ENCODE(BT_UUID_DIS_VAL),
+					BT_UUID_16_ENCODE(BT_UUID_GATT_VAL),
+					BT_UUID_16_ENCODE(BT_UUID_GAP_VAL)
+	),
+  BT_DATA_BYTES(BT_DATA_UUID128_ALL,
+		      0x9b, 0xfd, 0x5b, 0xd6, 0x72, 0x45, 0x1e, 0x80, 
+					0xd3, 0x42, 0x46, 0x47, 0xaf, 0x32, 0x81, 0x42
+	),
+};
+
+
+
+template <typename ContextT, typename BLEDatabaseT>
+class ConcreteBLETransmitter : public BLETransmitter {
 public:
   ConcreteBLETransmitter(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
+    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, BLEDatabaseT& bleDatabase)
+    : m_context(ctx),
+      m_stateManager(bluetoothStateManager),
+      m_pds(payloadDataSupplier),
+      m_db(bleDatabase),
+      delegates(),
+      isAdvertising(false)
+
+    HLOGGERINIT(ctx,"Sensor","BLE.ConcreteBLETransmitter")
+  {
+    latestPds = m_pds.get();
+  }
+
   ConcreteBLETransmitter(const ConcreteBLETransmitter& from) = delete;
   ConcreteBLETransmitter(ConcreteBLETransmitter&& from) = delete;
-  ~ConcreteBLETransmitter();
+
+  ~ConcreteBLETransmitter()
+  {
+    stop();
+    latestPds = NULL;
+  }
 
   // Coordination overrides - Since v1.2-beta3
-  std::optional<std::shared_ptr<CoordinationProvider>> coordinationProvider() override;
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
+    return {};
+  }
 
   // Sensor overrides
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override;
-  void start() override;
-  void stop() override;
+  void add(const std::shared_ptr<SensorDelegate>& delegate) override {
+    delegates.push_back(delegate);
+  }
+
+  void start() override {
+    HTDBG("ConcreteBLETransmitter::start");
+    if (!BLESensorConfiguration::advertisingEnabled) {
+      HTDBG("Sensor Configuration has advertising disabled. Returning.");
+      return;
+    }
+    m_context.getPlatform().getAdvertiser().registerStopCallback([this] () -> void {
+      stopAdvertising();
+    });
+    m_context.getPlatform().getAdvertiser().registerStartCallback([this] () -> void {
+      startAdvertising();
+    });
+    HTDBG("Advertising callbacks registered");
+
+    // Ensure our zephyr context has bluetooth ready
+    m_context.getPlatform().startBluetooth();
+
+    HTDBG("Bluetooth started. Requesting start of adverts");
+
+    startAdvertising();
+  }
+
+  void stop() override {
+    HTDBG("ConcreteBLETransmitter::stop");
+    if (!BLESensorConfiguration::advertisingEnabled) {
+      HTDBG("Sensor Configuration has advertising disabled. Returning.");
+      return;
+    }
+    stopAdvertising();
+  }
 
 private:
-  class Impl;
-  std::shared_ptr<Impl> mImpl; // shared to allow static callbacks to be bound
+  ContextT& m_context;
+  BluetoothStateManager& m_stateManager;
+  std::shared_ptr<PayloadDataSupplier> m_pds;
+  BLEDatabaseT& m_db;
+
+  std::vector<std::shared_ptr<SensorDelegate>> delegates;
+
+  bool isAdvertising;
+
+  HLOGGER(ContextT);
+
+  // Internal methods
+  void startAdvertising()
+  {
+    // HTDBG("startAdvertising called");
+    if (!BLESensorConfiguration::advertisingEnabled) {
+      HTDBG("Sensor Configuration has advertising disabled. Returning.");
+      return;
+    }
+    if (isAdvertising) {
+      // HTDBG("Already advertising. Returning.");
+      return;
+    }
+
+    // Note: TxPower currently disabled due to restricted advert space and the need to include Herald's service. 
+    //       See https://github.com/vmware/herald-for-cpp/issues/26
+    // Get current TxPower and alter advert accordingly:-
+    // int8_t txp_get = 0;
+    // zephyrinternal::get_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_ADV,0, &txp_get);
+    // HTDBG("Zephyr tx power:-");
+    // HTDBG(std::to_string(txp_get));
+    // herald::ble::ad[1] = bt_data{
+    //   .type=BT_DATA_TX_POWER,
+    //   .data_len=sizeof(txp_get),
+    //   .data=(const uint8_t *)uint8_t(txp_get)
+    // };
+
+    // Now start advertising
+    // See https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/reference/bluetooth/gap.html#group__bt__gap_1gac45d16bfe21c3c38e834c293e5ebc42b
+    int success = bt_le_adv_start(herald::ble::bp, herald::ble::ad, ARRAY_SIZE(herald::ble::ad), NULL, 0);
+    if (0 != success) {
+      HTDBG("Start advertising failed");
+      return;
+    }
+    
+    // zephyrinternal::get_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_ADV,0, &txp_get);
+    // HTDBG("Zephyr tx power post advertising starting:-");
+    // HTDBG(std::to_string(txp_get));
+
+    HTDBG("Start advertising completed successfully");
+    isAdvertising = true;
+  }
+
+  void stopAdvertising()
+  {
+    // HTDBG("stopAdvertising called");
+    if (!BLESensorConfiguration::advertisingEnabled) {
+      HTDBG("Sensor Configuration has advertising disabled. Returning.");
+      return;
+    }
+    if (!isAdvertising) {
+      // HTDBG("Not advertising already. Returning.");
+      return;
+    }
+    isAdvertising = false;
+    int success = bt_le_adv_stop();
+    if (0 != success) {
+      HTDBG("Stop advertising failed");
+      return;
+    }
+    // Don't stop Bluetooth altogether - this is done by the ZephyrContext->stopBluetooth() function only
+    HTDBG("Stop advertising completed successfully");
+  }
+
 };
 
 }

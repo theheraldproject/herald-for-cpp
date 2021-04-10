@@ -110,9 +110,9 @@ ZephyrContextProvider::getBluetoothStateManager()
 }
 
 void
-ZephyrContextProvider::add(std::shared_ptr<BluetoothStateManagerDelegate> delegate)
+ZephyrContextProvider::add(BluetoothStateManagerDelegate& delegate)
 {
-  stateDelegates.push_back(delegate);
+  stateDelegates.emplace_back(delegate);
 }
 
 BluetoothState
@@ -175,8 +175,8 @@ ZephyrContextProvider::enableBluetooth() noexcept
   if (0 == success) {
     bluetoothEnabled = true;
 
-    for (auto delegate : stateDelegates) {
-      delegate->bluetoothStateManager(BluetoothState::poweredOn);
+    for (auto& delegate : stateDelegates) {
+      delegate.get().bluetoothStateManager(BluetoothState::poweredOn);
     }
   } else {
     LOG_INF("Error enabling Zephyr Bluetooth: %d", success);
@@ -197,8 +197,8 @@ ZephyrContextProvider::startBluetooth() noexcept
 int 
 ZephyrContextProvider::stopBluetooth() noexcept
 {
-  for (auto delegate : stateDelegates) {
-    delegate->bluetoothStateManager(BluetoothState::poweredOff);
+  for (auto& delegate : stateDelegates) {
+    delegate.get().bluetoothStateManager(BluetoothState::poweredOff);
   }
   return 0;
 }

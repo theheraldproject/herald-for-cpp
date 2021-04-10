@@ -241,8 +241,9 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
   // create our BLE coordinator
   DummyLoggingSink dls;
   DummyBluetoothStateManager dbsm;
-  herald::Context ctx(dls,dbsm); // default context include
-  using CT = typename herald::Context<DummyLoggingSink,DummyBluetoothStateManager>;
+  herald::DefaultPlatformType dpt;
+  herald::Context ctx(dpt,dls,dbsm); // default context include
+  using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
   herald::ble::ConcreteBLEDatabase db(ctx);
   MockHeraldV1ProtocolProvider pp(ctx,db);
   herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);
