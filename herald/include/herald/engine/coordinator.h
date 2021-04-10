@@ -51,16 +51,16 @@ public:
   ~Coordinator() = default;
 
   /// Introspect and include in iteration planning
-  void add(std::shared_ptr<Sensor> sensor) {
+  void add(Sensor& sensor) {
     HTDBG("Adding sensor");
-    auto prov = sensor->coordinationProvider();
+    auto prov = sensor.coordinationProvider();
     if (prov.has_value()) {
       HTDBG("Sensor has Provider implementation");
       providers.push_back(prov.value());
     }
   }
   /// Remove from iteration planning
-  void remove(std::shared_ptr<Sensor> sensor)
+  void remove(Sensor& sensor)
   {
     // TODO support remove
   }

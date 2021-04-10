@@ -294,6 +294,7 @@ void herald_entry() {
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
 	SensorArray sa(ctx,pds);
 	ConcreteBLESensor<CT> ble(ctx,ctx.getBluetoothStateManager(),pds);
+	sa.add(ble);
 
 	// Add contacts.log delegate
 	// CURRENTLY BREAKS ZEPHYR - DON'T KNOW WHY YET - LOGGING SUBSYSTEM ISSUE
