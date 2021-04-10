@@ -4,9 +4,15 @@
 
 #include "herald/data/zephyr/zephyr_logging_sink.h"
 
+#include <logging/log.h>
+
 #include <string>
 
 namespace herald {
+
+// THE BELOW IS DONE IN EXACTLY ONE HERALD FILE
+LOG_MODULE_REGISTER(heraldlogger, HERALD_LOG_LEVEL);
+
 namespace data {
 
 void

@@ -135,7 +135,7 @@ ZephyrContextProvider::getAdvertiser() noexcept
 int 
 ZephyrContextProvider::enableBluetooth() noexcept
 {
-  LOG_INF("Context::enableBluetooth");
+  // LOG_INF("Context::enableBluetooth");
   int success;
 
   // TODO determine if default Zephyr mac address rotation uses Nordic CC3xx, if present
@@ -164,13 +164,13 @@ ZephyrContextProvider::enableBluetooth() noexcept
   //   return success;
   // }
   success = bt_enable(NULL); // NULL means synchronously enabled
-  LOG_INF("bt enable returned");
+  // LOG_INF("bt enable returned");
 
   // This should only called once
   if (IS_ENABLED(CONFIG_SETTINGS)) {
-    LOG_INF("Calling settings load");
+    // LOG_INF("Calling settings load");
     settings_load();
-    LOG_INF("settings load returned");
+    // LOG_INF("settings load returned");
   }
   if (0 == success) {
     bluetoothEnabled = true;
@@ -179,7 +179,7 @@ ZephyrContextProvider::enableBluetooth() noexcept
       delegate.get().bluetoothStateManager(BluetoothState::poweredOn);
     }
   } else {
-    LOG_INF("Error enabling Zephyr Bluetooth: %d", success);
+    // LOG_INF("Error enabling Zephyr Bluetooth: %d", success);
   }
 
   return success;

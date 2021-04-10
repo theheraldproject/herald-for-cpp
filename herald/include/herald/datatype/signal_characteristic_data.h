@@ -10,6 +10,7 @@
 #include "payload_data.h"
 #include "payload_sharing_data.h"
 #include "immediate_send_data.h"
+#include "../ble/ble_sensor_configuration.h"
 
 #include <optional>
 
@@ -21,38 +22,39 @@ enum class SignalCharacteristicDataType : short {
 };
 
 namespace SignalCharacteristicData {
+using namespace herald::ble;
 
 [[maybe_unused]]
-static std::optional<Data> encodeWriteRssi(const RSSI& rssi) noexcept;
+std::optional<Data> encodeWriteRssi(const BLESensorConfiguration& config,const RSSI& rssi) noexcept;
 
 [[maybe_unused]]
-static std::optional<RSSI> decodeWriteRSSI(const Data& data) noexcept;
+std::optional<RSSI> decodeWriteRSSI(const BLESensorConfiguration& config,const Data& data) noexcept;
 
 [[maybe_unused]]
-static std::optional<Data> encodeWritePayload(const PayloadData& payloadData) noexcept;
+std::optional<Data> encodeWritePayload(const BLESensorConfiguration& config,const PayloadData& payloadData) noexcept;
 
 [[maybe_unused]]
-static std::optional<PayloadData> decodeWritePayload(const Data& data) noexcept;
+std::optional<PayloadData> decodeWritePayload(const BLESensorConfiguration& config,const Data& data) noexcept;
 
 [[maybe_unused]]
-static std::optional<Data> encodeWritePayloadSharing(const PayloadSharingData& payloadSharingData) noexcept;
+std::optional<Data> encodeWritePayloadSharing(const BLESensorConfiguration& config,const PayloadSharingData& payloadSharingData) noexcept;
 
 [[maybe_unused]]
-static std::optional<PayloadSharingData> decodeWritePayloadSharing(const Data& data) noexcept;
+std::optional<PayloadSharingData> decodeWritePayloadSharing(const BLESensorConfiguration& config,const Data& data) noexcept;
 
 [[maybe_unused]]
-static std::optional<Data> encodeImmediateSend(const ImmediateSendData& immediateSendData) noexcept;
+std::optional<Data> encodeImmediateSend(const BLESensorConfiguration& config,const ImmediateSendData& immediateSendData) noexcept;
 
 [[maybe_unused]]
-static std::optional<ImmediateSendData> decodeImmediateSend(const Data& data) noexcept;
+std::optional<ImmediateSendData> decodeImmediateSend(const BLESensorConfiguration& config,const Data& data) noexcept;
 
 [[maybe_unused]]
-static SignalCharacteristicDataType detect(const Data& data) noexcept;
+SignalCharacteristicDataType detect(const BLESensorConfiguration& config,const Data& data) noexcept;
 
 // THE FOLLOWING METHODS ARE MOVED TO THE CPP AND THUS HIDDEN FROM THE ABI
-//static byte signalDataActionCode(const byte[] signalData);
+//byte signalDataActionCode(const byte[] signalData);
 
-//static bool int16(const byte[] data, const std::size_t index, int16& to); /// true if successful, sets to parameters
+//bool int16(const byte[] data, const std::size_t index, int16& to); /// true if successful, sets to parameters
 
 } // end namespace
 

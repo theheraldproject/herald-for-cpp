@@ -42,12 +42,12 @@
 #include <inttypes.h>
 
 #include <logging/log.h>
-namespace applogging {
+// namespace applogging {
   LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 	#define APP_DBG(_msg,...) LOG_DBG(_msg,##__VA_ARGS__);
 	#define APP_INF(_msg,...) LOG_INF(_msg,##__VA_ARGS__);
 	#define APP_ERR(_msg,...) LOG_ERR(_msg,##__VA_ARGS__);
-}
+// }
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME_MS   1000
@@ -283,7 +283,9 @@ void herald_entry() {
 	sink2.log("subsys2","cat2",SensorLoggerLevel::fault,"Herald error message");
 	
 	// Enable transmitter (i.e. this is a Herald device)
-	BLESensorConfiguration::advertisingEnabled = true;
+	BLESensorConfiguration config = ctx.getSensorConfiguration(); // copy ctor
+	config.advertisingEnabled = true;
+	ctx.setSensorConfiguration(config);
 
 	
 	APP_DBG("Creating sensor array");

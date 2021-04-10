@@ -5,6 +5,8 @@
 #ifndef HERALD_CONTEXT_H
 #define HERALD_CONTEXT_H
 
+#include "ble/ble_sensor_configuration.h" // TODO abstract this away in to platform class
+
 namespace herald {
 
 ///
@@ -55,9 +57,9 @@ struct Context {
   using logging_sink_type = LoggingSinkT;
 
   Context(PlatformT& platform,LoggingSinkT& sink,BluetoothStateManagerT& bsm) noexcept
-    : platform(platform), loggingSink(sink), bleStateManager(bsm) {}
+    : platform(platform), loggingSink(sink), bleStateManager(bsm), config() {}
   Context(const Context& other) noexcept
-    : platform(other.platform), loggingSink(other.loggingSink), bleStateManager(other.bleStateManager)
+    : platform(other.platform), loggingSink(other.loggingSink), bleStateManager(other.bleStateManager), config(other.config)
   {}
   // Context(Context&& other)
   //   : loggingSink(std::move(other.loggingSink)), bleStateManager(std::move(other.bleStateManager))
@@ -87,10 +89,19 @@ struct Context {
     return platform;
   }
 
+  const ble::BLESensorConfiguration& getSensorConfiguration() {
+    return config;
+  }
+
+  void setSensorConfiguration(ble::BLESensorConfiguration newConfig) {
+    config = newConfig;
+  }
+
 private:
   PlatformT& platform;
   LoggingSinkT& loggingSink;
   BluetoothStateManagerT& bleStateManager;
+  ble::BLESensorConfiguration config;
 };
 
 // \brief Default empty platform type for platforms that have no custom functionality

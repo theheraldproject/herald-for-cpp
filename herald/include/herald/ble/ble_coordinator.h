@@ -184,10 +184,10 @@ public:
 
 
     // Add all targets in database that are not known
-    auto newConns = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
+    auto newConns = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
       return !device->ignore() &&
         (
-          !device->hasService(BLESensorConfiguration::serviceUUID)
+          !device->hasService(context.getSensorConfiguration().serviceUUID)
           ||
           !device->payloadData().has_value() // Know the OS, but not the payload (ID)
           ||
@@ -286,21 +286,21 @@ public:
   // auto state0Devices = db.matches([](std::shared_ptr<BLEDevice> device) -> bool {
   //   return !device->ignore() && !device->pseudoDeviceAddress().has_value();
   // });
-  auto state1Devices = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
+  auto state1Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
     return !device->ignore() && 
            !device->receiveOnly() &&
-           !device->hasService(BLESensorConfiguration::serviceUUID);
+           !device->hasService(context.getSensorConfiguration().serviceUUID);
   });
-  auto state2Devices = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
+  auto state2Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
     return !device->ignore() && 
            !device->receiveOnly() &&
-            device->hasService(BLESensorConfiguration::serviceUUID) &&
+            device->hasService(context.getSensorConfiguration().serviceUUID) &&
            !device->payloadData().has_value(); // TODO check for Herald transferred payload data (not legacy)
   });
-  auto state4Devices = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
+  auto state4Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
     return !device->ignore() && 
            !device->receiveOnly() &&
-            device->hasService(BLESensorConfiguration::serviceUUID) &&
+            device->hasService(context.getSensorConfiguration().serviceUUID) &&
             device->immediateSendData().has_value();
   });
   // TODO State X (timed out / out of range) devices filter check -> Then remove from BLEDatabase
