@@ -13,48 +13,50 @@ namespace datatype {
 
 // IMPL DEFINITION
 
-class Location::Impl {
-public:
-  Impl(std::shared_ptr<LocationReference> value, Date start, Date end);
-  ~Impl() = default;
+// class Location::Impl {
+// public:
+//   Impl(std::shared_ptr<LocationReference> value, Date start, Date end);
+//   ~Impl() = default;
 
-  // member variables
-  std::shared_ptr<LocationReference> mValue;
-  Date mStart;
-  Date mEnd;
-};
+//   // member variables
+//   std::shared_ptr<LocationReference> mValue;
+//   Date mStart;
+//   Date mEnd;
+// };
 
-// IMPL DECLARATIONS
-Location::Impl::Impl(std::shared_ptr<LocationReference> value, Date start, Date end)
-  : mValue(value),
-    mStart(std::move(start)),
-    mEnd(std::move(end))
-{
-  ;
-}
+// // IMPL DECLARATIONS
+// Location::Impl::Impl(std::shared_ptr<LocationReference> value, Date start, Date end)
+//   : mValue(value),
+//     mStart(std::move(start)),
+//     mEnd(std::move(end))
+// {
+//   ;
+// }
 
 
 
 
 // LOCATION DECLARATIONS
 
-Location::Location(std::shared_ptr<LocationReference> value, Date start, Date end)
-  : mImpl(std::make_unique<Impl>(value,start,end))
-{
-  ;
-}
+// Location::Location(std::shared_ptr<LocationReference> value, Date start, Date end)
+//   : mValue(value),
+//     mStart(std::move(start)),
+//     mEnd(std::move(end))
+// {
+//   ;
+// }
 
-Location::~Location() {}
+// Location::~Location() {}
 
-std::string
-Location::description() const {
-  return mImpl->mValue->description() + ":[from=" + ((std::string)mImpl->mStart) + ",to=" + ((std::string)mImpl->mEnd) + "]";
-}
+// std::string
+// Location::description() const {
+//   return mValue->description() + ":[from=" + ((std::string)mStart) + ",to=" + ((std::string)mEnd) + "]";
+// }
 
-Location::operator std::string() const noexcept
-{
-  return description();
-}
+// Location::operator std::string() const noexcept
+// {
+//   return description();
+// }
 
 
 

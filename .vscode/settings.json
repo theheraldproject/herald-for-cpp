@@ -82,6 +82,7 @@
     "filesystem": "cpp",
     "strstream": "cpp",
     "resumable": "cpp",
-    "codecvt": "cpp"
+    "codecvt": "cpp",
+    "*.rh": "cpp"
   }
 }

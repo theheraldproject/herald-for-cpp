@@ -103,11 +103,16 @@ void main(void)
 	using namespace herald::payload::beacon;
 	using namespace herald::payload::extended;
 
-	// Disable receiver / scanning mode - we're just transmitting our value
-	herald::ble::BLESensorConfiguration::scanningEnabled = false;
-
 	// Create Herald sensor array
-	std::shared_ptr<ZephyrContext> ctx = std::make_shared<ZephyrContext>();
+	ZephyrContextProvider zcp;
+	Context ctx(zcp,zcp.getLoggingSink(),zcp.getBluetoothStateManager());
+	using CT = Context<ZephyrContextProvider,ZephyrLoggingSink,BluetoothStateManager>;
+	
+	// Disable receiver / scanning mode - we're just transmitting our value
+	BLESensorConfiguration config = ctx.getSensorConfiguration(); // copy ctor
+	config.scanningEnabled = false;
+	ctx.setSensorConfiguration(config);
+
 	ConcreteExtendedDataV1 extendedData;
 	extendedData.addSection(ExtendedDataSegmentCodesV1::TextPremises, erinsStakehouse.name);
 
@@ -117,7 +122,11 @@ void main(void)
 		erinsStakehouse.code,
 		extendedData
 	);
+	
 	SensorArray sa(ctx,pds);
+	ConcreteBLESensor<CT> ble(ctx,ctx.getBluetoothStateManager(),pds);
+	sa.add(ble);
+
 	// Start array (and thus start advertising)
 	sa.start();
 

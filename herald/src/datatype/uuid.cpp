@@ -16,26 +16,26 @@ namespace herald {
 namespace datatype {
 
 // PIMPL Class
-class UUID::Impl {
-public:
-  using value_type = uint8_t;
+// class UUID::Impl {
+// public:
+//   using value_type = uint8_t;
 
-  Impl(std::array<value_type, 16>& data, bool isValid);
-  ~Impl();
+//   Impl(std::array<value_type, 16>& data, bool isValid);
+//   ~Impl();
 
-  std::array<value_type, 16> mData = { {0}};
-  bool mValid;
-};
+//   std::array<value_type, 16> mData = { {0}};
+//   bool mValid;
+// };
 
-UUID::Impl::Impl(std::array<value_type, 16>& data, bool isValid)
- : mValid(isValid)
-{
-  mData = std::move(data);
-}
+// UUID::Impl::Impl(std::array<value_type, 16>& data, bool isValid)
+//  : mValid(isValid)
+// {
+//   mData = std::move(data);
+// }
 
-UUID::Impl::~Impl() {
-  ;
-}
+// UUID::Impl::~Impl() {
+//   ;
+// }
 
 
 
@@ -69,64 +69,62 @@ UUID::random(RandomnessGenerator& from) noexcept {
 // Instance functions
 
 UUID::UUID(UUID&& from) 
- : mImpl(std::make_unique<Impl>(from.mImpl->mData,from.mImpl->mValid))
+ : mData(std::move(from.mData)), mValid(from.mValid)
 {
   ;
 }
 
 UUID::UUID(const UUID& from) 
- : mImpl(std::make_unique<Impl>(from.mImpl->mData,from.mImpl->mValid))
+ : mData(from.mData),mValid(from.mValid)
 {
   ;
 }
 
 // private ctor
 UUID::UUID(std::array<value_type, 16> data, bool isValid) noexcept
- : mImpl(std::make_unique<Impl>(data,isValid))
+ : mData(data),mValid(isValid)
 {
   ;
 }
 
-UUID::~UUID() {
-  ;
-}
+UUID::~UUID() = default;
 
 
 UUID&
 UUID::operator=(const UUID& other) noexcept
 {
-  mImpl->mData = other.mImpl->mData;
-  mImpl->mValid = other.mImpl->mValid;
+  mData = other.mData;
+  mValid = other.mValid;
   return *this;
 }
 
 bool
 UUID::valid() const noexcept {
-  return mImpl->mValid;
+  return mValid;
 }
 
 bool
 UUID::operator==(const UUID& other) const noexcept {
-  return mImpl->mData == other.mImpl->mData;
+  return mData == other.mData;
 }
 bool
 UUID::operator!=(const UUID& other) const noexcept {
-  return mImpl->mData != other.mImpl->mData;
+  return mData != other.mData;
 }
 
 bool
 UUID::operator<(const UUID& other) const noexcept {
-  return mImpl->mData < other.mImpl->mData;
+  return mData < other.mData;
 }
 
 bool
 UUID::operator>(const UUID& other) const noexcept {
-  return mImpl->mData > other.mImpl->mData;
+  return mData > other.mData;
 }
 
 std::array<uint8_t, 16>
 UUID::data() const noexcept {
-  return mImpl->mData;
+  return mData;
 }
 
 std::string
@@ -136,7 +134,7 @@ UUID::string() const noexcept {
 	str.setf(std::ios_base::hex, std::ios::basefield);
 	str.fill('0');
   for (std::size_t i=0; i < 16; i++) {
-		str << std::setw(2) << (unsigned short)mImpl->mData[i];
+		str << std::setw(2) << (unsigned short)mData[i];
 	}
 	std::string hexString = str.str();
   // add in hyphens at relevant points

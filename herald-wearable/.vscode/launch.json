@@ -1,0 +1,123 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+
+    {
+      "type": "gnu-debugger",
+      "request": "launch",
+      "name": "Debug - NRF5340_XXAA_APP - Launch",
+      "program": "${workspaceFolder}/build/zephyr/zephyr.elf",
+      "toolchain": "${config:armToolchainPath}/bin",
+      "client": "arm-none-eabi-gdb.exe",
+      "server": "JLinkGDBServer",
+      "windows": {
+        "server": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      },
+      "serverArgs": [
+        "-device", "NRF5340_XXAA_APP",
+        "-if", "SWD",
+        "-speed", "4000"
+      ],
+      "serverHost": "localhost",
+      "serverPort": 2331,
+      "customVariables": [
+        "port0",
+        "port1",
+        "port2",
+      ],
+      "autoRun": false,
+      "debugOutput": false //,
+      //"preLaunchTask": "build firmware"
+    },
+    
+  
+    {
+      "type": "gnu-debugger",
+      "request": "launch",
+      "name": "Debug - NRF52840_XXAA - Launch",
+      "program": "${workspaceFolder}/build/zephyr/zephyr.elf",
+      "toolchain": "${config:armToolchainPath}/bin",
+      "client": "arm-none-eabi-gdb.exe",
+      "server": "JLinkGDBServer",
+      "windows": {
+        "server": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      },
+      "serverArgs": [
+        "-device", "NRF52840_XXAA",
+        "-if", "SWD",
+        "-speed", "4000"
+      ],
+      "serverHost": "localhost",
+      "serverPort": 2331,
+      "customVariables": [
+        "port0",
+        "port1",
+        "port2",
+      ],
+      "autoRun": false,
+      "debugOutput": false //,
+      //"preLaunchTask": "build firmware"
+    },
+    
+  
+    {
+      "type": "gnu-debugger",
+      "request": "launch",
+      "name": "Debug - NRF52833_XXAA - Launch",
+      "program": "${workspaceFolder}/build/zephyr/zephyr.elf",
+      "toolchain": "${config:armToolchainPath}/bin",
+      "client": "arm-none-eabi-gdb.exe",
+      "server": "JLinkGDBServer",
+      "windows": {
+        "server": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      },
+      "serverArgs": [
+        "-device", "NRF52833_XXAA",
+        "-if", "SWD",
+        "-speed", "4000"
+      ],
+      "serverHost": "localhost",
+      "serverPort": 2331,
+      "customVariables": [
+        "port0",
+        "port1",
+        "port2",
+      ],
+      "autoRun": false,
+      "debugOutput": false //,
+      //"preLaunchTask": "build firmware"
+    },
+    
+  
+    {
+      "type": "gnu-debugger",
+      "request": "launch",
+      "name": "Debug - NRF52832_XXAA - Launch",
+      "program": "${workspaceFolder}/build/zephyr/zephyr.elf",
+      "toolchain": "${config:armToolchainPath}/bin",
+      "client": "arm-none-eabi-gdb.exe",
+      "server": "JLinkGDBServer",
+      "windows": {
+        "server": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      },
+      "serverArgs": [
+        "-device", "NRF52832_XXAA",
+        "-if", "SWD",
+        "-speed", "4000"
+      ],
+      "serverHost": "localhost",
+      "serverPort": 2331,
+      "customVariables": [
+        "port0",
+        "port1",
+        "port2",
+      ],
+      "autoRun": false,
+      "debugOutput": false //,
+      //"preLaunchTask": "build firmware"
+    }
+  ]
+}

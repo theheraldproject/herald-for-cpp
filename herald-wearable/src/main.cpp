@@ -26,10 +26,11 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/services/bas.h>
 
-
+#ifdef CC3XX_BACKEND
 // Cryptocell - nRF52840/nRF9160/nRF53x only. See prj.conf too to enable this Hardware
 #include <nrf_cc3xx_platform.h>
 #include <nrf_cc3xx_platform_entropy.h>
+#endif
 
 #include <utility>
 
@@ -38,8 +39,15 @@
 #include <drivers/gpio.h>
 #include <drivers/hwinfo.h>
 
+#include <inttypes.h>
+
 #include <logging/log.h>
-LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
+// namespace applogging {
+  LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
+	#define APP_DBG(_msg,...) LOG_DBG(_msg,##__VA_ARGS__);
+	#define APP_INF(_msg,...) LOG_INF(_msg,##__VA_ARGS__);
+	#define APP_ERR(_msg,...) LOG_ERR(_msg,##__VA_ARGS__);
+// }
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME_MS   1000
@@ -60,14 +68,18 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 #endif
 
 struct k_thread herald_thread;
-K_THREAD_STACK_DEFINE(herald_stack, 9192); // TODO reduce this down
+K_THREAD_STACK_DEFINE(herald_stack, 
+#ifdef CONFIG_BT_MAX_CONN
+	1024 + (CONFIG_BT_MAX_CONN * 768)
+#else
+	9192
+#endif
+); // Was 9192 for nRF5340 (10 conns), 2048 for nRF52832 (3 conns)
 
 using namespace herald;
 using namespace herald::data;
 using namespace herald::payload;
 using namespace herald::payload::fixed;
-
-std::shared_ptr<SensorArray> sa;
 
 char* str(const TargetIdentifier& ti) {
   return log_strdup( ((std::string)ti).c_str());
@@ -80,24 +92,24 @@ public:
 
 	void sensor(SensorType sensor, const TargetIdentifier& didDetect) override {
 		// LOG_DBG("sensor didDetect");
-		LOG_DBG("sensor didDetect: %s", str(didDetect) ); // May want to disable this - logs A LOT of info
+		APP_DBG("sensor didDetect: %s", str(didDetect) ); // May want to disable this - logs A LOT of info
 	}
 
   /// Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
   void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) override {
 		// LOG_DBG("sensor didRead");
-		LOG_DBG("sensor didRead: %s with payload: %s", str(fromTarget), log_strdup(didRead.hexEncodedString().c_str()));
+		APP_DBG("sensor didRead: %s with payload: %s", str(fromTarget), log_strdup(didRead.hexEncodedString().c_str()));
 	}
 
   /// Receive written immediate send data from target, e.g. important timing signal.
   void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) override {
 		// LOG_DBG("sensor didReceive");
-		LOG_DBG("sensor didReceive: %s with immediate send data: %s", str(fromTarget), log_strdup(didReceive.hexEncodedString().c_str()));
+		APP_DBG("sensor didReceive: %s with immediate send data: %s", str(fromTarget), log_strdup(didReceive.hexEncodedString().c_str()));
 	}
 
   /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
   void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) override {
-		LOG_DBG("sensor didShare");
+		APP_DBG("sensor didShare");
 		// LOG_DBG("sensor didShare: %s", str(fromTarget) );
 		// for (auto& p : didShare) {
 		// 	LOG_DBG(" - %s", log_strdup(p.hexEncodedString().c_str()));
@@ -106,26 +118,28 @@ public:
 
   /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) override {
-		LOG_DBG("sensor didMeasure");
+		APP_DBG("sensor didMeasure");
 		// LOG_DBG("sensor didMeasure: %s with proximity: %d", str(fromTarget), didMeasure.value); 
 	}
 
   /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
-  void sensor(SensorType sensor, const Location& didVisit) override {
-		LOG_DBG("sensor didVisit");
+	template <typename LocationT>
+  void sensor(SensorType sensor, const Location<LocationT>& didVisit) {
+		APP_DBG("sensor didVisit");
 	}
 
   /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) override {
-		LOG_DBG("sensor didMeasure withPayload");
+		APP_DBG("sensor didMeasure withPayload");
 	}
 
   /// Sensor state update
   void sensor(SensorType sensor, const SensorState& didUpdateState) override {
-		LOG_DBG("sensor didUpdateState");
+		APP_DBG("sensor didUpdateState");
 	}
 };
 
+#ifdef CC3XX_BACKEND
 void cc3xx_init() {
   // START IMPLEMENTORS GUIDANCE - EXAMPLE CODE NOT NEEDED TO COPY IN TO IN YOUR DEMO APP
   // NOTE TO IMPLEMENTORS: Please remember to use a hardware security module where present.
@@ -159,24 +173,27 @@ void cc3xx_init() {
 	}
 	// END IMPLEMENTORS GUIDANCE
 }
+#endif
 
 void herald_entry() {
-	LOG_DBG("Herald entry");
+	APP_DBG("Herald entry");
 	k_sleep(K_MSEC(10000)); // pause so we have time to see Herald initialisation log messages. Don't do this in production!
-	LOG_DBG("Herald setup begins");
+	APP_DBG("Herald setup begins");
 
 	// Test date/time based things on Zephyr - interesting issues with compliance!
 	Date now;
-	LOG_DBG("BEFORE DATE");
+	APP_DBG("BEFORE DATE");
 	std::string s = now.iso8601DateTime();
-	LOG_DBG("DATE: %s", log_strdup(s.c_str()));
-	LOG_DBG("PAST DATE");
+	APP_DBG("DATE: %s", log_strdup(s.c_str()));
+	APP_DBG("PAST DATE");
 
 	std::shared_ptr<AppLoggingDelegate> appDelegate = std::make_shared<AppLoggingDelegate>();
 	
 	// IMPLEMENTORS GUIDANCE - USING HERALD
 	// First initialise the Zephyr Context - this links Herald to any Zephyr OS specific constructs or callbacks
-	std::shared_ptr<ZephyrContext> ctx = std::make_shared<ZephyrContext>();
+	ZephyrContextProvider zcp;
+	Context ctx(zcp,zcp.getLoggingSink(),zcp.getBluetoothStateManager());
+	using CT = Context<ZephyrContextProvider,ZephyrLoggingSink,BluetoothStateManager>;
 
   // Now prepare your device's Herald identity payload - this is what gets sent to other devices when they request it
 	//   SECURITY: Depending on the payload provider, this could be static and in the clear or varying over time. 
@@ -187,94 +204,103 @@ void herald_entry() {
 
 	// TESTING ONLY
 	// IF IN TESTING / DEBUG, USE A FIXED PAYLOAD (SO YOU CAN TRACK IT OVER TIME)
-	// std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
-	// std::uint8_t uniqueId[8];	
-  // // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
-	// auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
-	// if (hwInfoAvailable > 0) {
-	// 	LOG_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
-	// 	clientId = *uniqueId;
-	// } else {
-	// 	LOG_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
-	// }
-	// LOG_DBG("Final clientID: %d", clientId);
+	std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
+	std::uint8_t uniqueId[8];	
+  // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
+	auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
+	if (hwInfoAvailable > 0) {
+		APP_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
+		clientId = *uniqueId;
+	} else {
+		APP_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
+	}
+	APP_DBG("Final clientID: %" PRIu64 "", clientId);
 
-	// std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
-	// 	countryCode,
-	// 	stateCode,
-	// 	clientId
-	// );
+	std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
+		countryCode,
+		stateCode,
+		clientId
+	);
 	// END TESTING ONLY
 
 	// PRODUCTION ONLY
-	LOG_DBG("Before simple");
-	k_sleep(K_SECONDS(2));
-	// Use the simple payload, or secured payload, that implements privacy features to prevent user tracking
-	herald::payload::simple::K k;
-	// NOTE: You should store a secret key for a period of days and pass the value for the correct epoch in to here instead of sk
+// 	APP_DBG("Before simple");
+// 	k_sleep(K_SECONDS(2));
+// 	// Use the simple payload, or secured payload, that implements privacy features to prevent user tracking
+// 	herald::payload::simple::K k;
+// 	// NOTE: You should store a secret key for a period of days and pass the value for the correct epoch in to here instead of sk
 	
-	// Note: Using the CC310 to do this. You can use RandomnessSource.h random sources instead if you wish, but CC310 is more secure.
-	herald::payload::simple::SecretKey sk(std::byte(0x00),2048); // fallback - you should do something different.
+// 	// Note: Using the CC310 to do this. You can use RandomnessSource.h random sources instead if you wish, but CC310 is more secure.
+// 	herald::payload::simple::SecretKey sk(std::byte(0x00),2048); // fallback - you should do something different.
 	
-	size_t buflen = 2048;
-	uint8_t* buf = new uint8_t[buflen];
-	size_t olen = 0;
-	int success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); 
-	if (0 == success) {
-		sk.clear();
-		sk.append(buf, 0, buflen);
-		LOG_DBG("Have applied CC3xx generated data to secret key");
-	} else {
-		LOG_DBG("Could not generate 2048 bytes of randomness required for SimplePayload Secret Key. Falling back to fixed generic secret key.");
-	}
+// 	size_t buflen = 2048;
+// 	uint8_t* buf = new uint8_t[buflen];
+// 	size_t olen = 0;
+	
+// #ifdef CC3XX_BACKEND
+// 	int success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); 
+// #else
+// 	int success = 1;
+// #endif
+// 	if (0 == success) {
+// 		sk.clear();
+// 		sk.append(buf, 0, buflen);
+// 		APP_DBG("Have applied CC3xx generated data to secret key");
+// 	} else {
+// 		APP_DBG("Could not generate 2048 bytes of randomness required for SimplePayload Secret Key. Falling back to fixed generic secret key.");
+// 	}
 
-	// verify secret key
-	for (int i = 0;i < 2048;i+=64) {
-		Data t = sk.subdata(i,64);
-		LOG_DBG("Got 64 bytes from secret key from %d",i);
-	}
+// 	// verify secret key
+// 	for (int i = 0;i < 2048;i+=64) {
+// 		Data t = sk.subdata(i,64);
+// 		APP_DBG("Got 64 bytes from secret key from %d",i);
+// 	}
 
-	LOG_DBG("About to create Payload data supplier");
-	k_sleep(K_SECONDS(2));
+// 	APP_DBG("About to create Payload data supplier");
+// 	k_sleep(K_SECONDS(2));
 
-	std::shared_ptr<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1> pds = std::make_shared<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1>(
-		ctx,
-		countryCode,
-		stateCode,
-		sk,
-		k
-	);
+// 	std::shared_ptr<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1> pds = std::make_shared<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1>(
+// 		ctx,
+// 		countryCode,
+// 		stateCode,
+// 		sk,
+// 		k
+// 	);
 	// END PRODUCTION ONLY
-	LOG_DBG("Have created Payload data supplier");
+	APP_DBG("Have created Payload data supplier");
 	k_sleep(K_SECONDS(2));
 
 
-	auto sink = ctx->getLoggingSink("mySub","myCat");
-	sink->log(SensorLoggerLevel::debug,"Here's some info for you");
+	auto& sink = ctx.getLoggingSink();
+	sink.log("subsys1","cat1",SensorLoggerLevel::debug,"Here's some info for you");
 	auto payload = pds->payload(PayloadTimestamp(),nullptr);
-	sink->log(SensorLoggerLevel::debug,"I've got some payload data");
-	sink->log(SensorLoggerLevel::debug,payload->hexEncodedString());
+	sink.log("subsys1","cat1",SensorLoggerLevel::debug,"I've got some payload data");
+	sink.log("subsys1","cat1",SensorLoggerLevel::debug,payload->hexEncodedString());
 	
-	auto sink2 = ctx->getLoggingSink("mySub","mySecondCat");
-	sink2->log(SensorLoggerLevel::debug,"Here's some more info for you");
+	auto& sink2 = ctx.getLoggingSink();
+	sink2.log("subsys2","cat2",SensorLoggerLevel::debug,"Here's some more info for you");
 
 	// LOGGING LEVEL TESTING
-	LOG_DBG("Zephyr debug message");
-	LOG_INF("Zephyr info message");
-	LOG_ERR("Zephyr error message");
-	sink2->log(SensorLoggerLevel::debug,"Herald debug message");
-	sink2->log(SensorLoggerLevel::info,"Herald info message");
-	sink2->log(SensorLoggerLevel::fault,"Herald error message");
+	APP_DBG("Zephyr debug message");
+	APP_INF("Zephyr info message");
+	APP_ERR("Zephyr error message");
+	sink2.log("subsys2","cat2",SensorLoggerLevel::debug,"Herald debug message");
+	sink2.log("subsys2","cat2",SensorLoggerLevel::info,"Herald info message");
+	sink2.log("subsys2","cat2",SensorLoggerLevel::fault,"Herald error message");
 	
 	// Enable transmitter (i.e. this is a Herald device)
-	BLESensorConfiguration::advertisingEnabled = true;
+	BLESensorConfiguration config = ctx.getSensorConfiguration(); // copy ctor
+	config.advertisingEnabled = true;
+	ctx.setSensorConfiguration(config);
 
 	
-	LOG_DBG("Creating sensor array");
+	APP_DBG("Creating sensor array");
 	k_sleep(K_SECONDS(2));
 	
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
-	sa = std::make_shared<SensorArray>(ctx,pds);
+	SensorArray sa(ctx,pds);
+	ConcreteBLESensor<CT> ble(ctx,ctx.getBluetoothStateManager(),pds);
+	sa.add(ble);
 
 	// Add contacts.log delegate
 	// CURRENTLY BREAKS ZEPHYR - DON'T KNOW WHY YET - LOGGING SUBSYSTEM ISSUE
@@ -283,18 +309,36 @@ void herald_entry() {
 	// sa->add(contactLogger);
 	
 	// Note: You will likely want to register a SensorDelegate implementation of your own to the sensor array to get callbacks on nearby devices
-	sa->add(appDelegate);
+	sa.add(appDelegate);
 
 
 	// 3. Create and add a Logging sensor delegate to enable testing of discovery
 
 
+	// 4. Now create a live analysis pipeline and enable RSSI to be sent to it for distance estimation
+#ifdef HERALD_ANALYSIS_ENABLED
+	herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
+
+	herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance> myDelegate(ctx);
+	herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
+	herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
+
+	herald::analysis::AnalysisRunner<
+		herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance>>,
+		herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
+		RSSI,Distance
+	> runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
+
+	std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
+	sa.add(src);
+#endif
+
 	
-	LOG_DBG("Starting sensor array");
+	APP_DBG("Starting sensor array");
 	k_sleep(K_SECONDS(2));
 
 	// Start array (and thus start advertising)
-	sa->start(); // There's a corresponding stop() call too
+	sa.start(); // There's a corresponding stop() call too
 
 	int iter = 0;
 	Date last;
@@ -304,11 +348,12 @@ void herald_entry() {
 		Date now;
 		if (iter > 40 /* && iter < 44 */ ) { // some delay to allow us to see advertising output
 			// You could only do first 3 iterations so we can see the older log messages without continually scrolling through log messages
-			sa->iteration(now - last);
+			sa.iteration(now - last);
 		}
 		
 		if (0 == iter % (5000 / delay)) {
-			LOG_DBG("herald thread still running. Iteration: %d", iter);
+			APP_DBG("herald thread still running. Iteration: %d", iter);
+			// runner.run(Date()); // Note: You may want to do this less or more regularly depending on your requirements
 		}
 
 		last = now;
@@ -332,13 +377,16 @@ void main(void)
 		return;
 	}
 
-	LOG_DBG("Logging test");
-	LOG_DBG("Const char* param test: %s","some string param");
-	LOG_DBG("int param test: %d",1234);
+	APP_DBG("Logging test");
+	APP_DBG("Const char* param test: %s","some string param");
+	APP_DBG("int param test: %d",1234);
 
+#ifdef CC3XX_BACKEND
 	cc3xx_init();
+#endif
 
 	// Start herald entry on a new thread in case of errors, or needing to do something on the main thread
+	[[maybe_unused]]
 	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 4096,
 			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
 			-1, K_USER,
@@ -355,7 +403,7 @@ void main(void)
 		gpio_pin_set(dev, PIN, (int)led_is_on);
 		led_is_on = !led_is_on;
 
-		LOG_DBG("main thread still running");
+		APP_DBG("main thread still running");
 
 		// TODO Add logic here to detect failure in Herald thread, and restart to resume as necessary
 	}

@@ -41,8 +41,7 @@ public:
   int intValue() const noexcept;
 
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
+  int value;
 };
 
 } // end namespace

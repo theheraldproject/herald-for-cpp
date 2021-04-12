@@ -1,13 +1,19 @@
 cmake_minimum_required(VERSION 3.12)
 
 add_executable(herald-tests
-  # root with main
+  # Test templates
+	test-templates.h
+
+  # base data types
 	datatypes-tests.cpp
+	datetime-tests.cpp
+	randomuuid-tests.cpp
 	
 	# Low level
 	sensorlogger-tests.cpp
 	errorcontactlog-tests.cpp
 	data-tests.cpp
+	datatypesdataderived-tests.cpp
 	blemacaddress-tests.cpp
 	targetidentifier-tests.cpp
 
@@ -19,6 +25,8 @@ add_executable(herald-tests
 	bledevice-tests.cpp
 	sample-tests.cpp
 	ranges-tests.cpp
+	analysisrunner-tests.cpp
+	analysissensor-tests.cpp
 
   # high level
 	advertparser-tests.cpp
@@ -32,9 +40,14 @@ add_executable(herald-tests
 
 include_directories(${herald_SOURCE_DIR})
 
-set(THREADS_PREFER_PTHREAD_FLAG ON)
-find_package(Threads REQUIRED)
+# set(THREADS_PREFER_PTHREAD_FLAG ON)
+# find_package(Threads REQUIRED)
 
-target_link_libraries(herald-tests PRIVATE herald Threads::Threads)
+target_link_libraries(herald-tests PRIVATE herald) # Threads::Threads
 
+#add_compile_options(-Wl,--stack,100000000)
+#set_target_properties(herald-tests PROPERTIES LINK_FLAGS -Wl,--stack,10000000)
+#set_target_properties(herald-tests PROPERTIES LINK_FLAGS /STACK:10000000)
+add_compile_options(/STACK:1000000000000)
+set_target_properties(herald-tests PROPERTIES LINK_FLAGS /STACK:1000000000000)
 target_compile_features(herald-tests PRIVATE cxx_std_17)

@@ -5,10 +5,11 @@
 #ifndef SAMPLING_H
 #define SAMPLING_H
 
+#include "../datatype/date.h"
+
 #include <array>
 #include <cstdint>
-
-#include "../datatype/date.h"
+#include <type_traits>
 
 namespace herald {
 namespace analysis {
@@ -17,6 +18,12 @@ namespace sampling {
 
 using namespace herald::datatype;
 
+/// The unique ID of a source instance that has been sampled. 
+/// E.g. 64 bit hash of some unique identifier in the source physical realm 
+/// (unknown to the analysis engine)
+using SampledID = std::size_t;
+
+/// The Sample taken from an object with ID of type SampledID
 template <typename ValT>
 struct Sample {
   using value_type = ValT;
@@ -28,6 +35,8 @@ struct Sample {
   Sample(Date sampled, ValT v) : taken(Date{sampled.secondsSinceUnixEpoch()}), value(v) {}
   Sample(const Sample& other) : taken(Date{other.taken.secondsSinceUnixEpoch()}), value(other.value) {} // copy ctor
   Sample(Sample&& other) : taken(std::move(other.taken)), value(std::move(other.value)) {} // move ctor
+  template <typename... Args>
+  Sample(int secondsSinceEpoch,Args... args) : taken(Date(secondsSinceEpoch)), value(ValT(args...)) {} // initialiser list constructor
   ~Sample() = default;
 
   Sample& operator=(Sample&& other) {
@@ -98,30 +107,35 @@ struct SampleList {
 
   static constexpr std::size_t max_size = MaxSize;
 
-  SampleList() : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {};
+  SampleList() : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {}
   SampleList(const SampleList&) = delete; // no shallow copies allowed
+  SampleList(SampleList&& other) noexcept : data(std::move(other.data)), oldestPosition(other.oldestPosition), newestPosition(other.newestPosition) {} // move ctor
+
+  SampleList& operator=(SampleList&& other) noexcept {
+    std::swap(data,other.data);
+    oldestPosition = other.oldestPosition;
+    newestPosition = other.newestPosition;
+    return *this;
+  }
+
+  // Creates a list from static initialiser list elements, using deduction guide
+  template <typename... MultiSampleT>
+  SampleList(MultiSampleT... initialiserElements) : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {
+    appendData(initialiserElements...);
+  }
+  // This one requires specified final type, but deduces constructor to use
+  // SampleList(SampleT... initialiserElements) : data(), oldestPosition(SIZE_MAX), newestPosition(SIZE_MAX) {
+  //   appendData(initialiserElements...);
+  // }
   ~SampleList() = default;
 
+  void push(Sample<SampleValueT> sample) {
+    incrementNewest();
+    data[newestPosition] = sample;
+  }
+
   void push(Date taken, SampleValueT val) {
-    if (SIZE_MAX == newestPosition) {
-      newestPosition = 0;
-      oldestPosition = 0;
-    } else {
-      if (newestPosition == (oldestPosition - 1)) {
-        ++oldestPosition;
-        if (oldestPosition == data.size()) {
-          oldestPosition = 0;
-        }
-      }
-      ++newestPosition;
-    }
-    if (newestPosition == data.size()) {
-      // just gone past the end of the container
-      newestPosition = 0;
-      if (0 == oldestPosition) {
-        ++oldestPosition; // erases oldest if not already removed
-      }
-    }
+    incrementNewest();
     data[newestPosition] = SampleT{taken,val};
   }
 
@@ -172,6 +186,13 @@ struct SampleList {
     newestPosition = SIZE_MAX;
   }
 
+  // SampleT latest() {
+  //   return data[newestPosition];
+  // }
+  Date latest() {
+    return data[newestPosition].taken;
+  }
+
   SampleIterator<SampleList<SampleT,MaxSize>> begin() {
     return SampleIterator<SampleList<SampleT,MaxSize>>(*this);
   }
@@ -185,7 +206,45 @@ private:
   std::array<SampleT,MaxSize> data;
   std::size_t oldestPosition;
   std::size_t newestPosition;
+
+  void incrementNewest() {
+    if (SIZE_MAX == newestPosition) {
+      newestPosition = 0;
+      oldestPosition = 0;
+    } else {
+      if (newestPosition == (oldestPosition - 1)) {
+        ++oldestPosition;
+        if (oldestPosition == data.size()) {
+          oldestPosition = 0;
+        }
+      }
+      ++newestPosition;
+    }
+    if (newestPosition == data.size()) {
+      // just gone past the end of the container
+      newestPosition = 0;
+      if (0 == oldestPosition) {
+        ++oldestPosition; // erases oldest if not already removed
+      }
+    }
+  }
+
+  template <typename LastT>
+  void appendData(LastT last) {
+    push(last);
+  }
+
+  template <typename FirstT, typename SecondT, typename... Inits>
+  void appendData(FirstT first, SecondT second, Inits... initialiserElements) {
+    push(first);
+    appendData(second, initialiserElements...);
+  }
 };
+// Deduction guides
+template <typename... ValT, typename CommonValT = typename std::common_type_t<ValT...>, typename CommonValTValue = typename CommonValT::value_type>
+SampleList(ValT... valueList) -> SampleList<CommonValT,sizeof...(valueList),CommonValTValue>;
+// template<typename SampleValueT>
+// SampleList(Sample<SampleValueT>... valueList) -> SampleList<Sample<SampleValueT>,sizeof...(valueList),SampleValueT>; // TODO figure out guide when we know it's a Sample<ValT>
 
 template <typename SampleListT,
           typename ValT> // from fwd decl =>  = typename SampleListT::value_type

@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -21,6 +21,13 @@
 
 #ifdef __ZEPHYR__
 #include "herald/zephyr_context.h"
+#include "herald/data/zephyr/zephyr_logging_sink.h"
+#include "herald/ble/zephyr/concrete_ble_transmitter.h"
+#ifdef CONFIG_BT_SCAN
+#include "herald/ble/zephyr/concrete_ble_receiver.h"
+#else
+#include "herald/ble/default/concrete_ble_receiver.h"
+#endif
 #endif
 
 // Datatype namespace
@@ -28,6 +35,7 @@
 #include "herald/datatype/bluetooth_state.h"
 #include "herald/datatype/data.h"
 #include "herald/datatype/date.h"
+#include "herald/datatype/distance.h"
 #include "herald/datatype/encounter.h"
 #include "herald/datatype/error_code.h"
 #include "herald/datatype/immediate_send_data.h"
@@ -52,6 +60,7 @@
 #include "herald/data/contact_log.h"
 #include "herald/data/payload_data_formatter.h"
 #include "herald/data/sensor_logger.h"
+#include "herald/data/stdout_logging_sink.h"
 
 // engine namespace
 #include "herald/engine/activities.h"
@@ -77,13 +86,17 @@
 #include "herald/ble/filter/ble_advert_parser.h"
 
 #include "herald/ble/ble_concrete.h"
+#include "herald/ble/ble_concrete_database.h"
 
 // analysis namespace
 #include "herald/analysis/aggregates.h"
-#include "herald/analysis/distance.h"
+#include "herald/analysis/distance_conversion.h"
+#include "herald/analysis/logging_analysis_delegate.h"
 #include "herald/analysis/ranges.h"
 #include "herald/analysis/risk.h"
+#include "herald/analysis/runner.h"
 #include "herald/analysis/sampling.h"
+#include "herald/analysis/sensor_source.h"
 
 // payload namespace
 #include "herald/payload/payload_data_supplier.h"
@@ -101,3 +114,8 @@
 #include "herald/payload/extended/extended_data.h"
 
 // service namespace
+
+/// \brief The main Herald Proximity namespace in C++
+namespace herald {
+
+}

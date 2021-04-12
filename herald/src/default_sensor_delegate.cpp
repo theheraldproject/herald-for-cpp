@@ -28,8 +28,9 @@ void
 DefaultSensorDelegate::sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {
 };
 
+template <typename LocationT>
 void 
-DefaultSensorDelegate::sensor(SensorType sensor, const Location& didVisit) {
+DefaultSensorDelegate::sensor(SensorType sensor, const Location<LocationT>& didVisit) {
 };
 
 void 

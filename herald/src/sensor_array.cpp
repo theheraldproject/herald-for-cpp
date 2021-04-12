@@ -10,142 +10,142 @@
 #include "herald/ble/ble_concrete.h"
 #include "herald/engine/coordinator.h"
 
-#include <memory>
-#include <string>
-#include <vector>
-#include <optional>
+// #include <memory>
+// #include <string>
+// #include <vector>
+// #include <optional>
 
 namespace herald {
 
-using namespace ble;
-using namespace data;
-using namespace datatype;
-using namespace payload;
-using namespace engine;
+// using namespace ble;
+// using namespace data;
+// using namespace datatype;
+// using namespace payload;
+// using namespace engine;
 
-class SensorArray::Impl {
-public:
-  Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
-  ~Impl();
+// template <typename ContextT>
+// class SensorArray<ContextT>::Impl {
+// public:
+//   Impl(ContextT& ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier);
+//   ~Impl();
 
-  // Initialised on entry to Impl constructor:-
-  std::shared_ptr<Context> mContext;
-  std::shared_ptr<PayloadDataSupplier> mPayloadDataSupplier;
-  std::vector<std::shared_ptr<Sensor>> mSensorArray;
+// };
 
-  std::shared_ptr<ConcreteBLESensor> concrete;
+// template <typename ContextT>
+// SensorArray<ContextT>::Impl::Impl(ContextT& ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
+//   : mContext(ctx), 
+//     mPayloadDataSupplier(payloadDataSupplier),
+//     mSensorArray(),
+//     concrete(std::make_shared<ConcreteBLESensor<ContextT>>(mContext, mContext.getBluetoothStateManager(),
+//       mPayloadDataSupplier)),
+//     engine(ctx),
+//     deviceDescription("")
+//     HLOGGERINIT(mContext, "Sensor", "SensorArray")
+// {
+//   // PayloadTimestamp pts; // now
+//   // mPayloadData = mPayloadDataSupplier->payload(pts);
+//   // add(std::make_shared<ContactLog>(mContext, "contacts.csv"));
+//   // add(std::make_shared<StatisticsLog>(mContext, "statistics.csv", payloadData));
+//   // add(std::make_shared<StatisticsDidReadLog>(mContext, "statistics_didRead.csv", payloadData));
+//   // add(std::make_shared<DetectionLog>(mContext,"detection.csv", payloadData));
+//   // mBatteryLog = std::make_shared<BatteryLog>(mContext, "battery.csv");
 
-  Coordinator engine;
+//   mSensorArray.push_back(concrete); // adds in links to BLE transmitter, receiver
+//   engine.add(concrete);
 
-  // Not initialised (and thus optional):-
-  std::string deviceDescription;
+//   // deviceDescription = ""; // TODO get the real device description
 
-  HLOGGER;
-};
+//   // NOTE THE FOLLOWING LINE CAUSES ZEPHYR APPS TO NOT EXECUTE - COUT ISSUE?
+//   // TODO test this now logging on zephyr is reliable
+//   //mLogger.info("DEVICE (payload={},description={})", "nil", deviceDescription);
+// }
 
-SensorArray::Impl::Impl(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
-  : mContext(ctx), 
-    mPayloadDataSupplier(payloadDataSupplier),
-    mSensorArray(),
-    concrete(std::make_shared<ConcreteBLESensor>(mContext, mContext->getBluetoothStateManager(),
-      mPayloadDataSupplier)),
-    engine(ctx),
-    deviceDescription("")
-    HLOGGERINIT(mContext, "Sensor", "SensorArray")
-{
-  // PayloadTimestamp pts; // now
-  // mPayloadData = mPayloadDataSupplier->payload(pts);
-  // add(std::make_shared<ContactLog>(mContext, "contacts.csv"));
-  // add(std::make_shared<StatisticsLog>(mContext, "statistics.csv", payloadData));
-  // add(std::make_shared<StatisticsDidReadLog>(mContext, "statistics_didRead.csv", payloadData));
-  // add(std::make_shared<DetectionLog>(mContext,"detection.csv", payloadData));
-  // mBatteryLog = std::make_shared<BatteryLog>(mContext, "battery.csv");
-
-  mSensorArray.push_back(concrete); // adds in links to BLE transmitter, receiver
-  engine.add(concrete);
-
-  // deviceDescription = ""; // TODO get the real device description
-
-  // NOTE THE FOLLOWING LINE CAUSES ZEPHYR APPS TO NOT EXECUTE - COUT ISSUE?
-  // TODO test this now logging on zephyr is reliable
-  //mLogger.info("DEVICE (payload={},description={})", "nil", deviceDescription);
-}
-
-SensorArray::Impl::~Impl()
-{
-  ;
-}
+// template <typename ContextT>
+// SensorArray<ContextT>::Impl::~Impl()
+// {
+//   ;
+// }
 
 
 
 
 
 
-/// Takes ownership of payloadDataSupplier (std::move)
-SensorArray::SensorArray(std::shared_ptr<Context> ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
-  : mImpl(std::make_unique<Impl>(ctx,payloadDataSupplier))
-{
-  ;
-}
+// /// Takes ownership of payloadDataSupplier (std::move)
+// template <typename ContextT>
+// SensorArray<ContextT>::SensorArray(ContextT& ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
+//   : mImpl(std::make_unique<Impl>(ctx,payloadDataSupplier))
+// {
+//   ;
+// }
 
-SensorArray::~SensorArray()
-{
-  ;
-}
+// template <typename ContextT>
+// SensorArray<ContextT>::~SensorArray()
+// {
+//   ;
+// }
 
-// SENSOR ARRAY METHODS
-bool
-SensorArray::immediateSend(Data data, const TargetIdentifier& targetIdentifier) {
-  return mImpl->concrete->immediateSend(data, targetIdentifier);
-}
+// // SENSOR ARRAY METHODS
+// template <typename ContextT>
+// bool
+// SensorArray<ContextT>::immediateSend(Data data, const TargetIdentifier& targetIdentifier) {
+//   return mImpl->concrete->immediateSend(data, targetIdentifier);
+// }
 
-bool
-SensorArray::immediateSendAll(Data data) {
-  return mImpl->concrete->immediateSendAll(data);
-}
+// template <typename ContextT>
+// bool
+// SensorArray<ContextT>::immediateSendAll(Data data) {
+//   return mImpl->concrete->immediateSendAll(data);
+// }
 
-std::optional<PayloadData>
-SensorArray::payloadData() {
-  return mImpl->mPayloadDataSupplier->payload(PayloadTimestamp(),nullptr);
-}
+// template <typename ContextT>
+// std::optional<PayloadData>
+// SensorArray<ContextT>::payloadData() {
+//   return mImpl->mPayloadDataSupplier->payload(PayloadTimestamp(),nullptr);
+// }
 
-// SENSOR OVERRIDES 
-void
-SensorArray::add(const std::shared_ptr<SensorDelegate>& delegate) {
-  for (auto& sensor: mImpl->mSensorArray) {
-    sensor->add(delegate);
-  }
-}
+// // SENSOR OVERRIDES 
+// template <typename ContextT>
+// void
+// SensorArray<ContextT>::add(const std::shared_ptr<SensorDelegate>& delegate) {
+//   for (auto& sensor: mImpl->mSensorArray) {
+//     sensor->add(delegate);
+//   }
+// }
 
-void
-SensorArray::start() {
-  for (auto& sensor: mImpl->mSensorArray) {
-    sensor->start();
-  }
-  mImpl->engine.start();
-}
+// template <typename ContextT>
+// void
+// SensorArray<ContextT>::start() {
+//   for (auto& sensor: mImpl->mSensorArray) {
+//     sensor->start();
+//   }
+//   mImpl->engine.start();
+// }
 
-void
-SensorArray::stop() {
-  mImpl->engine.stop();
-  for (auto& sensor: mImpl->mSensorArray) {
-    sensor->stop();
-  }
-}
+// template <typename ContextT>
+// void
+// SensorArray<ContextT>::stop() {
+//   mImpl->engine.stop();
+//   for (auto& sensor: mImpl->mSensorArray) {
+//     sensor->stop();
+//   }
+// }
 
-std::optional<std::shared_ptr<CoordinationProvider>>
-SensorArray::coordinationProvider()
-{
-  return {};
-}
+// template <typename ContextT>
+// std::optional<std::shared_ptr<CoordinationProvider>>
+// SensorArray<ContextT>::coordinationProvider()
+// {
+//   return {};
+// }
 
-// Periodic actions
-void
-SensorArray::iteration(const TimeInterval sinceLastCompleted)
-{
-  // TODO ensure this works for continuous evaluation with minimal overhead or battery
-  mImpl->engine.iteration();
-}
+// // Periodic actions
+// template <typename ContextT>
+// void
+// SensorArray<ContextT>::iteration(const TimeInterval sinceLastCompleted)
+// {
+//   // TODO ensure this works for continuous evaluation with minimal overhead or battery
+//   mImpl->engine.iteration();
+// }
 
 
 } // end namespace

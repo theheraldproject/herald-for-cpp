@@ -8,33 +8,33 @@
 namespace herald {
 namespace datatype {
 
-class TargetIdentifier::Impl {
-public:
-  Impl();
-  Impl(const Data& mac);
-  Impl(const TargetIdentifier& from);
-  ~Impl() = default;
+// class TargetIdentifier::Impl {
+// public:
+//   Impl();
+//   Impl(const Data& mac);
+//   Impl(const TargetIdentifier& from);
+//   ~Impl() = default;
 
-  Data value;
-};
+//   Data value;
+// };
 
-TargetIdentifier::Impl::Impl()
- : value()
-{
-  ;
-}
+// TargetIdentifier::Impl::Impl()
+//  : value()
+// {
+//   ;
+// }
 
-TargetIdentifier::Impl::Impl(const Data& v)
- : value(v)
-{
-  ;
-}
+// TargetIdentifier::Impl::Impl(const Data& v)
+//  : value(v)
+// {
+//   ;
+// }
 
-TargetIdentifier::Impl::Impl(const TargetIdentifier& v)
- : value((Data)v) // conversion operator
-{
-  ;
-}
+// TargetIdentifier::Impl::Impl(const TargetIdentifier& v)
+//  : value((Data)v) // conversion operator
+// {
+//   ;
+// }
 
 
 
@@ -43,19 +43,19 @@ TargetIdentifier::Impl::Impl(const TargetIdentifier& v)
 
 
 TargetIdentifier::TargetIdentifier()
- : mImpl(std::make_unique<Impl>())
+ : value()
 {
   ; // TODO set value to random v4 UUID string
 }
 
 TargetIdentifier::TargetIdentifier(const Data& data)
-  : mImpl(std::make_unique<Impl>(data))
+  : value(data)
 {
   ;
 }
 
 TargetIdentifier::TargetIdentifier(const TargetIdentifier& from)
-  : mImpl(std::make_unique<Impl>(from))
+  : value((Data)from)
 {
   ;
 }
@@ -65,7 +65,7 @@ TargetIdentifier::~TargetIdentifier() {}
 TargetIdentifier&
 TargetIdentifier::operator=(const TargetIdentifier& from)
 {
-  mImpl->value = from.mImpl->value;
+  value = from.value;
   return *this;
 }
 
@@ -76,7 +76,7 @@ TargetIdentifier::operator==(const TargetIdentifier& other) const noexcept {
 
 bool
 TargetIdentifier::operator==(const Data& other) const noexcept {
-  return mImpl->value == other;
+  return value == other;
 }
 
 bool
@@ -86,29 +86,29 @@ TargetIdentifier::operator!=(const TargetIdentifier& other) const noexcept {
 
 bool
 TargetIdentifier::operator!=(const Data& other) const noexcept {
-  return mImpl->value != other;
+  return value != other;
 }
 bool
 TargetIdentifier::operator<(const TargetIdentifier& other) const noexcept {
-  return mImpl->value < other.mImpl->value;
+  return value < other.value;
 }
 
 bool
 TargetIdentifier::operator>(const TargetIdentifier& other) const noexcept {
-  return mImpl->value > other.mImpl->value;
+  return value > other.value;
 }
 
 std::size_t
 TargetIdentifier::hashCode() const {
-  return std::hash<Data>{}(mImpl->value);
+  return std::hash<Data>{}(value);
 }
 
 TargetIdentifier::operator std::string() const {
-  return mImpl->value.description();
+  return value.description();
 }
 
 TargetIdentifier::operator Data() const {
-  return mImpl->value;
+  return value;
 }
 
 } // end namespace

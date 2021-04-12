@@ -1,4 +1,4 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -13,6 +13,14 @@
 namespace herald {
 namespace datatype {
 
+/// \brief The main data workhorse class of the Herald API
+///
+/// A vitally important part of Herald's datatypes. Many other types
+/// are actually just aliases or thin wrappers to the Data class.
+/// 
+/// This class represents an arbitrarily long Big Endian list of std::byte.
+/// Data instances are used to encode Bluetooth advert data, to pass payloads
+/// between herald enabled devices, or to share data to and from backend systems.
 class Data {
 public:
   Data();

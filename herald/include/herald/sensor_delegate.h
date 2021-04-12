@@ -19,6 +19,7 @@ namespace herald {
   
 using namespace datatype;
 
+/// \brief Base interface for classes wishing to implement callbacks for core low-level Herald proximity and presence events.
 class SensorDelegate {
 public:
   SensorDelegate() = default;
@@ -41,7 +42,8 @@ public:
   virtual void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) = 0;
 
   /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
-  virtual void sensor(SensorType sensor, const Location& didVisit) = 0;
+  template <typename LocationT>
+  void sensor(SensorType sensor, const Location<LocationT>& didVisit) {}
 
   /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
   virtual void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) = 0;

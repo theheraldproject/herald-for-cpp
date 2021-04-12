@@ -115,7 +115,7 @@ TEST_CASE("ble-macaddress-tostring", "[ble][macaddress][tostring]") {
     herald::ble::Data d(data,6);
     herald::ble::BLEMacAddress mac(d);
     std::string description = (std::string)mac; // conversion operator
-    std::cout << "BLEMacAddress: String description: " << description << std::endl;
+    INFO("BLEMacAddress: String description: " << description);
     REQUIRE(17 == description.size()); // 2 chars per 6 data elements, 5 : char separators
     REQUIRE("05:04:03:02:01:00" == description); // little endian conversion
   }

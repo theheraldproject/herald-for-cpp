@@ -8,6 +8,14 @@
 #include "context.h"
 #include "ble/bluetooth_state_manager.h"
 
+// Herald logging to zephyr - see zephyr_context.cpp for details
+#ifndef CONFIG_HERALD_LOG_LEVEL
+  #define CONFIG_HERALD_LOG_LEVEL 0
+#endif
+
+#include "data/zephyr/zephyr_logging_sink.h"
+#include "data/sensor_logger.h"
+
 #include <memory>
 #include <iosfwd>
 #include <string>
@@ -18,15 +26,12 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/gatt_dm.h>
 
-// Herald logging to zephyr - see zephyr_context.cpp for details
-#ifndef CONFIG_HERALD_LOG_LEVEL
-  #define CONFIG_HERALD_LOG_LEVEL 0
-#endif
-
 namespace herald {
 
 using namespace herald::ble;
+using namespace herald::data;
 
+/// \brief Internal zephyr namespace DO NOT USE - API MAY CHANGE WITHOUT WARNING
 namespace zephyrinternal {
   class Advertiser {
   public:
@@ -42,26 +47,29 @@ namespace zephyrinternal {
   };
 }
 
-/*
- * Zephyr context class - holds state generic across our application for a particular device.
- */
-class ZephyrContext : public Context, public BluetoothStateManager, public std::enable_shared_from_this<ZephyrContext> {
+///
+/// \brief Holds generic state across our application for any Zephyr RTOS device.
+/// 
+/// Provides a solid class that holds information and types to be pass to Context.
+///
+/// Also acts as the Zephyr PlatformT in Context.
+///
+class ZephyrContextProvider : BluetoothStateManager {
 public:
-  ZephyrContext();
-  ~ZephyrContext();
+  ZephyrContextProvider();
+  ~ZephyrContextProvider();
 
-  // Context override methods
-  std::shared_ptr<SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor) override;
-  std::shared_ptr<BluetoothStateManager> getBluetoothStateManager() override;
+  ZephyrLoggingSink& getLoggingSink();
+  BluetoothStateManager& getBluetoothStateManager();
 
   // Bluetooth State Manager override methods
-  void add(std::shared_ptr<BluetoothStateManagerDelegate> delegate) override;
+  void add(BluetoothStateManagerDelegate& delegate) override;
   BluetoothState state() override;
 
   // Zephyr OS specific methods
   int enableBluetooth() noexcept;
 
-  zephyrinternal::Advertiser& getAdvertiser() noexcept;
+  herald::zephyrinternal::Advertiser& getAdvertiser() noexcept;
 
   int startBluetooth() noexcept;
   int stopBluetooth() noexcept;
@@ -69,14 +77,20 @@ public:
   void periodicActions() noexcept;
 
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl; // PIMPL idiom
+  ZephyrLoggingSink sink;
+
+  herald::zephyrinternal::Advertiser advertiser;
+
+  std::vector<std::reference_wrapper<BluetoothStateManagerDelegate>> stateDelegates;
+
+  bool bluetoothEnabled;
 };
 
 
 // Other zephyr internal-but-public API base classes
 namespace zephyrinternal {
 
+/// \brief INTERNAL utility class to allow Zephyr C API to call callbacks in the Zephyr internal Context Impl class.
 class Callbacks {
 public:
   Callbacks() = default;
