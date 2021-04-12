@@ -68,7 +68,13 @@
 #endif
 
 struct k_thread herald_thread;
-K_THREAD_STACK_DEFINE(herald_stack, 2048); // Was 9192
+K_THREAD_STACK_DEFINE(herald_stack, 
+#ifdef CONFIG_BT_MAX_CONN
+	1024 + (CONFIG_BT_MAX_CONN * 768)
+#else
+	9192
+#endif
+); // Was 9192 for nRF5340 (10 conns), 2048 for nRF52832 (3 conns)
 
 using namespace herald;
 using namespace herald::data;
@@ -313,18 +319,18 @@ void herald_entry() {
 #ifdef HERALD_ANALYSIS_ENABLED
 	herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
 
-	herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance> myDelegate(ctx);
+	herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance> myDelegate(ctx);
 	herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
 	herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
 
 	herald::analysis::AnalysisRunner<
-		herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<herald::datatype::Distance>>,
+		herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance>>,
 		herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
 		RSSI,Distance
 	> runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
 
 	std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
-	sa->add(src);
+	sa.add(src);
 #endif
 
 	
