@@ -10,6 +10,8 @@
 #include "../context.h"
 
 #include <memory>
+#include <optional>
+#include <functional>
 
 namespace herald {
 namespace analysis {
@@ -27,17 +29,22 @@ struct LoggingAnalysisDelegate {
   //   HLOGGERINIT(nullptr,"herald","LoggingAnalysisDelegate")
   // {
   // }
+  LoggingAnalysisDelegate()
+    : ctx()
+    // HLOGGERINIT(ctx,"herald","LoggingAnalysisDelegate")
+  {
+  }
 
-  LoggingAnalysisDelegate(ContextT& ctx)
-    : ctx(ctx)
-    HLOGGERINIT(ctx,"herald","LoggingAnalysisDelegate")
+  LoggingAnalysisDelegate(ContextT& context)
+    : ctx(context)
+    HLOGGERINIT(ctx.value().get(),"herald","LoggingAnalysisDelegate")
   {
   }
 
   LoggingAnalysisDelegate(const LoggingAnalysisDelegate&) = delete; // copy ctor deleted
   LoggingAnalysisDelegate(LoggingAnalysisDelegate&& other) noexcept
     : ctx(other.ctx)
-    HLOGGERINIT(ctx,"herald","LoggingAnalysisDelegate")
+    HLOGGERINIT(ctx.value().get(),"herald","LoggingAnalysisDelegate")
   {
   } // move ctor
   
@@ -57,7 +64,7 @@ struct LoggingAnalysisDelegate {
   }
 
 private:
-  ContextT& ctx;
+  std::optional<std::reference_wrapper<ContextT>> ctx;
   HLOGGER(ContextT);
 
 };
