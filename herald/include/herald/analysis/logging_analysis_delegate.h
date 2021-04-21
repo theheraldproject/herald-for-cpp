@@ -18,55 +18,119 @@ namespace analysis {
 
 using namespace sampling;
 
+template <typename ContextT>
+struct OptionalSensorLogger {
+  OptionalSensorLogger(ContextT& ctx) 
+    : m_context(ctx)
+      HLOGGERINIT(m_context,"herald","LoggingAnalysisDelegate")
+  {
+    ;
+  }
+
+  OptionalSensorLogger(const OptionalSensorLogger& other)
+    : m_context(other.m_context)
+      HLOGGERINIT(m_context,"herald","LoggingAnalysisDelegate")
+  {
+    ;
+  }
+
+  OptionalSensorLogger(OptionalSensorLogger&& other)
+    : m_context(other.m_context)
+      HLOGGERINIT(m_context,"herald","LoggingAnalysisDelegate")
+  {
+    ;
+  }
+
+  OptionalSensorLogger& operator=(OptionalSensorLogger&& other)
+  {
+    m_context = other.m_context;
+    logger = other.logger;
+    return *this;
+  }
+
+  OptionalSensorLogger& operator=(const OptionalSensorLogger& other)
+  {
+    m_context = other.m_context;
+    logger = other.logger;
+    return *this;
+  }
+
+  void debug(std::string toLog,SampledID sampled,double value)
+  {
+    HTDBG(toLog);
+    // HTDBG(std::to_string(sampled));
+    // HTDBG(std::to_string(value));
+  }
+
+  void debug(std::string toLog)
+  {
+    HTDBG(toLog);
+  }
+
+private:
+  ContextT& m_context;
+  HLOGGER(ContextT);
+};
+
 /// \brief Logs any given type of sample to the Herald logging subsystem as a Debug message
 template <typename ContextT, typename ValT>
 struct LoggingAnalysisDelegate {
-
   using value_type = ValT;
   
-  // LoggingAnalysisDelegate() 
-  //   : ctx(nullptr)
-  //   HLOGGERINIT(nullptr,"herald","LoggingAnalysisDelegate")
-  // {
-  // }
   LoggingAnalysisDelegate()
-    : ctx()
-    // HLOGGERINIT(ctx,"herald","LoggingAnalysisDelegate")
+    : ctx(),
+      logger()
   {
+    ;
   }
 
   LoggingAnalysisDelegate(ContextT& context)
-    : ctx(context)
-    HLOGGERINIT(ctx.value().get(),"herald","LoggingAnalysisDelegate")
+    : ctx(context),
+      logger(ctx)
   {
+    ;
   }
 
-  LoggingAnalysisDelegate(const LoggingAnalysisDelegate&) = delete; // copy ctor deleted
-  LoggingAnalysisDelegate(LoggingAnalysisDelegate&& other) noexcept
-    : ctx(other.ctx)
-    HLOGGERINIT(ctx.value().get(),"herald","LoggingAnalysisDelegate")
+  LoggingAnalysisDelegate(const LoggingAnalysisDelegate& other) noexcept
+    : ctx(other.ctx),
+      logger(ctx)
   {
-  } // move ctor
-  
-  ~LoggingAnalysisDelegate() {
+    ;
   }
+
+  LoggingAnalysisDelegate(LoggingAnalysisDelegate&& other) noexcept
+    : ctx(other.ctx),
+      logger(ctx)
+  {
+    ;
+  }
+  
+  ~LoggingAnalysisDelegate() = default;
 
   LoggingAnalysisDelegate& operator=(LoggingAnalysisDelegate&& other) noexcept {
     ctx = other.ctx;
-    // TODO assign logger too (may have been default initialised by the Analysis engine)
+    logger = other.logger;
     return *this;
+  }
+
+  void assignContext(ContextT& newContext) noexcept {
+    ctx = newContext;
+    logger.emplace(ctx);
   }
 
   // specific override of template
   void newSample(SampledID sampled, Sample<ValT> sample) {
     // Log the read distance as debug
-    HTDBG("New Sample Recorded"); // TODO include the sampled id, sample time, sample value
+    if (!logger.has_value()) { // GUARD
+      return;
+    }
+    logger.value().debug("New Sample Recorded.");
+    // logger.value().debug("New Sample Recorded. SampledID: {}, Value: {}",sampled,(double)sample);
   }
 
 private:
   std::optional<std::reference_wrapper<ContextT>> ctx;
-  HLOGGER(ContextT);
-
+  std::optional<OptionalSensorLogger<ContextT>> logger;
 };
 
 }
