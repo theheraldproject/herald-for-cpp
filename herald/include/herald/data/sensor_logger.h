@@ -272,6 +272,34 @@ public:
   {
     ;
   }
+
+  SensorLogger(const SensorLogger& other)
+    : mSink(other.mSink), mSubsystem(other.mSubsystem), mCategory(other.mCategory)
+  {
+    ;
+  }
+
+  SensorLogger(SensorLogger&& other)
+    : mSink(other.mSink), mSubsystem(other.mSubsystem), mCategory(other.mCategory)
+  {
+    ;
+  }
+
+  SensorLogger& operator=(const SensorLogger& other)
+  {
+    mSink = other.mSink;
+    mSubsystem = other.mSubsystem;
+    mCategory = other.mCategory;
+    return *this;
+  }
+
+  SensorLogger& operator=(SensorLogger&& other)
+  {
+    mSink = other.mSink;
+    mSubsystem = other.mSubsystem;
+    mCategory = other.mCategory;
+    return *this;
+  }
   
   // TODO consider supporting multiple sinks in the context - E.g. USB UART and log file
 
@@ -325,8 +353,8 @@ private:
   }
 
   LoggingSinkT& mSink;
-  const std::string mSubsystem;
-  const std::string mCategory;
+  std::string mSubsystem;
+  std::string mCategory;
 };
 
 } // end namespace
