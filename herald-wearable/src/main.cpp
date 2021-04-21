@@ -316,7 +316,7 @@ void herald_entry() {
 
 
 	// 4. Now create a live analysis pipeline and enable RSSI to be sent to it for distance estimation
-#ifdef HERALD_ANALYSIS_ENABLED
+// #ifdef HERALD_ANALYSIS_ENABLED
 	herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
 
 	herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance> myDelegate(ctx);
@@ -331,7 +331,7 @@ void herald_entry() {
 
 	std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
 	sa.add(src);
-#endif
+// #endif
 
 	
 	APP_DBG("Starting sensor array");
@@ -353,7 +353,7 @@ void herald_entry() {
 		
 		if (0 == iter % (5000 / delay)) {
 			APP_DBG("herald thread still running. Iteration: %d", iter);
-			// runner.run(Date()); // Note: You may want to do this less or more regularly depending on your requirements
+			runner.run(Date()); // Note: You may want to do this less or more regularly depending on your requirements
 		}
 
 		last = now;

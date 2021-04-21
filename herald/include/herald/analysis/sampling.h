@@ -267,7 +267,7 @@ struct SampleIterator {
   }
 
   /// Implement operator+(int amt) to move this iterator forward
-  SampleIterator<SampleListT>& operator+(int by) {
+  SampleIterator<SampleListT>& operator+(std::size_t by) {
     pos += by;
     if (pos > list.size()) {
       pos = list.size(); // i.e. list.end()
@@ -276,7 +276,7 @@ struct SampleIterator {
   }
 
   /// Implement operator+(int amt) to move this iterator forward
-  SampleIterator<SampleListT>& operator-(int by) {
+  SampleIterator<SampleListT>& operator-(std::size_t by) {
     if (by > pos) {
       pos = 0; // prevents underflow and a very large value of pos (as it's a std::size_t)
     } else {
