@@ -44,14 +44,22 @@ struct OptionalSensorLogger {
   OptionalSensorLogger& operator=(OptionalSensorLogger&& other)
   {
     m_context = other.m_context;
+#ifdef HERALD_LOG_LEVEL
+#if HERALD_LOG_LEVEL != 0
     logger = other.logger;
+#endif
+#endif
     return *this;
   }
 
   OptionalSensorLogger& operator=(const OptionalSensorLogger& other)
   {
     m_context = other.m_context;
+#ifdef HERALD_LOG_LEVEL
+#if HERALD_LOG_LEVEL != 0
     logger = other.logger;
+#endif
+#endif
     return *this;
   }
 

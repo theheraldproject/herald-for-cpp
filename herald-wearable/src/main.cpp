@@ -70,7 +70,7 @@
 struct k_thread herald_thread;
 K_THREAD_STACK_DEFINE(herald_stack, 
 #ifdef CONFIG_BT_MAX_CONN
-	1024 + (CONFIG_BT_MAX_CONN * 768)
+	1024 + (CONFIG_BT_MAX_CONN * 512)
 #else
 	9192
 #endif
@@ -204,68 +204,68 @@ void herald_entry() {
 
 	// TESTING ONLY
 	// IF IN TESTING / DEBUG, USE A FIXED PAYLOAD (SO YOU CAN TRACK IT OVER TIME)
-	std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
-	std::uint8_t uniqueId[8];	
-  // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
-	auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
-	if (hwInfoAvailable > 0) {
-		APP_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
-		clientId = *uniqueId;
-	} else {
-		APP_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
-	}
-	APP_DBG("Final clientID: %" PRIu64 "", clientId);
+	// std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
+	// std::uint8_t uniqueId[8];	
+  // // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
+	// auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
+	// if (hwInfoAvailable > 0) {
+	// 	APP_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
+	// 	clientId = *uniqueId;
+	// } else {
+	// 	APP_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
+	// }
+	// APP_DBG("Final clientID: %" PRIu64 "", clientId);
 
-	std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
-		countryCode,
-		stateCode,
-		clientId
-	);
+	// std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
+	// 	countryCode,
+	// 	stateCode,
+	// 	clientId
+	// );
 	// END TESTING ONLY
 
 	// PRODUCTION ONLY
-// 	APP_DBG("Before simple");
-// 	k_sleep(K_SECONDS(2));
-// 	// Use the simple payload, or secured payload, that implements privacy features to prevent user tracking
-// 	herald::payload::simple::K k;
-// 	// NOTE: You should store a secret key for a period of days and pass the value for the correct epoch in to here instead of sk
+	APP_DBG("Before simple");
+	k_sleep(K_SECONDS(2));
+	// Use the simple payload, or secured payload, that implements privacy features to prevent user tracking
+	herald::payload::simple::K k;
+	// NOTE: You should store a secret key for a period of days and pass the value for the correct epoch in to here instead of sk
 	
-// 	// Note: Using the CC310 to do this. You can use RandomnessSource.h random sources instead if you wish, but CC310 is more secure.
-// 	herald::payload::simple::SecretKey sk(std::byte(0x00),2048); // fallback - you should do something different.
+	// Note: Using the CC310 to do this. You can use RandomnessSource.h random sources instead if you wish, but CC310 is more secure.
+	herald::payload::simple::SecretKey sk(std::byte(0x00),2048); // fallback - you should do something different.
 	
-// 	size_t buflen = 2048;
-// 	uint8_t* buf = new uint8_t[buflen];
-// 	size_t olen = 0;
+	size_t buflen = 2048;
+	uint8_t* buf = new uint8_t[buflen];
+	size_t olen = 0;
 	
-// #ifdef CC3XX_BACKEND
-// 	int success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); 
-// #else
-// 	int success = 1;
-// #endif
-// 	if (0 == success) {
-// 		sk.clear();
-// 		sk.append(buf, 0, buflen);
-// 		APP_DBG("Have applied CC3xx generated data to secret key");
-// 	} else {
-// 		APP_DBG("Could not generate 2048 bytes of randomness required for SimplePayload Secret Key. Falling back to fixed generic secret key.");
-// 	}
+#ifdef CC3XX_BACKEND
+	int success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); 
+#else
+	int success = 1;
+#endif
+	if (0 == success) {
+		sk.clear();
+		sk.append(buf, 0, buflen);
+		APP_DBG("Have applied CC3xx generated data to secret key");
+	} else {
+		APP_DBG("Could not generate 2048 bytes of randomness required for SimplePayload Secret Key. Falling back to fixed generic secret key.");
+	}
 
-// 	// verify secret key
-// 	for (int i = 0;i < 2048;i+=64) {
-// 		Data t = sk.subdata(i,64);
-// 		APP_DBG("Got 64 bytes from secret key from %d",i);
-// 	}
+	// verify secret key
+	for (int i = 0;i < 2048;i+=64) {
+		Data t = sk.subdata(i,64);
+		APP_DBG("Got 64 bytes from secret key from %d",i);
+	}
 
-// 	APP_DBG("About to create Payload data supplier");
-// 	k_sleep(K_SECONDS(2));
+	APP_DBG("About to create Payload data supplier");
+	k_sleep(K_SECONDS(2));
 
-// 	std::shared_ptr<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1> pds = std::make_shared<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1>(
-// 		ctx,
-// 		countryCode,
-// 		stateCode,
-// 		sk,
-// 		k
-// 	);
+	std::shared_ptr<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1<CT>> pds = std::make_shared<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1<CT>>(
+		ctx,
+		countryCode,
+		stateCode,
+		sk,
+		k
+	);
 	// END PRODUCTION ONLY
 	APP_DBG("Have created Payload data supplier");
 	k_sleep(K_SECONDS(2));
