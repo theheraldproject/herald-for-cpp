@@ -45,8 +45,7 @@ public:
   operator long() const noexcept;
 
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
+  std::uint64_t seconds;
 };
 
 } // end namespace
