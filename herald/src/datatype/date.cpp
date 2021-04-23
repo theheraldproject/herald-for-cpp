@@ -11,62 +11,38 @@
 #include <chrono>
 #endif
 
-#include <ctime>
+// #include <ctime>
 
 namespace herald {
 namespace datatype {
 
-// PIMPL DEFINITION
-class Date::Impl {
-public:
-  Impl(); // now
-  Impl(std::uint64_t secondsSinceEpochOrRestart);
-  ~Impl() = default;
+// DATE DECLARATIONS
 
-  std::uint64_t seconds;
-};
-
-// PIMPL DECLARATIONS
-Date::Impl::Impl()
- : 
+Date::Date()
+  :
 #ifdef __ZEPHYR__
   seconds(0.001 * k_uptime_get())
 #else
- seconds(std::chrono::duration_cast<std::chrono::seconds>(
+  seconds(std::chrono::duration_cast<std::chrono::seconds>(
     std::chrono::system_clock::now().time_since_epoch()).count())
 #endif
 {
-  ;
 }
 
-Date::Impl::Impl(std::uint64_t secondsSinceEpochOrRestart)
+Date::Date(std::uint64_t secondsSinceEpochOrRestart)
  : seconds(secondsSinceEpochOrRestart)
 {
   ;
 }
 
-// DATE DECLARATIONS
-
-Date::Date()
- : mImpl(std::make_unique<Impl>())
-{
-  ;
-}
-
-Date::Date(std::uint64_t secondsSinceEpochOrRestart)
- : mImpl(std::make_unique<Impl>(secondsSinceEpochOrRestart))
-{
-  ;
-}
-
 Date::Date(const Date& from)
- : mImpl(std::make_unique<Impl>(from.mImpl->seconds))
+ : seconds(from.seconds)
 {
   ;
 }
 
 Date::Date(Date&& from)
- : mImpl(std::make_unique<Impl>(from.mImpl->seconds))
+ : seconds(from.seconds)
 {
   ;
 }
@@ -76,49 +52,50 @@ Date::~Date() = default;
 Date&
 Date::operator=(const Date& other) noexcept
 {
-  mImpl->seconds = other.mImpl->seconds;
+  seconds = other.seconds;
   return *this;
 }
 
 Date&
 Date::operator=(Date&& other) noexcept
 {
-  mImpl->seconds = other.mImpl->seconds;
+  seconds = other.seconds;
   return *this;
 }
 
 Date
 Date::operator-(const TimeInterval& other) noexcept
 {
-  return Date(mImpl->seconds - other.seconds());
+  return Date(seconds - other.seconds());
 }
 
 Date&
 Date::operator-=(const TimeInterval& other) noexcept
 {
-  mImpl->seconds -= other.seconds();
+  seconds -= other.seconds();
   return *this;
 }
 
 Date
 Date::operator+(const TimeInterval& other) noexcept
 {
-  return Date(mImpl->seconds + other.seconds());
+  return Date(seconds + other.seconds());
 }
 
 Date&
 Date::operator+=(const TimeInterval& other) noexcept
 {
-  mImpl->seconds += other.seconds();
+  seconds += other.seconds();
   return *this;
 }
 
 std::string
 Date::iso8601DateTime() const noexcept {
-  time_t t(mImpl->seconds);
-  char buf[21];
-  strftime(buf, sizeof(buf), "%FT%TZ", gmtime(&t));
-  return std::string(buf);
+  // time_t t(seconds);
+  // char buf[21];
+  // strftime(buf, sizeof(buf), "%FT%TZ", gmtime(&t));
+  // return std::string(buf);
+  return std::to_string(seconds);
 }
 
 Date::operator std::string() const noexcept {
@@ -127,49 +104,49 @@ Date::operator std::string() const noexcept {
 
 std::uint64_t
 Date::secondsSinceUnixEpoch() const noexcept {
-  return mImpl->seconds;
+  return seconds;
 }
 
 bool
 Date::operator==(const Date& other) const noexcept
 {
-  return mImpl->seconds == other.mImpl->seconds;
+  return seconds == other.seconds;
 }
 
 bool
 Date::operator!=(const Date& other) const noexcept
 {
-  return mImpl->seconds != other.mImpl->seconds;
+  return seconds != other.seconds;
 }
 
 bool
 Date::operator<(const Date& other) const noexcept
 {
-  return mImpl->seconds < other.mImpl->seconds;
+  return seconds < other.seconds;
 }
 
 bool
 Date::operator>(const Date& other) const noexcept
 {
-  return mImpl->seconds > other.mImpl->seconds;
+  return seconds > other.seconds;
 }
 
 bool
 Date::operator<=(const Date& other) const noexcept
 {
-  return mImpl->seconds <= other.mImpl->seconds;
+  return seconds <= other.seconds;
 }
 
 bool
 Date::operator>=(const Date& other) const noexcept
 {
-  return mImpl->seconds >= other.mImpl->seconds;
+  return seconds >= other.seconds;
 }
 
 
 Date::operator long() const noexcept
 {
-  return mImpl->seconds;
+  return seconds;
 }
 
 
