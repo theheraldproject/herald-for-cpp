@@ -548,7 +548,7 @@ public:
           default:
             ci += "connecting";
         }
-        ci += " connection is null: ";
+        ci += ", connection is null: ";
         ci += (NULL == value.connection ? "true" : "false");
         HTDBG(ci);
 
@@ -569,6 +569,7 @@ public:
               device->timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
             // disconnect
             bt_conn_disconnect(value.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+            bt_conn_unref(value.connection);
             value.connection = NULL;
           }
         }
@@ -576,6 +577,16 @@ public:
 
       // Do internal clean up too - remove states no longer required
       for (auto iter = connectionStates.begin();connectionStates.end() != iter; ++iter) {
+        if (NULL != iter->second.connection) {
+          // Ones that are not null, but have timed out according to BLE settings (This class doesn't get notified by BLEDatabase)
+          auto device = db.device(iter->second.target);
+          if (device->timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+            bt_conn_disconnect(iter->second.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+            bt_conn_unref(iter->second.connection);
+            iter->second.connection = NULL;
+          }
+        }
+
         if (NULL == iter->second.connection) { // means Zephyr callbacks are finished with the connection object (i.e. disconnect was called)
           connectionStates.erase(iter);
         }
