@@ -11,37 +11,6 @@
 
 #include "herald/herald.h"
 
-class DummyBLEDBDelegate : public herald::ble::BLEDatabaseDelegate {
-public:
-  DummyBLEDBDelegate() : updateCallbackCalled(false), createCallbackCalled(false),
-    deleteCallbackCalled(false), dev(), attr() {}
-  ~DummyBLEDBDelegate() {}
-
-  // overrides
-  void bleDatabaseDidCreate(const std::shared_ptr<herald::ble::BLEDevice>& device) override {
-    createCallbackCalled = true;
-    dev = device;
-  }
-  
-  void bleDatabaseDidUpdate(const std::shared_ptr<herald::ble::BLEDevice>& device, 
-    const herald::ble::BLEDeviceAttribute attribute) override {
-    updateCallbackCalled = true;
-    dev = device;
-    attr = attribute;
-  }
-  
-  void bleDatabaseDidDelete(const std::shared_ptr<herald::ble::BLEDevice>& device) override {
-    deleteCallbackCalled = true;
-    dev = device;
-  }
-  
-  bool updateCallbackCalled;
-  bool createCallbackCalled;
-  bool deleteCallbackCalled;
-  std::optional<std::shared_ptr<herald::ble::BLEDevice>> dev;
-  std::optional<herald::ble::BLEDeviceAttribute> attr;
-};
-
 TEST_CASE("ble-database-empty", "[ble][database][ctor][empty]") {
   SECTION("ble-database-empty") {
     DummyLoggingSink dls;

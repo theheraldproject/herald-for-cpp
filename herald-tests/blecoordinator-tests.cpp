@@ -430,4 +430,111 @@ TEST_CASE("blecoordinator-got-three-at-different-states", "[coordinator][got-thr
   }
 }
 
-// TODO non-device specific activity (broadcast via notify e.g. immediate send all)
+
+
+
+// Non-device specific activity (broadcast via notify e.g. immediate send all, remove old DB items)
+
+// TODO create generic TimeSource that time-bound classes are templatised on, separate from the full context
+
+/*
+
+TEST_CASE("blecoordinator-remove-old", "[ble][coordinator][remove][old]") {
+  SECTION("blecoordinator-remove-old") {
+    DummyLoggingSink dls;
+    DummyBluetoothStateManager dbsm;
+    TimeSetPlatformType dpt; // Use a platform type with customised now() Date support
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<TimeSetPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::ble::ConcreteBLEDatabase<CT> db(ctx); // enables shared_from_this
+      
+    NoOpHeraldV1ProtocolProvider pp(ctx,db);
+    herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);
+
+    DummyBLEDBDelegate delegate;
+    db.add(delegate);
+
+    REQUIRE(db.size() == 0);
+    REQUIRE(delegate.createCallbackCalled == false);
+    REQUIRE(delegate.updateCallbackCalled == false);
+    REQUIRE(delegate.deleteCallbackCalled == false);
+
+    herald::datatype::Data devMac(std::byte(0x02),6);
+    herald::datatype::TargetIdentifier dev(devMac);
+
+    // Set NOW time
+    dpt.seconds = 10;
+
+    // add in new device
+    std::shared_ptr<herald::ble::BLEDevice> devPtr = db.device(dev);
+    REQUIRE(db.size() == 1);
+    REQUIRE(delegate.createCallbackCalled == true);
+    REQUIRE(delegate.updateCallbackCalled == false);
+    REQUIRE(delegate.deleteCallbackCalled == false);
+    REQUIRE(delegate.dev.has_value());
+    REQUIRE(delegate.dev.value() == devPtr);
+
+    // ADVANCE NOW TIME to just before expiry
+    dpt.seconds += ctx.getSensorConfiguration().peripheralCleanInterval.seconds() - 1;
+    long secondDeviceAppearedAt = dpt.seconds;
+
+    // add in a second device via the payload, not target identifier
+    herald::datatype::PayloadData payload(std::byte(0x1f),6);
+    std::shared_ptr<herald::ble::BLEDevice> devPtr2 = db.device(payload);
+    REQUIRE(db.size() == 2);
+    REQUIRE(delegate.createCallbackCalled == true);
+    REQUIRE(delegate.updateCallbackCalled == false);
+    REQUIRE(delegate.deleteCallbackCalled == false);
+    REQUIRE(delegate.dev.has_value());
+    REQUIRE(delegate.dev.value() == devPtr2);
+
+    // ADVANCE NOW TIME BEYOND LIMIT FOR FIRST DEVICE
+    dpt.seconds += 2; // 1 second past expiry
+    
+    // Force DB cache re-evaluation
+    std::vector<herald::engine::Activity> acts = coord.requiredActivities();
+    
+    REQUIRE(db.size() == 1);
+    REQUIRE(delegate.createCallbackCalled == true);
+    REQUIRE(delegate.updateCallbackCalled == false);
+    REQUIRE(delegate.deleteCallbackCalled == true);
+    REQUIRE(delegate.dev.has_value());
+    REQUIRE(delegate.dev.value() == devPtr);
+
+    // update the second devices attribute
+    devPtr->rssi(herald::datatype::RSSI{14});
+    REQUIRE(db.size() == 1);
+    REQUIRE(delegate.createCallbackCalled == true);
+    REQUIRE(delegate.updateCallbackCalled == true);
+    REQUIRE(delegate.deleteCallbackCalled == true);
+    REQUIRE(delegate.dev.has_value());
+    REQUIRE(delegate.dev.value() == devPtr2);
+
+    // Advance by just under expiry time from its appearance
+    dpt.seconds = secondDeviceAppearedAt + ctx.getSensorConfiguration().peripheralCleanInterval.seconds() - 1;
+
+    // Force DB cache re-evaluation
+    acts = coord.requiredActivities();
+
+    REQUIRE(db.size() == 1);
+    REQUIRE(delegate.createCallbackCalled == true);
+    REQUIRE(delegate.updateCallbackCalled == true);
+    REQUIRE(delegate.deleteCallbackCalled == true);
+    REQUIRE(delegate.dev.has_value());
+    REQUIRE(delegate.dev.value() == devPtr2);
+
+    // Now go to just past this time
+    dpt.seconds += 2;
+    
+    // Force DB cache re-evaluation
+    acts = coord.requiredActivities();
+
+    REQUIRE(db.size() == 0);
+    REQUIRE(delegate.createCallbackCalled == true);
+    REQUIRE(delegate.updateCallbackCalled == true);
+    REQUIRE(delegate.deleteCallbackCalled == true);
+
+  }
+}
+
+*/

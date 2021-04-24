@@ -6,6 +6,7 @@
 #define HERALD_CONTEXT_H
 
 #include "ble/ble_sensor_configuration.h" // TODO abstract this away in to platform class
+#include "datatype/date.h"
 
 namespace herald {
 
@@ -97,6 +98,10 @@ struct Context {
     config = newConfig;
   }
 
+  datatype::Date getNow() noexcept {
+    return platform.getNow();
+  }
+
 private:
   PlatformT& platform;
   LoggingSinkT& loggingSink;
@@ -105,7 +110,11 @@ private:
 };
 
 // \brief Default empty platform type for platforms that have no custom functionality
-struct DefaultPlatformType {}; 
+struct DefaultPlatformType {
+  datatype::Date getNow() noexcept {
+    return datatype::Date();
+  }
+}; 
 
 } // end namespace
 

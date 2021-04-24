@@ -21,6 +21,7 @@ BLESensorConfiguration::BLESensorConfiguration()
     payloadDataUpdateTimeInterval(TimeInterval::never()),
     payloadSharingExpiryTimeInterval(TimeInterval::minutes(5)),
     advertRefreshTimeInterval(TimeInterval::minutes(15)),
+    peripheralCleanInterval(TimeInterval::minutes(2)),
     maxBluetoothConnections(20),
     advertisingEnabled(true),
     scanningEnabled(true)
@@ -42,6 +43,7 @@ BLESensorConfiguration::BLESensorConfiguration(const BLESensorConfiguration& oth
     payloadDataUpdateTimeInterval(other.payloadDataUpdateTimeInterval),
     payloadSharingExpiryTimeInterval(other.payloadSharingExpiryTimeInterval),
     advertRefreshTimeInterval(other.advertRefreshTimeInterval),
+    peripheralCleanInterval(other.peripheralCleanInterval),
     maxBluetoothConnections(other.maxBluetoothConnections),
     advertisingEnabled(other.advertisingEnabled),
     scanningEnabled(other.scanningEnabled)

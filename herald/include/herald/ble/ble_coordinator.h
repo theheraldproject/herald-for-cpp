@@ -73,63 +73,63 @@ public:
         }
       }
     }
-  // Now provision new connections
-  std::vector<PrioritisedPrerequisite> provisioned;
-  // For this provider, a prerequisite is a connection to a remote target identifier over Bluetooth
-  auto requestIter = requested.cbegin();
-  bool lastConnectionSuccessful = true;
-  while (/*currentConnections < maxConnections && */
-         lastConnectionSuccessful && 
-         requestIter != requested.cend()) {
-    HTDBG(" - Satisfying prereq");
-    // HTDBG(" - currentConnections currently:-");
-    // HTDBG(std::to_string(currentConnections));
-    auto& req = *requestIter;
-    // See if we're already connected
-    // If so, add to provisioned list
-    // If not, try to connect
-    auto& optTarget = std::get<2>(req);
-    if (optTarget.has_value()) {
-      HTDBG(" - Have defined target for this prerequisite. Requesting connection be made available.");
-      // std::future<void> fut = std::async(std::launch::async,
-      //     &HeraldProtocolV1Provider::openConnection,pp,
-      //     optTarget.value(),[&lastConnectionSuccessful] (
-      //     const TargetIdentifier& targetForConnection, bool success) -> void {
-      //   lastConnectionSuccessful = success;
-      // });
-      // fut.get(); // TODO FIND OUT HOW TO DO THIS FUTURE WAITING FUNCTIONALITY
+    // Now provision new connections
+    std::vector<PrioritisedPrerequisite> provisioned;
+    // For this provider, a prerequisite is a connection to a remote target identifier over Bluetooth
+    auto requestIter = requested.cbegin();
+    bool lastConnectionSuccessful = true;
+    while (/*currentConnections < maxConnections && */
+          lastConnectionSuccessful && 
+          requestIter != requested.cend()) {
+      HTDBG(" - Satisfying prereq");
+      // HTDBG(" - currentConnections currently:-");
+      // HTDBG(std::to_string(currentConnections));
+      auto& req = *requestIter;
+      // See if we're already connected
+      // If so, add to provisioned list
+      // If not, try to connect
+      auto& optTarget = std::get<2>(req);
+      if (optTarget.has_value()) {
+        HTDBG(" - Have defined target for this prerequisite. Requesting connection be made available.");
+        // std::future<void> fut = std::async(std::launch::async,
+        //     &HeraldProtocolV1Provider::openConnection,pp,
+        //     optTarget.value(),[&lastConnectionSuccessful] (
+        //     const TargetIdentifier& targetForConnection, bool success) -> void {
+        //   lastConnectionSuccessful = success;
+        // });
+        // fut.get(); // TODO FIND OUT HOW TO DO THIS FUTURE WAITING FUNCTIONALITY
 
-      lastConnectionSuccessful = pp.openConnection(optTarget.value());
+        lastConnectionSuccessful = pp.openConnection(optTarget.value());
 
-      // If successful, add to provisioned list
-      if (lastConnectionSuccessful) {
-        HTDBG(" - Ensuring connection successful");
-        provisioned.push_back(req);
-        // currentConnections++;
+        // If successful, add to provisioned list
+        if (lastConnectionSuccessful) {
+          HTDBG(" - Ensuring connection successful");
+          provisioned.push_back(req);
+          // currentConnections++;
+        } else {
+          HTDBG(" - Ensuring connection UNSUCCESSFUL");
+        }
       } else {
-        HTDBG(" - Ensuring connection UNSUCCESSFUL");
+        HTDBG(" - No defined target, returning satisfied - always true for Herald BLE");
+        // if target not specified then it just means any open connection, so return OK
+        provisioned.push_back(req);
+        // TODO determine what to do here if sensor stopped, bluetooth disabled, or no connections open
       }
-    } else {
-      HTDBG(" - No defined target, returning satisfied - always true for Herald BLE");
-      // if target not specified then it just means any open connection, so return OK
-      provisioned.push_back(req);
-      // TODO determine what to do here if sensor stopped, bluetooth disabled, or no connections open
+      // move forward in iterator
+      requestIter++;
+
+      lastConnectionSuccessful = true;
     }
-    // move forward in iterator
-    requestIter++;
 
-    lastConnectionSuccessful = true;
-  }
+    previouslyProvisioned = provisioned;
 
-  previouslyProvisioned = provisioned;
+    // TODO schedule disconnection from not required items (E.g. after minimum connection time)
+    //  - we already do this if provision is called, but not after a time period
+    //  - Bluetooth timeout will deal with the underlying connection, but not any intermediate state in the PP instance
 
-  // TODO schedule disconnection from not required items (E.g. after minimum connection time)
-  //  - we already do this if provision is called, but not after a time period
-  //  - Bluetooth timeout will deal with the underlying connection, but not any intermediate state in the PP instance
-
-  // HTDBG("Returning from provision");
-  // connCallback(provisioned);
-  return provisioned;
+    // HTDBG("Returning from provision");
+    // connCallback(provisioned);
+    return provisioned;
   }
 
   // Runtime coordination callbacks
@@ -267,125 +267,143 @@ public:
 
     return results;
   }
+
   std::vector<Activity> requiredActivities() override {
-  std::vector<Activity> results;
+    std::vector<Activity> results;
 
-  // State 0 - New device -> Read full advert data to see if DCT/Herald -> State Z, 1 or State 3
-  // State 1 - Discover services for DCT/Herald on this device -> State Z, or 2
-  // State 2 - New Herald BLE device -> Read payload -> State 3
-  // State 3 - Steady state - do nothing
-  // State 4 - Has immediateSend data -> Send immediate -> State 3
-  // TODO check for nearby payloads
-  // State 3 - Not seen in a while -> State X
-  // State X - Out of range. No actions.
-  // State Z - Ignore (not a relevant device for Herald... right now). Ignore for a period of time. No actions.
+    // General activities first - no connections required
+    // taskRemoveExpiredDevices
+    auto expiredDevices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
+      return device->timeIntervalSinceLastUpdate() > context.getSensorConfiguration().peripheralCleanInterval;
+    });
+    std::size_t dbSizeBefore = db.size();
+    for (auto& device : expiredDevices) {
+      // remove now so we don't get tasks later for expired devices
+      HTDBG("taskRemoveExpiredDevices (remove={})", (std::string)device->identifier());
+      db.remove(device->identifier());
+    }
+    std::size_t dbSizeAfter = db.size();
+    if (dbSizeAfter < dbSizeBefore) {
+      HTDBG("  db size has reduced");
+    }
 
-  // TODO is IOS and needs payload sharing
 
-  
-  // auto state0Devices = db.matches([](std::shared_ptr<BLEDevice> device) -> bool {
-  //   return !device->ignore() && !device->pseudoDeviceAddress().has_value();
-  // });
-  auto state1Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
-    return !device->ignore() && 
-           !device->receiveOnly() &&
-           !device->hasService(context.getSensorConfiguration().serviceUUID);
-  });
-  auto state2Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
-    return !device->ignore() && 
-           !device->receiveOnly() &&
-            device->hasService(context.getSensorConfiguration().serviceUUID) &&
-           !device->payloadData().has_value(); // TODO check for Herald transferred payload data (not legacy)
-  });
-  auto state4Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
-    return !device->ignore() && 
-           !device->receiveOnly() &&
-            device->hasService(context.getSensorConfiguration().serviceUUID) &&
-            device->immediateSendData().has_value();
-  });
-  // TODO State X (timed out / out of range) devices filter check -> Then remove from BLEDatabase
-  
-  // NOTE State 0 is handled by the Herald BLE scan function, and so has no specific activity
+    // State 0 - New device -> Read full advert data to see if DCT/Herald -> State Z, 1 or State 3
+    // State 1 - Discover services for DCT/Herald on this device -> State Z, or 2
+    // State 2 - New Herald BLE device -> Read payload -> State 3
+    // State 3 - Steady state - do nothing
+    // State 4 - Has immediateSend data -> Send immediate -> State 3
+    // TODO check for nearby payloads
+    // State 3 - Not seen in a while -> State X
+    // State X - Out of range. No actions.
+    // State Z - Ignore (not a relevant device for Herald... right now). Ignore for a period of time. No actions.
 
-  // State 1 - discovery Herald service
-  for (auto& device : state1Devices) {
-    results.emplace_back(Activity{
-      .priority = Priorities::High + 10,
-      .name = "herald-service-discovery",
-      .prerequisites = std::vector<std::tuple<FeatureTag,std::optional<TargetIdentifier>>>{
-        1,
-        std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
-          herald::engine::Features::HeraldBluetoothProtocolConnection,
-          device->identifier()
+    // TODO is IOS and needs payload sharing
+
+    
+    // auto state0Devices = db.matches([](std::shared_ptr<BLEDevice> device) -> bool {
+    //   return !device->ignore() && !device->pseudoDeviceAddress().has_value();
+    // });
+    auto state1Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
+      return !device->ignore() && 
+            !device->receiveOnly() &&
+            !device->hasService(context.getSensorConfiguration().serviceUUID);
+    });
+    auto state2Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
+      return !device->ignore() && 
+            !device->receiveOnly() &&
+              device->hasService(context.getSensorConfiguration().serviceUUID) &&
+            !device->payloadData().has_value(); // TODO check for Herald transferred payload data (not legacy)
+    });
+    auto state4Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
+      return !device->ignore() && 
+            !device->receiveOnly() &&
+              device->hasService(context.getSensorConfiguration().serviceUUID) &&
+              device->immediateSendData().has_value();
+    });
+    // TODO State X (timed out / out of range) devices filter check -> Then remove from BLEDatabase
+    
+    // NOTE State 0 is handled by the Herald BLE scan function, and so has no specific activity
+
+    // State 1 - discovery Herald service
+    for (auto& device : state1Devices) {
+      results.emplace_back(Activity{
+        .priority = Priorities::High + 10,
+        .name = "herald-service-discovery",
+        .prerequisites = std::vector<std::tuple<FeatureTag,std::optional<TargetIdentifier>>>{
+          1,
+          std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
+            herald::engine::Features::HeraldBluetoothProtocolConnection,
+            device->identifier()
+          }
+        },
+        // .executor = [this](const Activity activity, CompletionCallback callback) -> void {
+        //   // fill this out
+        //   pp->serviceDiscovery(activity,callback);
+        // }
+        .executor = [this](const Activity activity) -> std::optional<Activity> {
+          // fill this out
+          pp.serviceDiscovery(activity);
+          return {};
         }
-      },
-      // .executor = [this](const Activity activity, CompletionCallback callback) -> void {
-      //   // fill this out
-      //   pp->serviceDiscovery(activity,callback);
-      // }
-      .executor = [this](const Activity activity) -> std::optional<Activity> {
-        // fill this out
-        pp.serviceDiscovery(activity);
+      });
+    }
+
+    // State 2 - read herald payload(s)
+    for (auto& device : state2Devices) {
+      results.emplace_back(Activity{
+        .priority = Priorities::High + 9,
+        .name = "herald-read-payload",
+        .prerequisites =  std::vector<std::tuple<FeatureTag,std::optional<TargetIdentifier>>>{
+          1,
+          std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
+            herald::engine::Features::HeraldBluetoothProtocolConnection,
+            device->identifier()
+          }
+        },
+        // .executor = [this](const Activity activity, CompletionCallback callback) -> void {
+        //   // fill this out
+        //   pp->readPayload(activity,callback);
+        // }
+        .executor = [this](const Activity activity) -> std::optional<Activity> {
+          // fill this out
+        pp.readPayload(activity);
         return {};
-      }
-    });
-  }
-
-  // State 2 - read herald payload(s)
-  for (auto& device : state2Devices) {
-    results.emplace_back(Activity{
-      .priority = Priorities::High + 9,
-      .name = "herald-read-payload",
-      .prerequisites =  std::vector<std::tuple<FeatureTag,std::optional<TargetIdentifier>>>{
-        1,
-        std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
-          herald::engine::Features::HeraldBluetoothProtocolConnection,
-          device->identifier()
         }
-      },
-      // .executor = [this](const Activity activity, CompletionCallback callback) -> void {
-      //   // fill this out
-      //   pp->readPayload(activity,callback);
-      // }
-      .executor = [this](const Activity activity) -> std::optional<Activity> {
-        // fill this out
-       pp.readPayload(activity);
-       return {};
-      }
-    });
-  }
-  // TODO add check for sensor config payload timeout in above IF
-  // TODO add BLESensorConfiguration.deviceIntrospectionEnabled && device.supportsModelCharacteristic() && device.model() == null
-  // TODO add BLESensorConfiguration.deviceIntrospectionEnabled && device.supportsDeviceNameCharacteristic() && device.deviceName() == null
-  
-  // State 4 - Has data for immediate send
-  for (auto& device : state4Devices) {
-    results.emplace_back(Activity{
-      .priority = Priorities::Default + 10,
-      .name = "herald-immediate-send-targeted",
-      .prerequisites =  std::vector<std::tuple<FeatureTag,std::optional<TargetIdentifier>>>{
-        1,
-        std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
-          herald::engine::Features::HeraldBluetoothProtocolConnection,
-          device->identifier()
+      });
+    }
+    // TODO add check for sensor config payload timeout in above IF
+    // TODO add BLESensorConfiguration.deviceIntrospectionEnabled && device.supportsModelCharacteristic() && device.model() == null
+    // TODO add BLESensorConfiguration.deviceIntrospectionEnabled && device.supportsDeviceNameCharacteristic() && device.deviceName() == null
+    
+    // State 4 - Has data for immediate send
+    for (auto& device : state4Devices) {
+      results.emplace_back(Activity{
+        .priority = Priorities::Default + 10,
+        .name = "herald-immediate-send-targeted",
+        .prerequisites =  std::vector<std::tuple<FeatureTag,std::optional<TargetIdentifier>>>{
+          1,
+          std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
+            herald::engine::Features::HeraldBluetoothProtocolConnection,
+            device->identifier()
+          }
+        },
+        // For std::async based platforms:-
+        // .executor = [this](const Activity activity, CompletionCallback callback) -> void {
+        //   // fill this out
+        //   pp->immediateSend(activity,callback);
+        // }
+        .executor = [this](const Activity activity) -> std::optional<Activity> {
+          // fill this out
+          pp.immediateSend(activity);
+          return {};
         }
-      },
-      // For std::async based platforms:-
-      // .executor = [this](const Activity activity, CompletionCallback callback) -> void {
-      //   // fill this out
-      //   pp->immediateSend(activity,callback);
-      // }
-      .executor = [this](const Activity activity) -> std::optional<Activity> {
-        // fill this out
-        pp.immediateSend(activity);
-        return {};
-      }
-    });
-    // TODO add immediate send all support
-    // TODO add read of nearby payload data from remotes
+      });
+      // TODO add immediate send all support
+      // TODO add read of nearby payload data from remotes
+    }
+    return results;
   }
-  return results;
-}
 
 private:
   ContextT& context; 
