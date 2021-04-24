@@ -188,7 +188,7 @@ namespace zephyrinternal {
   // };
 
 
-  // TODO bind the below to a class and control their values
+  // TODO bind the below to a class and control their values - support for writing our payload to the remote device.
 
   uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
 
