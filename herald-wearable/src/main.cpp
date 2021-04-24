@@ -68,12 +68,16 @@
 #endif
 
 struct k_thread herald_thread;
-K_THREAD_STACK_DEFINE(herald_stack, 
+constexpr int stackMaxSize = 
 #ifdef CONFIG_BT_MAX_CONN
-	1024 + (CONFIG_BT_MAX_CONN * 512)
+	2048 + (CONFIG_BT_MAX_CONN * 512)
+	// Was 12288 + (CONFIG_BT_MAX_CONN * 512), but this starved newlibc of HEAP (used in handling BLE connections/devices)
 #else
 	9192
 #endif
+;
+K_THREAD_STACK_DEFINE(herald_stack, 
+	stackMaxSize
 ); // Was 9192 for nRF5340 (10 conns), 2048 for nRF52832 (3 conns)
 
 using namespace herald;
@@ -204,7 +208,7 @@ void herald_entry() {
 
 	// TESTING ONLY
 	// IF IN TESTING / DEBUG, USE A FIXED PAYLOAD (SO YOU CAN TRACK IT OVER TIME)
-	// std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
+	std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
 	// std::uint8_t uniqueId[8];	
   // // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
 	// auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
@@ -214,58 +218,63 @@ void herald_entry() {
 	// } else {
 	// 	APP_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
 	// }
-	// APP_DBG("Final clientID: %" PRIu64 "", clientId);
+	APP_DBG("Final clientID: %" PRIu64 "", clientId);
 
-	// std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
-	// 	countryCode,
-	// 	stateCode,
-	// 	clientId
-	// );
+	std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
+		countryCode,
+		stateCode,
+		clientId
+	);
 	// END TESTING ONLY
 
 	// PRODUCTION ONLY
-	APP_DBG("Before simple");
-	k_sleep(K_SECONDS(2));
-	// Use the simple payload, or secured payload, that implements privacy features to prevent user tracking
-	herald::payload::simple::K k;
-	// NOTE: You should store a secret key for a period of days and pass the value for the correct epoch in to here instead of sk
+// 	APP_DBG("Before simple");
+// 	k_sleep(K_SECONDS(2));
+// 	// Use the simple payload, or secured payload, that implements privacy features to prevent user tracking
+// 	herald::payload::simple::K k;
+// 	// NOTE: You should store a secret key for a period of days and pass the value for the correct epoch in to here instead of sk
 	
-	// Note: Using the CC310 to do this. You can use RandomnessSource.h random sources instead if you wish, but CC310 is more secure.
-	herald::payload::simple::SecretKey sk(std::byte(0x00),2048); // fallback - you should do something different.
+// 	APP_DBG("after simple key");
+// 	k_sleep(K_SECONDS(2));
+// 	// Note: Using the CC310 to do this. You can use RandomnessSource.h random sources instead if you wish, but CC310 is more secure.
+// 	herald::payload::simple::SecretKey sk(std::byte(0x00),2048); // fallback - you should do something different.
 	
-	size_t buflen = 2048;
-	uint8_t* buf = new uint8_t[buflen];
-	size_t olen = 0;
-	
-#ifdef CC3XX_BACKEND
-	int success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); 
-#else
-	int success = 1;
-#endif
-	if (0 == success) {
-		sk.clear();
-		sk.append(buf, 0, buflen);
-		APP_DBG("Have applied CC3xx generated data to secret key");
-	} else {
-		APP_DBG("Could not generate 2048 bytes of randomness required for SimplePayload Secret Key. Falling back to fixed generic secret key.");
-	}
+// 	APP_DBG("after secret key");
+// 	k_sleep(K_SECONDS(2));
+// #ifdef CC3XX_BACKEND
+// 	size_t buflen = 2048;
+// 	uint8_t* buf = new uint8_t[buflen];
+// 	size_t olen = 0;
+// 	int success = nrf_cc3xx_platform_entropy_get(buf,buflen,&olen); 
+// 	if (0 == success) {
+// 		sk.clear();
+// 		sk.append(buf, 0, buflen);
+// 		APP_DBG("Have applied CC3xx generated data to secret key");
+// 	} else {
+// 		APP_DBG("Could not generate 2048 bytes of randomness required for SimplePayload Secret Key. Falling back to fixed generic secret key.");
+// 	}
+// 	delete buf;
+// #endif
 
-	// verify secret key
-	for (int i = 0;i < 2048;i+=64) {
-		Data t = sk.subdata(i,64);
-		APP_DBG("Got 64 bytes from secret key from %d",i);
-	}
+// 	APP_DBG("Before printing key");
+// 	k_sleep(K_SECONDS(2));
 
-	APP_DBG("About to create Payload data supplier");
-	k_sleep(K_SECONDS(2));
+// 	// verify secret key
+// 	// for (int i = 0;i < 2048;i+=64) {
+// 	// 	Data t = sk.subdata(i,64);
+// 	// 	APP_DBG("Got 64 bytes from secret key from %d",i);
+// 	// }
 
-	std::shared_ptr<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1<CT>> pds = std::make_shared<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1<CT>>(
-		ctx,
-		countryCode,
-		stateCode,
-		sk,
-		k
-	);
+// 	APP_DBG("About to create Payload data supplier");
+// 	k_sleep(K_SECONDS(2));
+
+// 	std::shared_ptr<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1<CT>> pds = std::make_shared<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1<CT>>(
+// 		ctx,
+// 		countryCode,
+// 		stateCode,
+// 		sk,
+// 		k
+// 	);
 	// END PRODUCTION ONLY
 	APP_DBG("Have created Payload data supplier");
 	k_sleep(K_SECONDS(2));
@@ -339,15 +348,27 @@ void herald_entry() {
 
 	// Start array (and thus start advertising)
 	sa.start(); // There's a corresponding stop() call too
+	
+	APP_DBG("Sensor array running!");
+	k_sleep(K_SECONDS(2));
 
 	int iter = 0;
+	// APP_DBG("got iter!");
+	// k_sleep(K_SECONDS(2));
 	Date last;
+	// APP_DBG("got last!");
+	// k_sleep(K_SECONDS(2));
 	int delay = 250; // KEEP THIS SMALL!!! This is how often we check to see if anything needs to happen over a connection.
+	
+	APP_DBG("Entering herald iteration loop");
+	k_sleep(K_SECONDS(2));
 	while (1) {
 		k_sleep(K_MSEC(delay)); 
 		Date now;
 		if (iter > 40 /* && iter < 44 */ ) { // some delay to allow us to see advertising output
 			// You could only do first 3 iterations so we can see the older log messages without continually scrolling through log messages
+			APP_DBG("Calling Sensor Array iteration");
+			// k_sleep(K_SECONDS(2));
 			sa.iteration(now - last);
 		}
 		
@@ -357,7 +378,7 @@ void herald_entry() {
 		}
 
 		last = now;
-		iter++;
+		++iter;
 	}
 }
 
@@ -387,7 +408,7 @@ void main(void)
 
 	// Start herald entry on a new thread in case of errors, or needing to do something on the main thread
 	[[maybe_unused]]
-	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 4096,
+	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, stackMaxSize,
 			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
 			-1, K_USER,
 			K_NO_WAIT);
