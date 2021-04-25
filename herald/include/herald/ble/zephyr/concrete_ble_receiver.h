@@ -442,8 +442,8 @@ public:
           HTDBG(" - bt device initiating")
         } else if (-ENOMEM == success) {
           HTDBG(" - bt connect attempt failed with default BT ID. Trying again later.");
-          // auto device = db.device(toTarget);
-          // device->ignore(true);
+          // auto& device = db.device(toTarget);
+          // device.ignore(true);
         } else if (-ENOBUFS == success) {
           HTDBG(" - bt_hci_cmd_create has no buffers free");
         } else if (-ECONNREFUSED == success) {
@@ -456,13 +456,13 @@ public:
         }
 
         // Add to ignore list for now
-        // DONT DO THIS HERE - MANY REASONS IT CAN FAIL auto device = db.device(toTarget);
+        // DONT DO THIS HERE - MANY REASONS IT CAN FAIL auto& device = db.device(toTarget);
         // HTDBG(" - Ignoring following target: {}", toTarget);
-        // device->ignore(true);
+        // device.ignore(true);
         
         // Log last disconnected time in BLE database (records failure, allows progressive backoff)
-        auto device = db.device(newMac); // Find by actual current physical address
-        device->state(BLEDeviceState::disconnected);
+        auto& device = db.device(newMac); // Find by actual current physical address
+        device.state(BLEDeviceState::disconnected);
         
         // Immediately restart advertising on failure, but not scanning
         m_context.getPlatform().getAdvertiser().startAdvertising();
@@ -513,8 +513,8 @@ public:
         HTDBG("Connection remote instigated - not forcing close");
       } else {
         bt_conn_disconnect(state.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
-        // auto device = db.device(toTarget);
-        // device->registerDisconnect(Date());
+        // auto& device = db.device(toTarget);
+        // device.registerDisconnect(Date());
       }
     } else {
       // Can clear the remote instigated flag as they've closed the connection
@@ -548,7 +548,7 @@ public:
           default:
             ci += "connecting";
         }
-        ci += " connection is null: ";
+        ci += ", connection is null: ";
         ci += (NULL == value.connection ? "true" : "false");
         HTDBG(ci);
 
@@ -564,11 +564,12 @@ public:
         // Now check for timeout - nRF Connect doesn't cause a disconnect callback
         if (NULL != value.connection && value.remoteInstigated) {
           HTDBG("REMOTELY INSTIGATED OR CONNECTED DEVICE TIMED OUT");
-          auto device = db.device(value.target);
-          if (device->timeIntervalSinceConnected() < TimeInterval::never() &&
-              device->timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+          auto& device = db.device(value.target);
+          if (device.timeIntervalSinceConnected() < TimeInterval::never() &&
+              device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
             // disconnect
             bt_conn_disconnect(value.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+            bt_conn_unref(value.connection);
             value.connection = NULL;
           }
         }
@@ -576,6 +577,16 @@ public:
 
       // Do internal clean up too - remove states no longer required
       for (auto iter = connectionStates.begin();connectionStates.end() != iter; ++iter) {
+        if (NULL != iter->second.connection) {
+          // Ones that are not null, but have timed out according to BLE settings (This class doesn't get notified by BLEDatabase)
+          auto& device = db.device(iter->second.target);
+          if (device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+            bt_conn_disconnect(iter->second.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+            bt_conn_unref(iter->second.connection);
+            iter->second.connection = NULL;
+          }
+        }
+
         if (NULL == iter->second.connection) { // means Zephyr callbacks are finished with the connection object (i.e. disconnect was called)
           connectionStates.erase(iter);
         }
@@ -605,12 +616,12 @@ public:
       HTDBG("State for activity does not have a connection. Returning.");
       return {};
     }
-    auto device = db.device(currentTargetOpt.value());
+    auto& device = db.device(currentTargetOpt.value());
 
     gatt_discover(state.connection);
 
     uint32_t timedOut = waitWithTimeout(5'000, K_MSEC(25), [&device] () -> bool {
-      return !device->hasServicesSet(); // service discovery not completed yet
+      return !device.hasServicesSet(); // service discovery not completed yet
     });
 
     if (0 != timedOut) {
@@ -643,16 +654,16 @@ private:
     // identify device by both MAC and potential pseudoDeviceAddress
     BLEMacAddress bleMacAddress(addr->a.val);
     Data advert(buf->data,buf->len);
-    auto device = db.device(bleMacAddress,advert);
+    auto& device = db.device(bleMacAddress,advert);
 
-    // auto device = db.device(target);
-    if (device->ignore()) {
-      // device->rssi(RSSI(rssi)); // TODO should we do this so our update date works and shows this as a 'live' device?
+    // auto& device = db.device(target);
+    if (device.ignore()) {
+      // device.rssi(RSSI(rssi)); // TODO should we do this so our update date works and shows this as a 'live' device?
       return;
     }
 
     // // Now pass to relevant BLEDatabase API call
-    if (!device->rssi().has_value()) {
+    if (!device.rssi().has_value()) {
       char addr_str[BT_ADDR_LE_STR_LEN];
       bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
       std::string addrStr(addr_str);
@@ -661,7 +672,7 @@ private:
     }
 
     // Add this RSSI reading - called at the end to ensure all other data variables set
-    device->rssi(RSSI(rssi));
+    device.rssi(RSSI(rssi));
   }
 
   void le_param_updated(struct bt_conn *conn, uint16_t interval,
@@ -682,7 +693,7 @@ private:
     HTDBG((std::string)bleMacAddress);
 
     ConnectedDeviceState& state = findOrCreateStateByConnection(conn, true);
-    auto device = db.device(bleMacAddress); // Find by actual current physical address
+    auto& device = db.device(bleMacAddress); // Find by actual current physical address
 
     if (err) { // 2 = SMP issues? StreetPass blocker on Android device perhaps. Disabled SMP use?
       // When connecting to some devices (E.g. HTC Vive base station), you will connect BUT get an error code
@@ -698,7 +709,7 @@ private:
       state.connection = NULL;
         
       // Log last disconnected time in BLE database
-      device->state(BLEDeviceState::disconnected);
+      device.state(BLEDeviceState::disconnected);
 
       // if (targetForConnection.has_value() && connCallback.has_value()) {
       //   connCallback.value()(targetForConnection.value(),false);
@@ -711,7 +722,7 @@ private:
     state.state = BLEDeviceState::connected;
 
     // Log last connected time in BLE database
-    device->state(BLEDeviceState::connected);
+    device.state(BLEDeviceState::connected);
 
     
     // if (targetForConnection.has_value() && connCallback.has_value()) {
@@ -747,8 +758,8 @@ private:
     state.connection = NULL;
 
     // Log last disconnected time in BLE database
-    auto device = db.device(bleMacAddress); // Find by actual current physical address
-    device->state(BLEDeviceState::disconnected);
+    auto& device = db.device(bleMacAddress); // Find by actual current physical address
+    device.state(BLEDeviceState::disconnected);
   }
   
   void discovery_completed_cb(struct bt_gatt_dm *dm, void *context) override
@@ -757,7 +768,7 @@ private:
     const struct bt_gatt_dm_attr *prev = NULL;
     bool found = false;
     ConnectedDeviceState& state = findOrCreateStateByConnection(bt_gatt_dm_conn_get(dm));
-    auto device = db.device(state.target);
+    auto& device = db.device(state.target);
     do {
       prev = bt_gatt_dm_char_next(dm,prev);
       if (NULL != prev) {
@@ -767,7 +778,7 @@ private:
         int matches = bt_uuid_cmp(chrc->uuid, &zephyrinternal::getHeraldPayloadCharUUID()->uuid);
         if (0 == matches) {
           HTDBG("    - FOUND Herald read characteristic. Reading.");
-          device->payloadCharacteristic(m_context.getSensorConfiguration().payloadCharacteristicUUID);
+          device.payloadCharacteristic(m_context.getSensorConfiguration().payloadCharacteristicUUID);
           // initialise payload data for this state
           state.readPayload.clear();
 
@@ -790,16 +801,16 @@ private:
         matches = bt_uuid_cmp(chrc->uuid, &zephyrinternal::getHeraldSignalAndroidCharUUID()->uuid);
         if (0 == matches) {
           HTDBG("    - FOUND Herald android signal characteristic. logging.");
-          device->signalCharacteristic(m_context.getSensorConfiguration().androidSignalCharacteristicUUID);
-          device->operatingSystem(BLEDeviceOperatingSystem::android);
+          device.signalCharacteristic(m_context.getSensorConfiguration().androidSignalCharacteristicUUID);
+          device.operatingSystem(BLEDeviceOperatingSystem::android);
 
           continue; // check for other characteristics too
         }
         matches = bt_uuid_cmp(chrc->uuid, &zephyrinternal::getHeraldSignalIOSCharUUID()->uuid);
         if (0 == matches) {
           HTDBG("    - FOUND Herald ios signal characteristic. logging.");
-          device->signalCharacteristic(m_context.getSensorConfiguration().iosSignalCharacteristicUUID);
-          device->operatingSystem(BLEDeviceOperatingSystem::ios);
+          device.signalCharacteristic(m_context.getSensorConfiguration().iosSignalCharacteristicUUID);
+          device.operatingSystem(BLEDeviceOperatingSystem::ios);
 
           continue; // check for other characteristics too
         }
@@ -813,7 +824,7 @@ private:
 
     if (!found) {
       HTDBG("Herald read payload char not found in herald service (weird...). Ignoring device.");
-      device->ignore(true);
+      device.ignore(true);
       // bt_conn_disconnect(bt_gatt_dm_conn_get(dm), BT_HCI_ERR_REMOTE_USER_TERM_CONN);
     }
 
@@ -827,7 +838,7 @@ private:
     // very last action - for concurrency reasons (C++17 threading/mutex/async/future not available on Zephyr)
     std::vector<UUID> serviceList;
     serviceList.push_back(m_context.getSensorConfiguration().serviceUUID);
-    device->services(serviceList);
+    device.services(serviceList);
   }
 
   void discovery_service_not_found_cb(struct bt_conn *conn, void *context) override
@@ -836,10 +847,10 @@ private:
     ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
     HTDBG((std::string)state.target);
 
-    auto device = db.device(state.target);
+    auto& device = db.device(state.target);
     std::vector<UUID> serviceList; // empty service list // TODO put other listened-for services here
-    device->services(serviceList);
-    device->ignore(true);
+    device.services(serviceList);
+    device.ignore(true);
   }
 
   void discovery_error_found_cb(struct bt_conn *conn, int err, void *context) override
@@ -860,7 +871,7 @@ private:
       HTDBG(state.readPayload.hexEncodedString());
       
       // Set final read payload (triggers success callback on observer)
-      db.device(state.target)->payloadData(state.readPayload);
+      db.device(state.target).payloadData(state.readPayload);
 
       return 0;
     }

@@ -9,6 +9,17 @@
 
 #include <iostream>
 
+struct TimeSetPlatformType {
+  TimeSetPlatformType()
+    : seconds(0) {}
+  
+  herald::datatype::Date getNow() noexcept {
+    return herald::datatype::Date(seconds);
+  }
+
+  long seconds;
+};
+
 struct DummyLoggingSink {
   DummyLoggingSink() : subsystem(), category(), value() {}
   ~DummyLoggingSink() = default;
@@ -37,6 +48,38 @@ public:
   herald::ble::BluetoothState state() override {
     return herald::ble::BluetoothState::poweredOn;
   }
+};
+
+
+class DummyBLEDBDelegate : public herald::ble::BLEDatabaseDelegate {
+public:
+  DummyBLEDBDelegate() : updateCallbackCalled(false), createCallbackCalled(false),
+    deleteCallbackCalled(false), dev(), attr() {}
+  ~DummyBLEDBDelegate() {}
+
+  // overrides
+  void bleDatabaseDidCreate(const herald::ble::BLEDevice& device) override {
+    createCallbackCalled = true;
+    dev.emplace(device);
+  }
+  
+  void bleDatabaseDidUpdate(const herald::ble::BLEDevice& device, 
+    const herald::ble::BLEDeviceAttribute attribute) override {
+    updateCallbackCalled = true;
+    dev.emplace(device);
+    attr = attribute;
+  }
+  
+  void bleDatabaseDidDelete(const herald::ble::BLEDevice& device) override {
+    deleteCallbackCalled = true;
+    dev.emplace(device);
+  }
+  
+  bool updateCallbackCalled;
+  bool createCallbackCalled;
+  bool deleteCallbackCalled;
+  std::optional<std::reference_wrapper<const herald::ble::BLEDevice>> dev;
+  std::optional<herald::ble::BLEDeviceAttribute> attr;
 };
 
 #endif

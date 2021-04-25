@@ -10,6 +10,7 @@
 #include "herald/ble/bluetooth_state_manager.h"
 #include "herald/ble/bluetooth_state_manager_delegate.h"
 #include "herald/datatype/bluetooth_state.h"
+#include "herald/datatype/date.h"
 
 #include <memory>
 #include <iosfwd>
@@ -210,6 +211,10 @@ ZephyrContextProvider::periodicActions() noexcept
   // E.g. determine if we should rotate mac address (if not done for us?)
 }
 
+datatype::Date
+ZephyrContextProvider::getNow() noexcept {
+  return datatype::Date();
+}
 
 
 } // end namespace

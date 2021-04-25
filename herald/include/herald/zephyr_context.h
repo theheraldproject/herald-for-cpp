@@ -76,6 +76,8 @@ public:
 
   void periodicActions() noexcept;
 
+  Date getNow() noexcept;
+
 private:
   ZephyrLoggingSink sink;
 

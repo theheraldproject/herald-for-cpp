@@ -72,6 +72,16 @@ struct BLESensorConfiguration {
   /// Advert refresh time interval
   TimeInterval advertRefreshTimeInterval;
 
+  /// Remove peripheral records that haven't been updated for some time.
+  /// - Herald aims to maintain a regular "connection" to all peripherals to gather precise proximity and duration data for all peripheral records.
+  /// - A regular connection in this context means frequent data sampling that may or may not require an actual connection.
+  /// - For example, RSSI measurements are taken from adverts, thus do not require an active connection; even the connection on iOS is just an illusion for ease of understanding.
+  /// - A peripheral record stops updating if the device has gone out of range, therefore the record can be deleted to reduce workload.
+  /// - Upper bound : Set this value to iOS Bluetooth address rotation period (roughly 15 minutes) to maximise continuity when devices go out of range, then return back in range (connection resume period = 15 mins max).
+  /// - Lower bound : Set this value to Android scan-process period (roughly 2 minutes) to minimise workload, but iOS connection resume will be more reliant on re-discovery (connection resume period = 2 mins or more dependent on external factors).
+  /// - iOS-iOS connections may resume beyond the set interval value if the addresses have not changed, due to other mechanisms in Herald.
+  TimeInterval peripheralCleanInterval;
+
   /// Connection management
   /// Max connections - since v1.2 (allowing multiple connections on Android and C++)
   int maxBluetoothConnections; // Same as NRF 52840 max connections

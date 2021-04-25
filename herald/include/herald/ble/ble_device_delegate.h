@@ -19,7 +19,7 @@ public:
   BLEDeviceDelegate() = default;
   virtual ~BLEDeviceDelegate() = default;
 
-  virtual void device(const std::shared_ptr<BLEDevice>& device, const BLEDeviceAttribute didUpdate) = 0;  
+  virtual void device(const BLEDevice& device, const BLEDeviceAttribute didUpdate) = 0;  
 };
 
 } // end namespace

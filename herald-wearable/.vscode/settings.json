@@ -63,10 +63,10 @@
     "cinttypes": "cpp"
   },
   "cmake.configureEnvironment": {
-    // "BOARD": "nrf52dk_nrf52832"
+    "BOARD": "nrf52dk_nrf52832"
     // "BOARD": "nrf52833dk_nrf52833"
     // "BOARD": "nrf52840dk_nrf52840"
-    "BOARD": "nrf5340dk_nrf5340_cpuapp"
+    // "BOARD": "nrf5340dk_nrf5340_cpuapp"
     // ,"HERALD_ANALYSIS_ENABLED":"y"
   }
 }
