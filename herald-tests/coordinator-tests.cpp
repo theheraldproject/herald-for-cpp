@@ -179,41 +179,41 @@ public:
 
   std::optional<herald::engine::Activity> serviceDiscovery(herald::engine::Activity act) override {
     HTDBG("serviceDiscovery called");
-    auto device = db.device(std::get<1>(act.prerequisites.front()).value());
+    auto& device = db.device(std::get<1>(act.prerequisites.front()).value());
     std::vector<herald::datatype::UUID> heraldServiceList;
     herald::ble::BLESensorConfiguration cfg;
     heraldServiceList.push_back(cfg.serviceUUID);
-    device->services(heraldServiceList);
-    device->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
+    device.services(heraldServiceList);
+    device.operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
     hasIdentifiedOs = true;
-    lastDeviceOS = device->identifier();
+    lastDeviceOS = device.identifier();
     return {};
   }
 
   std::optional<herald::engine::Activity> readPayload(herald::engine::Activity act) override {
     HTDBG("readPayload called");
-    auto device = db.device(std::get<1>(act.prerequisites.front()).value());
-    device->payloadData(herald::datatype::Data(std::byte(0x02),2));
+    auto& device = db.device(std::get<1>(act.prerequisites.front()).value());
+    device.payloadData(herald::datatype::Data(std::byte(0x02),2));
     hasReadPayload = true;
-    lastDevicePayload = device->identifier();
+    lastDevicePayload = device.identifier();
     return {};
   }
 
   std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
     HTDBG("immediateSend called");
-    auto device = db.device(std::get<1>(act.prerequisites.front()).value());
+    auto& device = db.device(std::get<1>(act.prerequisites.front()).value());
     hasImmediateSend = true;
-    lastImmediateSend = device->identifier();
-    device->clearImmediateSendData();
+    lastImmediateSend = device.identifier();
+    device.clearImmediateSendData();
     return {};
   }
 
   std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
     HTDBG("immediateSendAll called");
-    auto device = db.device(std::get<1>(act.prerequisites.front()).value());
+    auto& device = db.device(std::get<1>(act.prerequisites.front()).value());
     hasImmediateSendAll = true;
-    lastImmediateSendAll = device->identifier();
-    device->clearImmediateSendData();
+    lastImmediateSendAll = device.identifier();
+    device.clearImmediateSendData();
     return {};
   }
 
@@ -275,7 +275,7 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
   // std::shared_ptr<herald::ble::BLEDevice> devPtr3 = db->device(device3);
   
   SECTION("blecoordinator-complex-iterations-01-device1") {
-    std::shared_ptr<herald::ble::BLEDevice> devPtr1 = db.device(device1);
+    herald::ble::BLEDevice& devPtr1 = db.device(device1);
 
     // std::vector<std::tuple<herald::engine::FeatureTag,herald::engine::Priority,
     //   std::optional<herald::datatype::TargetIdentifier>>> conns = 
@@ -309,7 +309,7 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
     //   coord->requiredConnections();
 
     // TODO MARK DEVICE FOR IMMEDIATE SEND IN PROVIDER
-    devPtr1->immediateSendData(herald::datatype::Data(std::byte(0x09),4));
+    devPtr1.immediateSendData(herald::datatype::Data(std::byte(0x09),4));
 
     // Now perform one iteration
     c.iteration();

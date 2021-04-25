@@ -29,22 +29,22 @@ public:
 
   virtual void add(BLEDatabaseDelegate& delegate) = 0;
 
-  virtual std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/) = 0;
+  virtual BLEDevice& device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/) = 0;
 
-  virtual std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac, const BLEMacAddress& pseudo) = 0;
+  virtual BLEDevice& device(const BLEMacAddress& mac, const BLEMacAddress& pseudo) = 0;
   
-  virtual std::shared_ptr<BLEDevice> device(const BLEMacAddress& mac) = 0;
+  virtual BLEDevice& device(const BLEMacAddress& mac) = 0;
 
-  virtual std::shared_ptr<BLEDevice> device(const PayloadData& payloadData) = 0;
+  virtual BLEDevice& device(const PayloadData& payloadData) = 0;
 
-  virtual std::shared_ptr<BLEDevice> device(const TargetIdentifier& targetIdentifier) = 0;
+  virtual BLEDevice& device(const TargetIdentifier& targetIdentifier) = 0;
 
   // virtual std::vector<std::shared_ptr<BLEDevice>> devices() const = 0;
 
   virtual std::size_t size() const = 0;
 
-  virtual std::vector<std::shared_ptr<BLEDevice>> matches(
-    const std::function<bool(const std::shared_ptr<BLEDevice>&)>& matcher) const = 0;
+  virtual std::vector<std::reference_wrapper<BLEDevice>> matches(
+    const std::function<bool(const BLEDevice&)>& matcher) = 0;
 
   /// Cannot name a function delete in C++. remove is common.
   virtual void remove(const TargetIdentifier& targetIdentifier) = 0;

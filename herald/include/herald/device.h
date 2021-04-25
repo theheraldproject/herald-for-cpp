@@ -32,6 +32,7 @@ public:
   virtual Date created() const = 0;
   virtual TimeInterval timeIntervalSinceLastUpdate() const = 0;
   virtual const TargetIdentifier& identifier() const = 0;
+  virtual void identifier(const TargetIdentifier& toCopyFrom) = 0;
 };
 
 }
