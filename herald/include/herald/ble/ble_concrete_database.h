@@ -351,7 +351,7 @@ private:
     auto comp = last_updated_descending();
     std::size_t oldestIndex = 0;
     for (std::size_t idx = 0;idx < devices.size();++idx) {
-      if (comp(devices[oldestIndex],devices[idx]) < 0) {
+      if (!comp(devices[oldestIndex],devices[idx])) {
         // new oldest
         oldestIndex = idx;
       }
