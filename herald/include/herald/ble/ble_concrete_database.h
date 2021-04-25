@@ -252,7 +252,19 @@ public:
 
   // BLE Device Delegate overrides
   void device(const BLEDevice& device, BLEDeviceAttribute didUpdate) override {
-    // TODO update any internal DB state as necessary (E.g. deletion)
+    // Update any internal DB state as necessary (E.g. payload received and its a duplicate as mac has rotated)
+    if (BLEDeviceAttribute::payloadData == didUpdate) {
+      // check for all devices with this payload that are NOT THIS device
+      auto oldMacsForSamePayload = matches([device](auto& devRef) {
+        return devRef.identifier() != device.identifier() && 
+               devRef.payloadData().has_value() && devRef.payloadData() == device.payloadData();
+      });
+      for (auto& oldMacDevice : oldMacsForSamePayload) {
+        remove(oldMacDevice.get().identifier());
+      }
+    }
+
+    // Now send update to delegates
     for (auto& delegate : delegates) {
       delegate.get().bleDatabaseDidUpdate(device, didUpdate); // TODO verify this is the right onward call
     }
