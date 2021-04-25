@@ -40,20 +40,30 @@ enum class BLEDeviceOperatingSystem : int {
 };
 
 enum class BLEDeviceState : int {
+  uninitialised, /* Uninitialised state only seen within Herald, not seen by those listing devices in a DB */
   connecting, connected, disconnected
 };
 
-class BLEDevice : public Device, public std::enable_shared_from_this<BLEDevice> {
+class BLEDevice : public Device {
 public:
+  BLEDevice(); // default constructor for array instantiation
+  BLEDevice(BLEDeviceDelegate& delegate, const Date& created = Date()); // default (uninitialised state) constructor
   BLEDevice(TargetIdentifier identifier, BLEDeviceDelegate& delegate, const Date& created = Date());
   BLEDevice(const BLEDevice& other); // copy ctor
   BLEDevice(BLEDevice&& other) = delete; // remove move constructor
   ~BLEDevice();
 
+  /// \brief Resets the device to what it's state would be if just constructed. Allows re-use in fixed size containers
+  void reset(const TargetIdentifier& newID, BLEDeviceDelegate& newDelegate);
+
   BLEDevice& operator=(const BLEDevice& other); // copy assign
   BLEDevice operator=(BLEDevice && other) = delete; // remove mode assign
+  
+  bool operator==(const BLEDevice& other) const noexcept;
+  bool operator!=(const BLEDevice& other) const noexcept;
 
   const TargetIdentifier& identifier() const override; // MAC ADDRESS OR PSEUDO DEVICE ADDRESS
+  void identifier(const TargetIdentifier&) override; // MAC ADDRESS OR PSEUDO DEVICE ADDRESS
   Date created() const override;
 
   // basic descriptors

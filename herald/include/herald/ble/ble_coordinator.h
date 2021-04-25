@@ -152,13 +152,13 @@ public:
     }
 
     // Remove expired devices
-    auto expired = db.matches([/*this*/] (const std::shared_ptr<BLEDevice>& device) -> bool {
-      auto interval = device->timeIntervalSinceLastUpdate();
+    auto expired = db.matches([/*this*/] (const BLEDevice& device) -> bool {
+      auto interval = device.timeIntervalSinceLastUpdate();
       bool notZero = interval != TimeInterval::zero();
       bool isOld = interval > TimeInterval::minutes(15);
       // HTDBG("ID, created, Now, interval, notZero, isOld:-");
-      // HTDBG((std::string)device->identifier());
-      // HTDBG(std::to_string((long)device->created()));
+      // HTDBG((std::string)device.identifier());
+      // HTDBG(std::to_string((long)device.created()));
       // HTDBG(std::to_string((long)Date()));
       // HTDBG((std::string)interval);
       // HTDBG(notZero?"true":"false");
@@ -166,39 +166,39 @@ public:
       return notZero && isOld;
     });
     for (auto& exp : expired) {
-      db.remove(exp->identifier());
+      db.remove(exp.get().identifier());
       HTDBG("Removing expired device with ID: ");
-      HTDBG((std::string)exp->identifier());
+      HTDBG((std::string)exp.get().identifier());
       HTDBG("time since last update:-");
-      HTDBG(std::to_string(exp->timeIntervalSinceLastUpdate()));
+      HTDBG(std::to_string(exp.get().timeIntervalSinceLastUpdate()));
     }
 
     // Allow updates from ignored (for a time) status, to retry status
-    auto tempIgnoredOS = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
-      return device->operatingSystem() == BLEDeviceOperatingSystem::ignore;
+    auto tempIgnoredOS = db.matches([](const BLEDevice& device) -> bool {
+      return device.operatingSystem() == BLEDeviceOperatingSystem::ignore;
     });
     for (auto& device : tempIgnoredOS) {
       // don't bother with separate activity right now - no connection required
-      device->operatingSystem(BLEDeviceOperatingSystem::unknown);
+      device.get().operatingSystem(BLEDeviceOperatingSystem::unknown);
     }
 
 
     // Add all targets in database that are not known
-    auto newConns = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
-      return !device->ignore() &&
+    auto newConns = db.matches([this](const BLEDevice& device) -> bool {
+      return !device.ignore() &&
         (
-          !device->hasService(context.getSensorConfiguration().serviceUUID)
+          !device.hasService(context.getSensorConfiguration().serviceUUID)
           ||
-          !device->payloadData().has_value() // Know the OS, but not the payload (ID)
+          !device.payloadData().has_value() // Know the OS, but not the payload (ID)
           ||
-          device->immediateSendData().has_value()
+          device.immediateSendData().has_value()
         )
         ;
     });
     for (auto& device : newConns) {
       results.emplace_back(herald::engine::Features::HeraldBluetoothProtocolConnection,
         herald::engine::Priorities::High,
-        device->identifier()
+        device.get().identifier()
       );
     }
 
@@ -208,24 +208,24 @@ public:
     if (newConns.size() > 0) {
       // print debug info about the BLE Database
       HTDBG("BLE DATABASE CURRENT CONTENTS:-");
-      auto allDevices = db.matches([](const std::shared_ptr<BLEDevice>& device) -> bool {
+      auto allDevices = db.matches([](const BLEDevice& device) -> bool {
         return true;
       });
       for (auto& device : allDevices) {
         std::string di(" - ");
-        BLEMacAddress mac((Data)device->identifier());
+        BLEMacAddress mac((Data)device.get().identifier());
         di += (std::string)mac;
         di += ", created=";
-        di += std::to_string(device->created());
+        di += std::to_string(device.get().created());
         di += ", pseudoAddress=";
-        auto pseudo = device->pseudoDeviceAddress();
+        auto pseudo = device.get().pseudoDeviceAddress();
         if (pseudo.has_value()) {
           di += (std::string)pseudo.value();
         } else {
           di += "unset";
         }
         di += ", os=";
-        auto os = device->operatingSystem();
+        auto os = device.get().operatingSystem();
         if (os.has_value()) {
           if (herald::ble::BLEDeviceOperatingSystem::ios == os) {
             di += "ios";
@@ -246,18 +246,18 @@ public:
           di += "unknown/unset";
         }
         di += ", ignore=";
-        auto ignore = device->ignore();
+        auto ignore = device.get().ignore();
         if (ignore) {
           di += "true (for ";
-          di += std::to_string(device->timeIntervalUntilIgnoreExpired().millis());
+          di += std::to_string(device.get().timeIntervalUntilIgnoreExpired().millis());
           di += " more secs)";
         } else {
           di += "false";
         }
         di += ", hasServices=";
-        di += (device->hasServicesSet() ? "true" : "false");
+        di += (device.get().hasServicesSet() ? "true" : "false");
         di += ", hasReadPayload=";
-        di += (device->payloadData().has_value() ? device->payloadData().value().hexEncodedString() : "false");
+        di += (device.get().payloadData().has_value() ? device.get().payloadData().value().hexEncodedString() : "false");
         HTDBG(di);
       }
     } else {
@@ -273,14 +273,14 @@ public:
 
     // General activities first - no connections required
     // taskRemoveExpiredDevices
-    auto expiredDevices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
-      return device->timeIntervalSinceLastUpdate() > context.getSensorConfiguration().peripheralCleanInterval;
+    auto expiredDevices = db.matches([this](const BLEDevice& device) -> bool {
+      return device.timeIntervalSinceLastUpdate() > context.getSensorConfiguration().peripheralCleanInterval;
     });
     std::size_t dbSizeBefore = db.size();
     for (auto& device : expiredDevices) {
       // remove now so we don't get tasks later for expired devices
-      HTDBG("taskRemoveExpiredDevices (remove={})", (std::string)device->identifier());
-      db.remove(device->identifier());
+      HTDBG("taskRemoveExpiredDevices (remove={})", (std::string)device.get().identifier());
+      db.remove(device.get().identifier());
     }
     std::size_t dbSizeAfter = db.size();
     if (dbSizeAfter < dbSizeBefore) {
@@ -301,25 +301,25 @@ public:
     // TODO is IOS and needs payload sharing
 
     
-    // auto state0Devices = db.matches([](std::shared_ptr<BLEDevice> device) -> bool {
-    //   return !device->ignore() && !device->pseudoDeviceAddress().has_value();
+    // auto state0Devices = db.matches([](BLEDevice device) -> bool {
+    //   return !device.ignore() && !device.pseudoDeviceAddress().has_value();
     // });
-    auto state1Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
-      return !device->ignore() && 
-            !device->receiveOnly() &&
-            !device->hasService(context.getSensorConfiguration().serviceUUID);
+    auto state1Devices = db.matches([this](const BLEDevice& device) -> bool {
+      return !device.ignore() && 
+            !device.receiveOnly() &&
+            !device.hasService(context.getSensorConfiguration().serviceUUID);
     });
-    auto state2Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
-      return !device->ignore() && 
-            !device->receiveOnly() &&
-              device->hasService(context.getSensorConfiguration().serviceUUID) &&
-            !device->payloadData().has_value(); // TODO check for Herald transferred payload data (not legacy)
+    auto state2Devices = db.matches([this](const BLEDevice& device) -> bool {
+      return !device.ignore() && 
+            !device.receiveOnly() &&
+              device.hasService(context.getSensorConfiguration().serviceUUID) &&
+            !device.payloadData().has_value(); // TODO check for Herald transferred payload data (not legacy)
     });
-    auto state4Devices = db.matches([this](const std::shared_ptr<BLEDevice>& device) -> bool {
-      return !device->ignore() && 
-            !device->receiveOnly() &&
-              device->hasService(context.getSensorConfiguration().serviceUUID) &&
-              device->immediateSendData().has_value();
+    auto state4Devices = db.matches([this](const BLEDevice& device) -> bool {
+      return !device.ignore() && 
+            !device.receiveOnly() &&
+              device.hasService(context.getSensorConfiguration().serviceUUID) &&
+              device.immediateSendData().has_value();
     });
     // TODO State X (timed out / out of range) devices filter check -> Then remove from BLEDatabase
     
@@ -334,7 +334,7 @@ public:
           1,
           std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
             herald::engine::Features::HeraldBluetoothProtocolConnection,
-            device->identifier()
+            device.get().identifier()
           }
         },
         // .executor = [this](const Activity activity, CompletionCallback callback) -> void {
@@ -358,7 +358,7 @@ public:
           1,
           std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
             herald::engine::Features::HeraldBluetoothProtocolConnection,
-            device->identifier()
+            device.get().identifier()
           }
         },
         // .executor = [this](const Activity activity, CompletionCallback callback) -> void {
@@ -385,7 +385,7 @@ public:
           1,
           std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
             herald::engine::Features::HeraldBluetoothProtocolConnection,
-            device->identifier()
+            device.get().identifier()
           }
         },
         // For std::async based platforms:-

@@ -69,7 +69,7 @@ using namespace herald::payload;
 /**
  * Acts as the main object to control the receiver, transmitter, and database instances
  */
-template <typename ContextT>
+template <typename ContextT,std::size_t DBSize = 10>
 class ConcreteBLESensor : public BLESensor, public BLEDatabaseDelegate, 
   public BluetoothStateManagerDelegate /*, public std::enable_shared_from_this<ConcreteBLESensor<ContextT,TransmitterT,ReceiverT>>*/  {
 public:
@@ -142,32 +142,32 @@ public:
   }
 
   // Database overrides
-  void bleDatabaseDidCreate(const std::shared_ptr<BLEDevice>& device) override {
+  void bleDatabaseDidCreate(const BLEDevice& device) override {
     for (auto& delegate : delegates) {
-      delegate->sensor(SensorType::BLE, device->identifier()); // didDetect
+      delegate->sensor(SensorType::BLE, device.identifier()); // didDetect
     }
   }
 
-  void bleDatabaseDidUpdate(const std::shared_ptr<BLEDevice>& device, const BLEDeviceAttribute attribute) override {
+  void bleDatabaseDidUpdate(const BLEDevice& device, const BLEDeviceAttribute attribute) override {
     switch (attribute) {
       case BLEDeviceAttribute::rssi: {
-        auto rssi = device->rssi();
+        auto rssi = device.rssi();
         if (rssi.has_value()) {
           double rssiValue = (double)rssi->intValue();
           auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
           for (auto& delegate: delegates) {
             delegate->sensor(SensorType::BLE,
               prox,
-              device->identifier()
+              device.identifier()
             ); // didMeasure
           }
           // also payload with rssi
-          auto payload = device->payloadData();
+          auto payload = device.payloadData();
           if (payload.has_value()) {
             for (auto& delegate: delegates) {
               delegate->sensor(SensorType::BLE,
                 prox,
-                device->identifier(),
+                device.identifier(),
                 *payload
               ); // didMeasure withPayload
             }
@@ -176,23 +176,23 @@ public:
         break;
       }
       case BLEDeviceAttribute::payloadData: {
-        auto payload = device->payloadData();
+        auto payload = device.payloadData();
         if (payload.has_value()) {
           for (auto& delegate: delegates) {
             delegate->sensor(SensorType::BLE,
               *payload,
-              device->identifier()
+              device.identifier()
             ); // didReadPayload
           }
           // also payload with rssi
-          auto rssi = device->rssi();
+          auto rssi = device.rssi();
           if (rssi.has_value()) {
             double rssiValue = (double)rssi->intValue();
             auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
             for (auto& delegate: delegates) {
               delegate->sensor(SensorType::BLE,
                 prox,
-                device->identifier(),
+                device.identifier(),
                 *payload
               ); // didMeasure withPayload
             }
@@ -206,8 +206,9 @@ public:
     }
   }
 
-  void bleDatabaseDidDelete(const std::shared_ptr<BLEDevice>& device) override {
+  void bleDatabaseDidDelete(const BLEDevice& device) override {
     ; // TODO just log this // TODO determine if to pass this on too
+    // TODO fire this for analysis runner and others' benefit
   }
 
   // Bluetooth state manager delegate overrides
@@ -232,17 +233,17 @@ private:
   // Data members hidden by PIMPL
 
   ContextT& m_context;
-  ConcreteBLEDatabase<ContextT> database;
+  ConcreteBLEDatabase<ContextT,DBSize> database;
   BluetoothStateManager& stateManager;
-  ConcreteBLETransmitter<ContextT,ConcreteBLEDatabase<ContextT>> transmitter;
-  ConcreteBLEReceiver<ContextT,ConcreteBLEDatabase<ContextT>> receiver;
+  ConcreteBLETransmitter<ContextT,ConcreteBLEDatabase<ContextT,DBSize>> transmitter;
+  ConcreteBLEReceiver<ContextT,ConcreteBLEDatabase<ContextT,DBSize>> receiver;
 
   std::vector<std::shared_ptr<SensorDelegate>> delegates;
   
   HeraldProtocolBLECoordinationProvider<
     ContextT,
-    ConcreteBLEDatabase<ContextT>,
-    ConcreteBLEReceiver<ContextT,ConcreteBLEDatabase<ContextT>>
+    ConcreteBLEDatabase<ContextT,DBSize>,
+    ConcreteBLEReceiver<ContextT,ConcreteBLEDatabase<ContextT,DBSize>>
   > coordinator;
 
   bool addedSelfAsDelegate;
