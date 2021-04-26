@@ -230,8 +230,10 @@ namespace zephyrinternal {
           newvalue[i] = (char)payload->at(i);
         }
         value = newvalue;
-        return bt_gatt_attr_read(conn, attr, buf, len, offset, value,
+        auto res = bt_gatt_attr_read(conn, attr, buf, len, offset, value,
           payload->size());
+        delete newvalue;
+        return res;
       // } else {
       //   value = "venue value"; // TODO replace with the use of PDS
       }
