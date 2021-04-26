@@ -57,7 +57,7 @@ uint32_t waitWithTimeout(uint32_t timeoutMillis, k_timeout_t period, std::functi
 struct ConnectedDeviceState {
   ConnectedDeviceState(const TargetIdentifier& id)
     : target(id), state(BLEDeviceState::disconnected), connection(NULL), address(),
-      readPayload(), immediateSend(), remoteInstigated(false)
+      readPayload(), immediateSend(), remoteInstigated(false), inDiscovery(false), isReading(false)
   {}
   ConnectedDeviceState(const ConnectedDeviceState& from) = delete;
   ConnectedDeviceState(ConnectedDeviceState&& from) = delete;
@@ -70,6 +70,8 @@ struct ConnectedDeviceState {
   PayloadData readPayload;
   ImmediateSendData immediateSend;
   bool remoteInstigated;
+  bool inDiscovery;
+  bool isReading;
 };
 
 namespace zephyrinternal {
@@ -508,22 +510,33 @@ public:
     char addr_str[BT_ADDR_LE_STR_LEN];
     bt_addr_le_to_str(&state.address, addr_str, sizeof(addr_str));
     HTDBG(addr_str);
+    if (0 == strcmp(addr_str,"00:00:00:00:00:00 (public)")) {
+      HTDBG("Remote address is empty. Not removing old state object.");
+      return false; // Assume this Zephyr internal state is being managed out eventually.
+    }
     if (NULL != state.connection) {
       if (state.remoteInstigated) {
         HTDBG("Connection remote instigated - not forcing close");
+      } else if (state.isReading) {
+        HTDBG("Connection in-use for characteristic read - not forcing close");
       } else {
         bt_conn_disconnect(state.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
         // auto& device = db.device(toTarget);
         // device.registerDisconnect(Date());
       }
     } else {
+      HTDBG("State connections is null - assuming it is closed");
       // Can clear the remote instigated flag as they've closed the connection
       state.remoteInstigated = false;
+      // state.isReading = false;
+      // state.readPayload.clear();
     }
-    if (!state.remoteInstigated) {
+    if (!state.remoteInstigated && !state.isReading) {
+      HTDBG("Removing old state connection cache object");
       removeState(toTarget);
-      return false; // assumes we've closed it // TODO proper multi-connection state tracking
+      return false; // assumes we've closed it // Multi-connection tracking done elsewhere
     }
+    HTDBG("Not removed state cache for connection. Notifying caller connection is not yet closed.");
     return true; // remote instigated the connection - keep it open and inform caller
   }
 
@@ -553,12 +566,20 @@ public:
         HTDBG(ci);
 
         // Check connection reference is valid by address - has happened with non connectable devices (VR headset bluetooth stations)
+        bool nullBefore = (NULL == value.connection);
+        char addr_str[BT_ADDR_LE_STR_LEN];
+        bt_addr_le_to_str(&value.address, addr_str, sizeof(addr_str));
+        HTDBG(addr_str);
+        HTDBG("Looking up connection object for address just printed");
         value.connection = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &value.address);
+        if (!nullBefore && (NULL == value.connection)) {
+          HTDBG("  WARNING connection was not null, but is now we've tried to look it up again - WHY? Zephyr could not find connection by address?");
+        }
         // If the above returns null, the next iterator will remove our state
 
         // Check for non null connection but disconnected state
-        
         if (BLEDeviceState::disconnected == value.state) {
+          HTDBG("Connection is in disconnected state. Setting state cache connection to NULL");
           value.connection = NULL;
         }
         // Now check for timeout - nRF Connect doesn't cause a disconnect callback
@@ -577,6 +598,7 @@ public:
 
       // Do internal clean up too - remove states no longer required
       for (auto iter = connectionStates.begin();connectionStates.end() != iter; ++iter) {
+        // We don't check for isReading or is in serviceDiscovery here as this is the catch-all, final, timeout check
         if (NULL != iter->second.connection) {
           // Ones that are not null, but have timed out according to BLE settings (This class doesn't get notified by BLEDatabase)
           auto& device = db.device(iter->second.target);
@@ -617,12 +639,18 @@ public:
       return {};
     }
     auto& device = db.device(currentTargetOpt.value());
+    state.inDiscovery = true;
 
     gatt_discover(state.connection);
 
-    uint32_t timedOut = waitWithTimeout(5'000, K_MSEC(25), [&device] () -> bool {
-      return !device.hasServicesSet(); // service discovery not completed yet
+    HTDBG("Zephyr waitWithTimeout for serviceDiscovery");
+    uint32_t timedOut = waitWithTimeout(5'000, K_MSEC(25), [/*&device,*/&state] () -> bool {
+      // return !device.hasServicesSet();
+      return state.inDiscovery || state.isReading;
     });
+    HTDBG("Zephyr waitWithTimeout completed for serviceDiscovery");
+
+    state.inDiscovery = false;
 
     if (0 != timedOut) {
       HTDBG("service discovery timed out for device");
@@ -634,6 +662,42 @@ public:
 
   std::optional<Activity> readPayload(Activity activity) override
   {
+    // HTDBG("Entered readPayload activity");
+    // auto currentTargetOpt = std::get<1>(activity.prerequisites.front());
+    // if (!currentTargetOpt.has_value()) {
+    //   HTDBG("No target specified for Read Payload activity. Returning.");
+    //   return {}; // We've been asked to connect to no specific target - not valid for Bluetooth
+    // }
+    // // Ensure we have a cached state (i.e. we are connected)
+    // auto& state = findOrCreateState(currentTargetOpt.value());
+    // if (state.state != BLEDeviceState::connected) {
+    //   HTDBG("Not connected to target of activity. Returning.");
+    //   return {};
+    // }
+    // if (NULL == state.connection) {
+    //   HTDBG("State for activity does not have a connection. Returning.");
+    //   return {};
+    // }
+    // if (!state.isReading) {
+    //   HTDBG("Reading already completed. Returning.");
+    //   return {};
+    // }
+
+    // // Note: Actual read operation started during service discovery, so just wait for it here
+
+    // HTDBG("Zephyr waitWithTimeout for readPayload");
+    // uint32_t timedOut = waitWithTimeout(5'000, K_MSEC(25), [&state] () -> bool {
+    //   return state.isReading; // service discovery or char reading not completed yet
+    // });
+    // HTDBG("Zephyr waitWithTimeout completed for readPayload");
+
+    // // Note: Let read continue beyond the time out, so it sets isReading in the read callback once complete (not set to false here)
+
+    // if (0 != timedOut) {
+    //   HTDBG("Read Payload timed out for device");
+    //   HTDBG(std::to_string(timedOut));
+    //   return {};
+    // }
     return {};
   }
 
@@ -781,6 +845,7 @@ private:
           device.payloadCharacteristic(m_context.getSensorConfiguration().payloadCharacteristicUUID);
           // initialise payload data for this state
           state.readPayload.clear();
+          state.isReading = true;
 
           // if match, for a read
           found = true;
@@ -821,6 +886,7 @@ private:
         HTDBG(uuid_str);
       }
     } while (NULL != prev);
+    state.inDiscovery = false;
 
     if (!found) {
       HTDBG("Herald read payload char not found in herald service (weird...). Ignoring device.");
@@ -864,6 +930,7 @@ private:
               struct bt_gatt_read_params *params,
               const void *data, uint16_t length) override
   {
+    HTDBG("In gatt_read_cb");
     // Fetch state for this element
     ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
     if (NULL == data) {
@@ -872,6 +939,11 @@ private:
       
       // Set final read payload (triggers success callback on observer)
       db.device(state.target).payloadData(state.readPayload);
+
+      // reset payload incase of later re-use
+      state.readPayload.clear();
+      // and set state to completed so we can clear the connection
+      state.isReading = false;
 
       return 0;
     }

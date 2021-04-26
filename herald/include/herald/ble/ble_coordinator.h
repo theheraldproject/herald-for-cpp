@@ -57,6 +57,12 @@ public:
       HTDBG("Provisioning connections");
     }
 
+    // Don't close connections if we've only paused for advertising/scanning
+    if (iterationsSinceBreak >= breakEvery &&
+      iterationsSinceBreak < (breakEvery + breakFor) ) {
+        return previouslyProvisioned;
+    }
+
     // Remove those previously provisoned that we no longer require
     for (auto& previous : previouslyProvisioned) {
       bool found = false;
@@ -73,6 +79,7 @@ public:
         }
       }
     }
+
     // Now provision new connections
     std::vector<PrioritisedPrerequisite> provisioned;
     // For this provider, a prerequisite is a connection to a remote target identifier over Bluetooth
