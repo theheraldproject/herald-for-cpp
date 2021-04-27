@@ -467,7 +467,8 @@ public:
         device.state(BLEDeviceState::disconnected);
         
         // Immediately restart advertising on failure, but not scanning
-        m_context.getPlatform().getAdvertiser().startAdvertising();
+        // DO NOT DO THIS - may be MULTIPLE connections, one of which has succeeded, and the below interferes with gatt discovery
+        // m_context.getPlatform().getAdvertiser().startAdvertising();
 
         return false;
       } else {
@@ -510,13 +511,15 @@ public:
     char addr_str[BT_ADDR_LE_STR_LEN];
     bt_addr_le_to_str(&state.address, addr_str, sizeof(addr_str));
     HTDBG(addr_str);
-    if (0 == strcmp(addr_str,"00:00:00:00:00:00 (public)")) {
-      HTDBG("Remote address is empty. Not removing old state object.");
-      return false; // Assume this Zephyr internal state is being managed out eventually.
-    }
+    // if (0 == strcmp(addr_str,"00:00:00:00:00:00 (public)")) {
+    //   HTDBG("Remote address is empty. Not removing old state object.");
+    //   return false; // Assume this Zephyr internal state is being managed out eventually.
+    // }
     if (NULL != state.connection) {
       if (state.remoteInstigated) {
         HTDBG("Connection remote instigated - not forcing close");
+      } else if (state.inDiscovery) {
+        HTDBG("Connection in-use for service discovery - not forcing close");
       } else if (state.isReading) {
         HTDBG("Connection in-use for characteristic read - not forcing close");
       } else {
@@ -531,7 +534,7 @@ public:
       // state.isReading = false;
       // state.readPayload.clear();
     }
-    if (!state.remoteInstigated && !state.isReading) {
+    if (!state.remoteInstigated && !state.inDiscovery && !state.isReading) {
       HTDBG("Removing old state connection cache object");
       removeState(toTarget);
       return false; // assumes we've closed it // Multi-connection tracking done elsewhere
