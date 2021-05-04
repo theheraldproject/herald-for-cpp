@@ -1,0 +1,58 @@
+# /*
+#  * Copyright 2020-2021 Herald Project Contributors
+#  * SPDX-License-Identifier: Apache-2.0
+#  * 
+#  */
+
+menu "HERALD"
+  config HERALD_PAYLOAD_READ_INTERVAL_MS
+  int "Payload read interval in MS"
+  default 120000
+  help
+    "The time that should be waited before payload is read again"
+  
+  config HERALD_MAX_PAYLOAD_READ_TIME_MS
+  int "Max payload read time"
+  default 5000
+  help
+    "The maximum time to wait for a device to finish reading the payload"
+  
+  config HERALD_MAX_PAYLOAD_READ_AT_ONE_TIME
+  int "Maximum payloads simultaneously read"
+  default 1
+  help
+    "The maximum number of devices the receiver is connecting to at a time"
+
+  config HERALD_MAX_PAYLOAD_SIZE
+  int "Max payload bytes"
+  default 256
+  help
+    "The buffer size to store payloads in. Must be larger then any payload"
+
+  config HERALD_MAX_ATTEMPTS_TO_FIND_SERVICE
+  int "Max attempts to find Herald service UUID"
+  default 2
+  help
+    "This is the number of attempts needed to find
+    herald UUID on an iOS device before ignoring it"
+
+  config HERALD_MAX_CONNECTION_ATTEMPTS
+  int "Max attempts to connect to a device"
+  default 3
+  help
+    "The maximum number of attempts to connect to a device 
+    before the device is ignored (it is reset once a connection suceeds)"
+  
+  config HERALD_DEVICE_EXPIRY_SEC
+  int "Max time to remember device after scan (seconds)"
+  default 900
+  help
+    "The maximum amount of time in seconds to remember device before it is removed"
+  
+  config HERALD_MAX_DEVS_IN_DB
+  int "Maximum number of devices to keep in the database"
+  default 500
+  help
+    "The maximum number of devices to keep in the database"
+    
+endmenu
