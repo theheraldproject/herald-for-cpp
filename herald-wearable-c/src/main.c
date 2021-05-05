@@ -99,19 +99,29 @@ SensorDelegate_t Main_sensorDelegate =
 static BleDatabase_t ble_sensor_db = BleSensor_database_INIT(&Main_sensorDelegate);
 
 #define prvSCAN_MSG_QUEUE_SIZE 256
-#define prvPAYLOAD_MSG_QUEUE_SIZE 2
+#define prvPAYLOAD_PROCESS_MSG_QUEUE_SIZE 2
+#define prvPAYLOAD_READ_MSG_QUEUE_SIZE 10
 
 K_MSGQ_DEFINE(scan_queue, sizeof(struct scan_results_message), prvSCAN_MSG_QUEUE_SIZE, 4);
-K_MSGQ_DEFINE(payload_queue, sizeof(struct payload_msg), prvPAYLOAD_MSG_QUEUE_SIZE, 4);
+K_MSGQ_DEFINE(payload_process_queue, sizeof(struct payload_msg), prvPAYLOAD_PROCESS_MSG_QUEUE_SIZE, 4);
+K_MSGQ_DEFINE(payload_read_queue, sizeof(struct payload_req_msg), prvPAYLOAD_READ_MSG_QUEUE_SIZE, 4);
 
 
-static BleSensor_t ble_sensor = BleSensor_DEF(&ble_sensor_db, &scan_queue, &payload_queue);
+static BleSensor_t ble_sensor = BleSensor_DEF(&ble_sensor_db, &scan_queue, &payload_read_queue, &payload_process_queue);
 
 static void prv_process_scans_task(void * p1, void * p2, void * p3)
 {
     while(1)
     {
         BleSensor_process_scan(&ble_sensor);
+    }
+}
+
+static void prv_read_payloads_task(void * p1, void * p2, void * p3)
+{
+    while(1)
+    {
+        BleSensor_read_payloads(&ble_sensor);
     }
 }
 
@@ -126,18 +136,26 @@ static void prv_process_payloads_task(void * p1, void * p2, void * p3)
 #define prvSCAN_PROCESS_TASK_STACK_SIZE 1024
 #define prvSCAN_PROCESS_TASK_PRIORITY 5
 
+#define prvPAYLOAD_PROCESS_TASK_STACK_SIZE 1024
+#define prvPAYLOAD_PROCESS_TASK_PRIORITY 5
+
+#define prvPAYLOAD_READ_TASK_STACK_SIZE 1024
+#define prvPAYLOAD_READ_TASK_PRIORITY 5
+
 /* The scan processing task, initialized and started here */
 K_THREAD_DEFINE(scan_task_tid, prvSCAN_PROCESS_TASK_STACK_SIZE,
                 prv_process_scans_task, NULL, NULL, NULL,
                 prvSCAN_PROCESS_TASK_PRIORITY, 0, 0);
 
-#define prvPAYLOAD_PROCESS_TASK_STACK_SIZE 1024
-#define prvPAYLOAD_PROCESS_TASK_PRIORITY 5
-
 /* The payload processing task, initialized and started here */
-K_THREAD_DEFINE(payload_task_tid, prvPAYLOAD_PROCESS_TASK_STACK_SIZE,
+K_THREAD_DEFINE(payload_process_task_tid, prvPAYLOAD_PROCESS_TASK_STACK_SIZE,
                 prv_process_payloads_task, NULL, NULL, NULL,
                 prvPAYLOAD_PROCESS_TASK_PRIORITY, 0, 0);
+
+/* The payload processing task, initialized and started here */
+K_THREAD_DEFINE(payload_read_task_tid, prvPAYLOAD_READ_TASK_STACK_SIZE,
+                prv_read_payloads_task, NULL, NULL, NULL,
+                prvPAYLOAD_READ_TASK_PRIORITY, 0, 0);
 
 void prv_db_clean_handler(struct k_work *work)
 {
