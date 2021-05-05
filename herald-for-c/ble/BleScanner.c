@@ -12,12 +12,6 @@
 #include <zephyr.h>
 
 
-// "^10....04",
-// "^10....14",
-// "^0100000000000000000000000000000000",
-// "^05","^07","^09",
-// "^00","^1002","^06","^08","^03","^0C","^0D","^0F","^0E","^0B"
-
 #define APPLE_MANUFACTURER_ID 0x004C
 
 /**
@@ -130,9 +124,6 @@ static int prv_check_apple_manufacturer_data(uint8_t * data, size_t size)
             LOG_ERR("Apple attribute length to long!");
             return -1;
         }
-
-        /* Increment total size */
-        size += attr_len;
 
         if(prv_apple_attr_requires_read(attr, attr_len, data) != 0)
         {
