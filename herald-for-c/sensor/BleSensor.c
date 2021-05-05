@@ -77,6 +77,41 @@ int BleSensor_init(BleSensor_t * self)
     return 0;
 }
 
+static void prv_err_msg_print(int8_t status)
+{
+    /* Error message */
+    switch(status)
+    {
+    case BleErr_ERR_CONNECTING:
+        LOG_DBG("Could not connect!");
+        break;
+
+    case BleErr_ERR_READING_GATT:
+        LOG_WRN("Error reading GATT!");
+        break;
+
+    case BleErr_ERR_SERVICE_NOT_FOUND:
+        LOG_DBG("Service not found!");
+        break;
+
+    case BleErr_ERR_PAYLOAD_NOT_FOUND:
+        LOG_WRN("Payload characteristic not found!");
+        break;
+
+    case BleErr_ERR_DISCOVERING_GATT:
+        LOG_WRN("Error discovering GATT!");
+        break;
+
+    case BleErr_ERR_PAYLOAD_TO_BIG:
+        LOG_WRN("Payload too large for allocated space!");
+        break;
+
+    default:
+        LOG_ERR("Unknown error! (%d)", status);
+        break;
+    }
+}
+
 void BleSensor_process_payload(BleSensor_t * self)
 {
     BleDevice_t * dev;
@@ -88,7 +123,8 @@ void BleSensor_process_payload(BleSensor_t * self)
     /* Wait for payloads */
     k_msgq_get(self->payload_queue, &msg, K_FOREVER);
 
-    /* Get the device from the DB */
+    /* Get the device from the DB,
+    if a device wrote a payload to us it will be created in the DB */
     dev = BleDatabase_find_create_device(self->database, &msg.pseudo);
 
     /* Error check */
@@ -102,52 +138,10 @@ void BleSensor_process_payload(BleSensor_t * self)
     /* Check status */
     if(msg.status)
     {
-        switch(msg.status)
-        {
-        case BleErr_ERR_CONNECTING:
-            /* Record connection error */
-            BleDatabase_connection_error(self->database, dev);
-            LOG_DBG("Could not connect!");
-            break;
-
-        case BleErr_ERR_READING_GATT:
-            /* Record connection error */
-            BleDatabase_connection_error(self->database, dev);
-            LOG_WRN("Error reading GATT!");
-            break;
-
-        case BleErr_ERR_SERVICE_NOT_FOUND:
-            /* Record Herald error */
-            BleDatabase_herald_not_found(self->database, dev);
-            LOG_DBG("Service not found!");
-            break;
-
-        case BleErr_ERR_PAYLOAD_NOT_FOUND:
-            /* Record Herald error */
-            BleDatabase_herald_not_found(self->database, dev);
-            LOG_WRN("Payload characteristic not found!");
-            break;
-
-        case BleErr_ERR_DISCOVERING_GATT:
-            /* Record connection error */
-            BleDatabase_connection_error(self->database, dev);
-            LOG_WRN("Error discovering GATT!");
-            break;
-
-        case BleErr_ERR_PAYLOAD_TO_BIG:
-            /* Record Herald error */
-            BleDatabase_herald_not_found(self->database, dev);
-            LOG_WRN("Payload too large for allocated space!");
-            break;
-
-        default:
-            /* Record a connection error */
-            BleDatabase_connection_error(self->database, dev);
-            LOG_ERR("Unknown error! (%d)", msg.status);
-        }
-
-        /* Update the device state */
-        BleDatabase_set_state(self->database, dev, BleDevice_stateIDLE);
+        /* Record the failure */
+        BleDatabase_payload_not_read(self->database, dev, msg.status);
+        /* Log */
+        prv_err_msg_print(msg.status);
         return;
     }
 
@@ -157,9 +151,6 @@ void BleSensor_process_payload(BleSensor_t * self)
 
     /* Record the payload */
     BleDatabase_read_payload(self->database, &msg.pseudo, dev, &data);
-
-    /* Update device state to idle */
-    BleDatabase_set_state(self->database, dev, BleDevice_stateIDLE);
 }
 
 void BleSensor_process_scan(BleSensor_t * self)
@@ -173,56 +164,39 @@ void BleSensor_process_scan(BleSensor_t * self)
     /* Wait for scan result */
     err = k_msgq_get(self->scan_queue, &scan_msg, K_FOREVER);
 
-    /* Check if scan result was found */
+    /* Check if a scan result message was received */
     if(err)
     {
         return;
     }
 
-    /* Run the didMeasure callback */
-    BleDatabase_record_rssi(self->database, &scan_msg.pseudo, NULL, scan_msg.rssi);
+    /* Run the DB delegate */
+    BleDatabase_rssi_found(self->database, &scan_msg.pseudo, scan_msg.rssi);
 
-    /* Check if it is forsure not a herald device, no need to include in DB if it is */
+    /* Check if it is known not a herald device,
+    no need to include in DB or proccess it */
     if(scan_msg.could_be_herald == 0)
     {
         return;
     }
 
-    /* Add to DB */
+    /* Add/find in DB */
     dev = BleDatabase_find_create_device(self->database, &scan_msg.pseudo);
 
     if(dev == NULL)
     {
-        LOG_ERR("Find create. Process scans");
+        LOG_ERR("DB find create!");
         return;
     }
 
     /* Record the scan */
     BleDatabase_scanned(self->database, dev);
 
-    /* Check the device has been marked as `do not connect` */
-    if(BleDatabase_should_connect(self->database, dev) == 0)
+    /* Check it is time to read the payload, this also updates state */
+    if(BleDatabase_payload_should_read(self->database, dev) == 0)
     {
         return;
     }
-
-    /* Record RSSI */
-    BleDatabase_record_rssi(self->database, &scan_msg.pseudo, dev, scan_msg.rssi);
-
-    /* Check device state is idle */
-    if(BleDatabase_get_state(self->database, dev) != BleDevice_stateIDLE)
-    {
-        return;
-    }
-
-    /* Check it is time to read the payload */
-    if(BleDatabase_payload_needs_read(self->database, dev) == 0)
-    {
-        return;
-    }
-
-    /* Update the device state in the DB */
-    BleDatabase_set_state(self->database, dev, BleDevice_stateCONNECTING);
 
     LOG_DBG("-- Processing: " BleAddr_printStr() " at: " BleAddr_printStr() " --", 
         BleAddr_printParams(&scan_msg.pseudo), BleAddr_printParams(&scan_msg.addr));
@@ -233,8 +207,8 @@ void BleSensor_process_scan(BleSensor_t * self)
     /* Error check */
     if(err)
     {
-        /* Update the device state in the DB */
-        BleDatabase_set_state(self->database, dev, BleDevice_stateIDLE);
+        /* Update device */
+        BleDatabase_payload_not_read(self->database, dev, BleErr_ERR_STARTING);
     }
 }
 

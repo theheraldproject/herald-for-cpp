@@ -25,6 +25,8 @@ set(HERALD_SOURCES
     "${HERALD_BASE}/ble/BleReader.c"
     "${HERALD_BASE}/ble/BleTransmitter.c"
 
+    "${HERALD_BASE}/ble/BleDevice.c"
+
     "${HERALD_BASE}/sensor/BleSensor.c"
     "${HERALD_BASE}/sensor/BleSensor_delegate.c"
 

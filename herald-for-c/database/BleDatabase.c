@@ -71,38 +71,28 @@ BleDevice_t * BleDatabase_find_create_device(BleDatabase_t * self, const BleAddr
 static int prv_db_delete_old_dev_cb(const BleAddress_t * addr, BleDevice_t * dev,
     void * param1, void * param2)
 {
-    uint64_t dev_ms;
-
     BleDatabase_t * self = (BleDatabase_t*) param1;
+    uint32_t time_now = *((uint32_t*)param2);
 
-    uint64_t * curr_ms = (uint64_t*) param2;
-
-    /* Get the last scanned time in MS */
-    Timestamp_get_ms(&dev_ms, &dev->lastScan);
-
-    /* Check if the device should be delete */
-    if((*curr_ms - dev_ms)/1000 > CONFIG_HERALD_DEVICE_EXPIRY_SEC)
+    if(BleDevice_isExpired(dev, time_now))
     {
-        /* Call did delete callback */
-        DatabaseDelegate_didDelete(&self->delegate, addr);
-        /* tell DB to delete it */
-        return 1;
+        /* Don't delete */
+        return 0;
     }
+    
+    /* Call did delete callback */
+    DatabaseDelegate_didDelete(&self->delegate, addr);
 
-    return 0;
+    /* Delete it */
+    return 1;
 }
-
-
 
 void BleDatabase_remove_old_devices(BleDatabase_t * self)
 {
     assert(self);
 
-    uint64_t now_ms;
-
-    Timestamp_now_ms(&now_ms);
-
+    uint32_t now = Timestamp_now_s();
 
     BleDbDataStruct_loop_devs(&self->deviceList, prv_db_delete_old_dev_cb, 
-        (void*) self, (void*) &now_ms);
+        (void*) self, (void*) &now);
 }

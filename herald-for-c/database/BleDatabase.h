@@ -14,6 +14,15 @@
 
 #include "logger/herald_logger.h"
 
+/**
+ * \defgroup BleDatabase Ble Database
+ * The Ble database is responsible for adding/removing devices
+ * mutual exclusion of BleDevice call and the database
+ * Calling DB delegates
+ * It is not responsible for any logic on the devices
+ * \{
+ */
+
 #define BleDatabase_DEF(_database_delegate) \
 { \
     _database_delegate, \
@@ -55,27 +64,59 @@ static inline void BleDatabase_unlock(BleDatabase_t * self)
 
 BleDevice_t * BleDatabase_find_create_device(BleDatabase_t * self, const BleAddress_t * addr);
 
-static inline void BleDatabase_herald_not_found(BleDatabase_t * self, BleDevice_t * dev)
+/**
+ * \brief Notify a read is starting 
+ * 
+ * \param self 
+ * \param dev 
+ */
+static inline void BleDatabase_payload_start_reading(BleDatabase_t * self, BleDevice_t * dev)
 {
     BleDatabase_lock(self);
-    BleDevice_herald_not_found(dev);
+    BleDevice_startingRead(dev);
     BleDatabase_unlock(self);
 }
 
-static inline void BleDatabase_connection_error(BleDatabase_t * self, BleDevice_t * dev)
+/**
+ * \brief Notify a payload read failed
+ * 
+ * \param self 
+ * \param dev 
+ * \param err reason for the fail 
+ */
+static inline void BleDatabase_payload_not_read(BleDatabase_t * self, BleDevice_t * dev, int8_t err)
 {
     BleDatabase_lock(self);
-    BleDevice_connection_error(dev);
+    BleDevice_payload_not_read(dev, err);
     BleDatabase_unlock(self);
 }
 
-static inline void BleDatabase_set_state(BleDatabase_t * self, BleDevice_t * dev, BleDevice_state_t state)
+/**
+ * \brief Notify a payload read was successfull and call the delegate
+ * 
+ * \param self 
+ * \param addr 
+ * \param dev 
+ * \param data 
+ */
+static inline void BleDatabase_read_payload(BleDatabase_t * self,
+    const BleAddress_t * addr, BleDevice_t * dev, const Data_t * data)
 {
-    BleDatabase_lock(self);
-    BleDevice_set_state(dev, state);
-    BleDatabase_unlock(self);
+    assert(self);
+
+    /* Recored the payload read */
+    BleDevice_payload_read_success(dev);
+
+    /* Call the delegate */
+    DatabaseDelegate_didUpdate(&self->delegate, addr, BleDeviceAttrPAYLOAD_DATA, (void*) data);
 }
 
+/**
+ * \brief Notify scan of device 
+ * 
+ * \param self 
+ * \param dev 
+ */
 static inline void BleDatabase_scanned(BleDatabase_t * self, BleDevice_t * dev)
 {
     BleDatabase_lock(self);
@@ -83,67 +124,42 @@ static inline void BleDatabase_scanned(BleDatabase_t * self, BleDevice_t * dev)
     BleDatabase_unlock(self);
 }
 
-static inline int BleDatabase_should_connect(BleDatabase_t * self, BleDevice_t * dev)
+/**
+ * \brief Check if the device needs a payload read
+ * 
+ * \param self 
+ * \param dev 
+ * \return ==0 it does not need to be read
+ * \return !=0 it should be read 
+ */
+static inline int BleDatabase_payload_should_read(BleDatabase_t * self, BleDevice_t * dev)
 {
     int ret;
     BleDatabase_lock(self);
-    ret = BleDevice_shouldConnect(dev);
-    BleDatabase_unlock(self);
-    return ret;
-}
-
-static inline BleDevice_state_t BleDatabase_get_state(BleDatabase_t * self, BleDevice_t * dev)
-{
-    BleDevice_state_t ret;
-    BleDatabase_lock(self);
-    ret = BleDevice_get_state(dev);
-    BleDatabase_unlock(self);
-    return ret;
-}
-
-static inline int BleDatabase_payload_needs_read(BleDatabase_t * self, BleDevice_t * dev)
-{
-    int ret;
-    BleDatabase_lock(self);
-    ret = BleDevice_payloadNeedsRead(dev);
+    ret = BleDevice_payloadShouldRead(dev);
     BleDatabase_unlock(self);
     return ret;
 }
 
 /**
- * \brief Log scan of the device and update the most recent RSSI in the database
+ * \brief Just call the delegate
  * 
  * \param self self
  * \param addr The BleAddress of the device
  * \param dev The device, can be NULL
  * \param rssi The RSSI of the most recent call
- *
  */
-static inline void BleDatabase_record_rssi(BleDatabase_t * self,
-    const BleAddress_t * addr, BleDevice_t * dev, Rssi_t rssi)
+static inline void BleDatabase_rssi_found(BleDatabase_t * self,
+    const BleAddress_t * addr, Rssi_t rssi)
 {
     assert(self);
-
-    if(dev != NULL)
-    {
-        /* Nothing to do yet, NULL device is allowes here */
-    }
 
     /* Call the didUpdate callback */
     DatabaseDelegate_didUpdate(&self->delegate, addr, BleDeviceAttrRSSI, (void*) &rssi);
 }
 
-static inline void BleDatabase_read_payload(BleDatabase_t * self,
-    const BleAddress_t * addr, BleDevice_t * dev, const Data_t * data)
-{
-    assert(self);
-
-    /* Set the last payload read time */
-    BleDevice_payload_read(dev);
-
-    DatabaseDelegate_didUpdate(&self->delegate, addr, BleDeviceAttrPAYLOAD_DATA, (void*) data);
-}
-
 void BleDatabase_remove_old_devices(BleDatabase_t * self);
+
+/** \} */
 
 #endif /* __BLE_DATABASE__ */

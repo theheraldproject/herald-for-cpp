@@ -5,17 +5,11 @@
 #  */
 
 menu "HERALD"
-  config HERALD_PAYLOAD_READ_INTERVAL_MS
-  int "Payload read interval in MS"
-  default 120000
+  config HERALD_PAYLOAD_READ_INTERVAL_S
+  int "Payload read interval (seconds)"
+  default 60
   help
     "The time that should be waited before payload is read again"
-  
-  config HERALD_MAX_PAYLOAD_READ_TIME_MS
-  int "Max payload read time"
-  default 5000
-  help
-    "The maximum time to wait for a device to finish reading the payload"
   
   config HERALD_MAX_PAYLOAD_READ_AT_ONE_TIME
   int "Maximum payloads simultaneously read"
@@ -28,20 +22,6 @@ menu "HERALD"
   default 256
   help
     "The buffer size to store payloads in. Must be larger then any payload"
-
-  config HERALD_MAX_ATTEMPTS_TO_FIND_SERVICE
-  int "Max attempts to find Herald service UUID"
-  default 2
-  help
-    "This is the number of attempts needed to find
-    herald UUID on an iOS device before ignoring it"
-
-  config HERALD_MAX_CONNECTION_ATTEMPTS
-  int "Max attempts to connect to a device"
-  default 3
-  help
-    "The maximum number of attempts to connect to a device 
-    before the device is ignored (it is reset once a connection suceeds)"
   
   config HERALD_DEVICE_EXPIRY_SEC
   int "Max time to remember device after scan (seconds)"
@@ -68,5 +48,44 @@ menu "HERALD"
   depends on !HERALD_SCAN_EVERYTHING
   help
     "If set to Y then apple and herald service UUID will pass through filter"
-    
+  
+  config HERALD_NOT_FOUND_RETRY_S
+  int "Time to wait after herald not found"
+  default 20
+  help
+    "The time to wait after a device did not report a herald service"
+  
+  config HERALD_NOT_FOUND_MULTIPLIER
+  int "Herald not found multiplier"
+  default 2
+  help
+    "Every time a herald service is not found we multiply 
+    HERALD_NOT_FOUND_RETRY_S by this multiplier
+    Set to less then or equal to zero to not use"
+  
+  config HERALD_NOT_FOUND_EXPONENTIAL
+  int "Herald not found exponential multiplier"
+  default 2
+  help
+    "Every time a herald device is not found we wait
+    HERALD_NOT_FOUND_RETRY_S ^ HERALD_NOT_FOUND_EXPONENTIAL
+    before retrying
+    Set to less then or equal to zero to not use"
+  
+  config HERALD_NOT_FOUND_RESET_COUNT
+  int "Herald not found reset count"
+  default 10
+  help
+    "The count to increase herald_not_found until reset to zero
+    This is so we make sure we are retrying frequently enough
+    Similar to TCP/IP retry intervals
+    Set to less then or equal to zero to never reset"
+
+  config HERALD_MAX_DEVICE_IGNORE_TIME_S
+  int "Device ignore time (SEC)"
+  default 30
+  help
+    "When A device reaches either HERALD_MAX_CONNECTION_ATTEMPTS or 
+    HERALD_MAX_ATTEMPTS_TO_FIND_SERVICE it will be ignored for this amount of time"
+
 endmenu

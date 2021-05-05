@@ -15,5 +15,6 @@
 #define BleErr_ERR_PAYLOAD_NOT_FOUND   -5
 #define BleErr_ERR_DISCOVERING_GATT    -6
 #define BleErr_ERR_PAYLOAD_TO_BIG      -7
+#define BleErr_ERR_STARTING            -8
 
 #endif /* __BLE_ERR_CODES__ */
