@@ -9,8 +9,20 @@
 
 #include "data_type/DataTypes.h"
 
+#define BleOsScanner_STATUS_CONNECTABLE         (1<<0)
+#define BleOsScanner_STATUS_HERALD_UUID_FOUND   (1<<1)
+
+/**
+ * \brief Scanner callback typedef, OS layer must provide this callback
+ * 
+ * \param module
+ * \param macAddr The physical MAC address
+ * \param manufacturer_data The manufacturer data
+ * \param rssi The RSSI of the scan
+ * \param status Status bit field, see BleOsScanner_STATUS_ for options
+ */
 typedef void (*BleOsScanner_cb_t)(void * module, const BleAddress_t * macAddr,
-    Data_t * manufacturer_data, Rssi_t rssi);
+    const Data_t * manufacturer_data, Rssi_t rssi, uint8_t status);
 
 /**
  * \brief Initialize the scanner

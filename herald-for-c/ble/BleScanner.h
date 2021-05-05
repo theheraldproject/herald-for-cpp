@@ -22,7 +22,13 @@ struct scan_results_message
     /**< Pseudo address */
     Rssi_t rssi;
     /**< RSSI */
-}__attribute__((aligned(4)));
+    uint8_t could_be_herald;
+    /**< 0 if it is not required to connect
+     * This is used so we have the option to disable the filter
+     * so everydevice can have a didMeasure callback
+     */
+}
+__attribute__((aligned(4)));
 
 typedef struct ble_scanner_s
 {

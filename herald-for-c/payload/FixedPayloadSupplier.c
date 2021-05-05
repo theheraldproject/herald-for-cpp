@@ -12,6 +12,7 @@
 #include "payload/PayloadInterface.h"
 #include "payload/PayloadSupplier.h"
 #include "payload/HeraldEnvelope.h"
+#include <zephyr.h> // For printk
 
 #define prvPAYLOAD_ID FixedPayloadSupplierPAYLOAD_ID
 #define prvPAYLOAD_SIZE FixedPayloadSupplierPAYLOAD_SIZE

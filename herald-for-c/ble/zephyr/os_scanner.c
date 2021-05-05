@@ -13,7 +13,8 @@ static void * prv_cb_module = NULL;
 static BleOsScanner_cb_t prv_cb = NULL;
 
 
-void BleZephyrScanner_cb(const bt_addr_le_t *addr, int8_t rssi, Data_t * manufacturer_data)
+void BleZephyrScanner_cb(const bt_addr_le_t *addr, int8_t rssi,
+    Data_t * manufacturer_data, uint8_t status)
 {
     assert(prv_cb);
 
@@ -21,7 +22,7 @@ void BleZephyrScanner_cb(const bt_addr_le_t *addr, int8_t rssi, Data_t * manufac
 
     hrld_addr_from_zephyr_addr(&hrldAddr, addr);
 
-    prv_cb(prv_cb_module, &hrldAddr, manufacturer_data, rssi);
+    prv_cb(prv_cb_module, &hrldAddr, manufacturer_data, rssi, status);
 }
 
 int BleOsScanner_init(BleOsScanner_cb_t scan_cb, void * module)

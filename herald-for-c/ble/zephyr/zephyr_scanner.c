@@ -8,17 +8,24 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/scan.h>
 
+#include "ble/BleOsScanner.h"
+
 #include "ble/zephyr/zephyr_ble.h"
 
+struct bt_data_parse_info
+{
+    uint8_t status;
+    Data_t manufacturer_data;
+};
+
 /**
- * \brief Get manufacturer data callback, this is passed to bt_data_parse
+ * \brief 
  * 
- * \param data The bt_data
- * \param user_data pointer to a structer of type BleAddress,
- *                  to be populated with manufacturer data
- * \return false if the callback should be called again with next data
+ * \param data 
+ * \param info 
+ * \return true if the callback should be called again with next data
  */
-static bool prv_get_manufacturer_data_cb(struct bt_data * data, Data_t * manufacturer_data)
+static bool prv_advert_data_cb(struct bt_data * data, struct bt_data_parse_info * info)
 {
     /*
      * struct bt_data
@@ -31,20 +38,39 @@ static bool prv_get_manufacturer_data_cb(struct bt_data * data, Data_t * manufac
      * For possible valuse of type see include/bluetooth/gap.h:29 or Bluetooth SIG docs
      */
 
-    /* make sure it is bluetooth data */
-    if(data->type != BT_DATA_MANUFACTURER_DATA)
+    if(data->type == BT_DATA_MANUFACTURER_DATA)
     {
-        /* The manufacturer data sectin has not been found yet,
-        keep calling this callback with new data */
-        return true;
+        info->manufacturer_data.size = data->data_len;
+        /* WARN: Casting from const to non const */
+        info->manufacturer_data.data = (uint8_t*)data->data;
     }
 
-    manufacturer_data->size = data->data_len;
-    /* WARN: Casting from const to non const */
-    manufacturer_data->data = (uint8_t*)data->data;
+    else if(data->type == BT_DATA_UUID128_ALL)
+    {
+        size_t len = data->data_len;
+        const uint8_t * bytes = data->data;
 
-    /* The manufacturer data has been found, stop calling this callback with new data */
-    return false;
+        /* Make sure it is large enough for a 128 bit UUID */
+        while(len >= BT_UUID_SIZE_128)
+        {
+            len -= BT_UUID_SIZE_128;
+            if(memcmp(herald_uuid.val, bytes, BT_UUID_SIZE_128) == 0)
+            {
+                /* We found it */
+                info->status |= BleOsScanner_STATUS_HERALD_UUID_FOUND;
+                break;
+            }
+            bytes += BT_UUID_SIZE_128;
+        }
+
+        if(len != 0)
+        {
+            LOG_WRN("UUID 128 advert size! (%u)", len);
+        }
+    }
+
+    /* Always continue for now */
+    return true;
 }
 
 /**
@@ -56,21 +82,28 @@ static bool prv_get_manufacturer_data_cb(struct bt_data * data, Data_t * manufac
  * \param buf buffer containing the advertising data
  */
 static void prv_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
-  struct net_buf_simple *buf)
+  struct net_buf_simple *buf, uint8_t connectable)
 {
-    Data_t manufacturer_data;
+    struct bt_data_parse_info parse_info;
 
-    /* Zero the manufacuter_data */
-    memset(&manufacturer_data, 0, sizeof(Data_t));
+    /* Initialize parse info */
+    memset(&parse_info, 0, sizeof(struct bt_data_parse_info));
 
-    /* Get the manufacturer data
-    Use the zephyr provided method and call the provided callback on all advertised data
-    The callback provided will populate the provided Data_t with the manufacturer data if found */
+    /* Check for Herald Service UUID, this will set the status bit if found
+    This must be done all in one pass,
+    if bt_data_parse is called multiple times a warning is shown */
     bt_data_parse(buf,
-        (bool(*)(struct bt_data*, void*) ) prv_get_manufacturer_data_cb,
-        &manufacturer_data);
+        (bool(*)(struct bt_data*, void*) ) prv_advert_data_cb,
+        &parse_info);
+    
+    /* Check it is connectable */
+    if(connectable != 0)
+    {
+        parse_info.status |= BleOsScanner_STATUS_CONNECTABLE;
+    }
 
-    BleZephyrScanner_cb(addr, rssi, &manufacturer_data);
+    /* Run the callback */
+    BleZephyrScanner_cb(addr, rssi, &parse_info.manufacturer_data, parse_info.status);
 }
 
 /**
@@ -86,23 +119,19 @@ static void prv_scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
 static void scan_filter_match(struct bt_scan_device_info * device_info,
     struct bt_scan_filter_match * filter_match, bool connectable)
 {
-	// char addr[BT_ADDR_LE_STR_LEN];
-
-	// bt_addr_le_to_str(device_info->recv_info->addr, addr, sizeof(addr));
-
-	// LOG_INF("Address: %s connectable: %d, type: %d", log_strdup(addr),
-    //     connectable, device_info->recv_info->addr->type);
-
-    /* Check it is connectable */
-    if(connectable == false)
-    {
-        return;
-    }
-
 	/* Call the traditional scan callback */
 	prv_scan_cb(device_info->recv_info->addr, device_info->recv_info->rssi,
-		device_info->recv_info->adv_type, device_info->adv_data);
+		device_info->recv_info->adv_type, device_info->adv_data, connectable);
 }
+
+#if CONFIG_HERALD_SCAN_EVERYTHING
+static void scan_filter_no_match(struct bt_scan_device_info* device_info, bool connectable)
+{
+    /* Call the traditional scan callback */
+	prv_scan_cb(device_info->recv_info->addr, device_info->recv_info->rssi,
+		device_info->recv_info->adv_type, device_info->adv_data, connectable);
+}
+#endif
 
 /**
  * \brief Connection error
@@ -134,8 +163,13 @@ BT_SCAN_CB_INIT(
     nrf_scan_cb,
     /* The match function, called everytime a match is found */
     scan_filter_match,
+
     /* The no match function, called if the item does not match */
+    #if CONFIG_HERALD_SCAN_EVERYTHING
+    scan_filter_no_match,
+    #else
     NULL,
+    #endif
     /* Called when there is an error starting a connection */
     scan_connecting_error,
     /* Called when we are starting to connect to a device */
@@ -165,8 +199,6 @@ static const struct bt_scan_init_param prv_scan_init =
 	.conn_param = NULL
 };
 
-static uint8_t apple_manufacturer_id[2] = {0x4C,0x00};
-
 /**
  * \brief Initialize the scanner and initialize the filters 
  * 
@@ -174,13 +206,15 @@ static uint8_t apple_manufacturer_id[2] = {0x4C,0x00};
  */
 int zephyr_scan_init(void)
 {
-	int err;
-	
     /* Initialize the scanner */
 	bt_scan_init(&prv_scan_init);
 
     /* Register the scan callback structure */
 	bt_scan_cb_register(&nrf_scan_cb);
+
+    #if !CONFIG_HERALD_SCAN_EVERYTHING
+
+    int err;
 
     /* Add a filter for the Herald service UUID */
 	err = bt_scan_filter_add(BT_SCAN_FILTER_TYPE_UUID, &herald_uuid);
@@ -192,10 +226,11 @@ int zephyr_scan_init(void)
 		return err;
 	}
 
+    #if CONFIG_HERALD_FILTER_ALLOW_APPLE_MANUFACTURER_ID
     /* Add a filter for Apple devices */
-
+    static const uint16_t apple_manufacturer_id = 0x004C;
     struct bt_scan_manufacturer_data apple_filter;
-    apple_filter.data = apple_manufacturer_id;
+    apple_filter.data = (uint8_t*) &apple_manufacturer_id;
     apple_filter.data_len = 2;
 
 	err = bt_scan_filter_add(BT_SCAN_FILTER_TYPE_MANUFACTURER_DATA, &apple_filter);
@@ -206,14 +241,16 @@ int zephyr_scan_init(void)
 		LOG_ERR("Scanning filters cannot be set (err %d)", err);
 		return err;
 	}
-
-
+    #endif
 
     /* Enable the scan filter for UUID and Manufacturer data
     Only require one filter match (match_all=false) */
 	err = bt_scan_filter_enable(
-        BT_SCAN_UUID_FILTER | BT_SCAN_MANUFACTURER_DATA_FILTER,
-        false);
+        BT_SCAN_UUID_FILTER
+        #if CONFIG_HERALD_FILTER_ALLOW_APPLE_MANUFACTURER_ID
+        | BT_SCAN_MANUFACTURER_DATA_FILTER
+        #endif
+        , false);
 
     /* Error check */
 	if (err)
@@ -221,9 +258,10 @@ int zephyr_scan_init(void)
 		LOG_ERR("Filters cannot be turned on (err %d)", err);
 		return err;
 	}
+    #endif /* HERALD_SCAN_EVERYTHING */
 
 	LOG_INF("Scan module initialized");
-	return err;
+	return 0;
 }
 
 /**

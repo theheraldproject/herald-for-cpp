@@ -57,14 +57,6 @@ void Main_didRead(const BleAddress_t * pseudo, Data_t * payloadData)
             LOG_WRN("Unknown payload!");
             break;
     }
-
-    // if(payloadData->size < 1 || *payloadData->data != AbttPayload_HERALD_PROTOCOL_VERSION)
-    // {
-    //     LOG_DBG("Payload not ABTT: ");
-    //     return;
-    // }
-
-    
 }
 
 void Main_didReceive(const BleAddress_t * pseudo, Data_t * immediateSendData)

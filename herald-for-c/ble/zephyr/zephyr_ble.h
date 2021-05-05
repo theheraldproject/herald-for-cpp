@@ -45,7 +45,8 @@ static inline void hrld_addr_from_conn(BleAddress_t * addr, const struct bt_conn
 }
 
 /* Scanner */
-void BleZephyrScanner_cb(const bt_addr_le_t *addr, int8_t rssi, Data_t * manufacturer_data);
+void BleZephyrScanner_cb(const bt_addr_le_t *addr, int8_t rssi, Data_t * manufacturer_data,
+    uint8_t status);
 void BleZephyrScan_allow(void);
 void BleZephyrScan_disallow(void);
 int zephyr_scan_init(void);
