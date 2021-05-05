@@ -200,6 +200,8 @@ void BleSensor_process_scan(BleSensor_t * self)
 
     LOG_DBG("-- Processing: " BleAddr_printStr() " at: " BleAddr_printStr() " --", 
         BleAddr_printParams(&scan_msg.pseudo), BleAddr_printParams(&scan_msg.addr));
+    
+    BleDatabase_payload_start_reading(self->database, dev);
 
     /* Attempt to start the read */
     err = BleReader_read_payload(&self->reader, &scan_msg.addr, &scan_msg.pseudo);

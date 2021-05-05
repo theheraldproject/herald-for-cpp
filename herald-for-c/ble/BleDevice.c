@@ -32,6 +32,11 @@ void BleDevice_payload_not_read(BleDevice_t * self, int8_t err)
 
     uint32_t increment_time;
 
+    if(self->nextRead != BleDevice_CONNECTION_TIME_MAX)
+    {
+        LOG_WRN("State is not CONNECTING!");
+    }
+
     #if CONFIG_HERALD_NOT_FOUND_RESET_COUNT > 0
     if(self->herald_not_found > CONFIG_HERALD_NOT_FOUND_RESET_COUNT)
     {
@@ -52,6 +57,8 @@ void BleDevice_payload_not_read(BleDevice_t * self, int8_t err)
     #if CONFIG_HERALD_NOT_FOUND_MULTIPLIER > 0
     increment_time *= self->herald_not_found * CONFIG_HERALD_NOT_FOUND_MULTIPLIER;
     #endif
+
+    LOG_DBG("Next read: %u", increment_time);
 
     /* Update the next time to read */
     self->nextRead = Timestamp_now_s() + increment_time;

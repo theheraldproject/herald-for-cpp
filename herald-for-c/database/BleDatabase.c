@@ -74,7 +74,7 @@ static int prv_db_delete_old_dev_cb(const BleAddress_t * addr, BleDevice_t * dev
     BleDatabase_t * self = (BleDatabase_t*) param1;
     uint32_t time_now = *((uint32_t*)param2);
 
-    if(BleDevice_isExpired(dev, time_now))
+    if(BleDevice_isExpired(dev, time_now) == 0)
     {
         /* Don't delete */
         return 0;
