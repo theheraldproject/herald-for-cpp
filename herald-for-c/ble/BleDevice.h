@@ -18,6 +18,8 @@
  * \{
  */
 
+#define BleDevice_CONNECTION_TIME_MAX ~0UL
+
 /**
  * Type of attributes that can be updated on a BLE device,
  * used for did_update callback
@@ -34,13 +36,6 @@ typedef enum ble_device_attribute_e
 }
 BleDeviceAttribute_t;
 
-typedef enum ble_device_state_e
-{
-    BleDevice_stateIDLE,
-    BleDevice_stateCONNECTING
-}
-BleDevice_state_t;
-
 /**
  * The BLE device structure
  * Contains all info needed for a known device
@@ -54,19 +49,9 @@ typedef struct ble_device_s
      */
 
     uint32_t nextRead;
-    /**< The next time to read a payload in seconds
-     * 
-     * Used to determine if a new payload read is needed
-     * 
-     * If herald is not found or to many connections errors then
-     * this will be set for a larger amount of time
-     * If payload is read then it will be set for the normal time
+    /**< The next time a payload should be read in seconds
+     * It is set tp BleDevice_CONNECTION_TIME_MAX when a connection is in progress
      */
-
-    BleDevice_state_t state;
-    /**< The current device state
-     * Right not just IDLE and CONNECTING
-    */
 
     uint8_t herald_not_found;
     /**<
@@ -81,7 +66,6 @@ static inline void BleDevice_init(BleDevice_t * self)
     assert(self);
     self->expiryTime = 0;
     self->nextRead = 0;
-    self->state = BleDevice_stateIDLE;
     self->herald_not_found = 0;
 }
 
@@ -102,16 +86,13 @@ static inline void BleDevice_scanned(BleDevice_t * self)
 static inline void BleDevice_payload_read_success(BleDevice_t * self)
 {
     assert(self);
-    if(self->state != BleDevice_stateCONNECTING)
+    if(self->nextRead != BleDevice_CONNECTION_TIME_MAX)
     {
         LOG_WRN("State is not CONNECTING!");
     }
 
     /* Reset herald not found */
     self->herald_not_found = 0;
-
-    /* Update state */
-    self->state = BleDevice_stateIDLE;
 
     /* Update the next read time */
     self->nextRead = Timestamp_now_s() + CONFIG_HERALD_PAYLOAD_READ_INTERVAL_S;
@@ -129,29 +110,18 @@ static inline int BleDevice_payloadShouldRead(const BleDevice_t * self)
 {
     assert(self);
 
-    /* Check state */
-    if(self->state != BleDevice_stateIDLE)
-    {
-        return 0;
-    }
-
     /* Just check the timestamp */
     if(self->nextRead > Timestamp_now_s())
     {
         return 0;
     }
-
     return 1;
 }
 
 static inline void BleDevice_startingRead(BleDevice_t * self)
 {
-    if(self->state != BleDevice_stateIDLE)
-    {
-        LOG_WRN("State not IDLE when staring read!");
-    }
-    /* Update state */
-    self->state = BleDevice_stateCONNECTING;
+    /* Set next read time to the max, IE no read until set again */
+    self->nextRead = BleDevice_CONNECTION_TIME_MAX;
 }
 
 /**
@@ -167,7 +137,7 @@ static inline int BleDevice_isExpired(BleDevice_t * self, uint32_t current_sec)
     {
         return 1;
     }
-    
+
     return 0;
 }
 
