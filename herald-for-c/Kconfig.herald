@@ -81,11 +81,20 @@ menu "HERALD"
     Similar to TCP/IP retry intervals
     Set to less then or equal to zero to never reset"
 
-  config HERALD_MAX_DEVICE_IGNORE_TIME_S
-  int "Device ignore time (SEC)"
-  default 30
-  help
-    "When A device reaches either HERALD_MAX_CONNECTION_ATTEMPTS or 
-    HERALD_MAX_ATTEMPTS_TO_FIND_SERVICE it will be ignored for this amount of time"
+  config HERALD_ADVERTISING_INTERVAL
+  int "Advertising interval MS"
+  default 200
+
+  config HERALD_ADVERTISING_INTERVAL_DEVIATION
+  int "Advertising deviation MS"
+  default 5
+
+  config HERALD_SCAN_INTERVAL_MS
+  int "Scan interval MS"
+  default 5000
+
+  config HERALD_SCAN_WINDOW_MS
+  int "Scan window MS"
+  default 500
 
 endmenu

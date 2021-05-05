@@ -13,12 +13,21 @@
 #include "ble/BleErrCodes.h"
 
 /* Herald advertising parameters */
-#define HRLD_ADV_INT_MIN (195 / 0.625)
-#define HRLD_ADV_INT_MAX (205 / 0.625)
+#define HRLD_ADV_INT_MIN ( \
+    (\
+        CONFIG_HERALD_ADVERTISING_INTERVAL - \
+        CONFIG_HERALD_ADVERTISING_INTERVAL_DEVIATION \
+    ) / 0.625)
+
+#define HRLD_ADV_INT_MAX ( \
+    (\
+        CONFIG_HERALD_ADVERTISING_INTERVAL + \
+        CONFIG_HERALD_ADVERTISING_INTERVAL_DEVIATION \
+    ) / 0.625)
 
 /* Herald scan parameters */
-#define HRLD_SCAN_INTERVAL (5000 / 0.625)
-#define HRLD_SCAN_WINDOW (500 / 0.625)
+#define HRLD_SCAN_INTERVAL (CONFIG_HERALD_SCAN_INTERVAL_MS / 0.625)
+#define HRLD_SCAN_WINDOW (CONFIG_HERALD_SCAN_WINDOW_MS / 0.625)
 
 /* Herald IDs */
 extern struct bt_uuid_128 herald_uuid;
