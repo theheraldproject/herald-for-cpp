@@ -115,6 +115,7 @@ static inline int BleDatabase_payload_needs_read(BleDatabase_t * self, BleDevice
  * 
  * \param self self
  * \param addr The BleAddress of the device
+ * \param dev The device, can be NULL
  * \param rssi The RSSI of the most recent call
  *
  */
@@ -122,6 +123,11 @@ static inline void BleDatabase_record_rssi(BleDatabase_t * self,
     const BleAddress_t * addr, BleDevice_t * dev, Rssi_t rssi)
 {
     assert(self);
+
+    if(dev != NULL)
+    {
+        /* Nothing to do yet, NULL device is allowes here */
+    }
 
     /* Call the didUpdate callback */
     DatabaseDelegate_didUpdate(&self->delegate, addr, BleDeviceAttrRSSI, (void*) &rssi);

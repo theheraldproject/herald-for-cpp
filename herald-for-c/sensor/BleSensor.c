@@ -38,7 +38,7 @@ int BleSensor_init(BleSensor_t * self)
         return -1;
     }
 
-     /* Initialize the reader */
+    /* Initialize the reader */
     err = BleReader_init(&self->reader, self->payload_queue);
 
     if(err)
@@ -175,6 +175,15 @@ void BleSensor_process_scan(BleSensor_t * self)
 
     /* Check if scan result was found */
     if(err)
+    {
+        return;
+    }
+
+    /* Run the didMeasure callback */
+    BleDatabase_record_rssi(self->database, &scan_msg.pseudo, NULL, scan_msg.rssi);
+
+    /* Check if it is forsure not a herald device, no need to include in DB if it is */
+    if(scan_msg.could_be_herald == 0)
     {
         return;
     }

@@ -54,5 +54,19 @@ menu "HERALD"
   default 500
   help
     "The maximum number of devices to keep in the database"
+  
+  config HERALD_SCAN_EVERYTHING
+  bool "Scan for every device"
+  default n
+  help
+    "If set to no, only herald devices will be in didMeasure
+    If set to yes, didMeasure will call every device"
+  
+  config HERALD_FILTER_ALLOW_APPLE_MANUFACTURER_ID
+  bool "Allow apple to pass through filter"
+  default y
+  depends on !HERALD_SCAN_EVERYTHING
+  help
+    "If set to Y then apple and herald service UUID will pass through filter"
     
 endmenu
