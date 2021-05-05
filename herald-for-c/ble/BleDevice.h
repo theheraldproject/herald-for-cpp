@@ -95,6 +95,7 @@ static inline void BleDevice_payload_read_success(BleDevice_t * self)
     self->herald_not_found = 0;
 
     /* Update the next read time */
+    LOG_DBG("Next read: %u", CONFIG_HERALD_PAYLOAD_READ_INTERVAL_S);
     self->nextRead = Timestamp_now_s() + CONFIG_HERALD_PAYLOAD_READ_INTERVAL_S;
 }
 
@@ -122,6 +123,7 @@ static inline void BleDevice_startingRead(BleDevice_t * self)
 {
     /* Set next read time to the max, IE no read until set again */
     self->nextRead = BleDevice_CONNECTION_TIME_MAX;
+    LOG_DBG("Next read: %lu", BleDevice_CONNECTION_TIME_MAX);
 }
 
 /**
@@ -129,7 +131,7 @@ static inline void BleDevice_startingRead(BleDevice_t * self)
  * 
  * \param self 
  * \param current_sec 
- * \return ==0 it is not expired
+ * \return ==0 if it is not expired
  */
 static inline int BleDevice_isExpired(BleDevice_t * self, uint32_t current_sec)
 {
