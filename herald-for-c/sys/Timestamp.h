@@ -15,6 +15,8 @@ typedef uint64_t Timestamp_t;
 
 void Timestamp_now(Timestamp_t * timestamp);
 
+uint32_t Timestamp_now_s(void);
+
 void Timestamp_get_ms(uint64_t * time_ms, Timestamp_t * timestamp);
 
 static inline void Timestamp_now_ms(uint64_t * ms)
