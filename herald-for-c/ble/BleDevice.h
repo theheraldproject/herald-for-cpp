@@ -135,12 +135,20 @@ static inline void BleDevice_startingRead(BleDevice_t * self)
  */
 static inline int BleDevice_isExpired(BleDevice_t * self, uint32_t current_sec)
 {
-    if(self->expiryTime < current_sec)
+    /* Check expiry time */
+    if(self->expiryTime > current_sec)
     {
-        return 1;
+        return 0;
     }
 
-    return 0;
+    /* Check device is not connecting */
+    if(self->nextRead == BleDevice_CONNECTION_TIME_MAX)
+    {
+        LOG_WRN("Expiry while in reading state!");
+        return 0;
+    }
+
+    return 1;
 }
 
 void BleDevice_payload_not_read(BleDevice_t * self, int8_t err);

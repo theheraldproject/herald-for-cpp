@@ -24,7 +24,8 @@
         ) \
     )
 
-#define BleSensor_DEF(_ble_database, _p_scan_queue, _p_payload_queue) \
+#define BleSensor_DEF(_ble_database, _p_scan_queue, \
+    _p_payload_read_queue, _p_payload_process_queue) \
 { \
     BleScanner_DEF(), \
     BleAdvertiser_DEF(), \
@@ -32,8 +33,15 @@
     BleTransmitter_DEF(), \
     _ble_database, \
     _p_scan_queue, \
-    _p_payload_queue \
+    _p_payload_read_queue, \
+    _p_payload_process_queue \
 }
+
+struct payload_req_msg
+{
+    BleAddress_t addr;
+    BleAddress_t pseudo;
+};
 
 typedef struct ble_sensor_s
 {
@@ -43,7 +51,8 @@ typedef struct ble_sensor_s
     BleTransmitter_t transmitter;
     BleDatabase_t * database;
     struct k_msgq * scan_queue;
-    struct k_msgq * payload_queue;
+    struct k_msgq * payload_read_queue;
+    struct k_msgq * payload_process_queue;
 }
 BleSensor_t;
 
@@ -61,6 +70,7 @@ void BleSensor_db_didDelete(void * module, const BleAddress_t * addr);
 void BleSensor_process_scan(BleSensor_t * self);
 void BleSensor_process_payload(BleSensor_t * self);
 void BleSensor_update_payload(BleSensor_t * self, Data_t * payload);
+void BleSensor_read_payloads(BleSensor_t * self);
 
 
 #endif /* __BLE_SENSOR_H__ */

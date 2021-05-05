@@ -39,7 +39,7 @@ int BleSensor_init(BleSensor_t * self)
     }
 
     /* Initialize the reader */
-    err = BleReader_init(&self->reader, self->payload_queue);
+    err = BleReader_init(&self->reader, self->payload_process_queue);
 
     if(err)
     {
@@ -121,7 +121,7 @@ void BleSensor_process_payload(BleSensor_t * self)
     assert(self);
 
     /* Wait for payloads */
-    k_msgq_get(self->payload_queue, &msg, K_FOREVER);
+    k_msgq_get(self->payload_process_queue, &msg, K_FOREVER);
 
     /* Get the device from the DB,
     if a device wrote a payload to us it will be created in the DB */
@@ -153,10 +153,38 @@ void BleSensor_process_payload(BleSensor_t * self)
     BleDatabase_read_payload(self->database, &msg.pseudo, dev, &data);
 }
 
+void BleSensor_read_payloads(BleSensor_t * self)
+{
+    struct payload_req_msg msg;
+    BleDevice_t * dev;
+    int err;
+
+    /* Wait for payload read requests */
+    k_msgq_get(self->payload_read_queue, &msg, K_FOREVER);
+
+    /* Attempt to start the read */
+    err = BleReader_read_payload(&self->reader, &msg.addr, &msg.pseudo);
+
+    /* Error check */
+    if(err)
+    {
+        /* Get the device from the DB, should not have to create a device here */
+        dev = BleDatabase_find_create_device(self->database, &msg.pseudo);
+        if(dev == NULL)
+        {
+            LOG_ERR("Find to mark not read!");
+            return;
+        }
+        /* Update device */
+        BleDatabase_payload_not_read(self->database, dev, BleErr_ERR_STARTING);
+    }
+}
+
 void BleSensor_process_scan(BleSensor_t * self)
 {
     BleDevice_t * dev;
     struct scan_results_message scan_msg;
+    struct payload_req_msg payload_req_msg;
     int err;
 
     assert(self);
@@ -203,14 +231,16 @@ void BleSensor_process_scan(BleSensor_t * self)
     
     BleDatabase_payload_start_reading(self->database, dev);
 
-    /* Attempt to start the read */
-    err = BleReader_read_payload(&self->reader, &scan_msg.addr, &scan_msg.pseudo);
+    /* Add to the payload request queue */
+    BleAddress_copy(&payload_req_msg.addr, &scan_msg.addr);
+    BleAddress_copy(&payload_req_msg.pseudo, &scan_msg.pseudo);
 
-    /* Error check */
+    /* Send the request message */
+    err = k_msgq_put(self->payload_read_queue, &payload_req_msg, K_SECONDS(10));
+
     if(err)
     {
-        /* Update device */
-        BleDatabase_payload_not_read(self->database, dev, BleErr_ERR_STARTING);
+        LOG_ERR("Could not add payload request!");
     }
 }
 
