@@ -37,3 +37,28 @@ set(HERALD_SOURCES
 
     "${HERALD_BASE}/payload/FixedPayloadSupplier.c"
 )
+
+# Add Herald configuration
+# Set config path
+set(BASE_CONFIG "${HERALD_BASE}/config")
+
+# Add the base config
+set(OVERLAY_CONFIG "${BASE_CONFIG}/base.conf")
+
+# Add config based on CMAKE build type
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    # Add debug configuration
+    set(OVERLAY_CONFIG ${OVERLAY_CONFIG} "${BASE_CONFIG}/debug.conf")
+else()
+    # Add release configuration
+    set(OVERLAY_CONFIG ${OVERLAY_CONFIG} "${BASE_CONFIG}/release.conf")
+endif()
+
+# Include the zephyr package, this creates the `app` target
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+# Add the include directory
+target_include_directories(app PUBLIC include ${HERALD_BASE} ${HERALD_BASE}/include)
+
+# Add the Herald sources
+target_sources(app PRIVATE ${HERALD_SOURCES})

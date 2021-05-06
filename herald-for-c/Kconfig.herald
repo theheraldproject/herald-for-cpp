@@ -37,7 +37,7 @@ menu "HERALD"
   
   config HERALD_MAX_DEVS_IN_DB
   int "Maximum number of devices to keep in the database"
-  default 600
+  default 800
   help
     "The maximum number of devices to keep in the database"
   
@@ -106,8 +106,10 @@ comment "Connection error exponential backoff"
   default 200
 
   config HERALD_ADVERTISING_INTERVAL_DEVIATION
-  int "Advertising deviation MS"
+  int "Advertising interval deviation MS"
   default 5
+  help
+    "The amount zephyr can jitter from the advertising interval"
 
   config HERALD_SCAN_INTERVAL_MS
   int "Scan interval MS"
