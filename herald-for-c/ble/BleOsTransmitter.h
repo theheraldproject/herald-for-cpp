@@ -19,7 +19,21 @@ typedef int (*BleOsTransmitter_allow_connection_cb)(void * module, const BleAddr
 typedef int (*BleOsTransmitter_get_payload_cb)(void * module, const BleAddress_t * addr,
     Data_t * payload);
 
-typedef int (*BleOsTransmitter_received_payload_cb)(void * module, const BleAddress_t * addr);
+/**
+ * \brief The callback when another device has written to our write characteristic
+ * 
+ * For now this callback should be called when a 
+ * device disconnects, the offset should be negative,
+ * If the device has not written anything then nothing will happen
+ * 
+ * \param module
+ * \param addr
+ * \param data
+ * \param offset the offset, set to negative to inidate the end of the payload
+ * 
+ * \return 0 for success, negative size was to big
+ */
+typedef int (*BleOsTransmitter_received_payload_cb)(void * module, const BleAddress_t * addr, Data_t * data, int offset);
 
 int BleOsTransmitter_init(void * module,
     BleOsTransmitter_allow_connection_cb allow_connection_cb,

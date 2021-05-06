@@ -128,7 +128,7 @@ static inline void prv_send_payload_message(BleReader_t * self, const BleAddress
 
     if(err)
     {
-        LOG_ERR("Could not send scan result");
+        LOG_ERR("Send payload message!");
     }
 }
 
@@ -215,6 +215,11 @@ int BleReader_init(BleReader_t * self, struct k_msgq * payload_queue)
 
     /* Add payload queue */
     self->payload_queue = payload_queue;
+
+    /* Clear payload memory, to make sure all used is set to zero */
+    memset(self->payload_readings, 0, 
+        sizeof(struct ble_payload_readings_s) * 
+            CONFIG_HERALD_MAX_PAYLOAD_READ_AT_ONE_TIME);
 
     /* Initialize the connection semaphore */
     err = k_sem_init(&self->conn_sem, CONFIG_HERALD_MAX_PAYLOAD_READ_AT_ONE_TIME,

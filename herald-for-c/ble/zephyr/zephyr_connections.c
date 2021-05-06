@@ -106,6 +106,9 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 		/* Remove it */
 		BleZephyrScan_allow();
         BleZephyrAdvertise_allow();
+		/* Signal a write done,
+		has no effect if the device did not write */
+		BleZephyrTransmitter_received_data_cb(conn, NULL, 0, -1);
 		zephyr_in_con_remove(conn);
 	}
 	else

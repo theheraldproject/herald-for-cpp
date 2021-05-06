@@ -129,7 +129,6 @@ static inline void BleDevice_startingRead(BleDevice_t * self)
 {
     /* Set next read time to the max, IE no read until set again */
     self->nextRead = BleDevice_CONNECTION_TIME_MAX;
-    LOG_DBG("Next read: %lu", BleDevice_CONNECTION_TIME_MAX);
 }
 
 /**

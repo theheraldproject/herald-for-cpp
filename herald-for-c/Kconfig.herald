@@ -125,5 +125,11 @@ comment "Connection error exponential backoff"
   help
     "When a connection is initiated by another device,
     it will be disconnected after this amount of time"
+  
+  config HERALD_MAX_INCOMING_CONNECTIONS_AT_ONCE
+  int "Max number of connections by other devices to allow at once"
+  default 3
+  help
+    "Maximum number of connections not initiated by the device at once"
 
 endmenu

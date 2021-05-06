@@ -12,8 +12,8 @@
 #include "logger/herald_logger.h"
 #include "ble/BleErrCodes.h"
 
-#undef LOG_DBG
-#define LOG_DBG(...) (void) (__VA_ARGS__)
+// #undef LOG_DBG
+// #define LOG_DBG(...)
 
 /* Herald advertising parameters */
 #define HRLD_ADV_INT_MIN ( \
@@ -82,6 +82,7 @@ void BleZephyrReader_disconnection_cb(struct bt_conn * conn);
 /* Transmitter */
 int BleZephyrTransmitter_should_accept_connection_cb(struct bt_conn * conn);
 int BleZephyrTransmitter_get_payload_cb(struct bt_conn * conn, Data_t * data);
+int BleZephyrTransmitter_received_data_cb(struct bt_conn * conn, uint8_t * data, size_t sz, size_t offset);
 
 /* Connections */
 int zephyr_connection_create(const bt_addr_le_t * addr, struct bt_conn ** conn);
