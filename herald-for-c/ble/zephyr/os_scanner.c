@@ -12,6 +12,40 @@
 static void * prv_cb_module = NULL;
 static BleOsScanner_cb_t prv_cb = NULL;
 
+void start_scanner_work_handler(struct k_work * work)
+{
+    zephyr_scan_start();
+    LOG_DBG("Scanner started");
+}
+
+K_WORK_DEFINE(start_scanner_work, start_scanner_work_handler);
+
+void scanner_work_timer_handler(struct k_timer *dummy)
+{
+    k_work_submit(&start_scanner_work);
+}
+
+K_TIMER_DEFINE(scanner_work_timer, scanner_work_timer_handler, NULL);
+
+//#define prvSCAN_START_DELAY (CONFIG_HERALD_SCAN_INTERVAL_MS - CONFIG_HERALD_SCAN_WINDOW_MS)
+#define prvSCAN_START_DELAY_MS (200)
+
+static void prv_start_scanner(void)
+{
+    k_timer_start(&scanner_work_timer, K_MSEC(prvSCAN_START_DELAY_MS), K_NO_WAIT);
+}
+
+static void prv_stop_scanner(void)
+{
+    if(k_timer_status_get(&scanner_work_timer) == 0)
+    {
+        LOG_DBG("Stopping timmer..");
+    }
+
+    /* Stop no matter what */
+    k_timer_stop(&scanner_work_timer);
+    zephyr_scan_stop();
+}
 
 void BleZephyrScanner_cb(const bt_addr_le_t *addr, int8_t rssi,
     Data_t * manufacturer_data, uint8_t status)
@@ -87,9 +121,7 @@ void BleZephyrScan_allow(void)
     if(prv_req_stop == 0 && prv_should_be_on != 0)
     {
         /* Resart the scanner */
-        zephyr_scan_start();
-        LOG_DBG("Scanner started");
-        k_sleep(K_MSEC(100));
+        prv_start_scanner();
     }
     prv_unlock();
 }
@@ -102,8 +134,7 @@ void BleZephyrScan_disallow(void)
     if(prv_req_stop == 0 && prv_should_be_on != 0)
     {
         /* Stop the scanner */
-        zephyr_scan_stop();
-        LOG_DBG("Scanner stopped");
+        prv_stop_scanner();
     }
 
     /* Increment */

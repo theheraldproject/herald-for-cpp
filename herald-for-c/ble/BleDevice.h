@@ -58,6 +58,11 @@ typedef struct ble_device_s
      * This count's the number of times a device has not had herrald service on it
      * If herald UUID is found then this should be reset to zero
      */
+    uint8_t err_connecting;
+    /**<
+     * Counts the number of connection errors
+     * Used for exponentail backoff
+     */
 }
 BleDevice_t;
 
@@ -67,6 +72,7 @@ static inline void BleDevice_init(BleDevice_t * self)
     self->expiryTime = 0;
     self->nextRead = 0;
     self->herald_not_found = 0;
+    self->err_connecting = 0;
 }
 
 static inline void BleDevice_scanned(BleDevice_t * self)

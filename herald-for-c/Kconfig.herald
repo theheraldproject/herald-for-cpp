@@ -1,13 +1,16 @@
-# /*
-#  * Copyright 2020-2021 Herald Project Contributors
-#  * SPDX-License-Identifier: Apache-2.0
-#  * 
-#  */
+#
+# Copyright 2020-2021 Herald Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+# 
+#
 
 menu "HERALD"
+
+  comment "Payload"
+
   config HERALD_PAYLOAD_READ_INTERVAL_S
   int "Payload read interval (seconds)"
-  default 60
+  default 900
   help
     "The time that should be waited before payload is read again"
   
@@ -15,7 +18,8 @@ menu "HERALD"
   int "Maximum payloads simultaneously read"
   default 1
   help
-    "The maximum number of devices the receiver is connecting to at a time"
+    "The maximum number of devices the receiver is connecting to at a time.
+    Right now zephyr is only supporting one at a time"
 
   config HERALD_MAX_PAYLOAD_SIZE
   int "Max payload bytes"
@@ -23,6 +27,8 @@ menu "HERALD"
   help
     "The buffer size to store payloads in. Must be larger then any payload"
   
+  comment "Database"
+
   config HERALD_DEVICE_EXPIRY_SEC
   int "Max time to remember device after scan (seconds)"
   default 900
@@ -31,16 +37,18 @@ menu "HERALD"
   
   config HERALD_MAX_DEVS_IN_DB
   int "Maximum number of devices to keep in the database"
-  default 500
+  default 600
   help
     "The maximum number of devices to keep in the database"
   
+  comment "Filter"
+
   config HERALD_SCAN_EVERYTHING
   bool "Scan for every device"
   default n
   help
-    "If set to no, only herald devices will be in didMeasure
-    If set to yes, didMeasure will call every device"
+    "If set to no, only herald potential devices will be in didMeasure
+    If set to yes, didMeasure will be called form every device"
   
   config HERALD_FILTER_ALLOW_APPLE_MANUFACTURER_ID
   bool "Allow apple to pass through filter"
@@ -48,38 +56,50 @@ menu "HERALD"
   depends on !HERALD_SCAN_EVERYTHING
   help
     "If set to Y then apple and herald service UUID will pass through filter"
-  
-  config HERALD_NOT_FOUND_RETRY_S
-  int "Time to wait after herald not found"
-  default 20
+
+comment "Herald not found exponential backoff"
+
+  config HERALD_NOT_FOUND_EXP_BACKOFF_RESET_COUNT
+  int "Herald not found backoff reset count"
+  default 4
   help
-    "The time to wait after a device did not report a herald service"
-  
-  config HERALD_NOT_FOUND_MULTIPLIER
-  int "Herald not found multiplier"
-  default 2
+    "The exponential backoff reset count for herald service
+    Set to zero or negative to disable"
+
+  config HERALD_NOT_FOUND_EXP_BACKOFF_INTERVAL_S
+  int "Herald not found backoff interval (seconds)"
+  default 30
   help
-    "Every time a herald service is not found we multiply 
-    HERALD_NOT_FOUND_RETRY_S by this multiplier
-    Set to less then or equal to zero to not use"
-  
-  config HERALD_NOT_FOUND_EXPONENTIAL
-  int "Herald not found exponential multiplier"
-  default 2
+    "The exponential backoff interval. delay=interval*rate^N"
+
+  config HERALD_NOT_FOUND_EXP_BACKOFF_RATE
+  int "Herald not found backoff rate"
+  default 7
   help
-    "Every time a herald device is not found we wait
-    HERALD_NOT_FOUND_RETRY_S ^ HERALD_NOT_FOUND_EXPONENTIAL
-    before retrying
-    Set to less then or equal to zero to not use"
-  
-  config HERALD_NOT_FOUND_RESET_COUNT
-  int "Herald not found reset count"
-  default 10
+    "delay=interval*rate^N"
+
+comment "Connection error exponential backoff"
+
+  config HERALD_CON_ERR_EXP_BACKOFF_INTERVAL_S
+  int "Connection error exponential backoff interval (seconds)"
+  default 30
   help
-    "The count to increase herald_not_found until reset to zero
-    This is so we make sure we are retrying frequently enough
-    Similar to TCP/IP retry intervals
-    Set to less then or equal to zero to never reset"
+    "The exponential backoff interval for connection errors"
+
+  config HERALD_CON_ERR_EXP_BACKOFF_RATE
+  int "Connection error exponential backoff rate"
+  default 6
+  help
+    "The exponential backoff rate"
+
+  config HERALD_CON_ERR_EXP_RESET_COUNT
+  int "Connection error exponential backoff reset count"
+  default 4
+  help
+    "The number off connection errors before the count is reset
+    Set to zero or negative to not be used"
+
+  comment "Advertising and scanning"
 
   config HERALD_ADVERTISING_INTERVAL
   int "Advertising interval MS"

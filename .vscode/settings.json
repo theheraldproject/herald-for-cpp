@@ -84,5 +84,8 @@
     "resumable": "cpp",
     "codecvt": "cpp",
     "*.rh": "cpp"
-  }
+  },
+  "cSpell.words": [
+    "backoff"
+  ]
 }
