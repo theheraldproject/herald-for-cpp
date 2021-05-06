@@ -3,7 +3,6 @@
 
 static uint32_t prv_ipow(uint32_t base, uint32_t exp)
 {
-    LOG_DBG("-------base: %u, exp: %u", base, exp);
     int result = 1;
     for (;;)
     {
@@ -14,8 +13,6 @@ static uint32_t prv_ipow(uint32_t base, uint32_t exp)
             break;
         base *= base;
     }
-
-    LOG_DBG("------Res: %u", result);
 
     return result;
 }

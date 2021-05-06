@@ -83,6 +83,7 @@ int BleZephyrTransmitter_get_payload_cb(struct bt_conn * conn, Data_t * data);
 /* Connections */
 int zephyr_connection_create(const bt_addr_le_t * addr, struct bt_conn ** conn);
 void zephyr_connection_register_callbacks(void);
+int zephyr_connection_disconnect(struct bt_conn * con);
 
 /* GATT */
 void zephyr_gatt_start_discovery(struct bt_conn * conn);
