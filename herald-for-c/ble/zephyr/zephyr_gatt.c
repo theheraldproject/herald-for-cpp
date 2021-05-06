@@ -53,9 +53,6 @@ static void discovery_complete(struct bt_gatt_dm * dm, void *context)
 
     struct bt_conn * conn = bt_gatt_dm_conn_get(dm);
 
-    /* Print the data */
-	// bt_gatt_dm_data_print(dm);
-
     /* Attempt to read the herald payload characteristic */
 	const struct bt_gatt_dm_attr * attr = 
 		bt_gatt_dm_char_by_uuid(dm, (const struct bt_uuid *) &herald_payload_uuid);
@@ -67,7 +64,7 @@ static void discovery_complete(struct bt_gatt_dm * dm, void *context)
 		LOG_WRN("Could not find payload characteristic in herald service");
 		bt_gatt_dm_data_release(dm);
         /* Run the callback with error */
-		BleZephyrReader_err_callback(conn, BleErr_ERR_PAYLOAD_NOT_FOUND);
+		BleZephyrReader_err_callback(conn, BleErr_ERR_HERALD_PAYLOAD_NOT_FOUND);
 		return;
 	}
 
@@ -80,7 +77,7 @@ static void discovery_complete(struct bt_gatt_dm * dm, void *context)
 	{
 		LOG_ERR("Could not get read params!");
 		bt_gatt_dm_data_release(dm);
-		BleZephyrReader_err_callback(conn, BleErr_ERR_READING_GATT);
+		BleZephyrReader_err_callback(conn, BleErr_SYSTEM);
 		return;
 	}
 
@@ -97,7 +94,7 @@ static void discovery_complete(struct bt_gatt_dm * dm, void *context)
         LOG_ERR("Error starting GATT read!");
 		bt_gatt_dm_data_release(dm);
         /* Run the callback */
-        BleZephyrReader_err_callback(conn, BleErr_ERR_READING_GATT);
+        BleZephyrReader_err_callback(conn, BleErr_SYSTEM);
 		return;
     }
 
@@ -107,7 +104,7 @@ static void discovery_complete(struct bt_gatt_dm * dm, void *context)
 static void discovery_service_not_found(struct bt_conn *conn, void *context)
 {
     /* Run the callback */
-    BleZephyrReader_err_callback(conn, BleErr_ERR_SERVICE_NOT_FOUND);
+    BleZephyrReader_err_callback(conn, BleErr_ERR_HERALD_SERVICE_NOT_FOUND);
 }
 
 static void discovery_error(struct bt_conn *conn, int err, void *context)
@@ -115,7 +112,7 @@ static void discovery_error(struct bt_conn *conn, int err, void *context)
 	LOG_WRN("Error while discovering GATT database: (%d)", err);
 
     /* Run the callback */
-    BleZephyrReader_err_callback(conn, BleErr_ERR_DISCOVERING_GATT);
+    BleZephyrReader_err_callback(conn, BleErr_ERR_GATT_DISCOVERY);
 }
 
 struct bt_gatt_dm_cb discovery_cb =
@@ -142,6 +139,6 @@ void zephyr_gatt_start_discovery(struct bt_conn * conn)
 		LOG_ERR("could not start the discovery procedure, error "
 			"code: %d", err);
 		/* Run the callback */
-        BleZephyrReader_err_callback(conn, BleErr_ERR_DISCOVERING_GATT);
+        BleZephyrReader_err_callback(conn, BleErr_SYSTEM);
 	}
 }

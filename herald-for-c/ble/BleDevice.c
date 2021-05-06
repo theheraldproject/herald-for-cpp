@@ -1,8 +1,9 @@
 #include "ble/BleDevice.h"
+#include "ble/BleErrCodes.h"
 
-#if HERALD_NOT_FOUND_EXPONENTIAL > 1
-static int prv_ipow(int base, int exp)
+static uint32_t prv_ipow(uint32_t base, uint32_t exp)
 {
+    LOG_DBG("-------base: %u, exp: %u", base, exp);
     int result = 1;
     for (;;)
     {
@@ -14,10 +15,60 @@ static int prv_ipow(int base, int exp)
         base *= base;
     }
 
+    LOG_DBG("------Res: %u", result);
+
     return result;
 }
-#endif
 
+// Exponential backoff. Can be calculated here http://exponentialbackoffcalculator.com/
+
+#define prvHRLD_RST_CNT  CONFIG_HERALD_NOT_FOUND_EXP_BACKOFF_RESET_COUNT
+#define prvHRLD_INTERVAL CONFIG_HERALD_NOT_FOUND_EXP_BACKOFF_INTERVAL_S
+#define prvHRLD_RATE     CONFIG_HERALD_NOT_FOUND_EXP_BACKOFF_RATE
+
+#define prvCON_RST_CNT  CONFIG_HERALD_CON_ERR_EXP_RESET_COUNT
+#define prvCON_INTERVAL CONFIG_HERALD_CON_ERR_EXP_BACKOFF_INTERVAL_S
+#define prvCON_RATE     CONFIG_HERALD_CON_ERR_EXP_BACKOFF_RATE
+
+static uint32_t prv_connection_error(BleDevice_t * self)
+{
+    uint32_t increment_time;
+
+    #if prvCON_RST_CNT > 0
+    if(self->err_connecting > prvCON_RST_CNT)
+    {
+        self->err_connecting = 0;
+    }
+    #endif
+
+    /* Calculate exponentail backoff */
+    increment_time = prvCON_INTERVAL * prv_ipow(prvCON_RATE, self->err_connecting);
+
+    /* Increment conenction error */
+    self->err_connecting++;
+
+    return increment_time;
+}
+
+static uint32_t prv_herald_not_found(BleDevice_t * self)
+{
+    uint32_t increment_time;
+
+    #if prvHRLD_RST_CNT > 0
+    if(self->herald_not_found > prvHRLD_RST_CNT)
+    {
+        self->herald_not_found = 0;
+    }
+    #endif
+
+    /* Calculate exponentail backoff */
+    increment_time = prvHRLD_INTERVAL * prv_ipow(prvHRLD_RATE, self->herald_not_found);
+
+    /* Increment herald not found counter */
+    self->herald_not_found++;
+
+    return increment_time;
+}
 
 /**
  * \brief Record a herald not found, must be called on payload read error
@@ -37,29 +88,51 @@ void BleDevice_payload_not_read(BleDevice_t * self, int8_t err)
         LOG_WRN("State is not CONNECTING!");
     }
 
-    #if CONFIG_HERALD_NOT_FOUND_RESET_COUNT > 0
-    if(self->herald_not_found > CONFIG_HERALD_NOT_FOUND_RESET_COUNT)
+    switch(err)
     {
-        self->herald_not_found = 0;
+        case BleErr_SYSTEM:
+            LOG_DBG("System error!");
+            /* Try again the next time it is scanned */
+            increment_time = 0;
+            break;
+
+        case BleErr_ERR_CONNECTING:
+            LOG_DBG("Error connecting");
+            /* Exponential backoff for connection error */
+            increment_time = prv_connection_error(self);
+            break;
+
+        case BleErr_ERR_GATT_DISCOVERY:
+            LOG_DBG("GATT Discovery could not complete!");
+            /* Treat as connection error */
+            increment_time = prv_connection_error(self);
+            break;
+
+        case BleErr_ERR_HERALD_SERVICE_NOT_FOUND:
+            LOG_DBG("Herald service not found!");
+            /* Exponential backoff, herald not found */
+            increment_time = prv_herald_not_found(self);
+            break;
+
+        case BleErr_ERR_HERALD_PAYLOAD_NOT_FOUND:
+            LOG_WRN("Herald payload not found!");
+            /* Treat as a connection error, every herald service UUID
+            should have herald payload service */
+            increment_time = prv_connection_error(self);
+            break;
+
+        case BleErr_ERR_PAYLOAD_TO_BIG:
+            LOG_WRN("Herald payload too big");
+            /* Treat as herald not found,
+            it is unlikely we are going to beable to read this */
+            increment_time = prv_herald_not_found(self);
+            break;
+        default:
+            LOG_ERR("Unknown error! (%d)", err);
+            increment_time = 0;
+            break;
     }
-    #endif
 
-    /* Increment herald not found */
-    self->herald_not_found++;
-
-    /* Only need to do the power it greater then 1 because x^1 = x */
-    #if HERALD_NOT_FOUND_EXPONENTIAL > 1
-    increment_time = prv_ipow(CONFIG_HERALD_NOT_FOUND_RETRY_S, HERALD_NOT_FOUND_EXPONENTIAL);
-    #else
-    increment_time = CONFIG_HERALD_NOT_FOUND_RETRY_S;
-    #endif
-
-    #if CONFIG_HERALD_NOT_FOUND_MULTIPLIER > 0
-    increment_time *= self->herald_not_found * CONFIG_HERALD_NOT_FOUND_MULTIPLIER;
-    #endif
-
-    LOG_DBG("Next read: %u", increment_time);
-
-    /* Update the next time to read */
+    LOG_DBG("Next connection in %us", increment_time);
     self->nextRead = Timestamp_now_s() + increment_time;
 }

@@ -77,41 +77,6 @@ int BleSensor_init(BleSensor_t * self)
     return 0;
 }
 
-static void prv_err_msg_print(int8_t status)
-{
-    /* Error message */
-    switch(status)
-    {
-    case BleErr_ERR_CONNECTING:
-        LOG_DBG("Could not connect!");
-        break;
-
-    case BleErr_ERR_READING_GATT:
-        LOG_WRN("Error reading GATT!");
-        break;
-
-    case BleErr_ERR_SERVICE_NOT_FOUND:
-        LOG_DBG("Service not found!");
-        break;
-
-    case BleErr_ERR_PAYLOAD_NOT_FOUND:
-        LOG_WRN("Payload characteristic not found!");
-        break;
-
-    case BleErr_ERR_DISCOVERING_GATT:
-        LOG_WRN("Error discovering GATT!");
-        break;
-
-    case BleErr_ERR_PAYLOAD_TO_BIG:
-        LOG_WRN("Payload too large for allocated space!");
-        break;
-
-    default:
-        LOG_ERR("Unknown error! (%d)", status);
-        break;
-    }
-}
-
 void BleSensor_process_payload(BleSensor_t * self)
 {
     BleDevice_t * dev;
@@ -140,8 +105,6 @@ void BleSensor_process_payload(BleSensor_t * self)
     {
         /* Record the failure */
         BleDatabase_payload_not_read(self->database, dev, msg.status);
-        /* Log */
-        prv_err_msg_print(msg.status);
         return;
     }
 
@@ -176,7 +139,7 @@ void BleSensor_read_payloads(BleSensor_t * self)
             return;
         }
         /* Update device */
-        BleDatabase_payload_not_read(self->database, dev, BleErr_ERR_STARTING);
+        BleDatabase_payload_not_read(self->database, dev, BleErr_SYSTEM);
     }
 }
 
