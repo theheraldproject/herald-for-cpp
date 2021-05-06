@@ -12,6 +12,9 @@
 #include "logger/herald_logger.h"
 #include "ble/BleErrCodes.h"
 
+#undef LOG_DBG
+#define LOG_DBG(...) (void) (__VA_ARGS__)
+
 /* Herald advertising parameters */
 #define HRLD_ADV_INT_MIN ( \
     (\
