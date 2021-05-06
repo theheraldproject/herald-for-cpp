@@ -47,3 +47,19 @@ int BleZephyrTransmitter_get_payload_cb(struct bt_conn * conn, Data_t * data)
 
     return prv_get_payload_cb(prv_module, &addr, data);
 }
+
+int BleZephyrTransmitter_received_data_cb(struct bt_conn * conn, uint8_t * data, size_t sz, size_t offset)
+{
+    BleAddress_t addr;
+    assert(prv_received_payload_cb);
+    /* Get the address */
+    hrld_addr_from_conn(&addr, conn);
+    /* Get the data */
+    Data_t data_st = 
+    {
+        .data = data,
+        .size = sz
+    };
+    /* Call the callback */
+    return prv_received_payload_cb(prv_module, &addr, &data_st, offset);
+}

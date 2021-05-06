@@ -48,7 +48,7 @@ int BleSensor_init(BleSensor_t * self)
     }
 
     /* Initialize the transmitter */
-    err = BleTransmitter_init(&self->transmitter);
+    err = BleTransmitter_init(&self->transmitter, self->payload_process_queue);
 
     if(err)
     {

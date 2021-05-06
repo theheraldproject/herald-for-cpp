@@ -59,20 +59,16 @@ static ssize_t herald_write_characteristic_write_cb(struct bt_conn *conn,
 	const struct bt_gatt_attr *attr, const void *buf, uint16_t len, uint16_t offset,
 	uint8_t flags)
 {
-	// uint8_t *value = attr->user_data;
+	/* Just call the callback */
+	int written = BleZephyrTransmitter_received_data_cb(conn, (uint8_t*) buf, len, offset);
 
-	int i;
-
-	/* For now, log the data */
-	printk("Write: ");
-	for(i=0 ; i<len; i++)
+	if(written < 0)
 	{
-		printk("%02X ", ((uint8_t*) buf)[i]);
+		/* Assume the error was not enough storage room */
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
-	printk("\r\n");
 
-	/* We wrote all data, return the entire length */
-	return len;
+	return written;
 }
 
 /* Advertising data */
