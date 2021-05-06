@@ -59,13 +59,6 @@ menu "HERALD"
 
 comment "Herald not found exponential backoff"
 
-  config HERALD_NOT_FOUND_EXP_BACKOFF_RESET_COUNT
-  int "Herald not found backoff reset count"
-  default 4
-  help
-    "The exponential backoff reset count for herald service
-    Set to zero or negative to disable"
-
   config HERALD_NOT_FOUND_EXP_BACKOFF_INTERVAL_S
   int "Herald not found backoff interval (seconds)"
   default 30
@@ -77,6 +70,13 @@ comment "Herald not found exponential backoff"
   default 7
   help
     "delay=interval*rate^N"
+
+  config HERALD_NOT_FOUND_EXP_BACKOFF_RESET_COUNT
+  int "Herald not found backoff reset count"
+  default 4
+  help
+    "The exponential backoff reset count for herald service
+    Set to zero or negative to disable"
 
 comment "Connection error exponential backoff"
 
@@ -116,5 +116,14 @@ comment "Connection error exponential backoff"
   config HERALD_SCAN_WINDOW_MS
   int "Scan window MS"
   default 500
+
+  comment "Incoming connections"
+
+  config HERALD_MAX_INCOMING_CONNECTION_TIME_MS
+  int "Max connection time for another device to stay connected (MS)"
+  default 4000
+  help
+    "When a connection is initiated by another device,
+    it will be disconnected after this amount of time"
 
 endmenu

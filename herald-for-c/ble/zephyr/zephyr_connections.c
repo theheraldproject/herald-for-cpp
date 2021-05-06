@@ -157,3 +157,8 @@ int zephyr_connection_create(const bt_addr_le_t * addr, struct bt_conn ** conn)
 	/* Create the connection */
 	return bt_conn_le_create(addr, &create_params, &conn_params, conn);
 }
+
+int zephyr_connection_disconnect(struct bt_conn * conn)
+{
+	return bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+}
