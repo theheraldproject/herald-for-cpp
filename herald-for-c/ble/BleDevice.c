@@ -67,6 +67,9 @@ static uint32_t prv_herald_not_found(BleDevice_t * self)
     return increment_time;
 }
 
+#define prvSYSTEM_ERROR_DELAY_TIME \
+    (CONFIG_HERALD_SCAN_INTERVAL_MS - CONFIG_HERALD_SCAN_WINDOW_MS)/1000
+
 /**
  * \brief Record a herald not found, must be called on payload read error
  * 
@@ -90,7 +93,7 @@ void BleDevice_payload_not_read(BleDevice_t * self, int8_t err)
         case BleErr_SYSTEM:
             LOG_DBG("System error!");
             /* Try again the next time it is scanned */
-            increment_time = 0;
+            increment_time = prvSYSTEM_ERROR_DELAY_TIME;
             break;
 
         case BleErr_ERR_CONNECTING:
@@ -130,6 +133,6 @@ void BleDevice_payload_not_read(BleDevice_t * self, int8_t err)
             break;
     }
 
-    LOG_DBG("Next connection in %us", increment_time);
+    LOG_DBG("Trying again in %us", increment_time);
     self->nextRead = Timestamp_now_s() + increment_time;
 }
