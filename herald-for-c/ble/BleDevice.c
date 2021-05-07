@@ -1,3 +1,9 @@
+/*
+ * Copyright 2020-2021 Herald Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ * 
+ */
+
 #include "ble/BleDevice.h"
 #include "ble/BleErrCodes.h"
 
