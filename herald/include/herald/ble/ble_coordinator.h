@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BLE_COORDINATION_PROVIDER_H
-#define BLE_COORDINATION_PROVIDER_H
+#ifndef HERALD_BLE_COORDINATION_PROVIDER_H
+#define HERALD_BLE_COORDINATION_PROVIDER_H
 
 #include "../context.h"
 #include "../sensor.h"

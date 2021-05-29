@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BLUETOOTH_STATE_MANAGER_H
-#define BLUETOOTH_STATE_MANAGER_H
+#ifndef HERALD_BLUETOOTH_STATE_MANAGER_H
+#define HERALD_BLUETOOTH_STATE_MANAGER_H
 
 #include "../datatype/bluetooth_state.h"
 #include "bluetooth_state_manager_delegate.h"

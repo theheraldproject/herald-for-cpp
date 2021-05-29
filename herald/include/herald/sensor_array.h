@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SENSOR_ARRAY_H
-#define SENSOR_ARRAY_H
+#ifndef HERALD_SENSOR_ARRAY_H
+#define HERALD_SENSOR_ARRAY_H
 
 #include "data/sensor_logger.h"
 #include "sensor_delegate.h"

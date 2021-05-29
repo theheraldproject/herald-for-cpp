@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BASE64_STRING_H
-#define BASE64_STRING_H
+#ifndef HERALD_BASE64_STRING_H
+#define HERALD_BASE64_STRING_H
 
 #include "data.h"
 

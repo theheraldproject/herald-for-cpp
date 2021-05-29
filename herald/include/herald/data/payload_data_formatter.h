@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef PAYLOAD_DATA_FORMATTER_H
-#define PAYLOAD_DATA_FORMATTER_H
+#ifndef HERALD_PAYLOAD_DATA_FORMATTER_H
+#define HERALD_PAYLOAD_DATA_FORMATTER_H
 
 #include "../datatype/payload_data.h"
 

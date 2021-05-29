@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SENSOR_LOGGER_H
-#define SENSOR_LOGGER_H
+#ifndef HERALD_SENSOR_LOGGER_H
+#define HERALD_SENSOR_LOGGER_H
 
 #include "../datatype/bluetooth_state.h"
 

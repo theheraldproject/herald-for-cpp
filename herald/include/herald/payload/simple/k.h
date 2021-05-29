@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SIMPLE_K_H
-#define SIMPLE_K_H
+#ifndef HERALD_SIMPLE_K_H
+#define HERALD_SIMPLE_K_H
 
 #include "secret_key.h"
 #include "matching_key.h"

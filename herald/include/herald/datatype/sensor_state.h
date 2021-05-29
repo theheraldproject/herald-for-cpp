@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SENSOR_STATE_H
-#define SENSOR_STATE_H
+#ifndef HERALD_SENSOR_STATE_H
+#define HERALD_SENSOR_STATE_H
 
 namespace herald {
 namespace datatype {

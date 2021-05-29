@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef DISTANCE_H
-#define DISTANCE_H
+#ifndef HERALD_DISTANCE_H
+#define HERALD_DISTANCE_H
 
 #include <cstddef>
 

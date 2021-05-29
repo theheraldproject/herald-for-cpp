@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SAMPLING_H
-#define SAMPLING_H
+#ifndef HERALD_SAMPLING_H
+#define HERALD_SAMPLING_H
 
 #include "../datatype/date.h"
 

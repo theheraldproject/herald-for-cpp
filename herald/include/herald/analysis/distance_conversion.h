@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef DISTANCE_CONVERSION_H
-#define DISTANCE_CONVERSION_H
+#ifndef HERALD_DISTANCE_CONVERSION_H
+#define HERALD_DISTANCE_CONVERSION_H
 
 #include <cmath>
 

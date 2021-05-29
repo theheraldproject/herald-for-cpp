@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZEPHYR_CONTEXT_H
-#define ZEPHYR_CONTEXT_H
+#ifndef HERALD_ZEPHYR_CONTEXT_H
+#define HERALD_ZEPHYR_CONTEXT_H
 
 #include "context.h"
 #include "ble/bluetooth_state_manager.h"

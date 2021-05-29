@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef UUID_H
-#define UUID_H
+#ifndef HERALD_UUID_H
+#define HERALD_UUID_H
 
 #include "error_code.h"
 #include "randomness.h"

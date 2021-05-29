@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BLE_DATABASE_H
-#define BLE_DATABASE_H
+#ifndef HERALD_BLE_DATABASE_H
+#define HERALD_BLE_DATABASE_H
 
 #include "ble_database_delegate.h"
 #include "ble_device.h"

@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SENSOR_TYPE_H
-#define SENSOR_TYPE_H
+#ifndef HERALD_SENSOR_TYPE_H
+#define HERALD_SENSOR_TYPE_H
 
 #include <string>
 

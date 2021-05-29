@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BLE_MAC_ADDRESS_H
-#define BLE_MAC_ADDRESS_H
+#ifndef HERALD_BLE_MAC_ADDRESS_H
+#define HERALD_BLE_MAC_ADDRESS_H
 
 #include "../datatype/data.h"
 

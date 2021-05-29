@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef PAYLOAD_TIMESTAMP_H
-#define PAYLOAD_TIMESTAMP_H
+#ifndef HERALD_PAYLOAD_TIMESTAMP_H
+#define HERALD_PAYLOAD_TIMESTAMP_H
 
 #include "date.h"
 

@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef PLACENAME_LOCATION_REFERENCE_H
-#define PLACENAME_LOCATION_REFERENCE_H
+#ifndef HERALD_PLACENAME_LOCATION_REFERENCE_H
+#define HERALD_PLACENAME_LOCATION_REFERENCE_H
 
 #include "location_reference.h"
 

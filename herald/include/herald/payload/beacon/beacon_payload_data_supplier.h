@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BEACON_PAYLOAD_DATA_SUPPLIER_H
-#define BEACON_PAYLOAD_DATA_SUPPLIER_H
+#ifndef HERALD_BEACON_PAYLOAD_DATA_SUPPLIER_H
+#define HERALD_BEACON_PAYLOAD_DATA_SUPPLIER_H
 
 #include "../extended/extended_data.h"
 #include "../payload_data_supplier.h"

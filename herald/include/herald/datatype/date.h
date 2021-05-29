@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef DATE_H
-#define DATE_H
+#ifndef HERALD_DATE_H
+#define HERALD_DATE_H
 
 #include <string>
 #include <memory>

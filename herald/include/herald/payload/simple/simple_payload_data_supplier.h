@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SIMPLE_PAYLOAD_DATA_SUPPLIER_H
-#define SIMPLE_PAYLOAD_DATA_SUPPLIER_H
+#ifndef HERALD_SIMPLE_PAYLOAD_DATA_SUPPLIER_H
+#define HERALD_SIMPLE_PAYLOAD_DATA_SUPPLIER_H
 
 #include "secret_key.h"
 #include "k.h"
