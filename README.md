@@ -137,3 +137,11 @@ We also use noexcept rather than throw exceptions for the same reason.
 
 See the [Zephyr C++ limitations](https://docs.zephyrproject.org/latest/reference/kernel/other/cxx_support.html) [External] page for details.
 Note that this page is out of date somewhat. The 'new' keyword, for example, is supported in Zephyr although it is very buggy.
+
+## Building with Code Coverage
+
+1. Open Visual Studio Code
+1. Perform a CMake build using CLang on Windows in Debug mode
+1. Open the CMake tools tab in Visual Studio Code
+1. Expand 'herald-tests'
+1. Run the 'ccov-report' utility
