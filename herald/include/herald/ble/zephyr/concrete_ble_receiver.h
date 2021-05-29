@@ -641,6 +641,7 @@ public:
       HTDBG("State for activity does not have a connection. Returning.");
       return {};
     }
+    [[maybe_unused]]
     auto& device = db.device(currentTargetOpt.value());
     state.inDiscovery = true;
 
