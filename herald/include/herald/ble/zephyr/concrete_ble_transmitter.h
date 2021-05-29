@@ -168,7 +168,7 @@ private:
     }
 
     // Note: TxPower currently disabled due to restricted advert space and the need to include Herald's service. 
-    //       See https://github.com/vmware/herald-for-cpp/issues/26
+    //       See https://github.com/theheraldproject/herald-for-cpp/issues/26
     // Get current TxPower and alter advert accordingly:-
     // int8_t txp_get = 0;
     // zephyrinternal::get_tx_power(BT_HCI_VS_LL_HANDLE_TYPE_ADV,0, &txp_get);

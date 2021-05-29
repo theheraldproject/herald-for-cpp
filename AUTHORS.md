@@ -2,7 +2,7 @@
 
 ## Project Leads
 
-Adam Fowler - https://github.com/adamfowleruk - adamf@vmware.com
+Adam Fowler - TSC Chair for Herald 2020-2021 - https://github.com/adamfowleruk - adam@adamfowler.org
 
 ## Developers
 

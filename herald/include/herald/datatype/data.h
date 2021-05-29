@@ -8,7 +8,7 @@
 #include <vector>
 #include <string>
 #include <memory>
-#include <iosfwd>
+#include <iostream>
 
 namespace herald {
 namespace datatype {
