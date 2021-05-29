@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef RANGES_H
-#define RANGES_H
+#ifndef HERALD_RANGES_H
+#define HERALD_RANGES_H
 
 // TODO if def for C++20 support check (so we don't have to roll our own ranges lib)
 // i.e. map std::views on to herald::analysis::views, otherwise include the following.

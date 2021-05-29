@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ANALYSIS_RUNNER_H
-#define ANALYSIS_RUNNER_H
+#ifndef HERALD_ANALYSIS_RUNNER_H
+#define HERALD_ANALYSIS_RUNNER_H
 
 #include "sampling.h"
 

@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ENCOUNTER_H
-#define ENCOUNTER_H
+#ifndef HERALD_ENCOUNTER_H
+#define HERALD_ENCOUNTER_H
 
 #include "date.h"
 #include "proximity.h"

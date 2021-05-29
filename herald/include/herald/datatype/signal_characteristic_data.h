@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SIGNAL_CHARACTERISTIC_DATA_H
-#define SIGNAL_CHARACTERISTIC_DATA_H
+#ifndef HERALD_SIGNAL_CHARACTERISTIC_DATA_H
+#define HERALD_SIGNAL_CHARACTERISTIC_DATA_H
 
 #include "data.h"
 #include "rssi.h"

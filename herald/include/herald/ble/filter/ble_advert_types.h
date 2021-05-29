@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BLE_ADVERT_TYPES_H
-#define BLE_ADVERT_TYPES_H
+#ifndef HERALD_BLE_ADVERT_TYPES_H
+#define HERALD_BLE_ADVERT_TYPES_H
 
 #include "../../datatype/data.h"
 

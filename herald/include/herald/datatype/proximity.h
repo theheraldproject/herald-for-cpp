@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef PROXIMITY_H
-#define PROXIMITY_H
+#ifndef HERALD_PROXIMITY_H
+#define HERALD_PROXIMITY_H
 
 #include <string>
 

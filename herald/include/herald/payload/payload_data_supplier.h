@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef PAYLOAD_DATA_SUPPLIER_H
-#define PAYLOAD_DATA_SUPPLIER_H
+#ifndef HERALD_PAYLOAD_DATA_SUPPLIER_H
+#define HERALD_PAYLOAD_DATA_SUPPLIER_H
 
 #include "../device.h"
 #include "../datatype/payload_timestamp.h"

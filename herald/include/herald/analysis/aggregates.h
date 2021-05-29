@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef AGGREGATES_H
-#define AGGREGATES_H
+#ifndef HERALD_AGGREGATES_H
+#define HERALD_AGGREGATES_H
 
 #include <map>
 #include <variant>

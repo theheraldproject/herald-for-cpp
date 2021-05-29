@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BLE_CONCRETE_H
-#define BLE_CONCRETE_H
+#ifndef HERALD_BLE_CONCRETE_H
+#define HERALD_BLE_CONCRETE_H
 
 #include "ble_concrete_database.h"
 #include "ble_database.h"

@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef TARGET_IDENTIFIER_H
-#define TARGET_IDENTIFIER_H
+#ifndef HERALD_TARGET_IDENTIFIER_H
+#define HERALD_TARGET_IDENTIFIER_H
 
 #include "data.h"
 

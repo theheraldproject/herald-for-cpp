@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BLE_RECEIVER_H
-#define BLE_RECEIVER_H
+#ifndef HERALD_BLE_RECEIVER_H
+#define HERALD_BLE_RECEIVER_H
 
 #include "../sensor.h"
 

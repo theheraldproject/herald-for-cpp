@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef RSSI_H
-#define RSSI_H
+#ifndef HERALD_RSSI_H
+#define HERALD_RSSI_H
 
 #include <string>
 #include <memory>

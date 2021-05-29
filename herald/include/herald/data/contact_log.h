@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef CONTACT_LOG_H
-#define CONTACT_LOG_H
+#ifndef HERALD_CONTACT_LOG_H
+#define HERALD_CONTACT_LOG_H
 
 #include "../sensor_delegate.h"
 #include "payload_data_formatter.h"

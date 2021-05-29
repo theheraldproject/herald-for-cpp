@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ZEPHYR_LOGGING_SINK_H
-#define ZEPHYR_LOGGING_SINK_H
+#ifndef HERALD_ZEPHYR_LOGGING_SINK_H
+#define HERALD_ZEPHYR_LOGGING_SINK_H
 
 #include "../sensor_logger.h"
 

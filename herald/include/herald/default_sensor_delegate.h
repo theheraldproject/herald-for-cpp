@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef DEFAULT_SENSOR_DELEGATE_H
-#define DEFAULT_SENSOR_DELEGATE_H
+#ifndef HERALD_DEFAULT_SENSOR_DELEGATE_H
+#define HERALD_DEFAULT_SENSOR_DELEGATE_H
 
 #include "sensor_delegate.h"
 
