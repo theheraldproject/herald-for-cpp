@@ -145,6 +145,108 @@ private:
 };
 
 
+struct Median {
+  static constexpr int runs = 1;
+
+  Median() : run(1), minNextPos(0), maxNextPos(0), minHeap(), maxHeap() {}
+  ~Median() = default;
+
+  void beginRun(int thisRun) {
+    run = thisRun;
+  }
+
+  template <typename ValT>
+  void map(ValT value) {
+    if (run > 1) {
+      return;
+    }
+    double dv = (double)value;
+    if (minNextPos == maxNextPos) {
+      if (10 == maxNextPos) {
+        removeLeast(maxHeap,maxNextPos);
+      }
+      maxHeap[maxNextPos++] = dv;
+      if (10 == minNextPos) {
+        removeMost(minHeap,minNextPos);
+      }
+      minHeap[minNextPos++] = maxHeap[leastIndex[maxHeap,maxNextPos]];
+    } else {
+      if (10 == minNextPos) {
+        removeMost(minHeap,minNextPos);
+      }
+      minHeap[minNextPos++] = dv;
+      if (10 == maxNextPos) {
+        removeLeast(maxHeap,maxNextPos);
+      }
+      maxHeap[maxNextPos++] = minHeap[mostIndex[minHeap,minNextPos]];
+    }
+  }
+
+  double reduce() {
+    if (0 == minNextPos && 0 == maxNextPos) {
+      return 0.0; // empty data check
+    }
+    if (minNextPos > maxNextPos) {
+      return minHeap[leastIndex(minHeap,minNextPos)];
+    }
+    return (minHeap[leastIndex(minHeap,minNextPos)] + maxHeap[mostIndex(maxHeap,maxNextPos)]) / 2.0;
+  }
+
+  void reset() {
+    run = 1;
+    minNextPos = 0;
+    maxNextPos = 0;
+  }
+
+
+private:
+  int run;
+  int minNextPos;
+  int maxNextPos;
+  std::array<double,10> minHeap;
+  std::array<double,10> maxHeap;
+
+  int leastIndex(const std::array<double,10>& from, const int fromNextPos) const {
+    int leastIdx = 0;
+    double least = from[0];
+    for (int i = 1;i < fromNextPos;++i) {
+      if (from[i] < least) {
+        least = from[i];
+        leastIdx = i;
+      }
+    }
+    return leastIdx;
+  }
+
+  int mostIndex(const std::array<double,10>& from, const int fromNextPos) const {
+    int mostIdx = 0;
+    double most = from[0];
+    for (int i = 1;i < fromNextPos;++i) {
+      if (from[i] > most) {
+        most = from[i];
+        mostIdx = i;
+      }
+    }
+    return mostIdx;
+  }
+
+  void removeMost(std::array<double,10>& from, int& fromNextPos) {
+    int mostIdx = mostIndex(from,fromNextPos);
+    for (int i = mostIdx; i < fromNextPos - 1;++i) {
+      from[i] = from[i + 1];
+    }
+    --fromNextPos;
+  }
+
+  void removeLeast(std::array<double,10>& from, int& fromNextPos) {
+    int leastIdx = leastIndex(from,fromNextPos);
+    for (int i = leastIdx; i < fromNextPos - 1;++i) {
+      from[i] = from[i + 1];
+    }
+    --fromNextPos;
+  }
+};
+
 
 
 
