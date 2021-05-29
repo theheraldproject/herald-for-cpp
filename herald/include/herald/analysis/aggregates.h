@@ -169,7 +169,7 @@ struct Median {
       if (10 == minNextPos) {
         removeMost(minHeap,minNextPos);
       }
-      minHeap[minNextPos++] = maxHeap[leastIndex[maxHeap,maxNextPos]];
+      minHeap[minNextPos++] = maxHeap[leastIndex(maxHeap,maxNextPos)];
     } else {
       if (10 == minNextPos) {
         removeMost(minHeap,minNextPos);
@@ -178,7 +178,7 @@ struct Median {
       if (10 == maxNextPos) {
         removeLeast(maxHeap,maxNextPos);
       }
-      maxHeap[maxNextPos++] = minHeap[mostIndex[minHeap,minNextPos]];
+      maxHeap[maxNextPos++] = minHeap[mostIndex(minHeap,minNextPos)];
     }
   }
 
