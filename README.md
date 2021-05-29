@@ -142,6 +142,7 @@ Note that this page is out of date somewhat. The 'new' keyword, for example, is 
 
 1. Open Visual Studio Code
 1. Perform a CMake build using CLang on Windows in Debug mode
+1. Execute this in the build folder on the command line: ```cmake .. -DCMAKE_BUILD_TYPE=Debug -DCODE_COVERAGE=ON``` to add code coverage support
 1. Open the CMake tools tab in Visual Studio Code
 1. Expand 'herald-tests'
 1. Run the 'ccov-report' utility
