@@ -44,6 +44,7 @@ include_directories(${herald_SOURCE_DIR})
 # find_package(Threads REQUIRED)
 
 target_link_libraries(herald-tests PRIVATE herald) # Threads::Threads
+target_code_coverage(herald-tests AUTO EXTERNAL EXCLUDE herald-tests/*) # EXCLUDE DOES NOT WORK YET!!!
 
 #add_compile_options(-Wl,--stack,100000000)
 #set_target_properties(herald-tests PROPERTIES LINK_FLAGS -Wl,--stack,10000000)
