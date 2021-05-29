@@ -1,5 +1,5 @@
 herald-for-cpp
-Copyright 2020 VMware, Inc.
+Copyright 2020-2021 Herald Project Contributors
 
 The Apache 2.0 license (the "License") set forth below applies to all parts of the herald-for-cpp project. You may not use this file except in compliance with the License.
 

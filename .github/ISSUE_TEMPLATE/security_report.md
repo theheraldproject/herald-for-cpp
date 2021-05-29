@@ -9,9 +9,9 @@ assignees: ''
 
 **WARNING*:: IF YOU ARE REPORTING AN ISSUE THAT COULD CAUSE
 IMMEDIATE SECURITY CONCERNS THAT PUT DEVICES OR PEOPLE AT RISK THEN
-PLEASE INSTEAD FOLLOW THE VMWARE SECURITY VULNERABILITY PROCEDURE:-
+PLEASE INSTEAD EMAIL THE TSC CHAIR:-
 
-https://hackerone.com/vmware?type=team
+adam@adamfowler.org
 
 For other security concerns, please continue.
 
@@ -24,7 +24,7 @@ developers and allow those developers to raise any upstream issues
 here themselves after they have completed their initial issue investigation. This prevents
 rework and delay in getting your issues resolved. Any issues
 raised referring to those apps here and not Herald shall be closed. Only raise the issue here if it
-has been reproduced with the Herald demonstration app.
+has been reproduced with a Herald demonstration app.
 
 Example: If Herald provides 4 options for a piece of security functionality and a downstream app
 is using one you believe to be insecure, then please report this as a concern in their issues tracker.
@@ -35,11 +35,11 @@ A clear and concise description of what the security concern is.
 
 **Smartphone and App information (REQUIRED if you have produced an exploit):**
 
-- Device: [e.g. Seed nRF 52840 MDK USB]
-- Device exact model (if known): [e.g. if using additional custom hardware/libraries/OS] 
-- OS exact version: [e.g. nRF Connect SDK / Zephyr RTOS]
-- Herald demonstration app: [e.g. Venue Beacon, Wearable]
-- Herald demo app version: [e.g. Release ID (v1.2.0-beta3), latest develop branch, or commit ID]
+- Device: [e.g. Samsung S20]
+- Device exact model (if known): [e.g. SM-G781B] 
+- OS exact version: [e.g. iOS8.1, Android 11, NCS 1.5]
+- OS security patch/exact release: [Optional. E.g. 1st Oct 2020. See Settings > Device Information on your phone]
+- Herald demonstration app version: [e.g. Release ID (v1.2.0-beta3), latest develop branch, or commit ID]
 - Have you reproduced this issue on the latest 'develop' Herald branch?: [Yes, No]
 
 Without the above information the Herald team will be unable to reproduce 
@@ -52,7 +52,7 @@ as 'cannot reproduce'.
 
 Please provide the following metrics (optional, can be filled in by project team if left blank):-
 
-- Likely How Widespread: [LOW = Less than 5% of installs of this (on beacons/wearables) variant, MEDIUM = 5%-50%, HIGH = More than 50%]
+- Likely How Widespread: [LOW = Less than 5% of installs of this (iOS, Android) variant, MEDIUM = 5%-50%, HIGH = More than 50%]
 - Reproducability: [NONE = Lab only/theoretical, or an unlikely user activity. LOW = Intermittent, unpredictable. MEDIUM = Occurs often, but unpredictable. HIGH = Easy to reproduce]
 - Impact: [LOW = Annoying, but functional. MEDIUM = Impacts function of the app/device, but there's a workaround. HIGH = Stops app/device functioning.]
 
@@ -82,5 +82,5 @@ Add any other context about the problem here.
 
 DO NOT MODIFY THE BELOW - it will alert the maintainers once you submit your report.
 
-@vmware/herald-maintainers
+@theheraldproject/committers
 

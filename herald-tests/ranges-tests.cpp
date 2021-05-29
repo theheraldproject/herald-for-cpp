@@ -275,8 +275,8 @@ TEST_CASE("ranges-distance-aggregate", "[ranges][distance][filter][multi][since]
     auto var = summary.get<Variance>();
     auto sd = std::sqrt(var);
 
-    // See second diagram at https://vmware.github.io/herald/bluetooth/distance
-    // i.e. https://vmware.github.io/herald/images/distance-rssi-regression.png
+    // See second diagram at https://heraldprox.io/bluetooth/distance
+    // i.e. https://heraldprox.io/images/distance-rssi-regression.png
     herald::analysis::algorithms::distance::FowlerBasic to_distance(-50, -24);
 
     auto distance = sl 

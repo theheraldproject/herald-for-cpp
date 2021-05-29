@@ -15,7 +15,7 @@ This implementation was introduced in Herald v1.2.
 
 ## License and Copyright
 
-Copyright 2020 VMware, Inc.
+Copyright 2020-2021 Herald Project Contributors
 
 [![License: Apache-2.0](https://img.shields.io/badge/License-Apache2.0-yellow.svg)](https://opensource.org/licenses/Apache-2.0)
 
@@ -54,9 +54,9 @@ Other platforms which may work but which we do not provide direct advice for:-
 
 - Other [Zephyr supported boards](https://docs.zephyrproject.org/latest/boards/index.html) [External]
 - Linux Desktops/laptops (yet)
-  - Android devices see the separate [herald-for-android](https://github.com/vmware/herald-for-android/) project
+  - Android devices see the separate [herald-for-android](https://github.com/theheraldproject/herald-for-android/) project
 - Apple OS X Desktops/laptops (yet)
-  - iOS devices see the separate [herald-for-ios](https://github.com/vmware/herald-for-ios) project
+  - iOS devices see the separate [herald-for-ios](https://github.com/theheraldproject/herald-for-ios) project
 
 ## Implementation differences
 
@@ -72,7 +72,7 @@ accesible in C++17. These include:-
 - strings (std::string)
 - tuple<A,B> (std::tuple<A,B>)
 - triple<A,B,C> (std::tuple<A,B,C>)
-- callback (std::bind return val / lambda)
+- callback (unused - syncrhonous only, threading abstracted outside of Herald. See Content class for details.)
 - BLETimer -> Not implemented. Android specific (Android has a bug in its Timer implementation that makes they awake unreliably)
 - Context -> Specific to an application's Context on Android, implemented here in case some platforms have similar requirements. E.g. the ZephyrContext derived class as Zephyr OS has this requirement around Bluetooth state handling.
 
@@ -88,17 +88,14 @@ Any trivial wrapper classes have been implemented
 as structs.
 
 Any Interfaces from Java and Swift have been implemented as
-pure virtual base classes. These shall always be referred to via
-std::shared_ptr wrappers to prevent memory leaks.
+pure virtual base classes. The code base is being heavily
+refactored to use references only and avoid using any pointers,
+including smart pointers. This allows us to be able to predict and
+restrict memory use at compile time, and provide for maximum memory
+safety.
 
-The API has been implemented using the PIMPL idiom throughout
-to hide internal members and implementation details even when
-the classes appear trivial. This is to ensure binary ABI compatibility
-in future, which is very useful in compiled c++ code for long lived
-code bases that depend upon Herald so they don't require a recompile.
-
-This code base implements Bluetooth Low Energy (BLe) and BLe Mesh
-implementations on native Windows and Zephyr/nRF Connect as standard.
+This code base implements Bluetooth Low Energy (BLe)
+implementations on Zephyr/nRF Connect as standard.
 
 ## What isn't implemented
 
@@ -133,8 +130,10 @@ We cannot use dynamic_pointer_cast to cast a std::shared_ptr<DerivedType>
 to a std::shared_ptr<BaseType> because this uses RTTI which is not
 supported by Zephyr. We use static_pointer_cast instead, but only when we
 know the class implementation can only have one definition (i.e. the
-one for the current platform).
+one for the current platform). We are moving to remove all use of
+smart pointers generally in favour of references.
 
 We also use noexcept rather than throw exceptions for the same reason.
 
 See the [Zephyr C++ limitations](https://docs.zephyrproject.org/latest/reference/kernel/other/cxx_support.html) [External] page for details.
+Note that this page is out of date somewhat. The 'new' keyword, for example, is supported in Zephyr although it is very buggy.
