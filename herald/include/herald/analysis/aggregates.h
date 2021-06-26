@@ -248,6 +248,41 @@ private:
 };
 
 
+/// Gaussian
+struct Gaussian {
+  static constexpr int runs = 1;
+
+  Gaussian() : run(1) {}
+  ~Gaussian() = default;
+
+  void beginRun(int thisRun) {
+    run = thisRun;
+  }
+
+  template <typename ValT>
+  void map(ValT value) {
+    if (run > 1) {
+      return;
+    }
+    double dv = (double)value;
+    // ??
+  }
+
+  double reduce() {
+    // ??
+  }
+
+  void reset() {
+    run = 1;
+  }
+
+
+private:
+  int run;
+};
+
+
+
 
 
 /// A Variadic aggregation function requiring aggregations to be prior initialised (i.e. configured)
