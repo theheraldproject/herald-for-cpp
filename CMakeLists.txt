@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.12)
 
-project(herald VERSION 1.3.0 LANGUAGES CXX)
+project(herald VERSION 2.0.0 LANGUAGES CXX)
 
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}")
 # Include the sanitizer module
