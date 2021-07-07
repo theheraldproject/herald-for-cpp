@@ -101,9 +101,10 @@ K::period(Date at) const noexcept {
 MatchingKey
 K::matchingKey(const SecretKey& secretKey, const int dayIdxFor) noexcept {
   // lazy initialisation
-  MatchingKeySeed last(F::h(secretKey));
+  MatchingKeySeed last(F::h(secretKey)); // value for day 2000
   MatchingKeySeed newSeed(32);
-  for (int i = mImpl->daysFor - 1;i >=dayIdxFor; i--) {
+  for (int i = mImpl->daysFor - 1;i >= dayIdxFor; --i) {
+    // Calculate 1999 based on 2000, and so on, until we reach the current day's seed
     newSeed.assign(F::h(F::t(last)));
     last.assign(newSeed);
   }

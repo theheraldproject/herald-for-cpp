@@ -3,11 +3,16 @@ cmake_minimum_required(VERSION 3.12)
 add_executable(herald-tests
   # Test templates
 	test-templates.h
+	test-util.h 
 
   # base data types
 	datatypes-tests.cpp
 	datetime-tests.cpp
 	randomuuid-tests.cpp
+	uint8-tests.cpp 
+	uint16-tests.cpp 
+	uint32-tests.cpp 
+	uint64-tests.cpp 
 	
 	# Low level
 	sensorlogger-tests.cpp
@@ -16,6 +21,10 @@ add_executable(herald-tests
 	datatypesdataderived-tests.cpp
 	blemacaddress-tests.cpp
 	targetidentifier-tests.cpp
+ 
+	# Low level cross platform 
+	test-util.cpp 
+	crossplatform-tests.cpp 
 
   # mid level
 	beaconpayload-tests.cpp
