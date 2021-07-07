@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BLE_SENSOR_CONFIGURATION_H
-#define BLE_SENSOR_CONFIGURATION_H
+#ifndef HERALD_BLE_SENSOR_CONFIGURATION_H
+#define HERALD_BLE_SENSOR_CONFIGURATION_H
 
 #include "../datatype/time_interval.h"
 #include "../datatype/uuid.h"

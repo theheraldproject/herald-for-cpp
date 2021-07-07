@@ -1,9 +1,9 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef EXTENDED_DATA_H
-#define EXTENDED_DATA_H
+#ifndef HERALD_EXTENDED_DATA_H
+#define HERALD_EXTENDED_DATA_H
 
 #include "../../datatype/data.h"
 #include "../../datatype/payload_data.h"

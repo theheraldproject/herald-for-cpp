@@ -1,9 +1,9 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef PAYLOAD_DATA_H
-#define PAYLOAD_DATA_H
+#ifndef HERALD_PAYLOAD_DATA_H
+#define HERALD_PAYLOAD_DATA_H
 
 #include "data.h"
 

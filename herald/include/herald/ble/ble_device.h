@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BLE_DEVICE_H
-#define BLE_DEVICE_H
+#ifndef HERALD_BLE_DEVICE_H
+#define HERALD_BLE_DEVICE_H
 
 #include "ble_tx_power.h"
 #include "ble_mac_address.h"

@@ -36,6 +36,56 @@ TEST_CASE("ranges-iterator-proxy", "[ranges][iterator][proxy]") {
   }
 }
 
+TEST_CASE("ranges-filter-singlematch", "[ranges][singlematch]") {
+  SECTION("ranges-filter-singlematch") {
+    herald::analysis::views::in_range<int> firstCentenary(0,100);
+
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<int>,5> ages;
+    ages.push(10,12);
+
+    herald::analysis::views::filter<herald::analysis::views::in_range<int>> workingAgeFilter(firstCentenary);
+
+    auto iter = workingAgeFilter(ages);
+    REQUIRE(!iter.ended());
+    REQUIRE(*iter == 12);
+    ++iter;
+    REQUIRE(iter.ended());
+  }
+}
+
+TEST_CASE("ranges-filter-allmatch", "[ranges][allmatch]") {
+  SECTION("ranges-filter-allmatch") {
+    herald::analysis::views::in_range<int> firstCentenary(0,100);
+
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<int>,5> ages;
+    ages.push(10,12);
+    ages.push(20,14);
+    ages.push(30,19);
+    ages.push(40,45);
+    ages.push(50,66);
+
+    herald::analysis::views::filter<herald::analysis::views::in_range<int>> workingAgeFilter(firstCentenary);
+
+    auto iter = workingAgeFilter(ages);
+    REQUIRE(!iter.ended());
+    REQUIRE(*iter == 12);
+    ++iter;
+    REQUIRE(!iter.ended());
+    REQUIRE(*iter == 14);
+    ++iter;
+    REQUIRE(!iter.ended());
+    REQUIRE(*iter == 19);
+    ++iter;
+    REQUIRE(!iter.ended());
+    REQUIRE(*iter == 45);
+    ++iter;
+    REQUIRE(!iter.ended());
+    REQUIRE(*iter == 66);
+    ++iter;
+    REQUIRE(iter.ended());
+  }
+}
+
 TEST_CASE("ranges-filter-typed", "[ranges][typed]") {
   SECTION("ranges-filter-typed") {
     herald::analysis::views::in_range<int> workingAge(18,65);
@@ -144,6 +194,49 @@ TEST_CASE("ranges-iterator-rssisamples", "[ranges][iterator][rssisamples][rssi]"
   }
 }
 
+TEST_CASE("ranges-listtoview", "[ranges][listtoview][rssi]") {
+  SECTION("ranges-listtoview") {
+    herald::analysis::views::in_range valid(-111,-1);
+
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
+    sl.push(1234,-9);
+    sl.push(1244,-60);
+    sl.push(1265,-58);
+    sl.push(1282,-61);
+    sl.push(1294,-100);
+
+    auto values = sl 
+                | herald::analysis::views::filter(valid) // Providing a filter as a list cannot convert directly to a view (what's the point? It's already a collection!)
+                | herald::analysis::views::to_view();
+
+    auto iter = values.begin();
+    REQUIRE(iter != values.end());
+    REQUIRE((*iter).value.intValue() == -9);
+    ++iter;
+    REQUIRE((*iter).value.intValue() == -60);
+    ++iter;
+    REQUIRE((*iter).value.intValue() == -58);
+    ++iter;
+    REQUIRE((*iter).value.intValue() == -61);
+    ++iter;
+    REQUIRE((*iter).value.intValue() == -100);
+    ++iter;
+    REQUIRE(iter == values.end());
+
+    REQUIRE(values.size() == 5);
+    auto val0 = values[0].value.intValue();
+    auto val1 = values[1].value.intValue();
+    auto val2 = values[2].value.intValue();
+    auto val3 = values[3].value.intValue();
+    auto val4 = values[4].value.intValue();
+    REQUIRE(val0 == -9);
+    REQUIRE(val1 == -60);
+    REQUIRE(val2 == -58);
+    REQUIRE(val3 == -61);
+    REQUIRE(val4 == -100);
+  }
+}
+
 TEST_CASE("ranges-filter-multi-rssisamples", "[ranges][filter][multi][rssisamples][rssi]") {
   SECTION("ranges-filter-multi-rssisamples") {
     herald::analysis::views::in_range valid(-99,-10);
@@ -174,6 +267,80 @@ TEST_CASE("ranges-filter-multi-rssisamples", "[ranges][filter][multi][rssisample
     auto val1 = values[1].value.intValue();
     REQUIRE(val0 == -60);
     REQUIRE(val1 == -61);
+  }
+}
+
+TEST_CASE("ranges-filter-multi-rssitwosamples-nothingfiltered", "[ranges][filter][multi][rssitwosamples-nothingfiltered][rssi]") {
+  SECTION("ranges-filter-multi-rssitwosamples-nothingfiltered") {
+    herald::analysis::views::in_range valid(-99,-10);
+    herald::analysis::views::less_than strong(-59);
+    
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
+    sl.push(1244,-60);
+    sl.push(1282,-61);
+
+    auto values = sl 
+                | herald::analysis::views::filter(valid) 
+                | herald::analysis::views::filter(strong)
+                | herald::analysis::views::to_view();
+
+    auto iter = values.begin();
+    REQUIRE(iter != values.end());
+    REQUIRE((*iter).value.intValue() == -60);
+    ++iter;
+    REQUIRE((*iter).value.intValue() == -61);
+    ++iter;
+    REQUIRE(iter == values.end());
+
+    REQUIRE(values.size() == 2);
+    auto val0 = values[0].value.intValue();
+    auto val1 = values[1].value.intValue();
+    REQUIRE(val0 == -60);
+    REQUIRE(val1 == -61);
+  }
+}
+
+TEST_CASE("ranges-filter-multi-rssisinglesample-nothingfiltered", "[ranges][filter][multi][rssisinglesample-nothingfiltered][rssi]") {
+  SECTION("ranges-filter-multi-rssisinglesample-nothingfiltered") {
+    herald::analysis::views::in_range valid(-99,-10);
+    herald::analysis::views::less_than strong(-59);
+    
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
+    sl.push(1244,-60);
+
+    auto values = sl 
+                | herald::analysis::views::filter(valid) 
+                | herald::analysis::views::filter(strong)
+                | herald::analysis::views::to_view();
+
+    auto iter = values.begin();
+    REQUIRE(iter != values.end());
+    REQUIRE((*iter).value == -60);
+    ++iter;
+    REQUIRE(iter == values.end());
+
+    REQUIRE(values.size() == 1);
+    auto val0 = values[0].value.intValue();
+    REQUIRE(val0 == -60);
+  }
+}
+
+TEST_CASE("ranges-filter-multi-rssinosample", "[ranges][filter][multi][rssinosample][rssi]") {
+  SECTION("ranges-filter-multi-rssinosample") {
+    herald::analysis::views::in_range valid(-99,-10);
+    herald::analysis::views::less_than strong(-59);
+    
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
+
+    auto values = sl 
+                | herald::analysis::views::filter(valid) 
+                | herald::analysis::views::filter(strong)
+                | herald::analysis::views::to_view();
+
+    auto iter = values.begin();
+    REQUIRE(iter == values.end());
+
+    REQUIRE(values.size() == 0);
   }
 }
 
@@ -275,8 +442,8 @@ TEST_CASE("ranges-distance-aggregate", "[ranges][distance][filter][multi][since]
     auto var = summary.get<Variance>();
     auto sd = std::sqrt(var);
 
-    // See second diagram at https://vmware.github.io/herald/bluetooth/distance
-    // i.e. https://vmware.github.io/herald/images/distance-rssi-regression.png
+    // See second diagram at https://heraldprox.io/bluetooth/distance
+    // i.e. https://heraldprox.io/images/distance-rssi-regression.png
     herald::analysis::algorithms::distance::FowlerBasic to_distance(-50, -24);
 
     auto distance = sl 

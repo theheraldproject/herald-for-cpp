@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef ACTIVITIES_H
-#define ACTIVITIES_H
+#ifndef HERALD_ACTIVITIES_H
+#define HERALD_ACTIVITIES_H
 
 #include "../context.h"
 #include "../datatype/data.h"

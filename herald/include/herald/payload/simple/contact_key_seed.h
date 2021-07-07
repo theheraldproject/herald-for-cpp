@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SIMPLE_CONTACT_KEY_SEED_H
-#define SIMPLE_CONTACT_KEY_SEED_H
+#ifndef HERALD_SIMPLE_CONTACT_KEY_SEED_H
+#define HERALD_SIMPLE_CONTACT_KEY_SEED_H
 
 #include "../../datatype/data.h"
 

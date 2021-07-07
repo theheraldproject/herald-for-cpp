@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SENSOR_DELEGATE_H
-#define SENSOR_DELEGATE_H
+#ifndef HERALD_SENSOR_DELEGATE_H
+#define HERALD_SENSOR_DELEGATE_H
 
 #include "datatype/sensor_type.h"
 #include "datatype/proximity.h"

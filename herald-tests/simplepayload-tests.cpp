@@ -267,7 +267,7 @@ TEST_CASE("payload-simple-basic", "[payload][simple][basic]") {
     REQUIRE(pd->uint16(3,rs));
     REQUIRE(pd->uint64(5,rcid1));
     REQUIRE(pd->uint64(13,rcid2));
-    REQUIRE(rpidversion == std::uint8_t(0x10)); // https://vmware.github.io/herald/specs/payload-simple
+    REQUIRE(rpidversion == std::uint8_t(0x10)); // https://heraldprox.io/specs/payload-simple
     REQUIRE(rc == country);
     REQUIRE(rs == state);
     REQUIRE(rcid1 != 0); // TODO verify

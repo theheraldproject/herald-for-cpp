@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef RISK_H
-#define RISK_H
+#ifndef HERALD_RISK_H
+#define HERALD_RISK_H
 
 #include <cmath>
 

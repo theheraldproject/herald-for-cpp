@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef BLE_PROTOCOLS_H
-#define BLE_PROTOCOLS_H
+#ifndef HERALD_BLE_PROTOCOLS_H
+#define HERALD_BLE_PROTOCOLS_H
 
 #include "../datatype/target_identifier.h"
 #include "../engine/activities.h"

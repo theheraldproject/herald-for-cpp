@@ -2,13 +2,13 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef DATA_H
-#define DATA_H
+#ifndef HERALD_DATA_H
+#define HERALD_DATA_H
 
 #include <vector>
 #include <string>
 #include <memory>
-#include <iosfwd>
+#include <iostream>
 
 namespace herald {
 namespace datatype {

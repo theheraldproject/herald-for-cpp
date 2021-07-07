@@ -1,9 +1,9 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef WGS84_H
-#define WGS84_H
+#ifndef HERALD_WGS84_H
+#define HERALD_WGS84_H
 
 #include "location_reference.h"
 

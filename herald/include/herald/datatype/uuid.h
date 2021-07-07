@@ -1,9 +1,9 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef UUID_H
-#define UUID_H
+#ifndef HERALD_UUID_H
+#define HERALD_UUID_H
 
 #include "error_code.h"
 #include "randomness.h"

@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef RANGES_H
-#define RANGES_H
+#ifndef HERALD_RANGES_H
+#define HERALD_RANGES_H
 
 // TODO if def for C++20 support check (so we don't have to roll our own ranges lib)
 // i.e. map std::views on to herald::analysis::views, otherwise include the following.
@@ -33,7 +33,7 @@ struct since {
 
   template <typename ValT>
   bool operator()(const herald::analysis::sampling::Sample<ValT>& s) const {
-    return s.taken >= from;
+    return s.taken > from;
   }
 
 private:
@@ -252,8 +252,8 @@ struct view {
   auto size() -> BaseSizeT {
     // return source.size(); // this is the UNFILTERED size
     BaseSizeT sz = 0;
-    auto iter = source;
-    auto end = source.end();
+    auto iter = source; // copy the iterator so as not to alter its state
+    auto end = source.end(); // copy the iterator so as not to alter its state
     while (iter != end) {
       ++sz;
       ++iter;
@@ -302,7 +302,7 @@ struct filtered_iterator_proxy {
 
   filtered_iterator_proxy(Coll& coll, Pred pred) : coll(coll), iter(std::move(std::begin(coll))), endIter(std::move(std::end(coll))), filter(pred) {
     // move forward to the first match (or end)
-    moveToNext();
+    moveToFirst();
   }
 
   // chaining ctor
@@ -378,6 +378,13 @@ private:
   IterT iter;
   IterT endIter;
   filter_fn<Pred> filter;
+
+  // Need this function so as not to incorrectly always filter the first value in the underlying proxy
+  void moveToFirst() {
+    while (endIter != iter && !filter(*iter)) {
+      ++iter;
+    };
+  }
 
   void moveToNext() {
     if (endIter == iter) return; // guard

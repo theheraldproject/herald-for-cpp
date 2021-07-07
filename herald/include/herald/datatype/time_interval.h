@@ -1,9 +1,9 @@
-//  Copyright 2020 VMware, Inc.
+//  Copyright 2020-2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef TIME_INTERVAL_H
-#define TIME_INTERVAL_H
+#ifndef HERALD_TIME_INTERVAL_H
+#define HERALD_TIME_INTERVAL_H
 
 #include "date.h"
 

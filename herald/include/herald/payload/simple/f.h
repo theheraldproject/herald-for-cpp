@@ -2,8 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-#ifndef SIMPLE_F_H
-#define SIMPLE_F_H
+#ifndef HERALD_SIMPLE_F_H
+#define HERALD_SIMPLE_F_H
 
 #include "../../datatype/data.h"
 

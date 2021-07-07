@@ -27,6 +27,7 @@ add_library(herald
   ${HERALD_SOURCES}
   ${PLATFORM_SOURCES}
 )
+target_code_coverage(herald AUTO)
 
 set_target_properties(herald PROPERTIES PUBLIC_HEADER "${HERALD_HEADERS}")
 
