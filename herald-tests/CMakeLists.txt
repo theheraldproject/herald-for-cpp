@@ -13,6 +13,7 @@ add_executable(herald-tests
 	uint16-tests.cpp 
 	uint32-tests.cpp 
 	uint64-tests.cpp 
+	sha256-tests.cpp
 	
 	# Low level
 	sensorlogger-tests.cpp

@@ -239,6 +239,21 @@ TEST_CASE("datatypes-data-append", "[datatypes][data][append]") {
   }
 }
 
+TEST_CASE("datatypes-data-append-data", "[datatypes][data][append-data]") {
+  SECTION("datatypes-data-append-data") {
+    herald::datatype::Data d{std::byte('a'),6}; // 6
+    herald::datatype::Data dAdd{std::byte(8),1}; // 1
+
+    d.append(dAdd);
+
+    REQUIRE(d.size() == 7);
+    std::uint8_t b;
+    bool ok = d.uint8(6, b);
+    REQUIRE(ok);
+    REQUIRE(std::uint8_t(8) == b);
+  }
+}
+
 TEST_CASE("datatypes-data-reversed", "[datatypes][data][reversed]") {
   SECTION("datatypes-data-reversed") {
     const uint8_t bytes[] = {0,1,2,3};

@@ -10,7 +10,7 @@ include(GNUInstallDirs
 set(HERALD_BASE .)
 include(herald.cmake)
 
-if (MSVC)
+if (WIN32)
   set(PLATFORM_SOURCES
     ${HERALD_SOURCES_WINDOWS}
   )
