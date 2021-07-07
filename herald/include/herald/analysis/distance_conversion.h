@@ -80,17 +80,35 @@ struct FowlerBasicAnalyser {
     if (lastRan + interval >= timeNow) return false; // interval guard
     // std::cout << "RUNNING FOWLER BASIC ANALYSIS at " << timeNow.secondsSinceUnixEpoch() << std::endl;
 
-    basic.reset();
-
     herald::analysis::views::in_range valid(-99,-10);
+
+    // Check that there has been any new data since the last run
+    herald::analysis::views::since sinceLastRun(lastRan);
+    auto newData = src
+                 | herald::analysis::views::filter(valid) 
+                 | herald::analysis::views::filter(sinceLastRun)
+                 | herald::analysis::views::to_view();
+    // if (newData.ended()) { // Doesn't work because the filter's are not applied until a data item is fetched
+    //   lastRan = timeNow;
+    //   return false;
+    // }
+
+    basic.reset();
 
     auto values = src 
                 | herald::analysis::views::filter(valid) 
+                | herald::analysis::views::filter(sinceLastRun)
                 | herald::analysis::views::to_view();
 
-    auto summary = values
-                 | summarise<Mode,Variance>();
+    auto summary = newData
+                 | summarise<Count,Mode,Variance>();
 
+    auto count = summary.template get<Count>();
+    if (0.0 == count) {
+      // No actual new data after filtering has been applied
+      lastRan = timeNow;
+      return false;
+    }
     auto mode = summary.template get<Mode>();
     auto var = summary.template get<Variance>();
     auto sd = std::sqrt(var);

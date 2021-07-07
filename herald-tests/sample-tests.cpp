@@ -86,6 +86,17 @@ TEST_CASE("samplelist-empty", "[samplelist][empty]") {
   }
 }
 
+TEST_CASE("samplelist-singleitem", "[samplelist][singleitem]") {
+  SECTION("samplelist-singleitem") {
+    herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
+    sl.push(1234,-55);
+
+    REQUIRE(sl.size() == 1);
+    REQUIRE(std::begin(sl) != std::end(sl));
+    REQUIRE(sl[0].value == -55);
+  }
+}
+
 TEST_CASE("samplelist-notfull", "[samplelist][notfull]") {
   SECTION("samplelist-notfull") {
     herald::analysis::sampling::SampleList<herald::analysis::sampling::Sample<herald::datatype::RSSI>,5> sl;
