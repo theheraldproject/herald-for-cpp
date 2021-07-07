@@ -232,7 +232,7 @@ struct AnalysisRunner {
   static constexpr std::size_t ListSize = 25; // TODO make this external somehow for each type (trait?)
   // using valueTypes = (typename SourceTypes::value_type)...;
 
-  AnalysisRunner(AnalysisDelegateManagerT& adm, AnalysisProviderManagerT& provds) : lists(), delegates(adm), runners(provds) {}
+  AnalysisRunner(AnalysisDelegateManagerT& adm, AnalysisProviderManagerT& provds) : lists(), delegates(adm), runners(provds) /*, hasNewData(false)*/ {}
   ~AnalysisRunner() = default;
 
   /// We are an analysis delegate ourselves - this is used by Source types, and by producers (analysis runners)
@@ -252,7 +252,13 @@ struct AnalysisRunner {
   /// Run the relevant analyses given the current time point
   void run(Date timeNow) {
     // call analyse(dateNow,srcList,dstDelegate) for all delegates with the correct list each, for each sampled
-    // TODO performance enhancement - 'dirty' sample lists only (ones with new data)
+    
+    // DO NOT USE Performance enhancement - 'dirty' sample lists only (ones with new data)
+    // The reason this is commented out is because for some analysers producing a new value based on no new data may be valid.
+    // if (!hasNewData) {
+    //   // This also prevents 'new' conversions even if no new data has arrived, skewing analysis results
+    //   return;
+    // }
     for (auto& listManager : lists) { // For each input list
       std::visit([timeNow,this] (auto&& arg) { // Visit each of our list managers (that may be used as an output list)
         for (auto& mgrPair : arg) { // For each output list instance // arg = ListManager<SampleList<InputValueT>,SrcSz>
@@ -277,6 +283,7 @@ struct AnalysisRunner {
         }
       }, listManager);
     }
+    // hasNewData = false;
   }
 
 private:
@@ -284,6 +291,7 @@ private:
   VariantSet<ListManager<SourceTypes,ListSize>...> lists; // exactly one list manager per value type
   AnalysisDelegateManagerT& delegates;
   AnalysisProviderManagerT& runners;
+  // bool hasNewData;
 };
 
 }

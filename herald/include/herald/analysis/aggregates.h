@@ -16,6 +16,36 @@ namespace herald {
 namespace analysis {
 namespace aggregates {
 
+struct Count {
+  static constexpr int runs = 1;
+
+  Count() : count(0) {}
+  ~Count() = default;
+
+  void beginRun(int thisRun) { // 1 indexed
+    run = thisRun;
+  }
+
+  template <typename ValT>
+  void map(ValT value) {
+    if (run > 1) return; // performance enhancement
+
+    ++count;
+  }
+
+  double reduce() {
+    return count;
+  }
+
+  void reset() {
+    count = 0;
+  }
+
+private:
+  int count;
+  int run;
+};
+
 struct Mean {
   static constexpr int runs = 1;
 
@@ -248,38 +278,38 @@ private:
 };
 
 
-/// Gaussian
-struct Gaussian {
-  static constexpr int runs = 1;
+// /// Gaussian
+// struct Gaussian {
+//   static constexpr int runs = 1;
 
-  Gaussian() : run(1) {}
-  ~Gaussian() = default;
+//   Gaussian() : run(1) {}
+//   ~Gaussian() = default;
 
-  void beginRun(int thisRun) {
-    run = thisRun;
-  }
+//   void beginRun(int thisRun) {
+//     run = thisRun;
+//   }
 
-  template <typename ValT>
-  void map(ValT value) {
-    if (run > 1) {
-      return;
-    }
-    double dv = (double)value;
-    // ??
-  }
+//   template <typename ValT>
+//   void map(ValT value) {
+//     if (run > 1) {
+//       return;
+//     }
+//     double dv = (double)value;
+//     // ??
+//   }
 
-  double reduce() {
-    // ??
-  }
+//   double reduce() {
+//     // ??
+//   }
 
-  void reset() {
-    run = 1;
-  }
+//   void reset() {
+//     run = 1;
+//   }
 
 
-private:
-  int run;
-};
+// private:
+//   int run;
+// };
 
 
 
