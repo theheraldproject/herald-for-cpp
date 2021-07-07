@@ -36,6 +36,7 @@
 #include "herald/datatype/data.h"
 #include "herald/datatype/date.h"
 #include "herald/datatype/distance.h"
+#include "herald/datatype/distribution.h"
 #include "herald/datatype/encounter.h"
 #include "herald/datatype/error_code.h"
 #include "herald/datatype/immediate_send_data.h"
