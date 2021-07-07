@@ -8,16 +8,27 @@
       "name": "(Windows) Launch",
       "type": "cppvsdbg",
       "request": "launch",
-      "program": "${workspaceFolder}/build/heraldns/Debug/heraldns.exe",
+      "program": "${workspaceFolder}/build/heraldns/heraldns.exe",
       "args": [],
       "stopAtEntry": false,
-      "cwd": "${workspaceFolder}/build/heraldns/Debug",
+      "cwd": "${workspaceFolder}/build/heraldns",
       "environment": [],
-      "externalConsole": false,
+      "console": "integratedTerminal",
       "logging": {
         "moduleLoad": false,
         "trace": true
       }
+    },
+    {
+      "name": "(Windows) Run Tests with Debug",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/herald-tests/herald-tests.exe",
+      "args": ["[crossplatform]"],
+      "stopAtEntry": false,
+      "cwd": "${workspaceFolder}/build/herald-tests",
+      "environment": [],
+      "console": "integratedTerminal"
     }
   ]
 }
