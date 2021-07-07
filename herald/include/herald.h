@@ -48,6 +48,7 @@
 #include "herald/datatype/proximity.h"
 #include "herald/datatype/randomness.h"
 #include "herald/datatype/rssi.h"
+#include "herald/datatype/sha256.h"
 #include "herald/datatype/sensor_state.h"
 #include "herald/datatype/sensor_type.h"
 #include "herald/datatype/signal_characteristic_data.h"
