@@ -67,6 +67,7 @@ public:
   bool operator>(const Data& other) const noexcept; // required for std::less
 
   Data reversed() const;
+  Data reverseEndianness() const;
 
   std::string hexEncodedString() const noexcept;
 

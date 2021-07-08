@@ -117,10 +117,10 @@ TEST_CASE("datatypes-data-from-uint8array", "[datatypes][data][ctor][from-uint8a
 TEST_CASE("datatypes-data-from-vector", "[datatypes][data][from-vector]") {
   SECTION("datatypes-data-from-vector") {
     herald::datatype::Base64String str;
+    // String is 'wotcha'
     bool encodeOk = herald::datatype::Base64String::from("d290Y2hh",str);
     herald::datatype::Data data = str.decode();
     REQUIRE(encodeOk);
-    const char* result = "wotcha";
     REQUIRE(data.size() == 6);
     REQUIRE(data.at(0) == std::byte('w'));
     REQUIRE(data.at(1) == std::byte('o'));
@@ -239,6 +239,21 @@ TEST_CASE("datatypes-data-append", "[datatypes][data][append]") {
   }
 }
 
+TEST_CASE("datatypes-data-append-data", "[datatypes][data][append-data]") {
+  SECTION("datatypes-data-append-data") {
+    herald::datatype::Data d{std::byte('a'),6}; // 6
+    herald::datatype::Data dAdd{std::byte(8),1}; // 1
+
+    d.append(dAdd);
+
+    REQUIRE(d.size() == 7);
+    std::uint8_t b;
+    bool ok = d.uint8(6, b);
+    REQUIRE(ok);
+    REQUIRE(std::uint8_t(8) == b);
+  }
+}
+
 TEST_CASE("datatypes-data-reversed", "[datatypes][data][reversed]") {
   SECTION("datatypes-data-reversed") {
     const uint8_t bytes[] = {0,1,2,3};
@@ -256,6 +271,35 @@ TEST_CASE("datatypes-data-reversed", "[datatypes][data][reversed]") {
     REQUIRE(rev.at(1) == std::byte(2));
     REQUIRE(rev.at(2) == std::byte(1));
     REQUIRE(rev.at(3) == std::byte(0));
+  }
+}
+
+TEST_CASE("datatypes-data-changeendianness", "[datatypes][data][changeendianness]") {
+  SECTION("datatypes-data-changeendianness") {
+    const std::byte fifteen = std::byte(15);
+    
+    herald::datatype::Data d{fifteen,5};
+
+    const std::uint8_t uintFifteen = 15; // 0f
+    const std::uint8_t uintTwoFourty = 240; // f0
+
+    std::uint8_t value;
+
+    for (std::size_t i = 0;i < 5;++i) {
+      REQUIRE(d.uint8(i, value));
+      REQUIRE(uintFifteen == value);
+    }
+
+    herald::datatype::Data rev = d.reverseEndianness();
+
+    REQUIRE(d.size() == 5);
+    REQUIRE(rev.size() == 5);
+
+    for (std::size_t i = 0;i < 5;++i) {
+      REQUIRE(rev.uint8(i, value));
+      INFO("Byte value is " << value << " with hex " << rev.subdata(i,1).hexEncodedString());
+      REQUIRE(uintTwoFourty == value);
+    }
   }
 }
 

@@ -8,6 +8,212 @@
 
 #include "herald/herald.h"
 
+// Test F first
+
+TEST_CASE("payload-f-hash", "[payload][f][hash]") {
+  SECTION("payload-f-hash") {
+    herald::datatype::Data d;
+    auto data = herald::payload::simple::F::h(d);
+
+    REQUIRE(data.size() == 32);
+  }
+}
+
+#ifdef __ZEPHYR__
+TEST_CASE("payload-f-hash-known-result", "[payload][f][hash][known-result]") {
+  SECTION("payload-f-hash-known-result") {
+    herald::payload::simple::SecretKey sk(std::byte(0),2048); // known blank 2048 byte key
+    REQUIRE(sk.size() == 2048);
+    std::uint8_t value;
+    REQUIRE(sk.uint8(0,value));
+    REQUIRE(value == 0);
+    REQUIRE(sk.uint8(2047,value));
+    REQUIRE(value == 0);
+
+    // std::string hex = sk.hexEncodedString();
+    // REQUIRE("flibble" == hex);
+    
+    auto data = herald::payload::simple::F::h(sk);
+    REQUIRE(data.size() == 32);
+
+    std::string encoded = herald::datatype::Base64String::encode(data).encoded();
+    // hex is: e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad
+    std::string expected("5aAKqZkayKXuMQmETYSlVYO9IFcq0//NQnkvPDaxg60=");
+
+    herald::datatype::Base64String decoded;
+    bool ok = herald::datatype::Base64String::from(expected,decoded);
+    REQUIRE(ok);
+    auto decodedData = decoded.decode();
+    REQUIRE(decodedData.size() == 32);
+    REQUIRE(decodedData == data);
+
+
+    REQUIRE(expected == encoded);
+  }
+}
+#endif
+
+TEST_CASE("payload-f-trim-half", "[payload][f][trim-half]") {
+  SECTION("payload-f-trim-half") {
+    herald::datatype::Data dEmpty;
+    auto dataEmptyHalfed = herald::payload::simple::F::t(dEmpty);
+    REQUIRE(dataEmptyHalfed.size() == 0);
+    
+    herald::datatype::Data dOne(std::byte(1),1);
+    auto dataOneHalfed = herald::payload::simple::F::t(dOne);
+    REQUIRE(dataOneHalfed.size() == 0);
+    
+    herald::datatype::Data dTwo(std::byte(5),2);
+    auto dataTwoHalfed = herald::payload::simple::F::t(dTwo);
+    REQUIRE(dataTwoHalfed.size() == 1);
+    
+    herald::datatype::Data dEight(std::byte(7),8);
+    auto dataEightHalfed = herald::payload::simple::F::t(dEight);
+    REQUIRE(dataEightHalfed.size() == 4);
+    
+    herald::datatype::Data dThirtyTwo(std::byte(9),32);
+    auto dataThirtyTwoHalfed = herald::payload::simple::F::t(dThirtyTwo);
+    REQUIRE(dataThirtyTwoHalfed.size() == 16);
+  }
+}
+
+TEST_CASE("payload-f-trim-arbitrary-empty", "[payload][f][arbitrary-empty]") {
+  SECTION("payload-f-arbitrary-empty") {
+    herald::datatype::Data d;
+    auto data = herald::payload::simple::F::t(d,3);
+    REQUIRE(data.size() == 0);
+  }
+}
+
+TEST_CASE("payload-f-trim-arbitrary-one", "[payload][f][arbitrary-one]") {
+  SECTION("payload-f-arbitrary-one") {
+    herald::datatype::Data d(std::byte(1),1);
+    auto data = herald::payload::simple::F::t(d,3);
+    REQUIRE(data.size() == 1);
+  }
+}
+
+TEST_CASE("payload-f-trim-arbitrary-two", "[payload][f][arbitrary-two]") {
+  SECTION("payload-f-arbitrary-two") {
+    herald::datatype::Data d(std::byte(1),2);
+    auto data = herald::payload::simple::F::t(d,3);
+    REQUIRE(data.size() == 2);
+  }
+}
+
+TEST_CASE("payload-f-trim-arbitrary-three", "[payload][f][arbitrary-three]") {
+  SECTION("payload-f-arbitrary-three") {
+    herald::datatype::Data d(std::byte(1),3);
+    auto data = herald::payload::simple::F::t(d,3);
+    REQUIRE(data.size() == 3);
+  }
+}
+
+TEST_CASE("payload-f-trim-arbitrary-four", "[payload][f][arbitrary-four]") {
+  SECTION("payload-f-arbitrary-four") {
+    herald::datatype::Data d(std::byte(1),4);
+    auto data = herald::payload::simple::F::t(d,3);
+    REQUIRE(data.size() == 3);
+  }
+}
+
+TEST_CASE("payload-f-xor-zeros", "[payload][f][xor-zeros]") {
+  SECTION("payload-f-xor-zeros") {
+    herald::datatype::Data dZero(std::byte(0),1);
+    auto data = herald::payload::simple::F::xorData(dZero,dZero);
+    REQUIRE(data.size() == 1);
+    REQUIRE(data == dZero);
+  }
+}
+
+TEST_CASE("payload-f-xor-ones", "[payload][f][xor-ones]") {
+  SECTION("payload-f-xor-ones") {
+    herald::datatype::Data dZero(std::byte(0),1);
+    herald::datatype::Data dOne(std::byte(0),1);
+    auto data = herald::payload::simple::F::xorData(dOne,dOne);
+    REQUIRE(data.size() == 1);
+    REQUIRE(data == dZero);
+  }
+}
+
+TEST_CASE("payload-f-xor-zero-one", "[payload][f][xor-zero-one]") {
+  SECTION("payload-f-xor-zero-one") {
+    herald::datatype::Data dZero(std::byte(0),1);
+    herald::datatype::Data dOne(std::byte(0),1);
+    auto data = herald::payload::simple::F::xorData(dZero,dOne);
+    REQUIRE(data.size() == 1);
+    REQUIRE(data == dOne);
+  }
+}
+
+TEST_CASE("payload-f-xor-one-zero", "[payload][f][xor-one-zero]") {
+  SECTION("payload-f-xor-one-zero") {
+    herald::datatype::Data dZero(std::byte(0),1);
+    herald::datatype::Data dOne(std::byte(0),1);
+    auto data = herald::payload::simple::F::xorData(dOne,dZero);
+    REQUIRE(data.size() == 1);
+    REQUIRE(data == dOne);
+  }
+}
+
+TEST_CASE("payload-f-xor-multiple", "[payload][f][xor-multiple]") {
+  SECTION("payload-f-xor-multiple") {
+    herald::datatype::Data dZero(std::byte(0),1);
+    herald::datatype::Data dOne(std::byte(1),1);
+    herald::datatype::Data dZeroZero(std::byte(0),2);
+    herald::datatype::Data dZeroOne = dZero;
+    dZeroOne.append(dOne);
+    herald::datatype::Data dOneZero = dOne;
+    dOneZero.append(dZero);
+    herald::datatype::Data dOneOne(std::byte(1),2);
+
+    std::uint8_t first;
+    std::uint8_t second;
+    INFO(dZeroOne);
+    bool okFirst = dZeroOne.uint8(0,first);
+    bool okSecond = dZeroOne.uint8(1,second);
+    REQUIRE(okFirst);
+    REQUIRE(okSecond);
+    REQUIRE(0 == first);
+    REQUIRE(1 == second);
+    INFO(dOneZero);
+    okFirst = dOneZero.uint8(0,first);
+    okSecond = dOneZero.uint8(1,second);
+    REQUIRE(okFirst);
+    REQUIRE(okSecond);
+    REQUIRE(1 == first);
+    REQUIRE(0 == second);
+
+    auto data = herald::payload::simple::F::xorData(dZeroZero,dZeroZero);
+    REQUIRE(data.size() == 2);
+    REQUIRE(data == dZeroZero);
+
+    data = herald::payload::simple::F::xorData(dZeroZero,dZeroOne);
+    REQUIRE(data.size() == 2);
+    REQUIRE(data == dZeroOne);
+
+    data = herald::payload::simple::F::xorData(dOneZero,dZeroZero);
+    REQUIRE(data.size() == 2);
+    REQUIRE(data == dOneZero);
+
+    data = herald::payload::simple::F::xorData(dOneOne,dOneOne);
+    REQUIRE(data.size() == 2);
+    REQUIRE(data == dZeroZero);
+
+    data = herald::payload::simple::F::xorData(dOneOne,dZeroOne);
+    REQUIRE(data.size() == 2);
+    REQUIRE(data == dOneZero);
+
+    data = herald::payload::simple::F::xorData(dOneZero,dOneOne);
+    REQUIRE(data.size() == 2);
+    REQUIRE(data == dZeroOne);
+  }
+}
+
+
+
+// Now test K
+
 TEST_CASE("payload-simple-k-initialvalues", "[payload][simple][k][initialvalues]") {
   SECTION("payload-simple-k-initialvalues") {
     herald::payload::simple::K k; // default values

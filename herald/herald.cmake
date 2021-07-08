@@ -43,6 +43,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/data.h
   ${HERALD_BASE}/include/herald/datatype/date.h
   ${HERALD_BASE}/include/herald/datatype/distance.h
+  ${HERALD_BASE}/include/herald/datatype/distribution.h
   ${HERALD_BASE}/include/herald/datatype/encounter.h
   ${HERALD_BASE}/include/herald/datatype/error_code.h
   ${HERALD_BASE}/include/herald/datatype/immediate_send_data.h
@@ -113,6 +114,7 @@ set(HERALD_SOURCES
 	${HERALD_BASE}/src/datatype/data.cpp
 	${HERALD_BASE}/src/datatype/date.cpp
 	${HERALD_BASE}/src/datatype/distance.cpp
+	${HERALD_BASE}/src/datatype/distribution.cpp
 	${HERALD_BASE}/src/datatype/encounter.cpp
 	${HERALD_BASE}/src/datatype/immediate_send_data.cpp
 	${HERALD_BASE}/src/datatype/location.cpp

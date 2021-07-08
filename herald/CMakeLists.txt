@@ -10,7 +10,7 @@ include(GNUInstallDirs
 set(HERALD_BASE .)
 include(herald.cmake)
 
-if (MSVC)
+if (WIN32)
   set(PLATFORM_SOURCES
     ${HERALD_SOURCES_WINDOWS}
   )
@@ -27,7 +27,10 @@ add_library(herald
   ${HERALD_SOURCES}
   ${PLATFORM_SOURCES}
 )
+
+if (WIN32)
 target_code_coverage(herald AUTO)
+endif()
 
 set_target_properties(herald PROPERTIES PUBLIC_HEADER "${HERALD_HEADERS}")
 
