@@ -133,10 +133,16 @@ target_sources(app PRIVATE
 
   # high level
   # These four passed together on 21 Mar 2021
-	../herald-tests/advertparser-tests.cpp
-	../herald-tests/bledatabase-tests.cpp
-	../herald-tests/blecoordinator-tests.cpp
-	../herald-tests/coordinator-tests.cpp
+	#../herald-tests/advertparser-tests.cpp
+	#../herald-tests/bledatabase-tests.cpp
+	#../herald-tests/blecoordinator-tests.cpp
+	#../herald-tests/coordinator-tests.cpp
+
+  # SHA-256 and simple payload specific
+  # The following tests passed together with zephyronly tests included as of 08 July 2021 21:27+0100
+  ../herald-tests/data-tests.cpp
+  ../herald-tests/sha256-tests.cpp
+  ../herald-tests/simplepayload-tests.cpp
 
   # NOTE: All tests that passed individually on 21 Mar 2021 also passed all together in 15 seconds
   #       This means that the issue is the individual tests, not catch or zephyr specifically, and not RAM issues.

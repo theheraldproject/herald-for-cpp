@@ -44,6 +44,7 @@ TEST_CASE("sha256-initialised", "[sha256][initialised]") {
   }
 }
 
+#ifdef __ZEPHYR__
 TEST_CASE("sha256-single-zero", "[.][zephyronly][sha256][single-zero]") {
   SECTION("sha256-single-zero") {
     herald::datatype::SHA256 sha;
@@ -60,7 +61,7 @@ TEST_CASE("sha256-single-zero", "[.][zephyronly][sha256][single-zero]") {
   }
 }
 
-TEST_CASE("sha256-2048-zeros", "[.][zephyronly][sha256][2048-zeros]") {
+TEST_CASE("sha256-2048-zeros", "[sha256][2048-zeros]") {
   SECTION("sha256-2048-zeros") {
     herald::datatype::SHA256 sha;
     herald::datatype::Data d(std::byte(0),2048); // initialised data
@@ -73,6 +74,7 @@ TEST_CASE("sha256-2048-zeros", "[.][zephyronly][sha256][2048-zeros]") {
     REQUIRE(expected == encoded);
   }
 }
+#endif
 
 TEST_CASE("sha256-differs", "[sha256][differs]") {
   SECTION("sha256-differs") {
@@ -89,7 +91,8 @@ TEST_CASE("sha256-differs", "[sha256][differs]") {
   }
 }
 
-TEST_CASE("sha256-same", "[.][zephyronly][sha256][same]") {
+#ifdef __ZEPHYR__
+TEST_CASE("sha256-same", "[sha256][same]") {
   SECTION("sha256-same") {
     herald::datatype::SHA256 sha1;
     herald::datatype::Data d1(std::byte(1),6);
@@ -103,3 +106,4 @@ TEST_CASE("sha256-same", "[.][zephyronly][sha256][same]") {
     REQUIRE(hash1 == hash2);
   }
 }
+#endif
