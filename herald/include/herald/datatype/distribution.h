@@ -45,6 +45,9 @@ public:
   /// Convert this distribution to a string
   operator std::string() const noexcept;
 
+  /// Reset this instance to its initial state
+  void reset() noexcept;
+
 private:
   /// Accumulator for count
   std::size_t n;

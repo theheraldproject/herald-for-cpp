@@ -76,20 +76,46 @@ using namespace herald::datatype;
 // };
 
 
+TEST_CASE("aggregates-gaussian-empty", "[aggregates][gaussian][empty][basic]") {
+  SECTION("aggregates-gaussian-empty") {
+    herald::analysis::aggregates::Gaussian g;
+
+    REQUIRE(g.reduce() == 0.0);
+    REQUIRE(g.model().count() == 0);
+    REQUIRE(g.model().min() != 0);
+    REQUIRE(g.model().max() != 0);
+  }
+}
+
 TEST_CASE("aggregates-gaussian-mapreduce", "[aggregates][gaussian][mapreduce][basic]") {
   SECTION("aggregates-gaussian-mapreduce") {
-    // herald::analysis::aggregates::Gaussian g;
-    // std::int8 sum = 0, count = 0;
-    // for (std::int8 i = 0;i < 10; ++i) {
-    //   g.map(Sample(i));
-    //   sum += i;
-    //   ++count;
-    //   REQUIRE((g.reduce() == dum / count) || (g.reduce() == 0.0));
-    // }
-    // REQUIRE(g.model().count() == 10);
-    // REQUIRE(g.model().min() == 0);
-    // REQUIRE(g.model().max() == 10);
-    // TODO g.reduce value test too (in expected range for data given)
-    REQUIRE(true);
+    herald::analysis::aggregates::Gaussian g;
+    double sum = 0.0;
+    std::size_t count = 0;
+    for (std::int8_t i = 0;i < 10; ++i) {
+      g.map(herald::analysis::Sample(herald::datatype::Date(0),i));
+      sum += i;
+      ++count;
+      REQUIRE(((g.reduce() == sum / count) || (g.reduce() == 0.0)));
+    }
+    REQUIRE(g.model().count() == 10);
+    REQUIRE(g.model().min() == 0);
+    REQUIRE(g.model().max() == 9);
+    // g.reduce value test too (in expected range for data given)
+    REQUIRE(g.reduce() == sum / count);
+  }
+}
+
+TEST_CASE("aggregates-gaussian-reset", "[aggregates][gaussian][reset][basic]") {
+  SECTION("aggregates-gaussian-reset") {
+    herald::analysis::aggregates::Gaussian g;
+    g.map(herald::analysis::Sample(herald::datatype::Date(0),5));
+
+    g.reset();
+
+    REQUIRE(g.reduce() == 0.0);
+    REQUIRE(g.model().count() == 0);
+    REQUIRE(g.model().min() != 0);
+    REQUIRE(g.model().max() != 0);
   }
 }

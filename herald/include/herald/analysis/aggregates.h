@@ -278,38 +278,43 @@ private:
 };
 
 
-// /// Gaussian
-// struct Gaussian {
-//   static constexpr int runs = 1;
+/// Gaussian
+struct Gaussian {
+  static constexpr int runs = 1;
 
-//   Gaussian() : run(1) {}
-//   ~Gaussian() = default;
+  Gaussian() : run(1), distribution() {}
+  ~Gaussian() = default;
 
-//   void beginRun(int thisRun) {
-//     run = thisRun;
-//   }
+  void beginRun(int thisRun) {
+    run = thisRun;
+  }
 
-//   template <typename ValT>
-//   void map(ValT value) {
-//     if (run > 1) {
-//       return;
-//     }
-//     double dv = (double)value;
-//     // ??
-//   }
+  template <typename ValT>
+  void map(ValT value) {
+    if (run > 1) {
+      return;
+    }
+    double dv = (double)value;
+    distribution.add(dv);
+  }
 
-//   double reduce() {
-//     // ??
-//   }
+  double reduce() {
+    return distribution.mean();
+  }
 
-//   void reset() {
-//     run = 1;
-//   }
+  void reset() {
+    run = 1;
+    distribution.reset();
+  }
 
+  const Distribution& model() const {
+    return distribution;
+  }
 
-// private:
-//   int run;
-// };
+private:
+  int run;
+  Distribution distribution;
+};
 
 
 

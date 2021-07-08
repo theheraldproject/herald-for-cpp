@@ -100,3 +100,20 @@ TEST_CASE("distribution-add", "[distribution][datatype][add]") {
     REQUIRE("" != about);
   }
 }
+
+TEST_CASE("distribution-reset", "[distribution][datatype][reset]") {
+  SECTION("distribution-reset") {
+    herald::datatype::Distribution d;
+
+    d.add(5);
+
+    d.reset();
+
+    REQUIRE(0 == d.count());
+    REQUIRE(0.0 == d.mean());
+    REQUIRE(0.0 == d.variance());
+    REQUIRE(0.0 == d.standardDeviation());
+    REQUIRE(0.0 != d.min());
+    REQUIRE(0.0 != d.max());
+  }
+}
