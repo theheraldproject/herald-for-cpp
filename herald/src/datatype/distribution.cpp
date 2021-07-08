@@ -133,5 +133,15 @@ Distribution::operator std::string() const noexcept
          ",max=" + std::to_string(max()) + "]";
 }
 
+void
+Distribution::reset() noexcept
+{
+  n = 0;
+  m1 = 0.0;
+  m2 = 0.0;
+  minimum = std::numeric_limits<double>::max();
+  maximum = std::numeric_limits<double>::min();
+}
+
 }
 }
