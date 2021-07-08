@@ -291,6 +291,30 @@ Data::reversed() const
   return result;
 }
 
+Data
+Data::reverseEndianness() const
+{
+  Data result;
+  result.mImpl->data.reserve(mImpl->data.size());
+
+  // Keep byte order intact (caller could use reversed() to change that)
+  // but reverse the order of the individual bits by each byte
+  std::uint8_t value, original;
+  for (std::size_t i = 0;i < mImpl->data.size();++i) {
+    original = std::uint8_t(mImpl->data[i]);
+    value = 0;
+    for (int b = 0;b < 8;++b) {
+      if ((original & (1 << b)) > 0) {
+        value |= 1 << (7 - b);
+      }
+    }
+    // result.mImpl->data[i] = std::byte(value);
+    result.append(value);
+  }
+
+  return result;
+}
+
 void
 Data::assign(const Data& other) {
   if (other.size() > mImpl->data.size()) {

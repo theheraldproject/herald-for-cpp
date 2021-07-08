@@ -42,7 +42,7 @@ TEST_CASE("crossplatform-contact-identifier", "[.][payload][crossplatform][basic
 TEST_CASE("crossplatform-k-matchingkeyseed", "[.][payload][k-matchingkeyseed][basic]") {
   SECTION("crossplatform-k-matchingkeyseed") {
     // Check output file can be created
-    auto fn = testutil::fullFilename("kMatchingSeed.csv");
+    auto fn = testutil::fullFilename("kMatchingSeed2000.csv");
     INFO("Output filename: " << fn);
     std::ofstream cppOut(fn);
     cppOut << "day,matchingSeed" << std::endl;
@@ -54,14 +54,27 @@ TEST_CASE("crossplatform-k-matchingkeyseed", "[.][payload][k-matchingkeyseed][ba
     // Note the indexes below are the value of i. I.e. today is day 0, tomorrow is day 1, etc.
     // So we start with day 2001 (at index 2000)
     cppOut << 2000 << "," << herald::datatype::Base64String::encode(last).encoded() << std::endl;
+    std::string firstTenDays[10];
     for (int day = 1999; day >= 0; --day) {
       nks = herald::payload::simple::F::h(herald::payload::simple::F::t(last));
       auto mks = herald::datatype::Base64String::encode(nks).encoded();
       cppOut << day << ","
              << mks << std::endl;
       last = nks;
+      if (day < 10) {
+        firstTenDays[day] = mks;
+      }
     }
     cppOut.close(); // flushes and closes
+
+    auto tenDaysFn = testutil::fullFilename("kMatchingSeed.csv");
+    INFO("Output filename: " << tenDaysFn);
+    std::ofstream cppOut2(tenDaysFn);
+    cppOut2 << "day,matchingSeed" << std::endl;
+    for (int i = 0;i < 10;++i) {
+      cppOut2 << i << "," << firstTenDays[i] << std::endl;
+    }
+    cppOut2.close(); // flushes and closes
 
     // Now ensure our output matches the other platforms'
     testutil::validateEqual("kMatchingSeed.csv");
