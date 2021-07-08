@@ -13,7 +13,7 @@
 #include <zephyr.h>
 
 #include <kernel_structs.h>
-#include <sys/thread_stack.h>
+// #include <sys/thread_stack.h> // Cannot be found in NCS v1.6.0
 #include <drivers/gpio.h>
 #include <drivers/hwinfo.h>
 

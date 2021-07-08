@@ -19,7 +19,8 @@ TEST_CASE("payload-f-hash", "[payload][f][hash]") {
   }
 }
 
-TEST_CASE("payload-f-hash-known-result", "[.][zephyronly][payload][f][hash][known-result]") {
+#ifdef __ZEPHYR__
+TEST_CASE("payload-f-hash-known-result", "[payload][f][hash][known-result]") {
   SECTION("payload-f-hash-known-result") {
     herald::payload::simple::SecretKey sk(std::byte(0),2048); // known blank 2048 byte key
     REQUIRE(sk.size() == 2048);
@@ -50,6 +51,7 @@ TEST_CASE("payload-f-hash-known-result", "[.][zephyronly][payload][f][hash][know
     REQUIRE(expected == encoded);
   }
 }
+#endif
 
 TEST_CASE("payload-f-trim-half", "[payload][f][trim-half]") {
   SECTION("payload-f-trim-half") {

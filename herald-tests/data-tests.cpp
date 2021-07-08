@@ -117,10 +117,10 @@ TEST_CASE("datatypes-data-from-uint8array", "[datatypes][data][ctor][from-uint8a
 TEST_CASE("datatypes-data-from-vector", "[datatypes][data][from-vector]") {
   SECTION("datatypes-data-from-vector") {
     herald::datatype::Base64String str;
+    // String is 'wotcha'
     bool encodeOk = herald::datatype::Base64String::from("d290Y2hh",str);
     herald::datatype::Data data = str.decode();
     REQUIRE(encodeOk);
-    const char* result = "wotcha";
     REQUIRE(data.size() == 6);
     REQUIRE(data.at(0) == std::byte('w'));
     REQUIRE(data.at(1) == std::byte('o'));
