@@ -274,6 +274,35 @@ TEST_CASE("datatypes-data-reversed", "[datatypes][data][reversed]") {
   }
 }
 
+TEST_CASE("datatypes-data-changeendianness", "[datatypes][data][changeendianness]") {
+  SECTION("datatypes-data-changeendianness") {
+    const std::byte fifteen = std::byte(15);
+    
+    herald::datatype::Data d{fifteen,5};
+
+    const std::uint8_t uintFifteen = 15; // 0f
+    const std::uint8_t uintTwoFourty = 240; // f0
+
+    std::uint8_t value;
+
+    for (std::size_t i = 0;i < 5;++i) {
+      REQUIRE(d.uint8(i, value));
+      REQUIRE(uintFifteen == value);
+    }
+
+    herald::datatype::Data rev = d.reverseEndianness();
+
+    REQUIRE(d.size() == 5);
+    REQUIRE(rev.size() == 5);
+
+    for (std::size_t i = 0;i < 5;++i) {
+      REQUIRE(rev.uint8(i, value));
+      INFO("Byte value is " << value << " with hex " << rev.subdata(i,1).hexEncodedString());
+      REQUIRE(uintTwoFourty == value);
+    }
+  }
+}
+
 TEST_CASE("datatypes-data-description", "[datatypes][data][description]") {
   SECTION("datatypes-data-description") {
     const uint8_t bytes[] = {0,1,2,3};

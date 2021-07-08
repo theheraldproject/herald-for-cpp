@@ -7,6 +7,7 @@ add_executable(herald-tests
 
   # base data types
 	datatypes-tests.cpp
+	base64string-tests.cpp
 	datetime-tests.cpp
 	randomuuid-tests.cpp
 	uint8-tests.cpp 

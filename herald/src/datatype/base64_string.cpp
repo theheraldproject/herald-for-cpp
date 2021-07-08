@@ -30,7 +30,7 @@ const std::string base64_chars =
 
 
 bool is_base64(char c) {
-  return (isalnum(c) || (c == '+') || (c == '/'));
+  return (isalnum(c) || (c == '+') || (c == '/') || (c == '='));
 }
 
 

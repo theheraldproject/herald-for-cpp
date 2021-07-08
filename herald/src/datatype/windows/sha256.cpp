@@ -73,6 +73,7 @@ SHA256::digest(const Data& with) noexcept {
   PBYTE                   message         = NULL;
   PBYTE                   pbHashObject    = NULL;
   PBYTE                   pbHash          = NULL;
+  //Data withOppositeEndianness = with.reversed();
 
   Data result;
 
@@ -145,7 +146,7 @@ SHA256::digest(const Data& with) noexcept {
   
   // copy over data
   message = (PBYTE)HeapAlloc (GetProcessHeap (), 0, with.size());
-  for (std::size_t i = 0;i < with.size();i++) {
+  for (std::size_t i = 0;i < with.size();++i) {
     message[i] = BYTE(with.at(i));
   }
 

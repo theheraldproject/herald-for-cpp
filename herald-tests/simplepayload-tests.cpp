@@ -19,6 +19,38 @@ TEST_CASE("payload-f-hash", "[payload][f][hash]") {
   }
 }
 
+TEST_CASE("payload-f-hash-known-result", "[.][zephyronly][payload][f][hash][known-result]") {
+  SECTION("payload-f-hash-known-result") {
+    herald::payload::simple::SecretKey sk(std::byte(0),2048); // known blank 2048 byte key
+    REQUIRE(sk.size() == 2048);
+    std::uint8_t value;
+    REQUIRE(sk.uint8(0,value));
+    REQUIRE(value == 0);
+    REQUIRE(sk.uint8(2047,value));
+    REQUIRE(value == 0);
+
+    // std::string hex = sk.hexEncodedString();
+    // REQUIRE("flibble" == hex);
+    
+    auto data = herald::payload::simple::F::h(sk);
+    REQUIRE(data.size() == 32);
+
+    std::string encoded = herald::datatype::Base64String::encode(data).encoded();
+    // hex is: e5a00aa9991ac8a5ee3109844d84a55583bd20572ad3ffcd42792f3c36b183ad
+    std::string expected("5aAKqZkayKXuMQmETYSlVYO9IFcq0//NQnkvPDaxg60=");
+
+    herald::datatype::Base64String decoded;
+    bool ok = herald::datatype::Base64String::from(expected,decoded);
+    REQUIRE(ok);
+    auto decodedData = decoded.decode();
+    REQUIRE(decodedData.size() == 32);
+    REQUIRE(decodedData == data);
+
+
+    REQUIRE(expected == encoded);
+  }
+}
+
 TEST_CASE("payload-f-trim-half", "[payload][f][trim-half]") {
   SECTION("payload-f-trim-half") {
     herald::datatype::Data dEmpty;
