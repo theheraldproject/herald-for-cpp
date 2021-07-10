@@ -323,7 +323,9 @@ TEST_CASE("ble-device-update-payloadchar", "[ble][device][update][payloadchar]")
     DummyBLEDeviceDelegate delegate;
     herald::ble::BLEDevice device(id,delegate,createdAt);
 
-    herald::datatype::RandomnessGenerator gen(std::make_unique<herald::datatype::IntegerDistributedRandomSource>());
+    herald::datatype::RandomnessGenerator<herald::datatype::IntegerDistributedRandomSource> gen(
+      herald::datatype::IntegerDistributedRandomSource()
+    );
     herald::datatype::UUID uuid = herald::datatype::UUID::random(gen);
 
     device.payloadCharacteristic(uuid);
@@ -351,7 +353,9 @@ TEST_CASE("ble-device-update-signalchar", "[ble][device][update][signalchar]") {
     DummyBLEDeviceDelegate delegate;
     herald::ble::BLEDevice device(id,delegate,createdAt);
 
-    herald::datatype::RandomnessGenerator gen(std::make_unique<herald::datatype::IntegerDistributedRandomSource>());
+    herald::datatype::RandomnessGenerator<herald::datatype::IntegerDistributedRandomSource> gen(
+      herald::datatype::IntegerDistributedRandomSource()
+    );
     herald::datatype::UUID uuid = herald::datatype::UUID::random(gen);
 
     device.signalCharacteristic(uuid);
@@ -379,7 +383,9 @@ TEST_CASE("ble-device-invalidate-chars", "[ble][device][update][invalidatechars]
     DummyBLEDeviceDelegate delegate;
     herald::ble::BLEDevice device(id,delegate,createdAt);
 
-    herald::datatype::RandomnessGenerator gen(std::make_unique<herald::datatype::IntegerDistributedRandomSource>());
+    herald::datatype::RandomnessGenerator<herald::datatype::IntegerDistributedRandomSource> gen(
+      herald::datatype::IntegerDistributedRandomSource()
+    );
     herald::datatype::UUID uuids = herald::datatype::UUID::random(gen);
     herald::datatype::UUID uuidp = herald::datatype::UUID::random(gen);
 

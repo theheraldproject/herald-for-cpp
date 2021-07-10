@@ -23,33 +23,33 @@ namespace datatype {
  * mechanics. On native platforms in C++ the implementations available may
  * vary dramatically.
  */
-class RandomnessSource {
-public:
-  RandomnessSource() = default;
-  virtual ~RandomnessSource() = default;
+// class RandomnessSource {
+// public:
+//   RandomnessSource() = default;
+//   virtual ~RandomnessSource() = default;
 
-  virtual std::string methodName() const = 0;
+//   virtual std::string methodName() const = 0;
 
-  virtual void nextBytes(std::size_t count, Data& into) = 0;
-  virtual int nextInt() = 0;
-  virtual double nextDouble() = 0;
+//   virtual void nextBytes(std::size_t count, Data& into) = 0;
+//   virtual int nextInt() = 0;
+//   virtual double nextDouble() = 0;
 
-};
+// };
 
 /**
  * A decidedly non random source!!! Used to test the v4 UUID format generation function only.
  * DO NOT USE IN PRODUCTION.
  */
-class AllZerosNotRandom : public RandomnessSource {
+class AllZerosNotRandom {
 public:
   AllZerosNotRandom() = default;
   ~AllZerosNotRandom() = default;
 
-  std::string methodName() const override {
+  std::string methodName() const {
     return "allzeros";
   }
 
-  void nextBytes(std::size_t count, Data& into) override {
+  void nextBytes(std::size_t count, Data& into) {
     std::vector<std::byte> result;
     for (std::size_t i = 0;i < count;i++) {
       result.push_back(std::byte(0));
@@ -58,16 +58,16 @@ public:
     into.append(final);
   }
 
-  int nextInt() override {
+  int nextInt() {
     return 0;
   }
 
-  double nextDouble() override {
+  double nextDouble() {
     return 0.0;
   }
 };
 
-class IntegerDistributedRandomSource : public RandomnessSource {
+class IntegerDistributedRandomSource {
 public:
   IntegerDistributedRandomSource() 
     : rd(), gen(rd()), distrib(LONG_MIN,LONG_MAX)
@@ -75,11 +75,11 @@ public:
 
   ~IntegerDistributedRandomSource() = default;
 
-  std::string methodName() const override {
+  std::string methodName() const {
     return "integerdistributed";
   }
 
-  void nextBytes(std::size_t count, Data& into) override {
+  void nextBytes(std::size_t count, Data& into) {
     std::vector<std::byte> result;
     for (std::size_t i = 0;i < count;i++) {
       result.push_back(std::byte(distrib(gen))); // a little wasteful...
@@ -88,11 +88,11 @@ public:
     into.append(final);
   }
 
-  int nextInt() override {
+  int nextInt() {
     return (int)distrib(gen);
   }
 
-  double nextDouble() override {
+  double nextDouble() {
     return (double)distrib(gen);
   }
 
@@ -117,10 +117,11 @@ private:
  * of communication, internal timer/interrupt timing changes, and
  * internal state computation times to make the entropy unpredictable.
  */
-class RandomnessGenerator : public RandomnessSource {
+template <typename RandomnessSourceT>
+class RandomnessGenerator {
 public:
-  RandomnessGenerator(std::unique_ptr<RandomnessSource>&& toOwn)
-    : m_source(std::move(toOwn)),
+  RandomnessGenerator(RandomnessSourceT&& toOwn)
+    : m_source(std::forward(toOwn)),
       m_entropy(0)
   {
     ;
@@ -153,7 +154,7 @@ public:
 
   
   std::string methodName() const {
-    return m_source->methodName();
+    return m_source.methodName();
   }
 
   void nextBytes(std::size_t count, Data& into) {
@@ -161,7 +162,7 @@ public:
     constexpr std::size_t sizeTSize = sizeof(std::size_t);
     constexpr std::size_t shifts = sizeTSize / byteSize;
     Data sourcedInto;
-    m_source->nextBytes(count,sourcedInto);
+    m_source.nextBytes(count,sourcedInto);
 
     std::vector<std::byte> result;
 
@@ -179,15 +180,15 @@ public:
   }
 
   int nextInt() {
-    return (int)(m_source->nextInt() ^ m_entropy);
+    return (int)(m_source.nextInt() ^ m_entropy);
   }
 
   double nextDouble() {
-    return (double)(((std::size_t)m_source->nextDouble()) ^ m_entropy);
+    return (double)(((std::size_t)m_source.nextDouble()) ^ m_entropy);
   }
 
 private:
-  std::unique_ptr<RandomnessSource> m_source;
+  RandomnessSourceT m_source;
   std::size_t m_entropy;
 };
 

@@ -35,7 +35,7 @@
 #include <utility>
 
 #include <kernel_structs.h>
-#include <sys/thread_stack.h>
+// #include <sys/thread_stack.h>
 #include <drivers/gpio.h>
 #include <drivers/hwinfo.h>
 

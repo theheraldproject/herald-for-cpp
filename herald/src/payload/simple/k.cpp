@@ -21,59 +21,29 @@ namespace simple {
 
 using namespace herald::datatype;
 
-
-class K::Impl {
-public:
-  Impl(int keyLength, int daysFor, int periodsInDay);
-  Impl(int keyLength, int daysFor, int periodsInDay, TimeInterval epochBeginning);
-  ~Impl();
-
-  const int keyLength;
-  const int daysFor;
-  const int periodsInDay;
-  const TimeInterval epoch;
-
-  // instance data members (lazy populated)
-  // std::vector<MatchingKey> matchingKeySet;
-  // std::size_t lastSecretKeyHash;
-};
-
-K::Impl::Impl(int keyLength, int daysFor, int periodsInDay)
-  : keyLength(keyLength), daysFor(daysFor), periodsInDay(periodsInDay), epoch(K::getEpoch())
-{
-  ;
-}
-
-K::Impl::Impl(int keyLength, int daysFor, int periodsInDay, TimeInterval epochBeginning)
-  : keyLength(keyLength), daysFor(daysFor), periodsInDay(periodsInDay), epoch(epochBeginning)
-{
-  ;
-}
-
-
-K::Impl::~Impl() = default;
-
-
 K::K() noexcept
-  : mImpl(std::make_unique<Impl>(2048,2000,240))
+  : keyLength(2048),daysFor(2000),periodsInDay(240), epoch(K::getEpoch())
 {
   ;
 }
 
 K::K(const K& other) noexcept
-  : mImpl(std::make_unique<Impl>(other.mImpl->keyLength, other.mImpl->daysFor,other.mImpl->periodsInDay, other.mImpl->epoch))
+  : keyLength(other.keyLength), 
+    daysFor(other.daysFor),
+    periodsInDay(other.periodsInDay),
+    epoch(other.epoch)
 {
   ;
 }
 
 K::K(int keyLength, int daysFor, int periodsInDay) noexcept
-  : mImpl(std::make_unique<Impl>(keyLength,daysFor,periodsInDay))
+  : keyLength(keyLength),daysFor(daysFor),periodsInDay(periodsInDay), epoch(K::getEpoch())
 {
   ;
 }
 
 K::K(int keyLength, int daysFor, int periodsInDay, TimeInterval epochBeginning) noexcept
-  : mImpl(std::make_unique<Impl>(keyLength,daysFor,periodsInDay,epochBeginning))
+  : keyLength(keyLength),daysFor(daysFor),periodsInDay(periodsInDay), epoch(epochBeginning)
 {
   ;
 }
@@ -87,13 +57,13 @@ K::getEpoch() noexcept {
 
 int
 K::day(Date on) const noexcept {
-  return (long)(on - mImpl->epoch) / 86400;
+  return (long)(on - epoch) / 86400;
 }
 
 int
 K::period(Date at) const noexcept {
-  long seconds = (long)(at - mImpl->epoch) % 86400;
-  return (seconds * mImpl->periodsInDay) / 86400; // more accurate
+  long seconds = (long)(at - epoch) % 86400;
+  return (seconds * periodsInDay) / 86400; // more accurate
 }
 
 /// Low memory version of the key generator - generates key for a specified day
@@ -103,7 +73,7 @@ K::matchingKey(const SecretKey& secretKey, const int dayIdxFor) noexcept {
   // lazy initialisation
   MatchingKeySeed last(F::h(secretKey)); // value for day 2000
   MatchingKeySeed newSeed(32);
-  for (int i = mImpl->daysFor - 1;i >= dayIdxFor; --i) {
+  for (int i = daysFor - 1;i >= dayIdxFor; --i) {
     // Calculate 1999 based on 2000, and so on, until we reach the current day's seed
     newSeed.assign(F::h(F::t(last)));
     last.assign(newSeed);
@@ -120,7 +90,7 @@ K::matchingKey(const SecretKey& secretKey, const int dayIdxFor) noexcept {
 
 ContactKey
 K::contactKey(const SecretKey& secretKey, const int dayFor, const int periodFor) noexcept {
-  const int n = mImpl->periodsInDay;
+  const int n = periodsInDay;
 
   auto mk(matchingKey(secretKey,dayFor));
 

@@ -42,8 +42,12 @@ public:
   std::vector<PayloadData> payload(const Data& data) override;
 
 private:
-  class Impl; // fwd decl
-  std::unique_ptr<Impl> mImpl; // PIMPL idiom
+  uint16_t country;
+  uint16_t state;
+  MYUINT32 code;
+  ConcreteExtendedDataV1 extendedData;
+
+  PayloadData mPayload;
 };
 
 }

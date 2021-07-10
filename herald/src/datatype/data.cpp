@@ -12,80 +12,61 @@
 namespace herald {
 namespace datatype {
 
-// DATA PIMPL DEFINITIONS
-
-class Data::Impl {
-public:
-  Impl();
-  Impl(std::size_t reserveLength);
-  ~Impl() = default;
-
-  std::vector<std::byte> data;
-};
-
-// DATA PIMPL DECLARATIONS
-Data::Impl::Impl() : data() { }
-
-Data::Impl::Impl(std::size_t reserveLength) : data(reserveLength) { }
-
-
-
-
-
 // DATA CLASS DECLARATIONS
 const char Data::hexChars[] = {
   '0','1','2','3','4','5','6','7',
   '8','9','a','b','c','d','e','f'
 };
 
-Data::Data() : mImpl(std::make_unique<Impl>()) {
+Data::Data() : data()
+{
   ;
 }
 
 Data::Data(Data&& other)
-  : mImpl(std::make_unique<Impl>())
+  : data()
 {
-  std::swap(mImpl->data,other.mImpl->data);
+  std::swap(data,other.data);
 }
 
 // TODO consider adding offset versions of the below two constructors
 
-Data::Data(const std::byte* value, std::size_t length) : mImpl(std::make_unique<Impl>(length)) {
+Data::Data(const std::byte* value, std::size_t length) : data(length) {
   for (std::size_t i = 0;i < length; i++) {
-    mImpl->data[i] = value[i];
+    data[i] = value[i];
   }
 }
 
 Data::Data(const std::uint8_t* value, std::size_t length) : 
-  mImpl(std::make_unique<Impl>(length)) {
+  data(length) {
   
   for (std::size_t i = 0;i < length; i++) {
-    mImpl->data[i] = std::byte(value[i]);
+    data[i] = std::byte(value[i]);
   }
 }
 
-Data::Data(std::vector<std::byte> value) : mImpl(std::make_unique<Impl>()) {
-  mImpl->data = std::move(value);
+Data::Data(std::vector<std::byte> value) : data() {
+  data = std::move(value);
 }
 
-Data::Data(const Data& from) : mImpl(std::make_unique<Impl>()) {
-  mImpl->data = from.mImpl->data; // copy ctor
+Data::Data(const Data& from) : data() {
+  data = from.data; // copy ctor
 }
 
-Data::Data(std::byte repeating, std::size_t count) : mImpl(std::make_unique<Impl>(count)) {
+Data::Data(std::byte repeating, std::size_t count) : data(count) {
   for (std::size_t i = 0;i < count; i++) {
-    mImpl->data[i] = repeating;
+    data[i] = repeating;
   }
 }
 
-Data::Data(std::size_t reserveLength) : mImpl(std::make_unique<Impl>(reserveLength)) {
+Data::Data(std::size_t reserveLength) : data(reserveLength) {
   ;
 }
 
 Data&
 Data::operator=(const Data& other)
 {
-  mImpl->data = other.mImpl->data;
+  data = other.data;
   return *this;
 }
 
@@ -105,39 +86,11 @@ Data::fromHexEncodedString(const std::string& hex)
     hexInput += "0";
   }
   hexInput += hex;
-  // char u, l;
-  // uint8_t vu, vl;
-  // for (std::size_t i = 0; i < hex.size(); i += 2) {
-  //   u = hex.at(i);
-  //   l = hex.at(i + 1);
-  //   vu = 0;
-  //   vl = 0;
-  //   if (u >= '0' | u <= '9') {
-  //     vu = uint8_t(u - '0');
-  //   } else if (u >= 'a' | u <= 'z') {
-  //     vu = uint8_t(u - 'a') + 10;
-  //   } else if (u >= 'A' | u <= 'Z') {
-  //     vu = uint8_t(u - 'A') + 10;
-  //   }
-  //   if (l >= '0' | l <= '9') {
-  //     vl = uint8_t(l - '0');
-  //   } else if (l >= 'a' | l <= 'z') {
-  //     vl = uint8_t(l - 'a') + 10;
-  //   } else if (l >= 'A' | l <= 'Z') {
-  //     vl = uint8_t(l - 'A') + 10;
-  //   }
-  //   d.append( std::uint8_t( (vu << 4 ) | vl ));
-  //   // d.append((std::uint8_t)( // forcing for the compiler to a single std::uint8_t
-  //   //   (std::uint8_t(hexChars[std::size_t(u % 16)] << 4) & 0xf0)  | 
-  //   //   (std::uint8_t(hexChars[std::size_t(l % 16)])      & 0x0f)
-  //   // ));
-  // }
 
-  
   for (std::size_t i = 0; i < hexInput.size(); i += 2) {
     std::string byteString = hexInput.substr(i, 2);
     std::byte byte = std::byte(strtol(byteString.c_str(), NULL, 16));
-    d.mImpl->data.push_back(byte);
+    d.data.push_back(byte);
   }
 
   return d;
@@ -146,15 +99,15 @@ Data::fromHexEncodedString(const std::string& hex)
 std::string
 Data::hexEncodedString() const noexcept
 {
-  if (0 == mImpl->data.size()) {
+  if (0 == data.size()) {
     return "";
   }
   std::string result;
-  std::size_t size = mImpl->data.size();
+  std::size_t size = data.size();
   result.reserve(size * 2);
   std::size_t v;
   for (std::size_t i = 0; i < size; i++) {
-    v = std::size_t(mImpl->data.at(i));
+    v = std::size_t(data.at(i));
     result += hexChars[0x0F & (v >> 4)]; // MSB
     result += hexChars[0x0F &  v      ]; // LSB
   }
@@ -169,10 +122,10 @@ Data::description() const {
 Data
 Data::subdata(std::size_t offset) const {
   Data copy;
-  if (offset >= mImpl->data.size()) {
+  if (offset >= data.size()) {
     return copy;
   }
-  std::copy(mImpl->data.begin() + offset, mImpl->data.end(), std::back_inserter(copy.mImpl->data));
+  std::copy(data.begin() + offset, data.end(), std::back_inserter(copy.data));
   return copy;
 }
 
@@ -180,103 +133,103 @@ Data
 Data::subdata(std::size_t offset, std::size_t length) const {
   Data copy;
   // Note: offset if passed as -1 could be MAX_LONG_LONG, so check it on its own too
-  if (offset >= mImpl->data.size()) {
+  if (offset >= data.size()) {
     return copy;
   }
   // Note the below is necessary as calling with (4,-1), the second condition IS valid!
-  if (length > mImpl->data.size() || offset + length > mImpl->data.size()) {
-    std::copy(mImpl->data.begin() + offset, mImpl->data.end(), std::back_inserter(copy.mImpl->data));
+  if (length > data.size() || offset + length > data.size()) {
+    std::copy(data.begin() + offset, data.end(), std::back_inserter(copy.data));
   } else {
-    std::copy(mImpl->data.begin() + offset, mImpl->data.begin() + offset + length, std::back_inserter(copy.mImpl->data));
+    std::copy(data.begin() + offset, data.begin() + offset + length, std::back_inserter(copy.data));
   }
   return copy;
 }
 
 std::byte
 Data::at(std::size_t index) const {
-  if (index > (mImpl->data.size() - 1)) {
+  if (index > (data.size() - 1)) {
     return std::byte(0);
   }
-  return mImpl->data[index];
+  return data[index];
 }
 
 bool
 Data::uint8(std::size_t fromIndex, uint8_t& into) const noexcept
 {
-  if (fromIndex > mImpl->data.size() - 1) {
+  if (fromIndex > data.size() - 1) {
     return false;
   }
-  into = std::uint8_t(mImpl->data[fromIndex]);
+  into = std::uint8_t(data[fromIndex]);
   return true;
 }
 
 bool
 Data::uint16(std::size_t fromIndex, uint16_t& into) const noexcept
 {
-  if (fromIndex > mImpl->data.size() - 2) {
+  if (fromIndex > data.size() - 2) {
     return false;
   }
-  into = (std::uint16_t(mImpl->data[fromIndex + 1]) << 8) | std::uint16_t(mImpl->data[fromIndex]);
+  into = (std::uint16_t(data[fromIndex + 1]) << 8) | std::uint16_t(data[fromIndex]);
   return true;
 }
 
 bool
 Data::uint32(std::size_t fromIndex, uint32_t& into) const noexcept
 {
-  if (fromIndex > mImpl->data.size() - 4) {
+  if (fromIndex > data.size() - 4) {
     return false;
   }
-  into =  std::uint32_t(mImpl->data[fromIndex])            | (std::uint32_t(mImpl->data[fromIndex + 1]) << 8) |
-         (std::uint32_t(mImpl->data[fromIndex + 2]) << 16) | (std::uint32_t(mImpl->data[fromIndex + 3]) << 24);
+  into =  std::uint32_t(data[fromIndex])            | (std::uint32_t(data[fromIndex + 1]) << 8) |
+         (std::uint32_t(data[fromIndex + 2]) << 16) | (std::uint32_t(data[fromIndex + 3]) << 24);
   return true;
 }
 
 bool
 Data::uint64(std::size_t fromIndex, uint64_t& into) const noexcept
 {
-  if (fromIndex > mImpl->data.size() - 8) {
+  if (fromIndex > data.size() - 8) {
     return false;
   }
-  into = (std::uint64_t(mImpl->data[fromIndex + 7]) << 56) | (std::uint64_t(mImpl->data[fromIndex + 6]) << 48) |
-         (std::uint64_t(mImpl->data[fromIndex + 5]) << 40) | (std::uint64_t(mImpl->data[fromIndex + 4]) << 32) |
-         (std::uint64_t(mImpl->data[fromIndex + 3]) << 24) | (std::uint64_t(mImpl->data[fromIndex + 2]) << 16) |
-         (std::uint64_t(mImpl->data[fromIndex + 1]) << 8)  |  std::uint64_t(mImpl->data[fromIndex]);
+  into = (std::uint64_t(data[fromIndex + 7]) << 56) | (std::uint64_t(data[fromIndex + 6]) << 48) |
+         (std::uint64_t(data[fromIndex + 5]) << 40) | (std::uint64_t(data[fromIndex + 4]) << 32) |
+         (std::uint64_t(data[fromIndex + 3]) << 24) | (std::uint64_t(data[fromIndex + 2]) << 16) |
+         (std::uint64_t(data[fromIndex + 1]) << 8)  |  std::uint64_t(data[fromIndex]);
   return true;
 }
 
 void
-Data::append(const std::uint8_t* data, std::size_t offset, std::size_t length)
+Data::append(const std::uint8_t* rawData, std::size_t offset, std::size_t length)
 {
-  mImpl->data.reserve(length);
+  data.reserve(length);
   for (std::size_t i = 0;i < length;i++) {
-    mImpl->data.push_back(std::byte(data[offset + i]));
+    data.push_back(std::byte(rawData[offset + i]));
   }
 }
 
 void
-Data::append(const Data& data, std::size_t offset, std::size_t length)
+Data::append(const Data& rawData, std::size_t offset, std::size_t length)
 {
-  mImpl->data.reserve(mImpl->data.size() + length);
-  std::copy(data.mImpl->data.begin() + offset, 
-            data.mImpl->data.begin() + offset + length, 
-            std::back_inserter(mImpl->data)
+  data.reserve(rawData.size() + length);
+  std::copy(rawData.data.begin() + offset, 
+            rawData.data.begin() + offset + length, 
+            std::back_inserter(data)
   );
 }
 
 void
-Data::appendReversed(const Data& data, std::size_t offset, std::size_t length)
+Data::appendReversed(const Data& rawData, std::size_t offset, std::size_t length)
 {
-  if (offset > data.size()) {
+  if (offset > rawData.size()) {
     return; // append nothing - out of range
   }
   std::size_t checkedLength = length;
-  if (length > (data.size() - offset)) {
-    checkedLength = data.size() - offset;
+  if (length > (rawData.size() - offset)) {
+    checkedLength = rawData.size() - offset;
   }
-  mImpl->data.reserve(mImpl->data.size() + checkedLength);
-  std::reverse_copy(data.mImpl->data.begin() + offset, 
-                    data.mImpl->data.begin() + offset + checkedLength, 
-                    std::back_inserter(mImpl->data)
+  data.reserve(rawData.size() + checkedLength);
+  std::reverse_copy(rawData.data.begin() + offset, 
+                    rawData.data.begin() + offset + checkedLength, 
+                    std::back_inserter(data)
   );
 }
 
@@ -284,9 +237,9 @@ Data
 Data::reversed() const
 {
   Data result;
-  result.mImpl->data.reserve(mImpl->data.size());
-  std::reverse_copy(mImpl->data.begin(),mImpl->data.end(),
-    std::back_inserter(result.mImpl->data)
+  result.data.reserve(data.size());
+  std::reverse_copy(data.begin(),data.end(),
+    std::back_inserter(result.data)
   );
   return result;
 }
@@ -295,20 +248,20 @@ Data
 Data::reverseEndianness() const
 {
   Data result;
-  result.mImpl->data.reserve(mImpl->data.size());
+  result.data.reserve(data.size());
 
   // Keep byte order intact (caller could use reversed() to change that)
   // but reverse the order of the individual bits by each byte
   std::uint8_t value, original;
-  for (std::size_t i = 0;i < mImpl->data.size();++i) {
-    original = std::uint8_t(mImpl->data[i]);
+  for (std::size_t i = 0;i < data.size();++i) {
+    original = std::uint8_t(data[i]);
     value = 0;
     for (int b = 0;b < 8;++b) {
       if ((original & (1 << b)) > 0) {
         value |= 1 << (7 - b);
       }
     }
-    // result.mImpl->data[i] = std::byte(value);
+    // result.data[i] = std::byte(value);
     result.append(value);
   }
 
@@ -317,80 +270,80 @@ Data::reverseEndianness() const
 
 void
 Data::assign(const Data& other) {
-  if (other.size() > mImpl->data.size()) {
-    mImpl->data.reserve(other.size());
+  if (other.size() > data.size()) {
+    data.reserve(other.size());
   }
   for (std::size_t pos = 0; pos < other.size();++pos) {
-    mImpl->data[pos] = other.mImpl->data[pos];
+    data[pos] = other.data[pos];
   }
 }
 
 void
-Data::append(const Data& data) {
-  mImpl->data.reserve(mImpl->data.size() + data.size());
-  std::copy(data.mImpl->data.begin(), data.mImpl->data.end(), std::back_inserter(mImpl->data));
+Data::append(const Data& rawData) {
+  data.reserve(rawData.size() + data.size());
+  std::copy(rawData.data.begin(), rawData.data.end(), std::back_inserter(data));
 }
 
 void
-Data::append(uint8_t data)
+Data::append(uint8_t rawData)
 {
-  std::size_t curSize = mImpl->data.size();
-  mImpl->data.reserve(curSize + 1); // C++ ensures types are AT LEAST x bits
-  mImpl->data.push_back(std::byte(data));
+  std::size_t curSize = data.size();
+  data.reserve(curSize + 1); // C++ ensures types are AT LEAST x bits
+  data.push_back(std::byte(rawData));
   curSize++;
 }
 
 void
-Data::append(std::byte data)
+Data::append(std::byte rawData)
 {
-  std::size_t curSize = mImpl->data.size();
-  mImpl->data.reserve(curSize + 1);
-  mImpl->data.push_back(data);
+  std::size_t curSize = data.size();
+  data.reserve(curSize + 1);
+  data.push_back(rawData);
   curSize++;
 }
 
 void
-Data::append(uint16_t data)
+Data::append(uint16_t rawData)
 {
-  std::size_t curSize = mImpl->data.size();
-  mImpl->data.reserve(curSize + 2); // C++ ensures types are AT LEAST x bits
-  mImpl->data.push_back(std::byte(data & 0xff));
-  mImpl->data.push_back(std::byte(data >> 8));
+  std::size_t curSize = data.size();
+  data.reserve(curSize + 2); // C++ ensures types are AT LEAST x bits
+  data.push_back(std::byte(rawData & 0xff));
+  data.push_back(std::byte(rawData >> 8));
 }
 
 void
-Data::append(uint32_t data)
+Data::append(uint32_t rawData)
 {
-  std::size_t curSize = mImpl->data.size();
-  mImpl->data.reserve(curSize + 4); // C++ ensures types are AT LEAST x bits
-  mImpl->data.push_back(std::byte(data & 0xff));
-  mImpl->data.push_back(std::byte(data >> 8));
-  mImpl->data.push_back(std::byte(data >> 16));
-  mImpl->data.push_back(std::byte(data >> 24));
+  std::size_t curSize = data.size();
+  data.reserve(curSize + 4); // C++ ensures types are AT LEAST x bits
+  data.push_back(std::byte(rawData & 0xff));
+  data.push_back(std::byte(rawData >> 8));
+  data.push_back(std::byte(rawData >> 16));
+  data.push_back(std::byte(rawData >> 24));
 }
 
 void
-Data::append(uint64_t data)
+Data::append(uint64_t rawData)
 {
-  std::size_t curSize = mImpl->data.size();
-  mImpl->data.reserve(curSize + 8); // C++ ensures types are AT LEAST x bits
-  mImpl->data.push_back(std::byte(data & 0xff));
-  mImpl->data.push_back(std::byte(data >> 8));
-  mImpl->data.push_back(std::byte(data >> 16));
-  mImpl->data.push_back(std::byte(data >> 24));
-  mImpl->data.push_back(std::byte(data >> 32));
-  mImpl->data.push_back(std::byte(data >> 40));
-  mImpl->data.push_back(std::byte(data >> 48));
-  mImpl->data.push_back(std::byte(data >> 56));
+  std::size_t curSize = data.size();
+  data.reserve(curSize + 8); // C++ ensures types are AT LEAST x bits
+  data.push_back(std::byte(rawData & 0xff));
+  data.push_back(std::byte(rawData >> 8));
+  data.push_back(std::byte(rawData >> 16));
+  data.push_back(std::byte(rawData >> 24));
+  data.push_back(std::byte(rawData >> 32));
+  data.push_back(std::byte(rawData >> 40));
+  data.push_back(std::byte(rawData >> 48));
+  data.push_back(std::byte(rawData >> 56));
 }
 
 void
-Data::append(const std::string& data)
+Data::append(const std::string& rawData)
 {
-  std::size_t curSize = mImpl->data.size();
-  mImpl->data.reserve(curSize + data.size());
-  for (std::size_t i = 0;i < data.size();i++) {
-    mImpl->data.push_back(std::byte(data[i]));
+  std::size_t curSize = data.size();
+  data.reserve(curSize + rawData.size());
+  for (std::size_t i = 0;i < rawData.size();i++) {
+    data.push_back(std::byte(rawData[i]));
   }
 }
 
@@ -431,18 +384,18 @@ Data::operator>(const Data& other) const noexcept
 std::size_t
 Data::hashCode() const noexcept {
   // TODO consider a faster (E.g. SIMD) algorithm or one with less hotspots (see hashdos attacks)
-  return std::hash<std::vector<std::byte>>{}(mImpl->data);
+  return std::hash<std::vector<std::byte>>{}(data);
 }
 
 std::size_t
 Data::size() const noexcept {
-  return mImpl->data.size();
+  return data.size();
 }
 
 void
 Data::clear() noexcept
 {
-  mImpl->data.clear();
+  data.clear();
 }
 
 } // end namespace

@@ -30,9 +30,6 @@ public:
   const Date& timestamp() const;
 
 private:
-  // class Impl;
-  // std::unique_ptr<Impl> mImpl; // PIMPL IDIOM
-  
   Date date;
   Proximity prox;
   PayloadData payloadData;

@@ -15,17 +15,14 @@ namespace datatype {
 class SHA256 {
 public:
   SHA256() noexcept;
-  SHA256(const Data& initialiseWith) noexcept;
   ~SHA256() noexcept;
 
   Data digest(const Data& with) noexcept;
 
   void reset() noexcept; // Initialise to all zeros
-  void reset(const Data& initialiseWith) noexcept;
 
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
+  // No internal state required for Windows or TinyCrypt or mbedtls
 };
 
 }

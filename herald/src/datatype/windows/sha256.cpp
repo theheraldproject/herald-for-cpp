@@ -19,41 +19,8 @@ namespace datatype {
 
 #define STATUS_UNSUCCESSFUL         ((NTSTATUS)0xC0000001L)
 
-class SHA256::Impl {
-public:
-  Impl() noexcept;
-  Impl(const Data& initialiseWith) noexcept;
-  ~Impl() noexcept;
-
-  // internal state that is OS specific here
-
-};
-
-SHA256::Impl::Impl() noexcept
-{
-  ;
-}
-
-SHA256::Impl::Impl(const Data& initialiseWith) noexcept
-{
-  ;
-}
-
-SHA256::Impl::~Impl() noexcept = default;
-
-
-
-
-
 
 SHA256::SHA256() noexcept
-  : mImpl(std::make_unique<Impl>())
-{
-  ;
-}
-
-SHA256::SHA256(const Data& initialiseWith) noexcept
-  : mImpl(std::make_unique<Impl>(initialiseWith))
 {
   ;
 }
@@ -208,10 +175,6 @@ SHA256::reset() noexcept {
 
 }
 
-void
-SHA256::reset(const Data& initialiseWith) noexcept {
-
-}
 
 }
 }
