@@ -12,44 +12,23 @@ namespace herald {
 namespace payload {
 namespace extended {
 
-class ConcreteExtendedDataV1::Impl {
-public:
-  Impl();
-  ~Impl();
-
-  bool hasData;
-  std::vector<ConcreteExtendedDataSectionV1> sections;
-};
-
-ConcreteExtendedDataV1::Impl::Impl()
-  : hasData(false), sections()
-{
-  ;
-}
-
-ConcreteExtendedDataV1::Impl::~Impl()
-{
-  ;
-}
-
-
-
-
 ConcreteExtendedDataV1::ConcreteExtendedDataV1()
-  : mImpl(std::make_unique<Impl>())
+  : mHasData(false),
+    sections()
 {
   ;
 }
 
 ConcreteExtendedDataV1::ConcreteExtendedDataV1(const ConcreteExtendedDataV1& other)
-  : mImpl(std::make_unique<Impl>())
+  : mHasData(other.mHasData),
+    sections(other.sections)
 {
-  mImpl->hasData = other.mImpl->hasData;
-  mImpl->sections = other.mImpl->sections;
+  ;
 }
 
 ConcreteExtendedDataV1::ConcreteExtendedDataV1(ConcreteExtendedDataV1&& other)
-  : mImpl(std::move(other.mImpl))
+  : mHasData(other.mHasData),
+    sections(std::move(other.sections))
 {
   ;
 }
@@ -57,8 +36,8 @@ ConcreteExtendedDataV1::ConcreteExtendedDataV1(ConcreteExtendedDataV1&& other)
 // ConcreteExtendedDataV1&
 // ConcreteExtendedDataV1::operator=(const ConcreteExtendedDataV1& other)
 // {
-//   mImpl->hasData = other.mImpl->hasData;
-//   mImpl->sections = other.mImpl->sections;
+//   mHasData = other.mHasData;
+//   sections = other.sections;
 
 //   return *this;
 // }
@@ -66,8 +45,8 @@ ConcreteExtendedDataV1::ConcreteExtendedDataV1(ConcreteExtendedDataV1&& other)
 // ConcreteExtendedDataV1&
 // ConcreteExtendedDataV1::operator=(ConcreteExtendedDataV1&& other)
 // {
-//   mImpl->hasData = other.mImpl->hasData;
-//   mImpl->sections = std::move(other.mImpl->sections);
+//   mHasData = other.mHasData;
+//   sections = std::move(other.sections);
 
 //   return *this;
 // }
@@ -82,7 +61,7 @@ ConcreteExtendedDataV1::~ConcreteExtendedDataV1()
 bool
 ConcreteExtendedDataV1::hasData() const
 {
-  return mImpl->hasData;
+  return mHasData;
 }
 
 void
@@ -90,8 +69,8 @@ ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, uint8_t value)
 {
   std::vector<std::byte> d;
   d.push_back(std::byte(value));
-  mImpl->sections.emplace_back(code, 1, std::move(d));
-  mImpl->hasData = true;
+  sections.emplace_back(code, 1, std::move(d));
+  mHasData = true;
 }
 
 void
@@ -100,8 +79,8 @@ ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, uint16_t value)
   std::vector<std::byte> d;
   d.push_back(std::byte(value >> 8));
   d.push_back(std::byte(value & 0xff));
-  mImpl->sections.emplace_back(code, 1, std::move(d));
-  mImpl->hasData = true;
+  sections.emplace_back(code, 1, std::move(d));
+  mHasData = true;
 }
 
 void
@@ -111,8 +90,8 @@ ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, float value)
   for (std::size_t i = sizeof(float);i > 0 ;--i) {
     d.push_back(std::byte(((std::size_t)value) >> (8 * (i - 1))));
   }
-  mImpl->sections.emplace_back(code,sizeof(float), std::move(d));
-  mImpl->hasData = true;
+  sections.emplace_back(code,sizeof(float), std::move(d));
+  mHasData = true;
 }
 
 void
@@ -122,34 +101,34 @@ ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, const std::stri
   for (auto c : value) {
     d.push_back(std::byte(c));
   }
-  mImpl->sections.emplace_back(code, value.size(), std::move(d));
-  mImpl->hasData = true;
+  sections.emplace_back(code, value.size(), std::move(d));
+  mHasData = true;
 }
 
 void
 ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, const Data& value)
 {
-  mImpl->sections.emplace_back(code, value.size(), value);
-  mImpl->hasData = true;
+  sections.emplace_back(code, value.size(), value);
+  mHasData = true;
 }
 
 const std::vector<ConcreteExtendedDataSectionV1>&
 ConcreteExtendedDataV1::getSections() const
 {
-  return mImpl->sections;
+  return sections;
 }
 
 std::optional<PayloadData>
 ConcreteExtendedDataV1::payload()
 {
-  if (mImpl->hasData) {
+  if (mHasData) {
     PayloadData result;
-    for (auto s : mImpl->sections) {
+    for (auto s : sections) {
       result.append(s.code);
       result.append(s.length);
       result.append(s.data);
     }
-    return result;
+    return std::optional<PayloadData>(result);
   }
   return std::optional<PayloadData>(); // empty optional
 }

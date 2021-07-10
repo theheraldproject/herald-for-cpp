@@ -80,8 +80,7 @@ public:
   
 protected:
   static const char hexChars[];
-  class Impl;
-  std::unique_ptr<Impl> mImpl; // PIMPL IDIOM
+  std::vector<std::byte> data;
 };
 
 } // end namespace

@@ -111,8 +111,8 @@ public:
   const std::vector<ConcreteExtendedDataSectionV1>& getSections() const;
 
 private:
-  class Impl; // fwd decl
-  std::unique_ptr<Impl> mImpl;
+  bool mHasData;
+  std::vector<ConcreteExtendedDataSectionV1> sections;
 };
 
 }

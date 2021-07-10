@@ -51,8 +51,10 @@ public:
   // const ContactIdentifier contactIdentifier(const ContactKey& contactKey) noexcept;
   
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
+  const int keyLength;
+  const int daysFor;
+  const int periodsInDay;
+  const TimeInterval epoch;
 };
 
 }

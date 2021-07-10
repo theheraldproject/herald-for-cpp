@@ -78,7 +78,7 @@ public:
 
   bool hasAdvertData() const;
   void advertData(std::vector<BLEAdvertSegment> segments);
-  std::vector<BLEAdvertSegment>& advertData() const;
+  const std::vector<BLEAdvertSegment>& advertData() const;
 
   /** Have we set the service list for this device yet? (i.e. done GATT service discover) **/
   bool hasServicesSet() const;
@@ -142,8 +142,40 @@ public:
   void registerWriteRssi(Date at); // ALWAYS externalise time (now())
   
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
+  TargetIdentifier id;
+  std::optional<std::reference_wrapper<BLEDeviceDelegate>> delegate;
+
+  // Data holders
+  Date mCreated;
+  std::optional<Date> lastUpdated;
+
+  std::optional<BLEDeviceState> mState;
+  std::optional<BLEDeviceOperatingSystem> os;
+  std::optional<PayloadData> payload;
+  std::optional<ImmediateSendData> mImmediateSendData;
+  std::optional<RSSI> mRssi;
+  std::optional<BLETxPower> mTxPower;
+  bool mReceiveOnly;
+  bool mIgnore;
+  std::optional<TimeInterval> ignoreForDuration;
+  std::optional<Date> ignoreUntil;
+
+  std::optional<UUID> mPayloadCharacteristic;
+  std::optional<UUID> mSignalCharacteristic;
+  std::optional<BLEMacAddress> pseudoAddress;
+
+  std::optional<Date> lastWriteRssiAt;
+  std::optional<Date> lastWritePayloadAt;
+  std::optional<Date> lastWritePayloadSharingAt;
+  std::optional<Date> lastDiscoveredAt;
+  std::optional<Date> connected;
+  std::optional<Date> payloadUpdated;
+
+  std::optional<std::vector<BLEAdvertSegment>> segments;
+  std::optional<std::vector<UUID>> mServices;
+
+  bool hasEverConnected;
+  int connectRepeatedFailures;
 };
 
 } // end namespace

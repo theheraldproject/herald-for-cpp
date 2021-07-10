@@ -21,70 +21,24 @@ namespace ble {
 using namespace herald::datatype;
 using namespace herald::ble::filter;
 
-class BLEDevice::Impl {
-public:
-  Impl();
-  Impl(TargetIdentifier identifier, BLEDeviceDelegate& del, const Date& createdAt);
-  Impl(const Impl& other); // copy ctor
-  Impl(Impl&& other) = delete;
-  ~Impl();
-
-  Impl& operator=(const Impl& other); // copy assign
-  Impl operator=(Impl&& other) = delete;
-
-  TargetIdentifier id;
-  std::optional<std::reference_wrapper<BLEDeviceDelegate>> delegate;
-
-  // Data holders
-  Date created;
-  std::optional<Date> lastUpdated;
-
-  std::optional<BLEDeviceState> state;
-  std::optional<BLEDeviceOperatingSystem> os;
-  std::optional<PayloadData> payload;
-  std::optional<ImmediateSendData> immediateSendData;
-  std::optional<RSSI> rssi;
-  std::optional<BLETxPower> txPower;
-  bool receiveOnly;
-  bool ignore;
-  std::optional<TimeInterval> ignoreForDuration;
-  std::optional<Date> ignoreUntil;
-
-  std::optional<UUID> payloadCharacteristic;
-  std::optional<UUID> signalCharacteristic;
-  std::optional<BLEMacAddress> pseudoAddress;
-
-  std::optional<Date> lastWriteRssiAt;
-  std::optional<Date> lastWritePayloadAt;
-  std::optional<Date> lastWritePayloadSharingAt;
-  std::optional<Date> lastDiscoveredAt;
-  std::optional<Date> connected;
-  std::optional<Date> payloadUpdated;
-
-  std::optional<std::vector<BLEAdvertSegment>> segments;
-  std::optional<std::vector<UUID>> services;
-
-  bool hasEverConnected;
-  int connectRepeatedFailures;
-};
-
-BLEDevice::Impl::Impl()
-  : id(),
+BLEDevice::BLEDevice()
+  : Device(),
+    id(),
     delegate(std::nullopt),
-    created(Date()),
+    mCreated(Date()),
     lastUpdated(std::optional<Date>()),
-    state(std::optional<BLEDeviceState>(BLEDeviceState::uninitialised)),
+    mState(std::optional<BLEDeviceState>(BLEDeviceState::uninitialised)),
     os(std::optional<BLEDeviceOperatingSystem>(BLEDeviceOperatingSystem::unknown)),
     payload(),
-    immediateSendData(),
-    rssi(),
-    txPower(),
-    receiveOnly(false),
-    ignore(false),
+    mImmediateSendData(),
+    mRssi(),
+    mTxPower(),
+    mReceiveOnly(false),
+    mIgnore(false),
     ignoreForDuration(),
     ignoreUntil(), // empty, not "now"
-    payloadCharacteristic(),
-    signalCharacteristic(),
+    mPayloadCharacteristic(),
+    mSignalCharacteristic(),
     pseudoAddress(),
     lastWriteRssiAt(),
     lastWritePayloadAt(),
@@ -93,30 +47,32 @@ BLEDevice::Impl::Impl()
     connected(),
     payloadUpdated(),
     segments(),
-    services(),
+    mServices(),
     hasEverConnected(false),
     connectRepeatedFailures(0)
 {
   ;
 }
 
-BLEDevice::Impl::Impl(TargetIdentifier identifier, BLEDeviceDelegate& del, const Date& createdAt)
-  : id(identifier),
-    delegate(std::reference_wrapper<BLEDeviceDelegate>(del)),
-    created(createdAt),
+BLEDevice::BLEDevice(TargetIdentifier identifier, BLEDeviceDelegate& del,
+  const Date& createdAt)
+  : Device(),
+    id(identifier),
+    delegate(std::optional(std::reference_wrapper<BLEDeviceDelegate>(del))),
+    mCreated(createdAt),
     lastUpdated(std::optional<Date>()),
-    state(),
+    mState(),
     os(std::optional<BLEDeviceOperatingSystem>(BLEDeviceOperatingSystem::unknown)),
     payload(),
-    immediateSendData(),
-    rssi(),
-    txPower(),
-    receiveOnly(false),
-    ignore(false),
+    mImmediateSendData(),
+    mRssi(),
+    mTxPower(),
+    mReceiveOnly(false),
+    mIgnore(false),
     ignoreForDuration(),
     ignoreUntil(), // empty, not "now"
-    payloadCharacteristic(),
-    signalCharacteristic(),
+    mPayloadCharacteristic(),
+    mSignalCharacteristic(),
     pseudoAddress(),
     lastWriteRssiAt(),
     lastWritePayloadAt(),
@@ -125,30 +81,31 @@ BLEDevice::Impl::Impl(TargetIdentifier identifier, BLEDeviceDelegate& del, const
     connected(),
     payloadUpdated(),
     segments(),
-    services(),
+    mServices(),
     hasEverConnected(false),
     connectRepeatedFailures(0)
 {
   ;
 }
 
-BLEDevice::Impl::Impl(const Impl& other)
-  : id(other.id),
+BLEDevice::BLEDevice(const BLEDevice& other)
+  : Device(),
+    id(other.id),
     delegate(other.delegate),
-    created(other.created),
+    mCreated(other.mCreated),
     lastUpdated(other.lastUpdated),
-    state(other.state),
+    mState(other.mState),
     os(other.os),
     payload(other.payload),
-    immediateSendData(other.immediateSendData),
-    rssi(other.rssi),
-    txPower(other.txPower),
-    receiveOnly(other.receiveOnly),
-    ignore(other.ignore),
+    mImmediateSendData(other.mImmediateSendData),
+    mRssi(other.mRssi),
+    mTxPower(other.mTxPower),
+    mReceiveOnly(other.mReceiveOnly),
+    mIgnore(other.mIgnore),
     ignoreForDuration(other.ignoreForDuration),
     ignoreUntil(other.ignoreUntil), // empty, not "now"
-    payloadCharacteristic(other.payloadCharacteristic),
-    signalCharacteristic(other.signalCharacteristic),
+    mPayloadCharacteristic(other.mPayloadCharacteristic),
+    mSignalCharacteristic(other.mSignalCharacteristic),
     pseudoAddress(other.pseudoAddress),
     lastWriteRssiAt(other.lastWriteRssiAt),
     lastWritePayloadAt(other.lastWritePayloadAt),
@@ -157,35 +114,41 @@ BLEDevice::Impl::Impl(const Impl& other)
     connected(other.connected),
     payloadUpdated(other.payloadUpdated),
     segments(other.segments),
-    services(other.services)
+    mServices(other.mServices)
 {
   ;
 }
 
-BLEDevice::Impl::~Impl()
+BLEDevice::~BLEDevice() = default;
+
+void
+BLEDevice::reset(const TargetIdentifier& newID, BLEDeviceDelegate& newDelegate)
 {
-  ;
+  // mImpl = std::make_unique<Impl>();
+  mState.reset();
+  id = newID;
+  delegate.emplace(std::reference_wrapper<BLEDeviceDelegate>(newDelegate));
 }
 
-BLEDevice::Impl&
-BLEDevice::Impl::operator=(const Impl& other)
+BLEDevice&
+BLEDevice::operator=(const BLEDevice& other)
 {
   id = other.id;
   delegate = other.delegate;
-  created = other.created;
+  mCreated = other.mCreated;
   lastUpdated = other.lastUpdated;
-  state = other.state;
+  mState = other.mState;
   os = other.os;
   payload = other.payload;
-  immediateSendData = other.immediateSendData;
-  rssi = other.rssi;
-  txPower = other.txPower;
-  receiveOnly = other.receiveOnly;
-  ignore = other.ignore;
+  mImmediateSendData = other.mImmediateSendData;
+  mRssi = other.mRssi;
+  mTxPower = other.mTxPower;
+  mReceiveOnly = other.mReceiveOnly;
+  mIgnore = other.mIgnore;
   ignoreForDuration = other.ignoreForDuration;
-  ignoreUntil = other.ignoreUntil;
-  payloadCharacteristic = other.payloadCharacteristic;
-  signalCharacteristic = other.signalCharacteristic;
+  ignoreUntil = other.ignoreUntil; // empty, not "now"
+  mPayloadCharacteristic = other.mPayloadCharacteristic;
+  mSignalCharacteristic = other.mSignalCharacteristic;
   pseudoAddress = other.pseudoAddress;
   lastWriteRssiAt = other.lastWriteRssiAt;
   lastWritePayloadAt = other.lastWritePayloadAt;
@@ -194,191 +157,143 @@ BLEDevice::Impl::operator=(const Impl& other)
   connected = other.connected;
   payloadUpdated = other.payloadUpdated;
   segments = other.segments;
-  services = other.services;
-
-  return *this;
-}
-
-
-
-
-
-BLEDevice::BLEDevice()
-  : Device(),
-    mImpl(std::make_unique<Impl>())
-{
-  ;
-}
-
-BLEDevice::BLEDevice(TargetIdentifier identifier, BLEDeviceDelegate& delegate,
-  const Date& createdAt)
-  : Device(),
-    mImpl(std::make_unique<Impl>(identifier,delegate,createdAt))
-{
-  ;
-}
-
-BLEDevice::BLEDevice(const BLEDevice& other)
-  : Device(),
-    mImpl(std::make_unique<Impl>(*other.mImpl))
-{
-  ;
-}
-
-BLEDevice::~BLEDevice()
-{
-  ;
-}
-
-void
-BLEDevice::reset(const TargetIdentifier& newID, BLEDeviceDelegate& newDelegate)
-{
-  mImpl = std::make_unique<Impl>();
-  mImpl->state.reset();
-  mImpl->id = newID;
-  mImpl->delegate.emplace(std::reference_wrapper<BLEDeviceDelegate>(newDelegate));
-}
-
-BLEDevice&
-BLEDevice::operator=(const BLEDevice& other)
-{
-  mImpl = std::make_unique<Impl>(*other.mImpl);
+  mServices = other.mServices;
   return *this;
 }
 
 bool
 BLEDevice::operator==(const BLEDevice& other) const noexcept
 {
-  return mImpl->id == other.mImpl->id;
+  return id == other.id;
 }
 
 bool
 BLEDevice::operator!=(const BLEDevice& other) const noexcept
 {
-  return mImpl->id != other.mImpl->id;
+  return id != other.id;
 }
 
 
 const TargetIdentifier&
 BLEDevice::identifier() const
 {
-  return mImpl->id;
+  return id;
 }
 
 void
 BLEDevice::identifier(const TargetIdentifier& toCopyFrom)
 {
-  mImpl->id = toCopyFrom;
+  id = toCopyFrom;
 }
 
 Date
 BLEDevice::created() const
 {
-  return mImpl->created;
+  return mCreated;
 }
 
 // basic descriptors
 std::string
 BLEDevice::description() const
 {
-  return (std::string)mImpl->id;
+  return (std::string)id;
 }
 
 BLEDevice::operator std::string() const
 {
-  return (std::string)mImpl->id;
+  return (std::string)id;
 }
 
 // timing related getters
 TimeInterval
 BLEDevice::timeIntervalSinceLastUpdate() const
 {
-  if (!mImpl->lastUpdated.has_value()) {
+  if (!lastUpdated.has_value()) {
     return TimeInterval::zero(); // default to new, just seen rather than 'no activity'
   }
-  return TimeInterval(mImpl->lastUpdated.value(), Date());
+  return TimeInterval(lastUpdated.value(), Date());
 }
 
 TimeInterval
 BLEDevice::timeIntervalSinceConnected() const
 {
-  if (state() != BLEDeviceState::connected) {
+  if (mState != BLEDeviceState::connected) {
     return TimeInterval::never();
   }
-  if (!mImpl->connected.has_value()) {
+  if (!connected.has_value()) {
     return TimeInterval::never();
   }
-  return TimeInterval(mImpl->connected.value(), Date());
+  return TimeInterval(connected.value(), Date());
 }
 
 TimeInterval
 BLEDevice::timeIntervalSinceLastPayloadDataUpdate() const
 {
-  if (!mImpl->payloadUpdated.has_value()) {
+  if (!payloadUpdated.has_value()) {
     return TimeInterval::never();
   }
-  return TimeInterval(mImpl->payloadUpdated.value(),Date());
+  return TimeInterval(payloadUpdated.value(),Date());
 }
 
 TimeInterval
 BLEDevice::timeIntervalSinceLastWritePayloadSharing() const
 {
-  if (!mImpl->lastWritePayloadSharingAt.has_value()) {
+  if (!lastWritePayloadSharingAt.has_value()) {
     return TimeInterval::never();
   }
-  return TimeInterval(mImpl->lastWritePayloadSharingAt.value(),Date());
+  return TimeInterval(lastWritePayloadSharingAt.value(),Date());
 }
 
 TimeInterval
 BLEDevice::timeIntervalSinceLastWritePayload() const
 {
-  if (!mImpl->lastWritePayloadAt.has_value()) {
+  if (!lastWritePayloadAt.has_value()) {
     return TimeInterval::never();
   }
-  return TimeInterval(mImpl->lastWritePayloadAt.value(), Date());
+  return TimeInterval(lastWritePayloadAt.value(), Date());
 }
 
 TimeInterval
 BLEDevice::timeIntervalSinceLastWriteRssi() const
 {
-  if (!mImpl->lastWriteRssiAt.has_value()) {
+  if (!lastWriteRssiAt.has_value()) {
     return TimeInterval::never();
   }
-  return TimeInterval(mImpl->lastWriteRssiAt.value(),Date());
+  return TimeInterval(lastWriteRssiAt.value(),Date());
 }
 
 TimeInterval
 BLEDevice::timeIntervalUntilIgnoreExpired() const
 {
-  if (!mImpl->ignoreUntil.has_value()) {
+  if (!ignoreUntil.has_value()) {
     return TimeInterval::zero();
   }
-  if (mImpl->ignoreUntil.value() == TimeInterval::never()) {
+  if (ignoreUntil.value() == TimeInterval::never()) {
     return TimeInterval::never();
   }
-  return TimeInterval(Date(),mImpl->ignoreUntil.value());
+  return TimeInterval(Date(),ignoreUntil.value());
 }
 
 // property getters and setters
 std::optional<BLEMacAddress>
 BLEDevice::pseudoDeviceAddress() const
 {
-  return mImpl->pseudoAddress;
+  return pseudoAddress;
 }
 
 void
 BLEDevice::pseudoDeviceAddress(BLEMacAddress newAddress)
 {
-  if (!mImpl->pseudoAddress.has_value() || mImpl->pseudoAddress.value() != newAddress) {
-    mImpl->pseudoAddress = newAddress;
-    mImpl->lastUpdated.emplace(); // Constructs Date as now
+  if (!pseudoAddress.has_value() || pseudoAddress.value() != newAddress) {
+    pseudoAddress.emplace(newAddress);
+    lastUpdated.emplace(); // Constructs Date as now
   }
 }
 
 std::optional<BLEDeviceState>
 BLEDevice::state() const
 {
-  return mImpl->state;
+  return mState;
 }
 
 void
@@ -386,84 +301,84 @@ BLEDevice::state(BLEDeviceState newState)
 {
   // Check if failed to connect
   if (BLEDeviceState::disconnected == newState &&
-      (!mImpl->state.has_value() ||
-       (mImpl->state.has_value() && BLEDeviceState::disconnected == mImpl->state ) ||
-       (mImpl->state.has_value() && BLEDeviceState::connecting == mImpl->state )
+      (!mState.has_value() ||
+       (mState.has_value() && BLEDeviceState::disconnected == mState ) ||
+       (mState.has_value() && BLEDeviceState::connecting == mState )
       )
   ) {
-    mImpl->connectRepeatedFailures++;
-    if (mImpl->connectRepeatedFailures >= 5) { // Changed to 5 from 10 for quicker failure in busy areas
+    connectRepeatedFailures++;
+    if (connectRepeatedFailures >= 5) { // Changed to 5 from 10 for quicker failure in busy areas
       // Ignore for a while (progressive backoff)
       operatingSystem(BLEDeviceOperatingSystem::ignore);
       // Don't backoff again immediately
-      mImpl->connectRepeatedFailures = 0;
+      connectRepeatedFailures = 0;
     }
   }
   if (BLEDeviceState::connected == newState) {
-    mImpl->hasEverConnected = true;
-    mImpl->connectRepeatedFailures = 0;
+    hasEverConnected = true;
+    connectRepeatedFailures = 0;
   }
-  bool changed = !mImpl->state.has_value() || mImpl->state.value() != newState;
+  bool changed = !mState.has_value() || mState.value() != newState;
   if (changed) {
-    mImpl->state.emplace(newState);
-    mImpl->lastUpdated.emplace(); // Constructs Date as now
-    mImpl->delegate->get().device(*this, BLEDeviceAttribute::state);
+    mState.emplace(newState);
+    lastUpdated.emplace(); // Constructs Date as now
+    delegate->get().device(*this, BLEDeviceAttribute::state);
   }
 }
 
 std::optional<BLEDeviceOperatingSystem>
 BLEDevice::operatingSystem() const
 {
-  return mImpl->os;
+  return os;
 }
 
 void
 BLEDevice::operatingSystem(BLEDeviceOperatingSystem newOS)
 {
   
-  mImpl->lastUpdated.emplace(); // Constructs Date as now
-  if (mImpl->os.has_value() && mImpl->os == BLEDeviceOperatingSystem::ignore) {
-    if (!mImpl->ignoreForDuration.has_value()) {
-      mImpl->ignoreForDuration = TimeInterval::minutes(1);
-    } else if (mImpl->ignoreForDuration.value() < TimeInterval::minutes(3)) {
+  lastUpdated.emplace(); // Constructs Date as now
+  if (os.has_value() && os == BLEDeviceOperatingSystem::ignore) {
+    if (!ignoreForDuration.has_value()) {
+      ignoreForDuration.emplace(TimeInterval::minutes(1));
+    } else if (ignoreForDuration.value() < TimeInterval::minutes(3)) {
       // progressive backoff for unknown device
-      mImpl->ignoreForDuration.value() * 1.2;
-      if (mImpl->ignoreForDuration.value() > TimeInterval::minutes(7)) {
+      ignoreForDuration.value() * 1.2;
+      if (ignoreForDuration.value() > TimeInterval::minutes(7)) {
         // just ignore as the mac will have rotated (7:43 will occur half way through 15 mins intervals)
         // As the total BLE DB timeout is ~ 25 minutes, this will save significant connection attempt cycles
-        mImpl->ignore = true;
+        mIgnore = true;
       }
     }
-    mImpl->ignoreUntil = mImpl->lastUpdated.value() + mImpl->ignoreForDuration.value();
+    ignoreUntil.emplace(lastUpdated.value() + ignoreForDuration.value());
   } else {
-    mImpl->ignoreUntil.reset();
+    ignoreUntil.reset();
   }
-  if (mImpl->os == BLEDeviceOperatingSystem::ios || mImpl->os == BLEDeviceOperatingSystem::android) {
-    mImpl->ignoreForDuration.reset();
+  if (os == BLEDeviceOperatingSystem::ios || os == BLEDeviceOperatingSystem::android) {
+    ignoreForDuration.reset();
   }
-  bool changed = !mImpl->os.has_value() || mImpl->os.value() != newOS;
+  bool changed = !os.has_value() || os.value() != newOS;
   if (changed) {
-    mImpl->os.emplace(newOS);
-    mImpl->delegate->get().device(*this, BLEDeviceAttribute::operatingSystem);
+    os.emplace(newOS);
+    delegate->get().device(*this, BLEDeviceAttribute::operatingSystem);
   }
 }
 
 std::optional<PayloadData>
 BLEDevice::payloadData() const
 {
-  return mImpl->payload;
+  return payload;
 }
 
 void
 BLEDevice::payloadData(PayloadData newPayloadData)
 {
-  bool changed = !mImpl->payload.has_value() || mImpl->payload.value() != newPayloadData;
+  bool changed = !payload.has_value() || payload.value() != newPayloadData;
   if (changed) {
-    mImpl->payload.emplace(newPayloadData);
-    mImpl->lastUpdated.emplace(); // Constructs Date as now
-    mImpl->payloadUpdated = Date();
-    if (mImpl->delegate.has_value()) {
-      mImpl->delegate->get().device(*this, BLEDeviceAttribute::payloadData);
+    payload.emplace(newPayloadData);
+    lastUpdated.emplace(); // Constructs Date as now
+    payloadUpdated.emplace();
+    if (delegate.has_value()) {
+      delegate->get().device(*this, BLEDeviceAttribute::payloadData);
     }
   }
 }
@@ -471,41 +386,41 @@ BLEDevice::payloadData(PayloadData newPayloadData)
 std::optional<ImmediateSendData>
 BLEDevice::immediateSendData() const
 {
-  return mImpl->immediateSendData;
+  return mImmediateSendData;
 }
 
 void
 BLEDevice::immediateSendData(ImmediateSendData toSend)
 {
-  bool changed = !mImpl->immediateSendData.has_value() || mImpl->immediateSendData.value() != toSend;
+  bool changed = !mImmediateSendData.has_value() || mImmediateSendData.value() != toSend;
   if (changed) {
-    mImpl->immediateSendData.emplace(toSend);
-    mImpl->lastUpdated.emplace(); // Constructs Date as now
-    mImpl->delegate->get().device(*this, BLEDeviceAttribute::immediateSendData);
+    mImmediateSendData.emplace(toSend);
+    lastUpdated.emplace(); // Constructs Date as now
+    delegate->get().device(*this, BLEDeviceAttribute::immediateSendData);
   }
 }
 
 void
 BLEDevice::clearImmediateSendData()
 {
-  mImpl->immediateSendData.reset();
+  mImmediateSendData.reset();
 }
 
 std::optional<RSSI>
 BLEDevice::rssi() const
 {
-  return mImpl->rssi;
+  return mRssi;
 }
 
 void
 BLEDevice::rssi(RSSI newRSSI)
 {
-  bool changed = !mImpl->rssi.has_value() || mImpl->rssi.value() != newRSSI;
+  bool changed = !mRssi.has_value() || mRssi.value() != newRSSI;
   if (changed) {
-    mImpl->rssi.emplace(newRSSI);
-    mImpl->lastUpdated.emplace(); // Constructs Date as now
-    if (mImpl->delegate.has_value()) {
-      mImpl->delegate->get().device(*this, BLEDeviceAttribute::rssi);
+    mRssi.emplace(newRSSI);
+    lastUpdated.emplace(); // Constructs Date as now
+    if (delegate.has_value()) {
+      delegate->get().device(*this, BLEDeviceAttribute::rssi);
     }
   }
 }
@@ -513,54 +428,54 @@ BLEDevice::rssi(RSSI newRSSI)
 std::optional<BLETxPower>
 BLEDevice::txPower() const
 {
-  return mImpl->txPower;
+  return mTxPower;
 }
 
 void
 BLEDevice::txPower(BLETxPower newPower)
 {
-  bool changed = !mImpl->txPower.has_value() || mImpl->txPower.value() != newPower;
+  bool changed = !mTxPower.has_value() || mTxPower.value() != newPower;
   if (changed) {
-    mImpl->txPower.emplace(newPower);
-    mImpl->lastUpdated.emplace(); // Constructs Date as now
-    mImpl->delegate->get().device(*this, BLEDeviceAttribute::txPower);
+    mTxPower.emplace(newPower);
+    lastUpdated.emplace(); // Constructs Date as now
+    delegate->get().device(*this, BLEDeviceAttribute::txPower);
   }
 }
 
 bool
 BLEDevice::receiveOnly() const
 {
-  return mImpl->receiveOnly;
+  return mReceiveOnly;
 }
 
 void
 BLEDevice::receiveOnly(bool newReceiveOnly)
 {
-  mImpl->receiveOnly = newReceiveOnly;
+  mReceiveOnly = newReceiveOnly;
 }
 
 std::optional<UUID>
 BLEDevice::signalCharacteristic() const
 {
-  return mImpl->signalCharacteristic;
+  return mSignalCharacteristic;
 }
 
 void
 BLEDevice::signalCharacteristic(UUID newChar)
 {
-  mImpl->signalCharacteristic = newChar;
+  mSignalCharacteristic.emplace(newChar);
 }
 
 std::optional<UUID>
 BLEDevice::payloadCharacteristic() const
 {
-  return mImpl->payloadCharacteristic;
+  return mPayloadCharacteristic;
 }
 
 void
 BLEDevice::payloadCharacteristic(UUID newChar)
 {
-  mImpl->payloadCharacteristic = newChar;
+  mPayloadCharacteristic.emplace(newChar);
 }
 
 // State engine methods
@@ -568,14 +483,14 @@ bool
 BLEDevice::ignore() const
 {
   // Check for permanent ignore
-  if (mImpl->ignore) {
+  if (mIgnore) {
     return true;
   }
   // Check for timed ignore
-  if (!mImpl->ignoreUntil.has_value()) {
+  if (!ignoreUntil.has_value()) {
     return false;
   }
-  if (Date() < mImpl->ignoreUntil.value()) {
+  if (Date() < ignoreUntil.value()) {
     return true;
   }
   return false;
@@ -584,80 +499,80 @@ BLEDevice::ignore() const
 void
 BLEDevice::ignore(bool newIgnore) // set permanent ignore flag
 {
-  mImpl->ignore = newIgnore;
+  mIgnore = newIgnore;
 }
 
 void
 BLEDevice::invalidateCharacteristics()
 {
-  mImpl->payloadCharacteristic.reset();
-  mImpl->signalCharacteristic.reset();
+  mPayloadCharacteristic.reset();
+  mSignalCharacteristic.reset();
 }
 
 void
 BLEDevice::registerDiscovery(Date at)
 {
-  mImpl->lastDiscoveredAt = at;
-  mImpl->lastUpdated.reset(); // TODO verify this shouldn't be 'at' instead (for continuity)
+  lastDiscoveredAt.emplace(at);
+  lastUpdated.reset(); // TODO verify this shouldn't be 'at' instead (for continuity)
 }
 
 void
 BLEDevice::registerWritePayload(Date at)
 {
-  mImpl->lastUpdated = at;
-  mImpl->lastWritePayloadAt = at;
+  lastUpdated.emplace(at);
+  lastWritePayloadAt.emplace(at);
 }
 
 void
 BLEDevice::registerWritePayloadSharing(Date at)
 {
-  mImpl->lastUpdated = at;
-  mImpl->lastWritePayloadSharingAt = at;
+  lastUpdated.emplace(at);
+  lastWritePayloadSharingAt.emplace(at);
 }
 
 void
 BLEDevice::registerWriteRssi(Date at)
 {
-  mImpl->lastUpdated = at;
-  mImpl->lastWriteRssiAt = at;
+  lastUpdated.emplace(at);
+  lastWriteRssiAt.emplace(at);
 }
 
 bool
 BLEDevice::hasAdvertData() const
 {
-  return mImpl->segments.has_value();
+  return segments.has_value();
 }
 
 void
-BLEDevice::advertData(std::vector<BLEAdvertSegment> segments)
+BLEDevice::advertData(std::vector<BLEAdvertSegment> newSegments)
 {
-  mImpl->segments = segments;
+  segments = newSegments;
 }
 
-std::vector<BLEAdvertSegment>&
+const std::vector<BLEAdvertSegment>&
 BLEDevice::advertData() const
 {
-  return mImpl->segments.value();
+  return segments.value();
 }
 
 bool
 BLEDevice::hasServicesSet() const
 {
-  return mImpl->services.has_value();
+  return mServices.has_value();
 }
 void
 BLEDevice::services(std::vector<UUID> services)
 {
-  mImpl->lastUpdated.emplace(); // Constructs Date as now
-  mImpl->services = services;
+  lastUpdated.emplace(); // Constructs Date as now
+  mServices.emplace(services);
 }
 
 bool
 BLEDevice::hasService(const UUID& serviceUUID) const
 {
-  if (!mImpl->services.has_value()) return false; // guard
-  auto iter = std::find(std::begin(mImpl->services.value()),std::end(mImpl->services.value()),serviceUUID);
-  return (std::end(mImpl->services.value()) != iter);
+  if (!mServices.has_value()) return false; // guard
+  auto iter = std::find(std::begin(mServices.value()),std::end(mServices.value()),serviceUUID);
+  return (std::end(mServices.value()) != iter);
 }
 
 }
