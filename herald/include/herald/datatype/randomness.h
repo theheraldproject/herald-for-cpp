@@ -43,6 +43,7 @@ namespace datatype {
 class AllZerosNotRandom {
 public:
   AllZerosNotRandom() = default;
+  AllZerosNotRandom(AllZerosNotRandom&& other) noexcept = default;
   ~AllZerosNotRandom() = default;
 
   std::string methodName() const {
@@ -71,7 +72,17 @@ class IntegerDistributedRandomSource {
 public:
   IntegerDistributedRandomSource() 
     : rd(), gen(rd()), distrib(LONG_MIN,LONG_MAX)
-  {}
+  {
+    ;
+  }
+
+  IntegerDistributedRandomSource(IntegerDistributedRandomSource&& other) noexcept
+    : rd(), // Doesn't have a move or copy constructor
+      gen(rd()),
+      distrib(other.distrib)
+  {
+    ;
+  } 
 
   ~IntegerDistributedRandomSource() = default;
 
@@ -121,7 +132,7 @@ template <typename RandomnessSourceT>
 class RandomnessGenerator {
 public:
   RandomnessGenerator(RandomnessSourceT&& toOwn)
-    : m_source(std::forward(toOwn)),
+    : m_source(std::move(toOwn)),
       m_entropy(0)
   {
     ;
