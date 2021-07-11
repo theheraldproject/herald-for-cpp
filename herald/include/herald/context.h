@@ -10,41 +10,6 @@
 
 namespace herald {
 
-///
-/// \brief High level abstraction to access platform-specific implemented primitives.
-/// 
-/// Some platforms require global configuration or static configuration that
-/// doesn't map well on to C++ idioms. This class provides an extension capability
-/// to allow this linking.
-///
-// class Context {
-// public:
-//   Context() = default;
-//   ~Context() = default;
-
-//   template <typename SinkT>
-//   SensorLogger<SinkT,std::string,std::string> getLogger(const std::string& subsystemFor, const std::string& categoryFor);
-//   // virtual std::shared_ptr<SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor) = 0;
-//   BluetoothStateManager getBluetoothStateManager();
-// };
-
-//class Context; // fwd decl only here
-
-
-///
-/// \brief Default context that just sends logging to stdout
-///
-// class DefaultContext : public Context {
-// public:
-//   DefaultContext() = default;
-//   ~DefaultContext() = default;
-
-//   std::shared_ptr<BluetoothStateManager> getBluetoothStateManager() override;
-
-//   std::shared_ptr<SensorLoggingSink> getLoggingSink(const std::string& subsystemFor, const std::string& categoryFor) override;
-// };
-
-
 /// \brief Compile-time Context class, customisable via template traits. Provides generic access to OS system features.
 /// 
 /// Covers all cross-cutting concerns methods and helpers to prevent tight coupling between components

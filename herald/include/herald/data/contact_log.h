@@ -15,10 +15,10 @@ namespace herald::data {
 /**
  * Logs all contact info to STDERR to allow it to be extracted as a stream
  */
-template <typename ContextT>
-class ErrorStreamContactLogger : public SensorDelegate {
+template <typename ContextT, typename PayloadDataFormatterT>
+class ErrorStreamContactLogger {
 public:
-  ErrorStreamContactLogger(ContextT& context, std::shared_ptr<PayloadDataFormatter> formatter)
+  ErrorStreamContactLogger(ContextT& context, PayloadDataFormatterT& formatter)
     : ctx(context), 
       fmt(formatter)
       HLOGGERINIT(ctx,"Sensor","contacts.log")
@@ -28,17 +28,17 @@ public:
   ~ErrorStreamContactLogger() = default;
 
   // Sensor delegate overrides
-  void sensor(SensorType sensor, const TargetIdentifier& didDetect) override {
+  void sensor(SensorType sensor, const TargetIdentifier& didDetect) {
     HTDBG("didDetect");
   }
-  void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) override {}
-  void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) override {}
-  void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) override{}
-  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) override {}
+  void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) {}
+  void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) {}
+  void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget){}
+  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {}
   template <typename LocationT>
   void sensor(SensorType sensor, const Location<LocationT>& didVisit) {}
-  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) override {}
-  void sensor(SensorType sensor, const SensorState& didUpdateState) override {}
+  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {}
+  void sensor(SensorType sensor, const SensorState& didUpdateState) {}
 
 private:
   std::string csv(std::string toEscape) const noexcept {
@@ -58,7 +58,7 @@ private:
   }
 
   ContextT& ctx;
-  std::shared_ptr<PayloadDataFormatter> fmt;
+  PayloadDataFormatterT& fmt;
 
   HLOGGER(ContextT);
 };

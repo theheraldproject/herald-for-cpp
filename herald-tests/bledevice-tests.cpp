@@ -9,6 +9,8 @@
 
 #include "herald/herald.h"
 
+#include "test-templates.h"
+
 class DummyBLEDeviceDelegate : public herald::ble::BLEDeviceDelegate {
 public:
   DummyBLEDeviceDelegate() : callbackCalled(false), dev(), attr() {};
@@ -122,12 +124,12 @@ TEST_CASE("ble-device-update-payload", "[ble][device][update][payload]") {
 
     herald::payload::fixed::ConcreteFixedPayloadDataSupplierV1 pds(826,4,123123123);
 
-    herald::datatype::PayloadData payload = pds.payload(herald::datatype::PayloadTimestamp(),nullptr).value();
+    BlankDevice bd;
+    herald::datatype::PayloadData payload = pds.payload(herald::datatype::PayloadTimestamp(),bd);
     device.payloadData(payload);
 
     // actual value
-    REQUIRE(device.payloadData().has_value());
-    REQUIRE(device.payloadData().value() == payload);
+    REQUIRE(device.payloadData() == payload);
 
     // delegates
     REQUIRE(delegate.callbackCalled);

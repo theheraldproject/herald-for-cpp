@@ -9,6 +9,26 @@
 
 #include <iostream>
 
+class BlankDevice : public herald::Device {
+public:
+  BlankDevice() : id(herald::datatype::Data(std::byte(10),6)) {};
+  ~BlankDevice() = default;
+
+  herald::datatype::Date created() const {
+    return herald::datatype::Date(14);
+  }
+  herald::datatype::TimeInterval timeIntervalSinceLastUpdate() const {
+    return herald::datatype::TimeInterval(12);
+  }
+  const herald::datatype::TargetIdentifier& identifier() const {
+    return id;
+  }
+  void identifier(const herald::datatype::TargetIdentifier& toCopyFrom) {}
+
+private:
+  herald::ble::TargetIdentifier id;
+};
+
 struct TimeSetPlatformType {
   TimeSetPlatformType()
     : seconds(0) {}
@@ -67,7 +87,7 @@ public:
     const herald::ble::BLEDeviceAttribute attribute) override {
     updateCallbackCalled = true;
     dev.emplace(device);
-    attr = attribute;
+    attr.emplace(attribute);
   }
   
   void bleDatabaseDidDelete(const herald::ble::BLEDevice& device) override {

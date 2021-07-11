@@ -116,7 +116,7 @@ void main(void)
 	ConcreteExtendedDataV1 extendedData;
 	extendedData.addSection(ExtendedDataSegmentCodesV1::TextPremises, erinsStakehouse.name);
 
-	std::shared_ptr<payload::beacon::ConcreteBeaconPayloadDataSupplierV1> pds = std::make_shared<payload::beacon::ConcreteBeaconPayloadDataSupplierV1>(
+	payload::beacon::ConcreteBeaconPayloadDataSupplierV1 pds(
 		erinsStakehouse.country,
 		erinsStakehouse.state,
 		erinsStakehouse.code,
@@ -124,7 +124,7 @@ void main(void)
 	);
 	
 	SensorArray sa(ctx,pds);
-	ConcreteBLESensor<CT> ble(ctx,ctx.getBluetoothStateManager(),pds);
+	ConcreteBLESensor ble(ctx,ctx.getBluetoothStateManager(),pds);
 	sa.add(ble);
 
 	// Start array (and thus start advertising)

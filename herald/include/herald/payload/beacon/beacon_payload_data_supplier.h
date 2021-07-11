@@ -21,7 +21,7 @@ using namespace herald::datatype;
 
 using MYUINT32 = unsigned long;
 
-class BeaconPayloadDataSupplier : public PayloadDataSupplier {
+class BeaconPayloadDataSupplier {
 public:
   BeaconPayloadDataSupplier() = default;
   virtual ~BeaconPayloadDataSupplier() = default;
@@ -37,9 +37,10 @@ public:
     MYUINT32 code);
   ~ConcreteBeaconPayloadDataSupplierV1();
 
-  std::optional<PayloadData> legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override;
-  std::optional<PayloadData> payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override;
-  std::vector<PayloadData> payload(const Data& data) override;
+  PayloadData legacyPayload(const PayloadTimestamp timestamp, const Device& device);
+  PayloadData payload(const PayloadTimestamp timestamp, const Device& device);
+  PayloadData payload(const PayloadTimestamp timestamp);
+  std::vector<PayloadData> payload(const Data& data);
 
 private:
   uint16_t country;

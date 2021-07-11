@@ -183,9 +183,7 @@ public:
     }
     BLEDevice& newDevice = devices[indexAvailable()];
     newDevice.reset(TargetIdentifier(payloadData),*this);
-    // std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
-    //   TargetIdentifier(payloadData), *this); //this->shared_from_this());
-    // devices.push_back(newDevice);
+
     for (auto& delegate : delegates) {
       delegate.get().bleDatabaseDidCreate(newDevice);
     }
@@ -203,7 +201,7 @@ public:
     HTDBG("New target identified: {}",(std::string)targetIdentifier);
     BLEDevice& newDevice = devices[indexAvailable()];
     newDevice.reset(targetIdentifier,*this);
-    // devices.push_back(newDevice);
+
     for (auto& delegate : delegates) {
       delegate.get().bleDatabaseDidCreate(newDevice);
     }
@@ -233,8 +231,6 @@ public:
     return results;
   }
 
-  // std::vector<std::shared_ptr<BLEDevice>> devices() const override;
-
   /// Cannot name a function delete in C++. remove is common.
   void remove(const TargetIdentifier& targetIdentifier) override {
     auto found = std::find_if(devices.begin(),devices.end(),
@@ -247,8 +243,6 @@ public:
       remove(toRemove);
     }
   }
-
-  // std::optional<PayloadSharingData> payloadSharingData(const std::shared_ptr<BLEDevice>& peer) override;
 
   // BLE Device Delegate overrides
   void device(const BLEDevice& device, BLEDeviceAttribute didUpdate) override {

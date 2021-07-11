@@ -52,35 +52,22 @@ using namespace herald::payload;
 //      SPECIFIC PLATFORM DEFINITIONS ARE WITHIN SEVERAL C++ FILES
 //      UNDER WINDOWS AND ZEPHYR SUB DIRECTORIES
 
-// class ConcreteBluetoothStateManager : public BluetoothStateManager, public std::enable_shared_from_this<BluetoothStateManager>  {
-// public:
-//   ConcreteBluetoothStateManager();
-//   ConcreteBluetoothStateManager(const ConcreteBluetoothStateManager& from) = delete;
-//   ConcreteBluetoothStateManager(ConcreteBluetoothStateManager&& from) = delete;
-//   ~ConcreteBluetoothStateManager();
-
-//   // Bluetooth State Manager overrides
-//   void add(std::shared_ptr<BluetoothStateManagerDelegate> delegate) override;
-//   BluetoothState state() override;
-// };
-
-
 
 /**
  * Acts as the main object to control the receiver, transmitter, and database instances
  */
-template <typename ContextT,std::size_t DBSize = 10>
+template <typename ContextT, typename PayloadDataSupplierT, typename SensorDelegateSetT, std::size_t DBSize = 10>
 class ConcreteBLESensor : public BLESensor, public BLEDatabaseDelegate, 
   public BluetoothStateManagerDelegate /*, public std::enable_shared_from_this<ConcreteBLESensor<ContextT,TransmitterT,ReceiverT>>*/  {
 public:
   ConcreteBLESensor(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
+    PayloadDataSupplierT& payloadDataSupplier, SensorDelegateSetT& dels)
   : m_context(ctx),
     database(ctx), 
     stateManager(bluetoothStateManager),
-    transmitter(ctx, bluetoothStateManager, payloadDataSupplier, database),
-    receiver(ctx, bluetoothStateManager, payloadDataSupplier, database),
-    delegates(),
+    transmitter(ctx, bluetoothStateManager, payloadDataSupplier, database, dels),
+    receiver(ctx, bluetoothStateManager, payloadDataSupplier, database, dels),
+    delegates(dels),
     coordinator(ctx, database, receiver),
     addedSelfAsDelegate(false)
     HLOGGERINIT(ctx,"sensor","ConcreteBLESensor")
@@ -112,13 +99,13 @@ public:
   }
 
   // Sensor overrides
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override {
-    delegates.push_back(delegate);
-    // add all delegates to receiver and transmitter too?
-    receiver.add(delegate);
-    transmitter.add(delegate);
-    // TODO what about duplicates?
-  }
+  // void add(const SensorDelegateT& delegate) override {
+  //   delegates.push_back(delegate);
+  //   // add all delegates to receiver and transmitter too?
+  //   receiver.add(delegate);
+  //   transmitter.add(delegate);
+  //   // TODO what about duplicates?
+  // }
 
   void start() override {
     if (!addedSelfAsDelegate) {
@@ -129,7 +116,7 @@ public:
     transmitter.start();
     receiver.start();
     for (auto& delegate : delegates) {
-      delegate->sensor(SensorType::BLE, SensorState::on);
+      delegate.sensor(SensorType::BLE, SensorState::on);
     }
   }
 
@@ -137,14 +124,14 @@ public:
     transmitter.stop();
     receiver.stop();
     for (auto& delegate : delegates) {
-      delegate->sensor(SensorType::BLE, SensorState::off);
+      delegate.sensor(SensorType::BLE, SensorState::off);
     }
   }
 
   // Database overrides
   void bleDatabaseDidCreate(const BLEDevice& device) override {
     for (auto& delegate : delegates) {
-      delegate->sensor(SensorType::BLE, device.identifier()); // didDetect
+      delegate.sensor(SensorType::BLE, device.identifier()); // didDetect
     }
   }
 
@@ -156,7 +143,7 @@ public:
           double rssiValue = (double)rssi->intValue();
           auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
           for (auto& delegate: delegates) {
-            delegate->sensor(SensorType::BLE,
+            delegate.sensor(SensorType::BLE,
               prox,
               device.identifier()
             ); // didMeasure
@@ -165,7 +152,7 @@ public:
           auto payload = device.payloadData();
           if (payload.has_value()) {
             for (auto& delegate: delegates) {
-              delegate->sensor(SensorType::BLE,
+              delegate.sensor(SensorType::BLE,
                 prox,
                 device.identifier(),
                 *payload
@@ -179,7 +166,7 @@ public:
         auto payload = device.payloadData();
         if (payload.has_value()) {
           for (auto& delegate: delegates) {
-            delegate->sensor(SensorType::BLE,
+            delegate.sensor(SensorType::BLE,
               *payload,
               device.identifier()
             ); // didReadPayload
@@ -190,7 +177,7 @@ public:
             double rssiValue = (double)rssi->intValue();
             auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
             for (auto& delegate: delegates) {
-              delegate->sensor(SensorType::BLE,
+              delegate.sensor(SensorType::BLE,
                 prox,
                 device.identifier(),
                 *payload
@@ -221,7 +208,7 @@ public:
     }
     if (BluetoothState::unsupported == didUpdateState) {
       for (auto& delegate : delegates) {
-        delegate->sensor(SensorType::BLE, SensorState::unavailable);
+        delegate.sensor(SensorType::BLE, SensorState::unavailable);
       }
     }
   }
@@ -235,15 +222,15 @@ private:
   ContextT& m_context;
   ConcreteBLEDatabase<ContextT,DBSize> database;
   BluetoothStateManager& stateManager;
-  ConcreteBLETransmitter<ContextT,ConcreteBLEDatabase<ContextT,DBSize>> transmitter;
-  ConcreteBLEReceiver<ContextT,ConcreteBLEDatabase<ContextT,DBSize>> receiver;
+  ConcreteBLETransmitter<ContextT,PayloadDataSupplierT,ConcreteBLEDatabase<ContextT,DBSize>,SensorDelegateSetT> transmitter;
+  ConcreteBLEReceiver<ContextT,PayloadDataSupplierT,ConcreteBLEDatabase<ContextT,DBSize>,SensorDelegateSetT> receiver;
 
-  std::vector<std::shared_ptr<SensorDelegate>> delegates;
+  SensorDelegateSetT& delegates;
   
   HeraldProtocolBLECoordinationProvider<
     ContextT,
     ConcreteBLEDatabase<ContextT,DBSize>,
-    ConcreteBLEReceiver<ContextT,ConcreteBLEDatabase<ContextT,DBSize>>
+    ConcreteBLEReceiver<ContextT,PayloadDataSupplierT,ConcreteBLEDatabase<ContextT,DBSize>,SensorDelegateSetT>
   > coordinator;
 
   bool addedSelfAsDelegate;

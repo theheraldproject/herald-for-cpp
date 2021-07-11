@@ -5,8 +5,6 @@
 #include "herald/default_sensor_delegate.h"
 
 namespace herald {
-
-DefaultSensorDelegate::DefaultSensorDelegate() {}
   
 void 
 DefaultSensorDelegate::sensor(SensorType sensor, const TargetIdentifier& didDetect) {

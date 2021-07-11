@@ -25,7 +25,7 @@ using namespace herald::payload::extended;
 
 using MYUINT32 = unsigned long;
 
-class SimplePayloadDataSupplier : public PayloadDataSupplier {
+class SimplePayloadDataSupplier {
 public:
   SimplePayloadDataSupplier() = default;
   virtual ~SimplePayloadDataSupplier() = default;
@@ -64,12 +64,11 @@ public:
   ConcreteSimplePayloadDataSupplierV1(ConcreteSimplePayloadDataSupplierV1&& from) = delete; // move ctor deletion
   ~ConcreteSimplePayloadDataSupplierV1() = default;
 
-  std::optional<PayloadData> legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override {
-    return {};
+  PayloadData legacyPayload(const PayloadTimestamp timestamp, const Device& device) {
+    return PayloadData();
   }
 
-  std::optional<PayloadData> payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override {
-    
+  PayloadData payload(const PayloadTimestamp timestamp, const Device& device) {
     const int day = k.day(timestamp.value);
     const int period = k.period(timestamp.value);
 
@@ -89,10 +88,33 @@ public:
       p.append(extended.payload().value());
     }
 
-    return std::optional<PayloadData>{p};
+    return p;
   }
 
-  std::vector<PayloadData> payload(const Data& data) override {
+  PayloadData payload(const PayloadTimestamp timestamp) {
+    const int day = k.day(timestamp.value);
+    const int period = k.period(timestamp.value);
+
+    auto cid = k.contactIdentifier(secretKey,day,period);
+
+    PayloadData p(commonPayloadHeader);
+    // length
+    if (extended.hasData()) {
+      p.append(std::uint16_t(2 + extended.payload().value().size()));
+    } else {
+      p.append(std::uint16_t(2));
+    }
+    // contact id
+    p.append(cid);
+    // extended data
+    if (extended.hasData()) {
+      p.append(extended.payload().value());
+    }
+
+    return p;
+  }
+
+  std::vector<PayloadData> payload(const Data& data) {
     return std::vector<PayloadData>();
   }
 

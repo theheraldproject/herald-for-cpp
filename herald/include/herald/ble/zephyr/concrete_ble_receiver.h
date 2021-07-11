@@ -218,16 +218,16 @@ namespace zephyrinternal {
   const struct bt_gatt_dm_cb* getDiscoveryCallbacks();
 }
 
-template <typename ContextT, typename BLEDatabaseT>
+template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
 class ConcreteBLEReceiver : public BLEReceiver, public HeraldProtocolV1Provider, public herald::zephyrinternal::Callbacks /*, public std::enable_shared_from_this<ConcreteBLEReceiver<ContextT>>*/ {
 public:
   ConcreteBLEReceiver(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, BLEDatabaseT& bleDatabase)
+    PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels)
     : m_context(ctx), // Herald API guarantees this to be safe
       m_stateManager(bluetoothStateManager),
       m_pds(payloadDataSupplier),
       db(bleDatabase),
-      delegates(),
+      delegates(dels),
       connectionStates(),
       isScanning(false)
       HLOGGERINIT(ctx,"Sensor","BLE.ConcreteBLEReceiver")
@@ -258,11 +258,6 @@ public:
   }
 
   // Sensor overrides
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override
-  {
-    delegates.push_back(delegate);
-  }
-
   void start() override
   {
     HTDBG("ConcreteBLEReceiver::start");
@@ -300,7 +295,7 @@ public:
       return;
     }
     
-    herald::ble::zephyrinternal::resetReceiverInstance(); // destroys the shared_ptr not necessarily the underlying value
+    herald::ble::zephyrinternal::resetReceiverInstance(); // may not destroy the underlying value
 
     stopScanning();
 
@@ -1034,10 +1029,10 @@ private:
 
   ContextT& m_context;
   BluetoothStateManager& m_stateManager;
-  std::shared_ptr<PayloadDataSupplier> m_pds;
+  PayloadDataSupplierT& m_pds;
   BLEDatabaseT& db;
 
-  std::vector<std::shared_ptr<SensorDelegate>> delegates;
+  SensorDelegateSetT& delegates;
 
   std::map<TargetIdentifier,ConnectedDeviceState> connectionStates;
   bool isScanning;

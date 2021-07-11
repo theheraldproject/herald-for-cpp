@@ -24,8 +24,6 @@ public:
   MockSensor(CoordProvT& provider) : cp(provider) {}
   ~MockSensor() = default;
 
-  
-  void add(const std::shared_ptr<herald::ble::SensorDelegate>& delegate) override {}
   void start() override {}
   void stop() override {}
 
@@ -268,18 +266,12 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
 
   herald::datatype::Data devMac2(std::byte(0x1f),6);
   herald::datatype::TargetIdentifier device2(devMac2);
-  // std::shared_ptr<herald::ble::BLEDevice> devPtr2 = db->device(device2);
 
   herald::datatype::Data devMac3(std::byte(0x09),6);
   herald::datatype::TargetIdentifier device3(devMac3);
-  // std::shared_ptr<herald::ble::BLEDevice> devPtr3 = db->device(device3);
   
   SECTION("blecoordinator-complex-iterations-01-device1") {
     herald::ble::BLEDevice& devPtr1 = db.device(device1);
-
-    // std::vector<std::tuple<herald::engine::FeatureTag,herald::engine::Priority,
-    //   std::optional<herald::datatype::TargetIdentifier>>> conns = 
-    //   coord->requiredConnections();
 
     // Now perform one iteration
     c.iteration();
@@ -290,7 +282,6 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
     REQUIRE(pp.hasReadPayload == false);
     REQUIRE(pp.hasImmediateSend == false);
     REQUIRE(pp.hasImmediateSendAll == false);
-  //}
 
   // second iteration should read payload
     c.iteration();
@@ -300,13 +291,6 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
     REQUIRE(pp.lastDevicePayload == device1);
     REQUIRE(pp.hasImmediateSend == false);
     REQUIRE(pp.hasImmediateSendAll == false);
-  
-  //SECTION("blecoordinator-complex-iterations-02-immediatesend-device1") {
-    //std::shared_ptr<herald::ble::BLEDevice> devPtr1 = db->device(device1);
-
-    // std::vector<std::tuple<herald::engine::FeatureTag,herald::engine::Priority,
-    //   std::optional<herald::datatype::TargetIdentifier>>> conns = 
-    //   coord->requiredConnections();
 
     // TODO MARK DEVICE FOR IMMEDIATE SEND IN PROVIDER
     devPtr1.immediateSendData(herald::datatype::Data(std::byte(0x09),4));
@@ -322,10 +306,6 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
     REQUIRE(pp.hasImmediateSend == true);
     REQUIRE(pp.lastImmediateSend == device1);
     REQUIRE(pp.hasImmediateSendAll == false);
-  //}
-  
-  //SECTION("blecoordinator-complex-iterations-03-noactivity") {
-    // No changes to required activity
 
     // Now perform one iteration
     c.iteration();

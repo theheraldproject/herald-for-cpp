@@ -8,6 +8,8 @@
 
 #include "herald/herald.h"
 
+#include "test-templates.h"
+
 // Test F first
 
 TEST_CASE("payload-f-hash", "[payload][f][hash]") {
@@ -459,20 +461,20 @@ TEST_CASE("payload-simple-basic", "[payload][simple][basic]") {
       sk,
       k
     );
-    auto pd = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(0)},nullptr);
+    BlankDevice bd;
+    auto pd = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(0)},bd);
 
-    REQUIRE(pd.has_value());
-    REQUIRE(pd->size() == 23); // 1 version code, 2 country, 2 state, 2 remainder length, 16 clientId, no optional = 23
+    REQUIRE(pd.size() == 23); // 1 version code, 2 country, 2 state, 2 remainder length, 16 clientId, no optional = 23
     std::uint8_t rpidversion = 0;
     std::uint16_t rc = 0;
     std::uint16_t rs = 0;
     std::uint64_t rcid1 = 0;
     std::uint64_t rcid2 = 0;
-    REQUIRE(pd->uint8(0,rpidversion));
-    REQUIRE(pd->uint16(1,rc));
-    REQUIRE(pd->uint16(3,rs));
-    REQUIRE(pd->uint64(5,rcid1));
-    REQUIRE(pd->uint64(13,rcid2));
+    REQUIRE(pd.uint8(0,rpidversion));
+    REQUIRE(pd.uint16(1,rc));
+    REQUIRE(pd.uint16(3,rs));
+    REQUIRE(pd.uint64(5,rcid1));
+    REQUIRE(pd.uint64(13,rcid2));
     REQUIRE(rpidversion == std::uint8_t(0x10)); // https://heraldprox.io/specs/payload-simple
     REQUIRE(rc == country);
     REQUIRE(rs == state);
@@ -501,14 +503,11 @@ TEST_CASE("payload-simple-payloadbounds", "[payload][simple][payloadbounds]") {
     );
 
     // same payload in same period - basis is 0
-    auto p1start = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(0)}, nullptr);
-    auto p1samestart = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(0)}, nullptr);
-    auto p1end = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date((6 * 60) - 1)}, nullptr);
-    auto p2start = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(6 * 60)}, nullptr);
-    REQUIRE(p1start.has_value());
-    REQUIRE(p1samestart.has_value());
-    REQUIRE(p1end.has_value());
-    REQUIRE(p2start.has_value());
+    BlankDevice bd;
+    auto p1start = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(0)}, bd);
+    auto p1samestart = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(0)}, bd);
+    auto p1end = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date((6 * 60) - 1)}, bd);
+    auto p2start = pds.payload(herald::datatype::PayloadTimestamp{.value = herald::datatype::Date(6 * 60)}, bd);
     REQUIRE(p1start == p1samestart);
     REQUIRE(p1start == p1end);
     REQUIRE(p1start != p2start);

@@ -20,11 +20,11 @@ using namespace herald::datatype;
 using namespace herald::payload;
 
 /// \brief Dummy implementation of a ConcreteBLEReceiver that does nothing (used for testing)
-template <typename ContextT, typename BLEDatabaseT>
+template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
 class ConcreteBLEReceiver : public BLEReceiver, public HeraldProtocolV1Provider {
 public:
   ConcreteBLEReceiver(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, BLEDatabaseT& bleDatabase) {}
+    PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels) {}
   ConcreteBLEReceiver(const ConcreteBLEReceiver& from) = delete;
   ConcreteBLEReceiver(ConcreteBLEReceiver&& from) = delete;
   ~ConcreteBLEReceiver() {}
@@ -42,7 +42,8 @@ public:
   }
 
   // Sensor overrides
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override {}
+  // template <typename SensorDelegateT>
+  // void add(const SensorDelegateT& delegate) override {}
   void start() override {}
   void stop() override {}
 
