@@ -89,30 +89,30 @@ char* str(const TargetIdentifier& ti) {
   return log_strdup( ((std::string)ti).c_str());
 }
 
-class AppLoggingDelegate : public herald::SensorDelegate {
+class AppLoggingDelegate {
 public:
 	AppLoggingDelegate() = default;
 	~AppLoggingDelegate() = default;
 
-	void sensor(SensorType sensor, const TargetIdentifier& didDetect) override {
+	void sensor(SensorType sensor, const TargetIdentifier& didDetect) {
 		// LOG_DBG("sensor didDetect");
 		APP_DBG("sensor didDetect: %s", str(didDetect) ); // May want to disable this - logs A LOT of info
 	}
 
   /// Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
-  void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) override {
+  void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) {
 		// LOG_DBG("sensor didRead");
 		APP_DBG("sensor didRead: %s with payload: %s", str(fromTarget), log_strdup(didRead.hexEncodedString().c_str()));
 	}
 
   /// Receive written immediate send data from target, e.g. important timing signal.
-  void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) override {
+  void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) {
 		// LOG_DBG("sensor didReceive");
 		APP_DBG("sensor didReceive: %s with immediate send data: %s", str(fromTarget), log_strdup(didReceive.hexEncodedString().c_str()));
 	}
 
   /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
-  void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) override {
+  void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) {
 		APP_DBG("sensor didShare");
 		// LOG_DBG("sensor didShare: %s", str(fromTarget) );
 		// for (auto& p : didShare) {
@@ -121,7 +121,7 @@ public:
 	}
 
   /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
-  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) override {
+  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {
 		APP_DBG("sensor didMeasure");
 		// LOG_DBG("sensor didMeasure: %s with proximity: %d", str(fromTarget), didMeasure.value); 
 	}
@@ -133,12 +133,12 @@ public:
 	}
 
   /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
-  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) override {
+  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {
 		APP_DBG("sensor didMeasure withPayload");
 	}
 
   /// Sensor state update
-  void sensor(SensorType sensor, const SensorState& didUpdateState) override {
+  void sensor(SensorType sensor, const SensorState& didUpdateState) {
 		APP_DBG("sensor didUpdateState");
 	}
 };
@@ -191,13 +191,36 @@ void herald_entry() {
 	APP_DBG("DATE: %s", log_strdup(s.c_str()));
 	APP_DBG("PAST DATE");
 
-	std::shared_ptr<AppLoggingDelegate> appDelegate = std::make_shared<AppLoggingDelegate>();
 	
 	// IMPLEMENTORS GUIDANCE - USING HERALD
 	// First initialise the Zephyr Context - this links Herald to any Zephyr OS specific constructs or callbacks
 	ZephyrContextProvider zcp;
 	Context ctx(zcp,zcp.getLoggingSink(),zcp.getBluetoothStateManager());
 	using CT = Context<ZephyrContextProvider,ZephyrLoggingSink,BluetoothStateManager>;
+
+
+	AppLoggingDelegate appDelegate;
+	
+	// 4. Now create a live analysis pipeline and enable RSSI to be sent to it for distance estimation
+// #ifdef HERALD_ANALYSIS_ENABLED
+	herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
+
+	herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance> myDelegate(ctx);
+	herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
+	herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
+
+	herald::analysis::AnalysisRunner<
+		herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance>>,
+		herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
+		RSSI,Distance
+	> runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
+
+	herald::analysis::SensorDelegateRSSISource<decltype(runner)> src(runner);
+	// sa.add(src);
+// #endif
+
+	SensorDelegateSet sensorDelegates(appDelegate, src); // just the one from the app, and one for the analysis API
+	
 
   // Now prepare your device's Herald identity payload - this is what gets sent to other devices when they request it
 	//   SECURITY: Depending on the payload provider, this could be static and in the clear or varying over time. 
@@ -220,7 +243,7 @@ void herald_entry() {
 	// }
 	APP_DBG("Final clientID: %" PRIu64 "", clientId);
 
-	std::shared_ptr<ConcreteFixedPayloadDataSupplierV1> pds = std::make_shared<ConcreteFixedPayloadDataSupplierV1>(
+	ConcreteFixedPayloadDataSupplierV1 pds(
 		countryCode,
 		stateCode,
 		clientId
@@ -268,7 +291,7 @@ void herald_entry() {
 // 	APP_DBG("About to create Payload data supplier");
 // 	k_sleep(K_SECONDS(2));
 
-// 	std::shared_ptr<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1<CT>> pds = std::make_shared<herald::payload::simple::ConcreteSimplePayloadDataSupplierV1<CT>>(
+// 	herald::payload::simple::ConcreteSimplePayloadDataSupplierV1 pds(
 // 		ctx,
 // 		countryCode,
 // 		stateCode,
@@ -279,12 +302,11 @@ void herald_entry() {
 	APP_DBG("Have created Payload data supplier");
 	k_sleep(K_SECONDS(2));
 
-
 	auto& sink = ctx.getLoggingSink();
 	sink.log("subsys1","cat1",SensorLoggerLevel::debug,"Here's some info for you");
-	auto payload = pds->payload(PayloadTimestamp(),nullptr);
-	sink.log("subsys1","cat1",SensorLoggerLevel::debug,"I've got some payload data");
-	sink.log("subsys1","cat1",SensorLoggerLevel::debug,payload->hexEncodedString());
+	// auto payload = pds.payload(PayloadTimestamp(),nullptr);
+	// sink.log("subsys1","cat1",SensorLoggerLevel::debug,"I've got some payload data");
+	// sink.log("subsys1","cat1",SensorLoggerLevel::debug,payload->hexEncodedString());
 	
 	auto& sink2 = ctx.getLoggingSink();
 	sink2.log("subsys2","cat2",SensorLoggerLevel::debug,"Here's some more info for you");
@@ -308,39 +330,22 @@ void herald_entry() {
 	
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
 	SensorArray sa(ctx,pds);
-	ConcreteBLESensor<CT> ble(ctx,ctx.getBluetoothStateManager(),pds);
+	ConcreteBLESensor ble(ctx, ctx.getBluetoothStateManager(), sensorDelegates, pds);
 	sa.add(ble);
 
 	// Add contacts.log delegate
 	// CURRENTLY BREAKS ZEPHYR - DON'T KNOW WHY YET - LOGGING SUBSYSTEM ISSUE
-	// std::shared_ptr<ConcretePayloadDataFormatter> pdf = std::make_shared<ConcretePayloadDataFormatter>();
-	// std::shared_ptr<ErrorStreamContactLogger> contactLogger = std::make_shared<ErrorStreamContactLogger>(ctx, pdf);
-	// sa->add(contactLogger);
+	// ConcretePayloadDataFormatter pdf;
+	// ErrorStreamContactLogger contactLogger(ctx, pdf);
+	// sa.add(contactLogger);
 	
 	// Note: You will likely want to register a SensorDelegate implementation of your own to the sensor array to get callbacks on nearby devices
-	sa.add(appDelegate);
+	// sa.add(appDelegate);
 
 
 	// 3. Create and add a Logging sensor delegate to enable testing of discovery
 
 
-	// 4. Now create a live analysis pipeline and enable RSSI to be sent to it for distance estimation
-// #ifdef HERALD_ANALYSIS_ENABLED
-	herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
-
-	herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance> myDelegate(ctx);
-	herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
-	herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
-
-	herald::analysis::AnalysisRunner<
-		herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance>>,
-		herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
-		RSSI,Distance
-	> runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
-
-	std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
-	sa.add(src);
-// #endif
 
 	
 	APP_DBG("Starting sensor array");

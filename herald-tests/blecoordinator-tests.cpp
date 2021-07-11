@@ -85,34 +85,6 @@ public:
   HLOGGER(ContextT);
 };
 
-/*
-class MockHeraldV1ProtocolProvider : public herald::ble::HeraldProtocolV1Provider {
-public:
-  MockHeraldV1ProtocolProvider(std::shared_ptr<herald::ble::BLEDatabase> bledb)
-    : db(bledb), hasIdentifiedOs(false), lastDeviceOS(), hasReadPayload(false), lastDevicePayload()
-  {}
-  ~MockHeraldV1ProtocolProvider() = default;
-  
-  void identifyOS(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
-    auto device = db->device(std::get<1>(act.prerequisites.front()).value());
-    device->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
-    cb(act,{});
-  }
-
-  void readPayload(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
-    auto device = db->device(std::get<1>(act.prerequisites.front()).value());
-    device->payloadData(herald::datatype::Data(std::byte(0x02),2));
-    cb(act,{});
-  }
-
-  std::shared_ptr<herald::ble::BLEDatabase> db;
-  bool hasIdentifiedOs;
-  std::optional<herald::datatype::TargetIdentifier> lastDeviceOS;
-  bool hasReadPayload;
-  std::optional<herald::datatype::TargetIdentifier> lastDevicePayload;
-};
-*/
-
 TEST_CASE("blecoordinator-ctor", "[coordinator][ctor][basic]") {
   SECTION("blecoordinator-ctor") {
     DummyLoggingSink dls;

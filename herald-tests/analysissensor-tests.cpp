@@ -80,14 +80,14 @@ TEST_CASE("analysissensor-rssi-basic", "[analysissensor][rssi][basic]") {
       RSSI,Distance
     > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
 
-    std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
+    herald::analysis::SensorDelegateRSSISource<decltype(runner)> src(runner);
     PayloadData payload(std::byte(5),4);
     TargetIdentifier id(Data(std::byte(3),16));
-    src->sensor(SensorType::BLE, p1, id, payload);
-    src->sensor(SensorType::BLE, p2, id, payload);
+    src.sensor(SensorType::BLE, p1, id, payload);
+    src.sensor(SensorType::BLE, p2, id, payload);
     runner.run(Date()); // In an app, use a Coordinator task
-    src->sensor(SensorType::BLE, p3, id, payload);
-    src->sensor(SensorType::BLE, p4, id, payload);
+    src.sensor(SensorType::BLE, p3, id, payload);
+    src.sensor(SensorType::BLE, p4, id, payload);
     runner.run(Date()); // In an app, use a Coordinator task
 
     auto& delegateRef = adm.get<DummyDistanceDelegate>();
@@ -100,7 +100,7 @@ TEST_CASE("analysissensor-rssi-basic", "[analysissensor][rssi][basic]") {
 
     // Let's see the total memory in use...
     std::cout << "AnalysisRunner::RAM = " << sizeof(runner) << std::endl;
-    std::cout << "SensorDelegateRSSISource::RAM = " << sizeof(*src) << std::endl;
+    std::cout << "SensorDelegateRSSISource::RAM = " << sizeof(src) << std::endl;
   }
 }
 
@@ -135,14 +135,14 @@ TEST_CASE("analysissensor-output", "[sensorlogger][analysissensor][output]") {
       RSSI,Distance
     > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
 
-    std::shared_ptr<herald::analysis::SensorDelegateRSSISource<decltype(runner)>> src = std::make_shared<herald::analysis::SensorDelegateRSSISource<decltype(runner)>>(runner);
+    herald::analysis::SensorDelegateRSSISource<decltype(runner)> src(runner);
     PayloadData payload(std::byte(5),4);
     TargetIdentifier id(Data(std::byte(3),16));
-    src->sensor(SensorType::BLE, p1, id, payload);
-    src->sensor(SensorType::BLE, p2, id, payload);
+    src.sensor(SensorType::BLE, p1, id, payload);
+    src.sensor(SensorType::BLE, p2, id, payload);
     runner.run(Date()); // In an app, use a Coordinator task
-    src->sensor(SensorType::BLE, p3, id, payload);
-    src->sensor(SensorType::BLE, p4, id, payload);
+    src.sensor(SensorType::BLE, p3, id, payload);
+    src.sensor(SensorType::BLE, p4, id, payload);
     runner.run(Date()); // In an app, use a Coordinator task
 
     auto& delegateRef = adm.get<DummyDistanceDelegate>();
@@ -159,7 +159,7 @@ TEST_CASE("analysissensor-output", "[sensorlogger][analysissensor][output]") {
 
     // Let's see the total memory in use...
     std::cout << "AnalysisRunner::RAM = " << sizeof(runner) << std::endl;
-    std::cout << "SensorDelegateRSSISource::RAM = " << sizeof(src.get()) << std::endl;
+    std::cout << "SensorDelegateRSSISource::RAM = " << sizeof(src) << std::endl;
 
 
   }

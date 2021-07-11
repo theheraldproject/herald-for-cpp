@@ -25,16 +25,22 @@ ConcreteFixedPayloadDataSupplierV1::ConcreteFixedPayloadDataSupplierV1(std::uint
 
 ConcreteFixedPayloadDataSupplierV1::~ConcreteFixedPayloadDataSupplierV1() = default;
 
-std::optional<PayloadData>
-ConcreteFixedPayloadDataSupplierV1::legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device)
+PayloadData
+ConcreteFixedPayloadDataSupplierV1::legacyPayload(const PayloadTimestamp timestamp, const Device& device)
 {
-  return std::optional<PayloadData>();
+  return PayloadData();
 }
 
-std::optional<PayloadData>
-ConcreteFixedPayloadDataSupplierV1::payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device)
+PayloadData
+ConcreteFixedPayloadDataSupplierV1::payload(const PayloadTimestamp timestamp, const Device& device)
 {
-  return std::optional<PayloadData>(mPayload);
+  return mPayload;
+}
+
+PayloadData
+ConcreteFixedPayloadDataSupplierV1::payload(const PayloadTimestamp timestamp)
+{
+  return mPayload;
 }
 
 std::vector<PayloadData>

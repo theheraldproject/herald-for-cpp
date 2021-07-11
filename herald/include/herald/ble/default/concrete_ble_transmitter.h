@@ -37,11 +37,11 @@ using namespace herald::payload;
 
 
 /// \brief Dummy implementation of a ConcreteBLETransmitter that does nothing (used for testing)
-template <typename ContextT, typename BLEDatabaseT>
+template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
 class ConcreteBLETransmitter : public BLETransmitter {
 public:
   ConcreteBLETransmitter(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, BLEDatabaseT& bleDatabase) {}
+    PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels) {}
 
   ConcreteBLETransmitter(const ConcreteBLETransmitter& from) = delete;
   ConcreteBLETransmitter(ConcreteBLETransmitter&& from) = delete;
@@ -54,7 +54,8 @@ public:
   }
 
   // Sensor overrides
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override {}
+  // template <typename SensorDelegateT>
+  // void add(const SensorDelegateT& delegate) override {}
 
   void start() override {}
 

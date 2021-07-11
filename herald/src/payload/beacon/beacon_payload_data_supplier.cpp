@@ -48,14 +48,20 @@ ConcreteBeaconPayloadDataSupplierV1::~ConcreteBeaconPayloadDataSupplierV1()
   ;
 }
 
-std::optional<PayloadData>
-ConcreteBeaconPayloadDataSupplierV1::legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device)
+PayloadData
+ConcreteBeaconPayloadDataSupplierV1::legacyPayload(const PayloadTimestamp timestamp, const Device& device)
 {
-  return std::optional<PayloadData>();
+  return PayloadData();
 }
 
-std::optional<PayloadData>
-ConcreteBeaconPayloadDataSupplierV1::payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device)
+PayloadData
+ConcreteBeaconPayloadDataSupplierV1::payload(const PayloadTimestamp timestamp, const Device& device)
+{
+  return mPayload;
+}
+
+PayloadData
+ConcreteBeaconPayloadDataSupplierV1::payload(const PayloadTimestamp timestamp)
 {
   return mPayload;
 }

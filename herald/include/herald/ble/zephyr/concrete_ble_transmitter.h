@@ -49,9 +49,11 @@ using namespace herald::payload;
 
 
 namespace zephyrinternal {
-  PayloadDataSupplier* getPayloadDataSupplier();
+  template <typename PayloadDataSupplierT>
+  PayloadDataSupplierT& getPayloadDataSupplier();
 
-  void setPayloadDataSupplier(PayloadDataSupplier* pds);
+  template <typename PayloadDataSupplierT>
+  void setPayloadDataSupplier(PayloadDataSupplierT& pds);
 
   
   struct bt_data* getAdvertData();
@@ -75,16 +77,16 @@ namespace zephyrinternal {
 
 
 
-template <typename ContextT, typename BLEDatabaseT>
+template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
 class ConcreteBLETransmitter : public BLETransmitter {
 public:
   ConcreteBLETransmitter(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, BLEDatabaseT& bleDatabase)
+    PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels)
     : m_context(ctx),
       m_stateManager(bluetoothStateManager),
       m_pds(payloadDataSupplier),
       m_db(bleDatabase),
-      delegates(),
+      delegates(dels),
       isAdvertising(false)
 
     HLOGGERINIT(ctx,"Sensor","BLE.ConcreteBLETransmitter")
@@ -98,7 +100,7 @@ public:
   ~ConcreteBLETransmitter()
   {
     stop();
-    zephyrinternal::setPayloadDataSupplier(NULL);
+    // zephyrinternal::setPayloadDataSupplier(NULL);
   }
 
   // Coordination overrides - Since v1.2-beta3
@@ -107,10 +109,6 @@ public:
   }
 
   // Sensor overrides
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override {
-    delegates.push_back(delegate);
-  }
-
   void start() override {
     HTDBG("ConcreteBLETransmitter::start");
     if (!m_context.getSensorConfiguration().advertisingEnabled) {
@@ -145,10 +143,10 @@ public:
 private:
   ContextT& m_context;
   BluetoothStateManager& m_stateManager;
-  std::shared_ptr<PayloadDataSupplier> m_pds;
+  PayloadDataSupplierT& m_pds;
   BLEDatabaseT& m_db;
 
-  std::vector<std::shared_ptr<SensorDelegate>> delegates;
+  SensorDelegateSetT& delegates;
 
   bool isAdvertising;
 

@@ -119,13 +119,16 @@ namespace zephyrinternal {
     return bp;
   }
 
-  PayloadDataSupplier* latestPds = NULL;
+  template <typename PayloadDataSupplierT>
+  PayloadDataSupplierT* latestPds = NULL;
 
-  PayloadDataSupplier* getPayloadDataSupplier() {
+  template <typename PayloadDataSupplierT>
+  PayloadDataSupplierT* getPayloadDataSupplier() {
     return latestPds;
   }
 
-  void setPayloadDataSupplier(PayloadDataSupplier* pds) {
+  template <typename PayloadDataSupplierT>
+  void setPayloadDataSupplier(PayloadDataSupplierT* pds) {
     latestPds = pds;
   }
 
@@ -165,29 +168,6 @@ namespace zephyrinternal {
     net_buf_unref(rsp);
   }
 
-  // template <typename ContextT>
-  // class ConcreteBLETransmitter<ContextT>::Impl {
-  // public:
-  //   Impl(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
-  //     std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, std::shared_ptr<BLEDatabase> bleDatabase);
-  //   ~Impl();
-
-  //   void startAdvertising();
-  //   void stopAdvertising();
-
-  //   ContextT& m_context;
-  //   BluetoothStateManager& m_stateManager;
-  //   std::shared_ptr<PayloadDataSupplier> m_pds;
-  //   std::shared_ptr<BLEDatabase> m_db;
-
-  //   std::vector<std::shared_ptr<SensorDelegate>> delegates;
-
-  //   bool isAdvertising;
-
-  //   HLOGGER(ContextT);
-  // };
-
-
   // TODO bind the below to a class and control their values - support for writing our payload to the remote device.
 
   uint8_t vnd_value[] = { 'V', 'e', 'n', 'd', 'o', 'r' };
@@ -222,7 +202,7 @@ namespace zephyrinternal {
     const char *value = (const char*)attr->user_data;
     if (NULL != latestPds) {
       PayloadTimestamp pts; // now
-      auto payload = latestPds->payload(pts,nullptr);
+      auto payload = latestPds->payload(pts);
       if (payload.has_value()) {
         char* newvalue = new char[payload->size()];
         std::size_t i;

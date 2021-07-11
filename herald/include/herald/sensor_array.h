@@ -41,11 +41,11 @@ using namespace engine;
 /// available on each platform. In Zephyr RTOS, for example,
 /// This is a simple 250ms delay within a special Herald-only
 /// Zephyr kernel thread.
-template <typename ContextT>
+template <typename ContextT, typename PayloadDataSupplierT>
 class SensorArray : public Sensor {
 public:
   /// \brief Takes ownership of payloadDataSupplier (std::move)
-  SensorArray(ContextT& ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
+  SensorArray(ContextT& ctx, PayloadDataSupplierT& payloadDataSupplier)
   : mContext(ctx), 
     mPayloadDataSupplier(payloadDataSupplier),
     mSensorArray(),
@@ -77,13 +77,7 @@ public:
     engine.add(sensor);
   }
 
-  // SENSOR OVERRIDES 
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override {
-    for (auto& sensor: mSensorArray) {
-      sensor.get().add(delegate);
-    }
-  }
-
+  // SENSOR OVERRIDES
   void start() override {
     for (auto& sensor: mSensorArray) {
       sensor.get().start();
@@ -111,7 +105,7 @@ public:
 private:
   // Initialised on entry to Impl constructor:-
   ContextT& mContext;
-  std::shared_ptr<PayloadDataSupplier> mPayloadDataSupplier;
+  PayloadDataSupplierT& mPayloadDataSupplier;
   std::vector<std::reference_wrapper<Sensor>> mSensorArray;
 
   Coordinator<ContextT> engine;
