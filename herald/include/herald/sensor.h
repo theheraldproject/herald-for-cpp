@@ -16,21 +16,21 @@ using namespace herald::engine;
 ///
 /// A Sensor could be a bluetooth transmitter or receiver (scanner), or an NFC
 /// receiver, or some other proximity sensor (E.g. UWB radio).
-class Sensor {
-public:
-  Sensor() = default;
-  virtual ~Sensor() = default;
+// class Sensor {
+// public:
+//   Sensor() = default;
+//   virtual ~Sensor() = default;
 
-  template <typename SensorDelegateT>
-  void add(const SensorDelegateT& delegate) {
-    ;
-  }
-  virtual void start() = 0;
-  virtual void stop() = 0;
+//   template <typename SensorDelegateT>
+//   void add(const SensorDelegateT& delegate) {
+//     ;
+//   }
+//   virtual void start() = 0;
+//   virtual void stop() = 0;
 
-  /// \brief For complex sensor coordination support, if required - Since v1.2-beta3
-  virtual std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() = 0;
-};
+//   /// \brief For complex sensor coordination support, if required - Since v1.2-beta3
+//   virtual std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() = 0;
+// };
 
 
 

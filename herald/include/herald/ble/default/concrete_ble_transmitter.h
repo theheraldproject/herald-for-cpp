@@ -38,7 +38,7 @@ using namespace herald::payload;
 
 /// \brief Dummy implementation of a ConcreteBLETransmitter that does nothing (used for testing)
 template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
-class ConcreteBLETransmitter : public BLETransmitter {
+class ConcreteBLETransmitter {
 public:
   ConcreteBLETransmitter(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels) {}
@@ -49,17 +49,14 @@ public:
   ~ConcreteBLETransmitter() {}
 
   // Coordination overrides - Since v1.2-beta3
-  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() {
     return {};
   }
 
   // Sensor overrides
-  // template <typename SensorDelegateT>
-  // void add(const SensorDelegateT& delegate) override {}
+  void start() {}
 
-  void start() override {}
-
-  void stop() override {}
+  void stop() {}
 
 };
 

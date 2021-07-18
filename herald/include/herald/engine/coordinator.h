@@ -6,11 +6,9 @@
 #define HERALD_COORDINATOR_H
 
 #include "../context.h"
-#include "../sensor.h"
 #include "activities.h"
 #include "../data/sensor_logger.h"
 
-#include <memory>
 #include <map>
 #include <vector>
 #include <algorithm>
@@ -51,7 +49,8 @@ public:
   ~Coordinator() = default;
 
   /// Introspect and include in iteration planning
-  void add(Sensor& sensor) {
+  template <typename SensorT>
+  void add(SensorT& sensor) {
     HTDBG("Adding sensor");
     auto prov = sensor.coordinationProvider();
     if (prov.has_value()) {
@@ -60,7 +59,8 @@ public:
     }
   }
   /// Remove from iteration planning
-  void remove(Sensor& sensor)
+  template <typename SensorT>
+  void remove(SensorT& sensor)
   {
     // TODO support remove
   }

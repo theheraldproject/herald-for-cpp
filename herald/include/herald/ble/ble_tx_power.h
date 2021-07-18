@@ -8,7 +8,8 @@
 namespace herald {
 namespace ble {
 
-using BLETxPower = int;
+/// \brief Signed short int for Transmit Power in dBm
+using BLETxPower = short int;
 
 } // end namespace
 } // end namespace

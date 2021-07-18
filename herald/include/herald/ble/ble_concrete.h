@@ -57,8 +57,8 @@ using namespace herald::payload;
  * Acts as the main object to control the receiver, transmitter, and database instances
  */
 template <typename ContextT, typename PayloadDataSupplierT, typename SensorDelegateSetT, std::size_t DBSize = 10>
-class ConcreteBLESensor : public BLESensor, public BLEDatabaseDelegate, 
-  public BluetoothStateManagerDelegate /*, public std::enable_shared_from_this<ConcreteBLESensor<ContextT,TransmitterT,ReceiverT>>*/  {
+class ConcreteBLESensor : public BLEDatabaseDelegate, 
+  public BluetoothStateManagerDelegate {
 public:
   ConcreteBLESensor(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     PayloadDataSupplierT& payloadDataSupplier, SensorDelegateSetT& dels)
@@ -79,7 +79,7 @@ public:
   ~ConcreteBLESensor() = default;
 
   // Coordination overrides - Since v1.2-beta3
-  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() {
     // Only return this if we support scanning
     if (m_context.getSensorConfiguration().scanningEnabled) {
       HTDBG("Providing a BLECoordinationProvider");
@@ -99,15 +99,7 @@ public:
   }
 
   // Sensor overrides
-  // void add(const SensorDelegateT& delegate) override {
-  //   delegates.push_back(delegate);
-  //   // add all delegates to receiver and transmitter too?
-  //   receiver.add(delegate);
-  //   transmitter.add(delegate);
-  //   // TODO what about duplicates?
-  // }
-
-  void start() override {
+  void start() {
     if (!addedSelfAsDelegate) {
       stateManager.add(*this); // FAILS IF USED IN THE CTOR - DO NOT DO THIS FROM CTOR
       database.add(*this);
@@ -120,7 +112,7 @@ public:
     }
   }
 
-  void stop() override {
+  void stop() {
     transmitter.stop();
     receiver.stop();
     for (auto& delegate : delegates) {
