@@ -204,7 +204,7 @@ namespace zephyrinternal {
       PayloadTimestamp pts; // now
       auto payload = latestPds->payload(pts);
       if (payload.has_value()) {
-        char* newvalue = new char[payload->size()];
+        char* newvalue = new char[payload->size()]; // TODO replace this with maximal fixed payload char array that we re-use
         std::size_t i;
         for (i = 0;i < payload->size();i++) {
           newvalue[i] = (char)payload->at(i);

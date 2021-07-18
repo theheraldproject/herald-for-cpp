@@ -21,7 +21,7 @@ using namespace herald::payload;
 
 /// \brief Dummy implementation of a ConcreteBLEReceiver that does nothing (used for testing)
 template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
-class ConcreteBLEReceiver : public BLEReceiver, public HeraldProtocolV1Provider {
+class ConcreteBLEReceiver : public HeraldProtocolV1Provider {
 public:
   ConcreteBLEReceiver(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels) {}
@@ -30,22 +30,20 @@ public:
   ~ConcreteBLEReceiver() {}
 
   // Coordination overrides - Since v1.2-beta3
-  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() {
     return {};
   }
 
-  bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) override {
+  bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) {
     return false;
   }
-  bool immediateSendAll(Data data) override {
+  bool immediateSendAll(Data data) {
     return false;
   }
 
   // Sensor overrides
-  // template <typename SensorDelegateT>
-  // void add(const SensorDelegateT& delegate) override {}
-  void start() override {}
-  void stop() override {}
+  void start() {}
+  void stop() {}
 
   // Herald V1 Protocol Provider methods
   bool openConnection(const TargetIdentifier& toTarget) override {

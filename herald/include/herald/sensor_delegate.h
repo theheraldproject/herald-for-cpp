@@ -58,7 +58,7 @@ class SensorDelegateSet {
 public:
   static constexpr std::size_t Size = sizeof...(SensorDelegateTs);
 
-  SensorDelegateSet(SensorDelegateTs... dels) : delegates() {
+  SensorDelegateSet(SensorDelegateTs&... dels) : delegates() {
     addDelegates(0,dels...);
   }
 
@@ -111,15 +111,15 @@ public:
   }
 
 private:
-  std::array<std::reference_wrapper<std::variant<SensorDelegateTs...>>,Size> delegates;
+  std::array<std::variant<std::reference_wrapper<SensorDelegateTs...>>,Size> delegates;
 
   template <typename LastT>
-  constexpr void addDelegates(int nextPos,LastT&& last) {
+  constexpr void addDelegates(int nextPos,LastT& last) {
     delegates[nextPos] = std::reference_wrapper<LastT>(last);
   }
 
   template <typename FirstT, typename SecondT, typename... RestT>
-  constexpr void addDelegates(int nextPos,FirstT&& first, SecondT&& second, RestT&&... rest) {
+  constexpr void addDelegates(int nextPos,FirstT& first, SecondT& second, RestT&... rest) {
     delegates[nextPos] = std::reference_wrapper<FirstT>(first);
     ++nextPos;
     addDelegates(nextPos,second,rest...);
