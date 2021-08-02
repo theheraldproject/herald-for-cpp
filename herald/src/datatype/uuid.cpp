@@ -12,6 +12,8 @@
 #include <iosfwd>
 #include <iomanip>
 
+#include <type_traits>
+
 namespace herald {
 namespace datatype {
 
@@ -50,14 +52,19 @@ UUID::fromString(const std::string& from) noexcept {
 }
 
 // Instance functions
+UUID::UUID(const char* from) noexcept
+ : mData({0}), mValid(true)
+{
+  // TODO actually copy the value from the string
+}
 
-UUID::UUID(UUID&& from) 
+UUID::UUID(UUID&& from) noexcept
  : mData(std::move(from.mData)), mValid(from.mValid)
 {
   ;
 }
 
-UUID::UUID(const UUID& from) 
+UUID::UUID(const UUID& from) noexcept
  : mData(from.mData),mValid(from.mValid)
 {
   ;
@@ -69,8 +76,6 @@ UUID::UUID(std::array<value_type, 16> data, bool isValid) noexcept
 {
   ;
 }
-
-UUID::~UUID() = default;
 
 
 UUID&
@@ -127,6 +132,11 @@ UUID::string() const noexcept {
        << hexString.substr(20,12);
   return fstr.str();
 }
+
+// Static assertions on this classes compiler contract
+static_assert(std::is_constructible_v<UUID,const char*>,"UUID Cannot be string constructed");
+static_assert(std::is_copy_constructible_v<UUID>,"UUID Cannot be copy constructed");
+static_assert(std::is_move_constructible_v<UUID>,"UUID Cannot be move constructed");
 
 } // end namespace
 } // end namespace

@@ -13,7 +13,6 @@
 #include "herald/datatype/target_identifier.h"
 
 #include <optional>
-#include <algorithm>
 
 namespace herald {
 namespace ble {
@@ -21,7 +20,7 @@ namespace ble {
 using namespace herald::datatype;
 using namespace herald::ble::filter;
 
-BLEDeviceFlags::BLEDeviceFlags() : bitFields(64000) /* TTT TT FTF FFFFF ?(F)?(F) F */
+BLEDeviceFlags::BLEDeviceFlags() : bitFields(64112) /* TTT TT FTF F TTT FFF F */
 {
   ;
 }
@@ -39,6 +38,10 @@ BLEDeviceFlags::reset()
   bitFields.set(4);
 
   bitFields.set(6);
+
+  bitFields.set(9);
+  bitFields.set(10);
+  bitFields.set(11);
 }
 
 BLEInternalState
@@ -108,23 +111,22 @@ BLEDeviceFlags::internalState(const BLEInternalState newState)
   }
 }
 
-std::optional<BLEDeviceState>
+BLEDeviceState
 BLEDeviceFlags::state() const
 {
   if (bitFields.test(3)) {
     if (bitFields.test(4)) {
-      return std::optional({BLEDeviceState::uninitialised});
+      return BLEDeviceState::uninitialised;
     } else {
-      return std::optional({BLEDeviceState::connecting});
+      return BLEDeviceState::connecting;
     }
   } else {
     if (bitFields.test(4)) {
-      return std::optional({BLEDeviceState::connected});
+      return BLEDeviceState::connected;
     } else {
-      return std::optional({BLEDeviceState::disconnected});
+      return BLEDeviceState::disconnected;
     }
   }
-  return {};
 }
 
 void
@@ -152,7 +154,7 @@ BLEDeviceFlags::state(const BLEDeviceState newState)
 }
 
 
-std::optional<BLEDeviceOperatingSystem>
+BLEDeviceOperatingSystem
 BLEDeviceFlags::operatingSystem() const
 {
   if (bitFields.test(0) && bitFields.test(1) && !bitFields.test(2)) {
@@ -182,7 +184,7 @@ BLEDeviceFlags::operatingSystem() const
     }
     // remaining values reserved
   }
-  return {};
+  return BLEDeviceOperatingSystem::unknown;
 }
 
 void
@@ -244,49 +246,94 @@ BLEDeviceFlags::hasHeraldService(bool newValue)
 bool
 BLEDeviceFlags::hasLegacyService() const
 {
-  return bitFields.test(9);
+  return bitFields.test(9) || bitFields.test(10) || bitFields.test(11);
+
+}
+
+BLELegacyService
+BLEDeviceFlags::legacyService() const
+{
+  if (hasHeraldService()) {
+    return BLELegacyService::NotApplicable;
+  }
+  if (bitFields.test(9)) {
+    if (bitFields.test(10)) {
+      if (bitFields.test(11)) {
+        return BLELegacyService::Unknown;
+      } else {
+        return BLELegacyService::OpenTrace;
+      }
+    } else {
+      if (bitFields.test(11)) {
+        return BLELegacyService::AustraliaCovidSafe;
+      }
+    }
+  }
+  return BLELegacyService::Unknown;
 }
 
 void
-BLEDeviceFlags::hasLegacyService(bool newValue)
+BLEDeviceFlags::legacyService(BLELegacyService newValue)
 {
-  bitFields.set(9,newValue);
+  switch (newValue)
+  {
+  case BLELegacyService::NotApplicable:
+    bitFields.set(9,true);
+    bitFields.set(10,true);
+    bitFields.set(11,true);
+    break;
+  case BLELegacyService::Unknown:
+    bitFields.set(9,true);
+    bitFields.set(10,true);
+    bitFields.set(11,true);
+    break;
+  case BLELegacyService::OpenTrace:
+    bitFields.set(9,true);
+    bitFields.set(10,true);
+    bitFields.set(11,false);
+    break;
+  case BLELegacyService::AustraliaCovidSafe:
+    bitFields.set(9,true);
+    bitFields.set(10,false);
+    bitFields.set(11,true);
+    break;
+  }
 }
 
 bool
 BLEDeviceFlags::hasPayloadCharacteristic() const
 {
-  return bitFields.test(10);
+  return bitFields.test(12);
 }
 
 void
 BLEDeviceFlags::hasPayloadCharacteristic(bool newValue)
 {
-  bitFields.set(10,newValue);
+  bitFields.set(12,newValue);
 }
 
 bool
-BLEDeviceFlags::hasSignalCharacteristic() const
+BLEDeviceFlags::signalCharacteristic() const
 {
-  return bitFields.test(11);
+  return bitFields.test(13);
 }
 
 void
-BLEDeviceFlags::hasSignalCharacteristic(bool newValue)
+BLEDeviceFlags::signalCharacteristic(bool newValue)
 {
-  bitFields.set(11,newValue);
+  bitFields.set(13,newValue);
 }
 
 bool
 BLEDeviceFlags::hasSecureCharacteristic() const
 {
-  return bitFields.test(12);
+  return bitFields.test(14);
 }
 
 void
 BLEDeviceFlags::hasSecureCharacteristic(bool newValue)
 {
-  bitFields.set(12,newValue);
+  bitFields.set(14,newValue);
 }
 
 bool
@@ -305,108 +352,39 @@ BLEDeviceFlags::hasEverConnected(bool newValue)
 
 
 
-BLEDevice::BLEDevice()
+BLEDevice::BLEDevice(BLESensorConfiguration& config)
   : Device(),
+    conf(config),
     delegate(std::nullopt),
     id(),
     flags(),
     lastUpdated(Date(0)),
     stateData(std::monostate())
-    // mCreated(Date()),
-    // lastUpdated(std::optional<Date>()),
-    // mState(std::optional<BLEDeviceState>(BLEDeviceState::uninitialised)),
-    // os(std::optional<BLEDeviceOperatingSystem>(BLEDeviceOperatingSystem::unknown)),
-    // payload(),
-    // mImmediateSendData(),
-    // mRssi(),
-    // mTxPower(),
-    // mReceiveOnly(false),
-    // mIgnore(false),
-    // ignoreForDuration(),
-    // ignoreUntil(), // empty, not "now"
-    // mPayloadCharacteristic(),
-    // mSignalCharacteristic(),
-    // pseudoAddress(),
-    // lastWriteRssiAt(),
-    // lastWritePayloadAt(),
-    // lastWritePayloadSharingAt(),
-    // lastDiscoveredAt(),
-    // connected(),
-    // payloadUpdated(),
-    // segments(),
-    // mServices(),
-    // hasEverConnected(false),
-    // connectRepeatedFailures(0)
 {
   ;
 }
 
-BLEDevice::BLEDevice(TargetIdentifier identifier, BLEDeviceDelegate& del,
+BLEDevice::BLEDevice(BLESensorConfiguration& config, TargetIdentifier identifier, BLEDeviceDelegate& del,
   const Date& createdAt)
   : Device(),
-    delegate(std::optional(std::reference_wrapper<BLEDeviceDelegate>(del))),
+    conf(config),
+    delegate(std::make_optional(std::reference_wrapper<BLEDeviceDelegate>(del))),
     id(identifier),
     flags(),
     lastUpdated(createdAt),
     stateData(DiscoveredState())
-    // mCreated(createdAt),
-    // lastUpdated(std::optional<Date>()),
-    // mState(),
-    // os(std::optional<BLEDeviceOperatingSystem>(BLEDeviceOperatingSystem::unknown)),
-    // payload(),
-    // mImmediateSendData(),
-    // mRssi(),
-    // mTxPower(),
-    // mReceiveOnly(false),
-    // mIgnore(false),
-    // ignoreForDuration(),
-    // ignoreUntil(), // empty, not "now"
-    // mPayloadCharacteristic(),
-    // mSignalCharacteristic(),
-    // pseudoAddress(),
-    // lastWriteRssiAt(),
-    // lastWritePayloadAt(),
-    // lastWritePayloadSharingAt(),
-    // lastDiscoveredAt(),
-    // connected(),
-    // payloadUpdated(),
-    // segments(),
-    // mServices(),
-    // hasEverConnected(false),
-    // connectRepeatedFailures(0)
 {
   ;
 }
 
 BLEDevice::BLEDevice(const BLEDevice& other)
   : Device(),
+    conf(other.conf),
     delegate(other.delegate),
     id(other.id),
     flags(other.flags),
     lastUpdated(other.lastUpdated),
     stateData(other.stateData)
-    // mCreated(other.mCreated),
-    // mState(other.mState),
-    // os(other.os),
-    // payload(other.payload),
-    // mImmediateSendData(other.mImmediateSendData),
-    // mRssi(other.mRssi),
-    // mTxPower(other.mTxPower),
-    // mReceiveOnly(other.mReceiveOnly),
-    // mIgnore(other.mIgnore),
-    // ignoreForDuration(other.ignoreForDuration),
-    // ignoreUntil(other.ignoreUntil), // empty, not "now"
-    // mPayloadCharacteristic(other.mPayloadCharacteristic),
-    // mSignalCharacteristic(other.mSignalCharacteristic),
-    // pseudoAddress(other.pseudoAddress),
-    // lastWriteRssiAt(other.lastWriteRssiAt),
-    // lastWritePayloadAt(other.lastWritePayloadAt),
-    // lastWritePayloadSharingAt(other.lastWritePayloadSharingAt),
-    // lastDiscoveredAt(other.lastDiscoveredAt),
-    // connected(other.connected),
-    // payloadUpdated(other.payloadUpdated),
-    // segments(other.segments),
-    // mServices(other.mServices)
 {
   ;
 }
@@ -418,41 +396,18 @@ BLEDevice::reset(const TargetIdentifier& newID, BLEDeviceDelegate& newDelegate)
 {
   delegate.emplace(std::reference_wrapper<BLEDeviceDelegate>(newDelegate));
   id = newID;
-  // mImpl = std::make_unique<Impl>();
-  // mState.reset();
   stateData = std::monostate();
 }
 
 BLEDevice&
 BLEDevice::operator=(const BLEDevice& other)
 {
+  conf = other.conf;
   delegate = other.delegate;
   id = other.id;
   flags = other.flags;
-  // mCreated = other.mCreated;
   lastUpdated = other.lastUpdated;
   stateData = other.stateData;
-  // mState = other.mState;
-  // os = other.os;
-  // payload = other.payload;
-  // mImmediateSendData = other.mImmediateSendData;
-  // mRssi = other.mRssi;
-  // mTxPower = other.mTxPower;
-  // mReceiveOnly = other.mReceiveOnly;
-  // mIgnore = other.mIgnore;
-  // ignoreForDuration = other.ignoreForDuration;
-  // ignoreUntil = other.ignoreUntil; // empty, not "now"
-  // mPayloadCharacteristic = other.mPayloadCharacteristic;
-  // mSignalCharacteristic = other.mSignalCharacteristic;
-  // pseudoAddress = other.pseudoAddress;
-  // lastWriteRssiAt = other.lastWriteRssiAt;
-  // lastWritePayloadAt = other.lastWritePayloadAt;
-  // lastWritePayloadSharingAt = other.lastWritePayloadSharingAt;
-  // lastDiscoveredAt = other.lastDiscoveredAt;
-  // connected = other.connected;
-  // payloadUpdated = other.payloadUpdated;
-  // segments = other.segments;
-  // mServices = other.mServices;
   return *this;
 }
 
@@ -528,10 +483,10 @@ BLEDevice::timeIntervalSinceLastUpdate() const
 TimeInterval
 BLEDevice::timeIntervalSinceLastPayloadDataUpdate() const
 {
-  if (!payloadUpdated.has_value()) {
+  if (BLEInternalState::identified != flags.internalState()) {
     return TimeInterval::never();
   }
-  return TimeInterval(payloadUpdated.value(),Date());
+  return TimeInterval(std::get<RelevantState>(stateData).payloadUpdated,Date());
 }
 
 // TimeInterval
@@ -564,32 +519,41 @@ BLEDevice::timeIntervalSinceLastPayloadDataUpdate() const
 TimeInterval
 BLEDevice::timeIntervalUntilIgnoreExpired() const
 {
-  if (!ignoreUntil.has_value()) {
+  const auto is = flags.internalState();
+  if (is != BLEInternalState::relevant &&
+      is != BLEInternalState::identified) {
     return TimeInterval::zero();
   }
-  if (ignoreUntil.value() == TimeInterval::never()) {
+  const auto ignoreUntil = std::get<RelevantState>(stateData).ignoreUntil;
+  if (ignoreUntil == TimeInterval::never()) {
     return TimeInterval::never();
   }
-  return TimeInterval(Date(),ignoreUntil.value());
+  return TimeInterval(Date(),ignoreUntil);
 }
 
 // property getters and setters
 std::optional<BLEMacAddress>
 BLEDevice::pseudoDeviceAddress() const
 {
-  return pseudoAddress;
+  const auto is = flags.internalState();
+  if (is == BLEInternalState::filtered ||
+      is == BLEInternalState::timed_out) {
+    return {};
+  }
+  return std::make_optional(std::get<RelevantState>(stateData).pseudoAddress);
 }
 
 void
 BLEDevice::pseudoDeviceAddress(BLEMacAddress newAddress)
 {
-  if (!pseudoAddress.has_value() || pseudoAddress.value() != newAddress) {
-    pseudoAddress.emplace(newAddress);
-    lastUpdated.emplace(); // Constructs Date as now
+  const auto pa = pseudoDeviceAddress();
+  if (!pa.has_value() || pa.value() != newAddress) {
+    std::get<RelevantState>(stateData).pseudoAddress = newAddress;
+    lastUpdated.setToNow(); // Constructs Date as now
   }
 }
 
-std::optional<BLEDeviceState>
+BLEDeviceState
 BLEDevice::state() const
 {
   return flags.state();
@@ -598,6 +562,15 @@ BLEDevice::state() const
 void
 BLEDevice::state(BLEDeviceState newState)
 {
+  // Safety check
+  const auto is = flags.internalState();
+  if (is == BLEInternalState::discovered ||
+      is == BLEInternalState::filtered ||
+      is == BLEInternalState::timed_out) {
+    return;
+  }
+  auto& rs = std::get<RelevantState>(stateData);
+
   const auto curState = flags.state();
   // Check if failed to connect
   if (BLEDeviceState::disconnected == newState &&
@@ -605,17 +578,17 @@ BLEDevice::state(BLEDeviceState newState)
        BLEDeviceState::connecting == curState
       )
   ) {
-    ++connectRepeatedFailures;
-    if (connectRepeatedFailures >= 5) { // Changed to 5 from 10 for quicker failure in busy areas
+    ++rs.connectRepeatedFailures;
+    if (rs.connectRepeatedFailures >= 5) { // Changed to 5 from 10 for quicker failure in busy areas
       // Ignore for a while (progressive backoff)
       operatingSystem(BLEDeviceOperatingSystem::ignore);
       // Don't backoff again immediately
-      connectRepeatedFailures = 0;
+      rs.connectRepeatedFailures = 0;
     }
   }
   if (BLEDeviceState::connected == newState) {
     flags.hasEverConnected(true);
-    connectRepeatedFailures = 0;
+    rs.connectRepeatedFailures = 0;
   }
   bool changed = curState != newState;
   if (changed) {
@@ -625,7 +598,7 @@ BLEDevice::state(BLEDeviceState newState)
   }
 }
 
-std::optional<BLEDeviceOperatingSystem>
+BLEDeviceOperatingSystem
 BLEDevice::operatingSystem() const
 {
   return flags.operatingSystem();
@@ -634,161 +607,216 @@ BLEDevice::operatingSystem() const
 void
 BLEDevice::operatingSystem(BLEDeviceOperatingSystem newOS)
 {
-  lastUpdated = Date(); // Constructs Date as now
-  if (os.has_value() && os == BLEDeviceOperatingSystem::ignore) {
-    if (!ignoreForDuration.has_value()) {
-      ignoreForDuration.emplace(TimeInterval::minutes(1));
-    } else if (ignoreForDuration.value() < TimeInterval::minutes(3)) {
+  // Safety check
+  const auto is = flags.internalState();
+  if (is == BLEInternalState::discovered ||
+      is == BLEInternalState::filtered ||
+      is == BLEInternalState::timed_out) {
+    // TODO convert to relevant state now?
+    return;
+  }
+  auto& rs = std::get<RelevantState>(stateData);
+
+  lastUpdated.setToNow();
+  const auto os = operatingSystem();
+  if (os != BLEDeviceOperatingSystem::unknown && os == BLEDeviceOperatingSystem::ignore) {
+    if (TimeInterval::zero() == rs.ignoreForDuration) {
+      rs.ignoreForDuration = TimeInterval::minutes(1);
+    } else if (rs.ignoreForDuration < TimeInterval::minutes(3)) {
       // progressive backoff for unknown device
-      ignoreForDuration.value() * 1.2;
-      if (ignoreForDuration.value() > TimeInterval::minutes(7)) {
+      rs.ignoreForDuration *= 1.2;
+      if (rs.ignoreForDuration > TimeInterval::minutes(7)) {
         // just ignore as the mac will have rotated (7:43 will occur half way through 15 mins intervals)
         // As the total BLE DB timeout is ~ 25 minutes, this will save significant connection attempt cycles
-        mIgnore = true;
+        // mIgnore = true;
+        // Change to ignored (aka filtered) state
+        flags.internalState(BLEInternalState::filtered);
       }
     }
-    ignoreUntil.emplace(lastUpdated.value() + ignoreForDuration.value());
+    rs.ignoreUntil = lastUpdated + rs.ignoreForDuration;
   } else {
-    ignoreUntil.reset();
+    rs.ignoreUntil = Date(0); // ensure we've already passed the time
   }
   if (os == BLEDeviceOperatingSystem::ios || os == BLEDeviceOperatingSystem::android) {
-    ignoreForDuration.reset();
+    rs.ignoreForDuration = TimeInterval::zero();
   }
-  bool changed = !os.has_value() || os.value() != newOS;
+  bool changed = (BLEDeviceOperatingSystem::unknown != os) || os != newOS;
   if (changed) {
-    os.emplace(newOS);
+    flags.operatingSystem(newOS);
     delegate->get().device(*this, BLEDeviceAttribute::operatingSystem);
   }
 }
 
-std::optional<PayloadData>
-BLEDevice::payloadData() const
-{
-  return payload;
-}
+// std::optional<PayloadData>
+// BLEDevice::payloadData() const
+// {
+//   return payload;
+// }
 
-void
-BLEDevice::payloadData(PayloadData newPayloadData)
-{
-  bool changed = !payload.has_value() || payload.value() != newPayloadData;
-  if (changed) {
-    payload.emplace(newPayloadData);
-    lastUpdated = Date(); // Constructs Date as now
-    payloadUpdated.emplace();
-    if (delegate.has_value()) {
-      delegate->get().device(*this, BLEDeviceAttribute::payloadData);
-    }
-  }
-}
+// void
+// BLEDevice::payloadData(PayloadData newPayloadData)
+// {
+//   bool changed = !payload.has_value() || payload.value() != newPayloadData;
+//   if (changed) {
+//     payload.emplace(newPayloadData);
+//     lastUpdated = Date(); // Constructs Date as now
+//     payloadUpdated.emplace();
+//     if (delegate.has_value()) {
+//       delegate->get().device(*this, BLEDeviceAttribute::payloadData);
+//     }
+//   }
+// }
 
-std::optional<ImmediateSendData>
-BLEDevice::immediateSendData() const
-{
-  return mImmediateSendData;
-}
+// std::optional<ImmediateSendData>
+// BLEDevice::immediateSendData() const
+// {
+//   return mImmediateSendData;
+// }
 
-void
-BLEDevice::immediateSendData(ImmediateSendData toSend)
-{
-  bool changed = !mImmediateSendData.has_value() || mImmediateSendData.value() != toSend;
-  if (changed) {
-    mImmediateSendData.emplace(toSend);
-    lastUpdated = Date(); // Constructs Date as now
-    delegate->get().device(*this, BLEDeviceAttribute::immediateSendData);
-  }
-}
+// void
+// BLEDevice::immediateSendData(ImmediateSendData toSend)
+// {
+//   bool changed = !mImmediateSendData.has_value() || mImmediateSendData.value() != toSend;
+//   if (changed) {
+//     mImmediateSendData.emplace(toSend);
+//     lastUpdated = Date(); // Constructs Date as now
+//     delegate->get().device(*this, BLEDeviceAttribute::immediateSendData);
+//   }
+// }
 
-void
-BLEDevice::clearImmediateSendData()
-{
-  mImmediateSendData.reset();
-}
+// void
+// BLEDevice::clearImmediateSendData()
+// {
+//   mImmediateSendData.reset();
+// }
 
-std::optional<RSSI>
-BLEDevice::rssi() const
-{
-  return mRssi;
-}
+// std::optional<RSSI>
+// BLEDevice::rssi() const
+// {
+//   return mRssi;
+// }
 
-void
-BLEDevice::rssi(RSSI newRSSI)
-{
-  bool changed = !mRssi.has_value() || mRssi.value() != newRSSI;
-  if (changed) {
-    mRssi.emplace(newRSSI);
-    lastUpdated.emplace(); // Constructs Date as now
-    if (delegate.has_value()) {
-      delegate->get().device(*this, BLEDeviceAttribute::rssi);
-    }
-  }
-}
+// void
+// BLEDevice::rssi(RSSI newRSSI)
+// {
+//   bool changed = !mRssi.has_value() || mRssi.value() != newRSSI;
+//   if (changed) {
+//     mRssi.emplace(newRSSI);
+//     lastUpdated.emplace(); // Constructs Date as now
+//     if (delegate.has_value()) {
+//       delegate->get().device(*this, BLEDeviceAttribute::rssi);
+//     }
+//   }
+// }
 
 std::optional<BLETxPower>
 BLEDevice::txPower() const
 {
-  return mTxPower;
+  // Safety check
+  const auto is = flags.internalState();
+  if (is == BLEInternalState::discovered ||
+      is == BLEInternalState::filtered ||
+      is == BLEInternalState::timed_out) {
+    return {};
+  }
+  auto& rs = std::get<RelevantState>(stateData);
+  return std::make_optional(rs.txPower);
 }
 
 void
 BLEDevice::txPower(BLETxPower newPower)
 {
-  bool changed = !mTxPower.has_value() || mTxPower.value() != newPower;
+  // Safety check
+  const auto is = flags.internalState();
+  if (is == BLEInternalState::discovered ||
+      is == BLEInternalState::filtered ||
+      is == BLEInternalState::timed_out) {
+    return; // TODO convert type to Relevant instead?
+  }
+  auto& rs = std::get<RelevantState>(stateData);
+  bool changed = rs.txPower != newPower;
   if (changed) {
-    mTxPower.emplace(newPower);
-    lastUpdated.emplace(); // Constructs Date as now
+    rs.txPower = newPower;
+    lastUpdated.setToNow();
     delegate->get().device(*this, BLEDeviceAttribute::txPower);
   }
 }
 
-bool
-BLEDevice::receiveOnly() const
-{
-  return mReceiveOnly;
-}
+// bool
+// BLEDevice::receiveOnly() const
+// {
+//   return mReceiveOnly;
+// }
 
-void
-BLEDevice::receiveOnly(bool newReceiveOnly)
-{
-  mReceiveOnly = newReceiveOnly;
-}
+// void
+// BLEDevice::receiveOnly(bool newReceiveOnly)
+// {
+//   mReceiveOnly = newReceiveOnly;
+// }
 
 std::optional<UUID>
 BLEDevice::signalCharacteristic() const
 {
-  return mSignalCharacteristic;
+  // Safety check
+  const auto is = flags.internalState();
+  if (is == BLEInternalState::discovered ||
+      is == BLEInternalState::filtered ||
+      is == BLEInternalState::timed_out) {
+    // Apple devices are not spec compliant for Bluetooth, which is what this value really means
+    if (SignalCharacteristicType::SpecCompliant == flags.signalCharacteristic()) {
+      return std::make_optional(conf.androidSignalCharacteristicUUID);
+    }
+    return std::make_optional(conf.iosSignalCharacteristicUUID);
+  }
+  return {};
 }
 
 void
 BLEDevice::signalCharacteristic(UUID newChar)
 {
-  mSignalCharacteristic.emplace(newChar);
+  if (conf.androidSignalCharacteristicUUID == newChar) {
+    flags.signalCharacteristic(true);
+  } else {
+    flags.signalCharacteristic(false);
+  }
 }
 
 std::optional<UUID>
 BLEDevice::payloadCharacteristic() const
 {
-  return mPayloadCharacteristic;
+  if (!flags.hasPayloadCharacteristic()) {
+    return {};
+  }
+  return std::make_optional(conf.payloadCharacteristicUUID);
 }
 
 void
 BLEDevice::payloadCharacteristic(UUID newChar)
 {
-  mPayloadCharacteristic.emplace(newChar);
+  if (conf.payloadCharacteristicUUID == newChar) {
+    flags.hasPayloadCharacteristic(true);
+  }
 }
 
 // State engine methods
 bool
 BLEDevice::ignore() const
 {
-  // Check for permanent ignore
-  if (mIgnore) {
+  const auto is = flags.internalState();
+  if (is == BLEInternalState::filtered ||
+      is == BLEInternalState::timed_out) {
     return true;
   }
-  // Check for timed ignore
-  if (!ignoreUntil.has_value()) {
+  if (is == BLEInternalState::discovered) {
     return false;
   }
-  if (Date() < ignoreUntil.value()) {
+  auto& rs = std::get<RelevantState>(stateData);
+
+  // Check for timed ignore
+  if (0 == rs.ignoreUntil) {
+    return false;
+  }
+  if (Date() < rs.ignoreUntil) {
     return true;
   }
   return false;
@@ -797,7 +825,10 @@ BLEDevice::ignore() const
 void
 BLEDevice::ignore(bool newIgnore) // set permanent ignore flag
 {
-  mIgnore = newIgnore;
+  // change state to ignored permanently
+  if (newIgnore) {
+    stateData = FilteredState(); // TODO determine if this breaks end of life detection for android devices with pseudo device address
+  }
 }
 
 void
@@ -806,8 +837,8 @@ BLEDevice::invalidateCharacteristics()
   // mPayloadCharacteristic.reset();
   // mSignalCharacteristic.reset();
   flags.hasPayloadCharacteristic(false);
-  flags.hasLegacyService(false);
-  flags.hasSignalCharacteristic(false);
+  flags.legacyService(BLELegacyService::Unknown);
+  flags.signalCharacteristic(SignalCharacteristicType::SpecCompliant); // Assume spec compliant
 }
 
 void
@@ -838,23 +869,31 @@ BLEDevice::registerDiscovery(Date at)
 //   lastWriteRssiAt.emplace(at);
 // }
 
-bool
-BLEDevice::hasAdvertData() const
-{
-  return segments.has_value();
-}
+// bool
+// BLEDevice::hasAdvertData() const
+// {
+//   const auto is = flags.internalState();
+//   if (is == BLEInternalState::discovered) {
+//     return true;
+//   }
+// }
 
 void
 BLEDevice::advertData(std::vector<BLEAdvertSegment> newSegments)
 {
-  segments = newSegments;
+  stateData = DiscoveredState{newSegments};
 }
 
-const std::vector<BLEAdvertSegment>&
-BLEDevice::advertData() const
-{
-  return segments.value();
-}
+// const std::vector<BLEAdvertSegment>&
+// BLEDevice::advertData() const
+// {
+//   const auto is = flags.internalState();
+//   if (is != BLEInternalState::discovered) {
+//     return {};
+//   }
+//   auto& rs = std::get<DiscoveredState>(stateData);
+//   return rs.segments;
+// }
 
 // bool
 // BLEDevice::hasServicesSet() const
@@ -865,16 +904,39 @@ BLEDevice::advertData() const
 void
 BLEDevice::services(std::vector<UUID> services)
 {
-  lastUpdated.emplace(); // Constructs Date as now
-  mServices.emplace(services);
+  lastUpdated.setToNow();
+  for (auto& svc : services) {
+    if (svc == conf.serviceUUID) {
+      flags.hasHeraldService(true);
+      return;
+    }
+    if (svc == herald::ble::legacyOpenTraceUUID) {
+      flags.legacyService(BLELegacyService::OpenTrace);
+      return;
+    }
+    if (svc == herald::ble::legacyAustraliaServiceUUID) {
+      flags.legacyService(BLELegacyService::AustraliaCovidSafe);
+      return;
+    }
+  }
+  flags.hasHeraldService(false);
 }
 
 bool
 BLEDevice::hasService(const UUID& serviceUUID) const
 {
-  if (!mServices.has_value()) return false; // guard
-  auto iter = std::find(std::begin(mServices.value()),std::end(mServices.value()),serviceUUID);
-  return (std::end(mServices.value()) != iter);
+  if (flags.hasHeraldService()) {
+    if (conf.serviceUUID == serviceUUID) {
+      return true;
+    }
+  }
+  return false;
+}
+
+const BLESensorConfiguration&
+BLEDevice::configuration() const noexcept
+{
+  return conf;
 }
 
 }

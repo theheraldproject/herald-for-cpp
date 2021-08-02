@@ -49,6 +49,17 @@ Date::Date(Date&& from)
 
 Date::~Date() = default;
 
+void
+Date::setToNow() noexcept
+{
+  #ifdef __ZEPHYR__
+    seconds = 0.001 * k_uptime_get();
+  #else
+    seconds = std::chrono::duration_cast<std::chrono::seconds>(
+      std::chrono::system_clock::now().time_since_epoch()).count();
+  #endif
+}
+
 Date&
 Date::operator=(const Date& other) noexcept
 {

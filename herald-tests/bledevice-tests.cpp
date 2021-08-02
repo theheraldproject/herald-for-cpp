@@ -33,7 +33,8 @@ TEST_CASE("ble-device-ctor", "[ble][device][ctor]") {
     herald::datatype::Data d{std::byte(9),6};
     herald::datatype::TargetIdentifier id{d};
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate);
 
     REQUIRE(device.identifier() == id);
     REQUIRE(device.description().size() > 0);
@@ -46,11 +47,10 @@ TEST_CASE("ble-device-ctor", "[ble][device][ctor]") {
     REQUIRE(device.timeIntervalSinceLastWritePayloadSharing() == herald::datatype::TimeInterval::never());
     REQUIRE(device.timeIntervalSinceLastWriteRssi() == herald::datatype::TimeInterval::never());
     
-    REQUIRE(!device.state().has_value());
-    REQUIRE(device.operatingSystem().has_value());
-    REQUIRE(device.operatingSystem().value() == herald::ble::BLEDeviceOperatingSystem::unknown);
+    REQUIRE(device.state() != herald::ble::BLEDeviceState::uninitialised);
+    REQUIRE(device.operatingSystem() == herald::ble::BLEDeviceOperatingSystem::unknown);
     REQUIRE(!device.payloadData().has_value());
-    REQUIRE(!device.immediateSendData().has_value());
+    // REQUIRE(!device.immediateSendData().has_value());
     REQUIRE(!device.rssi().has_value());
   }
 }
@@ -65,7 +65,8 @@ TEST_CASE("ble-device-update-state", "[ble][device][update][state]") {
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     herald::ble::BLEDeviceState s = herald::ble::BLEDeviceState::disconnected;
     device.state(s);
@@ -91,7 +92,8 @@ TEST_CASE("ble-device-update-os", "[ble][device][update][os]") {
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     herald::ble::BLEDeviceOperatingSystem s = herald::ble::BLEDeviceOperatingSystem::android;
     device.operatingSystem(s);
@@ -120,7 +122,8 @@ TEST_CASE("ble-device-update-payload", "[ble][device][update][payload]") {
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     herald::payload::fixed::ConcreteFixedPayloadDataSupplierV1 pds(826,4,123123123);
 
@@ -155,7 +158,8 @@ TEST_CASE("ble-device-update-immediatesenddata", "[ble][device][update][immediat
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     herald::datatype::Data raw{std::byte(9), 12};
     herald::datatype::ImmediateSendData isd(raw);
@@ -186,7 +190,8 @@ TEST_CASE("ble-device-update-rssi", "[ble][device][update][rssi]") {
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     herald::datatype::RSSI rssi(12);
     device.rssi(rssi);
@@ -216,7 +221,8 @@ TEST_CASE("ble-device-update-txpower", "[ble][device][update][txpower]") {
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     herald::ble::BLETxPower tx(12);
     device.txPower(tx);
@@ -246,7 +252,8 @@ TEST_CASE("ble-device-update-pseudo", "[ble][device][update][pseudo]") {
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     herald::datatype::Data pseudod{std::byte(7),6};
     herald::ble::BLEMacAddress pseudo(pseudod);
@@ -273,7 +280,8 @@ TEST_CASE("ble-device-update-receiveOnly", "[ble][device][update][receiveOnly]")
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     REQUIRE(device.receiveOnly() == false); // default - should default to try both read and write
     device.receiveOnly(true);
@@ -298,7 +306,8 @@ TEST_CASE("ble-device-update-ignore", "[ble][device][update][ignore]") {
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     REQUIRE(device.ignore() == false); // default - should default to try both read and write
     device.ignore(true);
@@ -323,7 +332,8 @@ TEST_CASE("ble-device-update-payloadchar", "[ble][device][update][payloadchar]")
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     herald::datatype::IntegerDistributedRandomSource irds;
     herald::datatype::RandomnessGenerator<herald::datatype::IntegerDistributedRandomSource> gen(
@@ -354,7 +364,8 @@ TEST_CASE("ble-device-update-signalchar", "[ble][device][update][signalchar]") {
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     herald::datatype::IntegerDistributedRandomSource irds;
     herald::datatype::RandomnessGenerator<herald::datatype::IntegerDistributedRandomSource> gen(
@@ -385,7 +396,8 @@ TEST_CASE("ble-device-invalidate-chars", "[ble][device][update][invalidatechars]
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     herald::datatype::IntegerDistributedRandomSource irds;
     herald::datatype::RandomnessGenerator<herald::datatype::IntegerDistributedRandomSource> gen(
@@ -429,7 +441,8 @@ TEST_CASE("ble-device-register-rssi", "[ble][device][register][rssi]") {
     herald::datatype::Date createdAt = now - herald::datatype::TimeInterval::minutes(1); // forces updated times to be greater than zero
 
     DummyBLEDeviceDelegate delegate;
-    herald::ble::BLEDevice device(id,delegate,createdAt);
+    herald::ble::BLESensorConfiguration conf;
+    herald::ble::BLEDevice device(conf,id,delegate,createdAt);
 
     herald::datatype::Date operationAt = now - herald::datatype::TimeInterval::seconds(30);
 

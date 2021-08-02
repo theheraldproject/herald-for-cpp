@@ -171,23 +171,26 @@ public:
   }
 
   BLEDevice& device(const PayloadData& payloadData) override {
-    auto results = matches([&payloadData](const BLEDevice& d) {
-      auto payload = d.payloadData();
-      if (!payload.has_value()) {
-        return false;
-      }
-      return (*payload)==payloadData;
+    auto pti = TargetIdentifier(payloadData);
+    auto results = matches([&pti](const BLEDevice& d) {
+      return d.identifier() == pti;
+      // auto payload = d.payloadData();
+      // if (!payload.has_value()) {
+      //   return false;
+      // }
+      // return (*payload)==payloadData;
     });
     if (results.size() != 0) {
       return results.front(); // TODO ensure we send back the latest, not just the first match
     }
     BLEDevice& newDevice = devices[indexAvailable()];
-    newDevice.reset(TargetIdentifier(payloadData),*this);
+    newDevice.reset(pti,*this);
 
     for (auto& delegate : delegates) {
       delegate.get().bleDatabaseDidCreate(newDevice);
     }
-    newDevice.payloadData(payloadData); // has to be AFTER create called
+    // newDevice.payloadData(payloadData); // has to be AFTER create called
+    device(newDevice,BLEDeviceAttribute::payloadData); // moved from BLEDevice.payloadData()
     return newDevice;
   }
 
@@ -348,7 +351,7 @@ private:
   std::size_t indexAvailable() noexcept {
     for (std::size_t idx = 0;idx < devices.size();++idx) {
       auto& device = devices[idx];
-      if (device.state().has_value() && BLEDeviceState::uninitialised == device.state().value()) {
+      if (BLEDeviceState::uninitialised == device.state()) {
         return idx;
       }
     }

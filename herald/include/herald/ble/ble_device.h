@@ -7,6 +7,7 @@
 
 #include "ble_tx_power.h"
 #include "ble_mac_address.h"
+#include "ble_sensor_configuration.h"
 
 #include "../device.h"
 
@@ -62,6 +63,19 @@ enum class BLEInternalState : short {
   timed_out
 };
 
+enum class BLELegacyService : short {
+  NotApplicable, // i.e. Herald
+  Unknown, // i.e. other
+  OpenTrace,
+  AustraliaCovidSafe
+  // TODO others later (up to 7 values plus Unknown and NotApplicable)
+};
+
+namespace SignalCharacteristicType {
+  constexpr bool SpecCompliant = true;
+  constexpr bool NotSpecCompliant = false;
+}
+
 /// \brief INTERNAL Herald class used to minimise the memory footprint with hundreds of devices nearby
 class BLEDeviceFlags {
 public:
@@ -73,20 +87,21 @@ public:
   BLEInternalState internalState() const;
   void internalState(BLEInternalState newInternalState);
 
-  std::optional<BLEDeviceState> state() const;
+  BLEDeviceState state() const;
   void state(BLEDeviceState newState);
 
-  std::optional<BLEDeviceOperatingSystem> operatingSystem() const;
+  BLEDeviceOperatingSystem operatingSystem() const;
   void operatingSystem(BLEDeviceOperatingSystem newOS);
 
   bool hasHeraldService() const;
   void hasHeraldService(bool newValue);
   bool hasLegacyService() const;
-  void hasLegacyService(bool newValue);
+  BLELegacyService legacyService() const;
+  void legacyService(BLELegacyService newValue);
   bool hasPayloadCharacteristic() const;
   void hasPayloadCharacteristic(bool newValue);
-  bool hasSignalCharacteristic() const;
-  void hasSignalCharacteristic(bool newValue);
+  bool signalCharacteristic() const;
+  void signalCharacteristic(bool newValue);
   bool hasSecureCharacteristic() const;
   void hasSecureCharacteristic(bool newValue);
   bool hasEverConnected() const;
@@ -105,12 +120,12 @@ private:
   // 6 = BLEDeviceOperatingSystem field 2
   // 7 = BLEDeviceOperatingSystem field 3
   // 8 = hasHeraldService
-  // 9 = hasLegacyService
-  // 10 = hasPayloadChar
-  // 11 = hasSignalChar
-  // 12 = hasSecureChar
-  // 13 = UNASSIGNED
-  // 14 = UNASSIGNED
+  // 9 = hasLegacyService field 1
+  // 10 = hasLegacyService field 2
+  // 11 = hasLegacyService field 3
+  // 12 = hasPayloadChar
+  // 13 = hasSignalChar
+  // 14 = hasSecureChar
   // 15 = hasEverConnected
 };
 
@@ -142,6 +157,8 @@ struct RelevantState {
   BLEMacAddress pseudoAddress; // all zeros if unset (also OS is not Android)
 
   unsigned short int connectRepeatedFailures;
+
+  Date payloadUpdated; // Note only use if state is Identified, not just Relevant
 };
 
 // struct IdentifiedState {
@@ -154,9 +171,9 @@ struct RelevantState {
 
 class BLEDevice : public Device {
 public:
-  BLEDevice(); // default constructor for array instantiation
-  BLEDevice(BLEDeviceDelegate& delegate, const Date& created = Date()); // default (uninitialised state) constructor
-  BLEDevice(TargetIdentifier identifier, BLEDeviceDelegate& delegate, const Date& created = Date());
+  BLEDevice(BLESensorConfiguration& config); // default constructor for array instantiation
+  BLEDevice(BLESensorConfiguration& config,BLEDeviceDelegate& delegate, const Date& created = Date()); // default (uninitialised state) constructor
+  BLEDevice(BLESensorConfiguration& config,TargetIdentifier identifier, BLEDeviceDelegate& delegate, const Date& created = Date());
   BLEDevice(const BLEDevice& other); // copy ctor
   BLEDevice(BLEDevice&& other) = delete; // remove move constructor
   ~BLEDevice();
@@ -169,6 +186,9 @@ public:
   
   bool operator==(const BLEDevice& other) const noexcept;
   bool operator!=(const BLEDevice& other) const noexcept;
+
+  /// \brief Returns the BLESensorConfiguration reference relating to this instance
+  const BLESensorConfiguration& configuration() const noexcept;
 
   const TargetIdentifier& identifier() const override; // MAC ADDRESS OR PSEUDO DEVICE ADDRESS
   void identifier(const TargetIdentifier&) override; // MAC ADDRESS OR PSEUDO DEVICE ADDRESS
@@ -185,7 +205,7 @@ public:
   // TODO add in generic Advert and GATT handle number information caching here
 
   // bool hasAdvertData() const; // TODO unused, consider removing
-  // void advertData(std::vector<BLEAdvertSegment> segments); // TODO getter unused, so consider removing
+  void advertData(std::vector<BLEAdvertSegment> segments); // TODO getter unused, so consider removing
   // const std::vector<BLEAdvertSegment>& advertData() const; // TODO unused, consider removing
 
   /** Have we set the service list for this device yet? (i.e. done GATT service discover) **/
@@ -195,22 +215,22 @@ public:
   /** Does the service list contain a service UUID? **/
   bool hasService(const UUID& serviceUUID) const;
 
-  std::optional<BLEDeviceState> state() const;
+  BLEDeviceState state() const;
   void state(BLEDeviceState newState);
 
   // TODO decide if operatingSystem is relevant anymore??? - change it to BluetoothComplianceFlag?
-  std::optional<BLEDeviceOperatingSystem> operatingSystem() const;
+  BLEDeviceOperatingSystem operatingSystem() const;
   void operatingSystem(BLEDeviceOperatingSystem newOS);
 
-  std::optional<RSSI> rssi() const;
-  void rssi(RSSI newRSSI);
+  // std::optional<RSSI> rssi() const;
+  // void rssi(RSSI newRSSI);
 
   std::optional<BLETxPower> txPower() const;
   void txPower(BLETxPower newPower);
 
   // NOTE May need a herald specific version of this, as we may wish a herald device to only receive or transmit
-  bool receiveOnly() const;
-  void receiveOnly(bool newReceiveOnly);
+  // bool receiveOnly() const;
+  // void receiveOnly(bool newReceiveOnly);
 
 
 
@@ -233,12 +253,12 @@ public:
   std::optional<BLEMacAddress> pseudoDeviceAddress() const;
   void pseudoDeviceAddress(BLEMacAddress newAddress);
 
-  std::optional<PayloadData> payloadData() const;
-  void payloadData(PayloadData newPayloadData);
+  // std::optional<PayloadData> payloadData() const;
+  // void payloadData(PayloadData newPayloadData);
 
-  std::optional<ImmediateSendData> immediateSendData() const;
-  void immediateSendData(ImmediateSendData toSend);
-  void clearImmediateSendData();
+  // std::optional<ImmediateSendData> immediateSendData() const;
+  // void immediateSendData(ImmediateSendData toSend);
+  // void clearImmediateSendData();
 
   // State engine methods - Herald specific
   bool ignore() const;
@@ -250,6 +270,8 @@ public:
   // void registerWriteRssi(Date at); // ALWAYS externalise time (now())
   
 private:
+  BLESensorConfiguration& conf; // allows this class to minimise its memory storage space
+
   std::optional<std::reference_wrapper<BLEDeviceDelegate>> delegate; // Optional to avoid catch-22
   TargetIdentifier id; // Mac address // TODO replace this here with a hash
 

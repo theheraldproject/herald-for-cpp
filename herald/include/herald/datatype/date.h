@@ -26,6 +26,9 @@ public:
   Date& operator=(const Date& other) noexcept;
   Date& operator=(Date&& other) noexcept;
 
+  /// \brief Sets the value to now without any temporaries being created/destroyed
+  void setToNow() noexcept;
+
   std::string iso8601DateTime() const noexcept;
   operator std::string() const noexcept;
   std::uint64_t secondsSinceUnixEpoch() const noexcept;
