@@ -13,6 +13,12 @@ namespace ble {
   
 using namespace herald::datatype;
 
+/// \brief Legacy Australia COVIDsafe service UUID
+static const UUID legacyAustraliaServiceUUID("00000000-0000-4000-8000-000000000000"); // TODO fill this value in
+/// \brief Legacy OpenTrace service UUID
+static const UUID legacyOpenTraceUUID("00000000-0000-4000-8000-000000000000"); // TODO fill this value in
+
+
 /// Defines BLE sensor configuration data, e.g. service and characteristic UUIDs
 struct BLESensorConfiguration {
   BLESensorConfiguration();

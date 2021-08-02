@@ -20,6 +20,7 @@ public:
   using value_type = uint8_t;
 
   static UUID fromString(const std::string& from) noexcept;
+  // static UUID fromString(const char* from) noexcept;
 
   template <typename RandomnessSourceT>
   static UUID random(RandomnessGenerator<RandomnessSourceT>& from) noexcept {
@@ -38,9 +39,10 @@ public:
     return uuid; // returns copy
   }
 
-  UUID(UUID&& from);
-  UUID(const UUID& from);
-  ~UUID();
+  UUID(const char* from) noexcept;
+  UUID(UUID&& from) noexcept;
+  UUID(const UUID& from) noexcept;
+  ~UUID() noexcept = default;
 
   UUID& operator=(const UUID& other) noexcept; // copy assign
 
