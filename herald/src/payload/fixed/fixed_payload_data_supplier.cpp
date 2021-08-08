@@ -43,10 +43,10 @@ ConcreteFixedPayloadDataSupplierV1::payload(const PayloadTimestamp timestamp)
   return mPayload;
 }
 
-std::vector<PayloadData>
+PayloadData
 ConcreteFixedPayloadDataSupplierV1::payload(const Data& data)
 {
-  return std::vector<PayloadData>();
+  return PayloadData();
 }
 
 }

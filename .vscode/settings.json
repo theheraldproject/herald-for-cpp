@@ -84,7 +84,8 @@
     "resumable": "cpp",
     "codecvt": "cpp",
     "*.rh": "cpp",
-    "bitset": "cpp"
+    "bitset": "cpp",
+    "cfenv": "cpp"
   },
   "cSpell.words": [
     "backoff"

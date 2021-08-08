@@ -33,7 +33,7 @@ public:
   virtual void addSection(ExtendedDataSegmentCode code, const std::string value) = 0;
   virtual void addSection(ExtendedDataSegmentCode code, const Data& value) = 0;
 
-  virtual std::optional<PayloadData> payload() = 0;
+  virtual PayloadData payload() = 0;
 };
 
 // V1 Concrete types
@@ -68,8 +68,16 @@ struct ConcreteExtendedDataSectionV1 {
   uint8_t length;
   Data data;
 
+  ConcreteExtendedDataSectionV1() : code(0), length(0), data() {}
+
   ConcreteExtendedDataSectionV1(uint8_t code,uint8_t length,const Data data)
     : code(code), length(length), data(data)
+  {
+    ;
+  }
+
+  ConcreteExtendedDataSectionV1(uint8_t code,const std::string& from) 
+    : code(code), length(from.size()), data(from)
   {
     ;
   }
@@ -105,14 +113,16 @@ public:
   void addSection(ExtendedDataSegmentCode code, float value) override;
   void addSection(ExtendedDataSegmentCode code, const std::string value) override;
   void addSection(ExtendedDataSegmentCode code, const Data& value) override;
-  std::optional<PayloadData> payload() override;
+  PayloadData payload() override;
 
   // V1 only methods
-  const std::vector<ConcreteExtendedDataSectionV1>& getSections() const;
+  const std::size_t getSectionCount() const;
+  const ConcreteExtendedDataSectionV1& getSection(std::size_t index) const;
 
 private:
-  bool mHasData;
-  std::vector<ConcreteExtendedDataSectionV1> sections;
+  // bool mHasData;
+  std::array<ConcreteExtendedDataSectionV1,8> sections;
+  std::size_t inUse;
 };
 
 }

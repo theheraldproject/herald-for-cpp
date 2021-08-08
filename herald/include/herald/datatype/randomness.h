@@ -53,10 +53,8 @@ public:
   void nextBytes(std::size_t count, Data& into) {
     std::vector<std::byte> result;
     for (std::size_t i = 0;i < count;i++) {
-      result.push_back(std::byte(0));
+      into.append(std::byte(0));
     }
-    Data final(result);
-    into.append(final);
   }
 
   int nextInt() {
@@ -93,10 +91,10 @@ public:
   void nextBytes(std::size_t count, Data& into) {
     std::vector<std::byte> result;
     for (std::size_t i = 0;i < count;i++) {
-      result.push_back(std::byte(distrib(gen))); // a little wasteful...
+      into.append(std::byte(distrib(gen))); // a little wasteful...
     }
-    Data final(result);
-    into.append(final);
+    // Data final(result);
+    // into.append(final);
   }
 
   int nextInt() {
@@ -175,19 +173,19 @@ public:
     Data sourcedInto;
     m_source.nextBytes(count,sourcedInto);
 
-    std::vector<std::byte> result;
+    // std::vector<std::byte> result;
 
     // now add in entropy
     for (std::size_t byteIndex = 0;byteIndex < count;byteIndex++) {
-      result.push_back((std::byte)(
+      into.append((std::byte)(
         std::size_t(sourcedInto.at(byteIndex))
         ^ 
         (m_entropy >> 8 * (byteIndex % shifts))
       ));
     }
 
-    Data final(result);
-    into.append(final);
+    // Data final(result);
+    // into.append(final);
   }
 
   int nextInt() {

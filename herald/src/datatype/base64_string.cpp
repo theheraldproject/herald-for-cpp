@@ -147,7 +147,7 @@ Base64String::decode() const noexcept {
   int j = 0;
   int in_ = 0;
   char char_array_4[4], char_array_3[3];
-  std::vector<std::byte> ret;
+  Data result;
 
   while (in_len-- && ( value[in_] != '=') && is_base64(value[in_])) {
     char_array_4[i++] = value[in_]; in_++;
@@ -160,7 +160,7 @@ Base64String::decode() const noexcept {
       char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
       for (i = 0; (i < 3); i++) {
-        ret.push_back(std::byte(char_array_3[i]));
+        result.append(std::byte(char_array_3[i]));
       }
       i = 0;
     }
@@ -177,10 +177,10 @@ Base64String::decode() const noexcept {
     char_array_3[1] = ((char_array_4[1] & 0xf) << 4) + ((char_array_4[2] & 0x3c) >> 2);
     char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
-    for (j = 0; (j < i - 1); j++) ret.push_back(std::byte(char_array_3[j]));
+    for (j = 0; (j < i - 1); j++) result.append(std::byte(char_array_3[j]));
   }
 
-  return Data(ret); // std::move via compiler
+  return result; // std::move via compiler
 }
 
 

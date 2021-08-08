@@ -25,7 +25,7 @@ TEST_CASE("payload-extendeddata-empty", "[payload][extendeddata][empty]") {
     herald::payload::extended::ConcreteExtendedDataV1 d;
     auto pd = d.payload();
 
-    REQUIRE(!pd.has_value());
+    REQUIRE(pd.size() == 0); // no data unless sections exist!
   }
 }
 
@@ -35,7 +35,6 @@ TEST_CASE("payload-extendeddata-one-section", "[payload][extendeddata][one-secti
     d.addSection(herald::payload::extended::ExtendedDataSegmentCodesV1::TextPremises,std::string("Adams Pizza"));
     auto pd = d.payload();
 
-    REQUIRE(pd.has_value());
-    REQUIRE(pd->size() == 13); // 1 code + 1 length + 11 characters
+    REQUIRE(pd.size() == 13); // 1 code + 1 length + 11 characters
   }
 }

@@ -77,7 +77,7 @@ public:
     PayloadData p(commonPayloadHeader);
     // length
     if (extended.hasData()) {
-      p.append(std::uint16_t(2 + extended.payload().value().size()));
+      p.append(std::uint16_t(2 + extended.payload().size()));
     } else {
       p.append(std::uint16_t(2));
     }
@@ -85,7 +85,7 @@ public:
     p.append(cid);
     // extended data
     if (extended.hasData()) {
-      p.append(extended.payload().value());
+      p.append(extended.payload());
     }
 
     return p;
@@ -100,7 +100,7 @@ public:
     PayloadData p(commonPayloadHeader);
     // length
     if (extended.hasData()) {
-      p.append(std::uint16_t(2 + extended.payload().value().size()));
+      p.append(std::uint16_t(2 + extended.payload().size()));
     } else {
       p.append(std::uint16_t(2));
     }
@@ -108,7 +108,7 @@ public:
     p.append(cid);
     // extended data
     if (extended.hasData()) {
-      p.append(extended.payload().value());
+      p.append(extended.payload());
     }
 
     return p;

@@ -52,18 +52,41 @@ TEST_CASE("memoryarena-set","[memoryarena][set]") {
   }
 }
 
+TEST_CASE("memoryarena-reserve","[memoryarena][reserve]") {
+  SECTION("memoryarena-reserve") {
+    herald::datatype::MemoryArena<2048,10> arena;
+    REQUIRE(arena.pagesFree() == 205);
+    auto entrySame = arena.allocate(10);
+    REQUIRE(arena.pagesFree() == 204);
+    arena.reserve(entrySame,10);
+    REQUIRE(arena.pagesFree() == 204);
+    REQUIRE(entrySame.byteLength == 10);
+
+    auto entryExpanded = arena.allocate(10);
+    REQUIRE(arena.pagesFree() == 203);
+    arena.reserve(entryExpanded,20);
+    REQUIRE(arena.pagesFree() == 202);
+    REQUIRE(entryExpanded.byteLength == 20);
+
+    auto entryShorter = arena.allocate(20);
+    REQUIRE(arena.pagesFree() == 200);
+    arena.reserve(entryShorter,10);
+    REQUIRE(arena.pagesFree() == 200);
+    REQUIRE(entryShorter.byteLength == 20);
+  }
+}
 
 TEST_CASE("memoryarena-useall","[memoryarena][useall]") {
   SECTION("memoryarena-useall") {
     herald::datatype::MemoryArena<2048,10> arena;
     REQUIRE(arena.pagesFree() == 205);
     auto entry1 = arena.allocate(512);
-    auto entry2 = arena.allocate(1024);
-    auto entry3 = arena.allocate(491);
     REQUIRE(entry1.startPageIndex == 0);
     REQUIRE(entry1.byteLength == 512);
+    auto entry2 = arena.allocate(1024);
     REQUIRE(entry2.startPageIndex == 52);
     REQUIRE(entry2.byteLength == 1024);
+    auto entry3 = arena.allocate(491);
     REQUIRE(entry3.startPageIndex == 155);
     REQUIRE(entry3.byteLength == 491); // not 512 as we have overhead due to page length of 10 bytes
     REQUIRE(arena.pagesFree() == 0); // used all pages (not bytes) exactly

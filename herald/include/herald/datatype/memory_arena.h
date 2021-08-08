@@ -16,10 +16,14 @@ namespace datatype {
 /// \brief Represents an external 'pointer' to an allocated memory area.
 ///
 /// Used by calling classes only.
-/// Max memory allocation in pages is 65536
+/// Max memory allocation in bytes is 65536
 struct MemoryArenaEntry {
-  unsigned short startPageIndex;
-  unsigned short byteLength;
+  unsigned short startPageIndex = 0;
+  unsigned short byteLength = 0;
+
+  bool isInitialised() const {
+    return 0 != byteLength;
+  }
 };
 
 constexpr long pagesRequired(std::size_t size,std::size_t pageSize)
@@ -49,7 +53,22 @@ public:
 
   ~MemoryArena() = default;
 
+  void reserve(MemoryArenaEntry& entry,std::size_t newSize) {
+    if (newSize <= entry.byteLength) {
+      return;
+    }
+    auto newEntry = allocate(newSize);
+    for (std::size_t i = 0;i < entry.byteLength;++i) {
+      set(newEntry,i,get(entry,i));
+    }
+    deallocate(entry);
+    entry = newEntry;
+  }
+
   MemoryArenaEntry allocate(std::size_t size) {
+    if (0 == size) {
+      return MemoryArenaEntry{0,0};
+    }
     // find first page location with enough space
     long pages = pagesRequired(size,PageSize);
     bool inEmpty = false;
@@ -60,14 +79,13 @@ public:
         if (!inEmpty) {
           inEmpty = true;
           lastEmptyIndex = i;
-        } else {
-          if (i - lastEmptyIndex + 1 == pages) {
-            // flip bits and return
-            for (int f = lastEmptyIndex;f <= i;++f) {
-              pagesInUse.set(f,true);
-            }
-            return MemoryArenaEntry{(unsigned short)lastEmptyIndex,(unsigned short)size};
+        }
+        if (i - lastEmptyIndex + 1 == pages) {
+          // flip bits and return
+          for (int f = lastEmptyIndex;f <= i;++f) {
+            pagesInUse.set(f,true);
           }
+          return MemoryArenaEntry{(unsigned short)lastEmptyIndex,(unsigned short)size};
         }
       } else {
         inEmpty = false;
@@ -77,19 +95,30 @@ public:
     throw std::exception("Unable to allocate memory in arena");
   }
 
-  void deallocate(const MemoryArenaEntry& entry) {
+  void deallocate(MemoryArenaEntry& entry) {
+    if (!entry.isInitialised()) {
+      return; // guard
+    }
     // set relevant bits to empty
     long pages = pagesRequired(entry.byteLength,PageSize);
     for (int i = 0;i < pages;++i) {
       pagesInUse.set(entry.startPageIndex + i,false);
     }
+    entry.byteLength = 0;
+    entry.startPageIndex = 0;
   }
 
-  void set(const MemoryArenaEntry& entry, unsigned short bytePosition, char value) {
+  void set(const MemoryArenaEntry& entry, unsigned short bytePosition, unsigned char value) {
+    if (!entry.isInitialised()) {
+      return;
+    }
     arena[(entry.startPageIndex * PageSize) + bytePosition] = value;
   }
 
   char get(const MemoryArenaEntry& entry, unsigned short bytePosition) {
+    if (!entry.isInitialised()) {
+      return '\0';
+    }
     return arena[(entry.startPageIndex * PageSize) + bytePosition];
   }
 
@@ -98,7 +127,7 @@ public:
   }
 
 private:
-  std::array<char,Size> arena;
+  std::array<unsigned char,Size> arena;
   std::bitset<pagesRequired(Size,PageSize)> pagesInUse;
 };
 
