@@ -242,6 +242,12 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
   DummyBluetoothStateManager dbsm;
   herald::DefaultPlatformType dpt;
   herald::Context ctx(dpt,dls,dbsm); // default context include
+  auto serviceUUID = herald::datatype::UUID::fromString("428132af-4746-42d3-801e-4572d65bfd9b");
+  // INFO("Service UUID " << std::string(serviceUUID));
+  REQUIRE(ctx.getSensorConfiguration().serviceUUID == serviceUUID);
+  auto blankUUID = herald::datatype::UUID::fromString("");
+  // INFO("Blank UUID " << std::string(blankUUID));
+  REQUIRE(ctx.getSensorConfiguration().serviceUUID != blankUUID);
   using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
   herald::ble::ConcreteBLEDatabase db(ctx);
   MockHeraldV1ProtocolProvider pp(ctx,db);
@@ -274,7 +280,7 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
     herald::ble::BLEDevice& devPtr1 = db.device(device1);
 
     // Now perform one iteration
-    c.iteration();
+    c.iteration(); // should call serviceDiscovery
     
     // check provider used
     REQUIRE(pp.hasIdentifiedOs == true);
