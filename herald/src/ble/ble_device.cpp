@@ -416,8 +416,9 @@ BLEDevice::reset(const TargetIdentifier& newID, BLEDeviceDelegate& newDelegate)
 {
   delegate.emplace(std::reference_wrapper<BLEDeviceDelegate>(newDelegate));
   id = newID;
-  stateData = std::monostate();
+  stateData = DiscoveredState();
   flags.internalState(BLEInternalState::discovered);
+  flags.state(BLEDeviceState::disconnected); // allows action from protocol providers (i.e. no longer uninitialised)
   payload.clear();
   mRssi = 0;
 }
@@ -561,7 +562,8 @@ std::optional<BLEMacAddress>
 BLEDevice::pseudoDeviceAddress() const
 {
   const auto is = flags.internalState();
-  if (is == BLEInternalState::filtered ||
+  if (is == BLEInternalState::discovered ||
+      is == BLEInternalState::filtered ||
       is == BLEInternalState::timed_out) {
     return {};
   }

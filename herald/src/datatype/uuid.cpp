@@ -5,8 +5,10 @@
 #include "herald/datatype/uuid.h"
 #include "herald/datatype/data.h"
 #include "herald/datatype/randomness.h"
+#include "herald/datatype/base64_string.h"
 
 #include <string>
+#include <algorithm>
 #include <array>
 #include <sstream>
 #include <iosfwd>
@@ -46,9 +48,21 @@ namespace datatype {
 // Static functions
 UUID
 UUID::fromString(const std::string& from) noexcept {
+  Base64String asString;
+  // remove hyphens before using hex decoding
+  std::string newFrom = from; // copy
+  newFrom.erase(std::remove(newFrom.begin(),newFrom.end(),'-'), newFrom.end());
+  auto dataInstance = Data::fromHexEncodedString(newFrom);
+
   std::array<value_type, 16> data{ {0} };
-  UUID uuid(data,false); // TODO parse string, determine if valid, and tag as v4
-  return uuid; // returns copy
+  if (dataInstance.size() != 16) {
+    return UUID(data,false);
+  }
+  for (std::size_t pos = 0;pos < 16;++pos) {
+    data[pos] = (value_type)dataInstance.at(pos);
+  }
+  UUID uuid(data,true); // TODO check UUID is a V4 format
+  return uuid;
 }
 
 // Instance functions
