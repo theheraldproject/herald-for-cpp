@@ -48,8 +48,8 @@ public:
 
   virtual std::optional<Activity> serviceDiscovery(Activity) = 0;
   virtual std::optional<Activity> readPayload(Activity) = 0;
-  virtual std::optional<Activity> immediateSend(Activity) = 0;
-  virtual std::optional<Activity> immediateSendAll(Activity) = 0;
+  // virtual std::optional<Activity> immediateSend(Activity) = 0;
+  // virtual std::optional<Activity> immediateSendAll(Activity) = 0;
 };
 
 }

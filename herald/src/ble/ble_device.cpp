@@ -20,9 +20,9 @@ namespace ble {
 using namespace herald::datatype;
 using namespace herald::ble::filter;
 
-BLEDeviceFlags::BLEDeviceFlags() : bitFields(64112) /* TTT TT FTF F TTT FFF F */
+BLEDeviceFlags::BLEDeviceFlags() : bitFields(0) /* empty */
 {
-  ;
+  reset();
 }
 
 void
@@ -350,6 +350,19 @@ BLEDeviceFlags::hasEverConnected(bool newValue)
 }
 
 
+BLEDevice::BLEDevice()
+  : Device(),
+    conf(staticConfig),
+    delegate(std::nullopt),
+    id(),
+    flags(),
+    lastUpdated(Date(0)),
+    stateData(std::monostate()),
+    payload(),
+    mRssi(0)
+{
+  ;
+}
 
 
 
@@ -558,6 +571,14 @@ BLEDevice::pseudoDeviceAddress() const
 void
 BLEDevice::pseudoDeviceAddress(BLEMacAddress newAddress)
 {
+  // Safety check
+  const auto is = flags.internalState();
+  if (is == BLEInternalState::discovered ||
+      is == BLEInternalState::filtered ||
+      is == BLEInternalState::timed_out) {
+    flags.internalState(BLEInternalState::relevant);
+    stateData = RelevantState{};
+  }
   const auto pa = pseudoDeviceAddress();
   if (!pa.has_value() || pa.value() != newAddress) {
     std::get<RelevantState>(stateData).pseudoAddress = newAddress;
@@ -966,6 +987,10 @@ BLEDevice::configuration() const noexcept
 {
   return conf;
 }
+
+
+BLESensorConfiguration
+BLEDevice::staticConfig = BLESensorConfiguration();
 
 }
 }

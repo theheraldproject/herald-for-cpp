@@ -348,7 +348,7 @@ TEST_CASE("payload-simple-matchingkeys", "[payload][simple][matchingkeys]") {
 
 TEST_CASE("payload-simple-contactkeys", "[payload][simple][contactkeys]") {
   SECTION("payload-simple-contactkeys") {
-    herald::payload::simple::SecretKey ks1;
+    herald::payload::simple::SecretKey ks1();
     int v = 0;
     for (int i = 0;i < 2048;i++) {
       ks1.append(std::byte(v));

@@ -95,15 +95,15 @@ public:
     return {};
   }
 
-  std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
-    HTDBG("immediateSend called");
-    return {};
-  }
+  // std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
+  //   HTDBG("immediateSend called");
+  //   return {};
+  // }
 
-  std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
-    HTDBG("immediateSendAll called");
-    return {};
-  }
+  // std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
+  //   HTDBG("immediateSendAll called");
+  //   return {};
+  // }
 
   ContextT& ctx;
   HLOGGER(ContextT);
@@ -113,8 +113,8 @@ template <typename ContextT, typename BLEDBT>
 class MockHeraldV1ProtocolProvider : public herald::ble::HeraldProtocolV1Provider {
 public:
   MockHeraldV1ProtocolProvider(ContextT& context,BLEDBT& bledb)
-    : ctx(context), db(bledb), hasIdentifiedOs(false), lastDeviceOS(), hasReadPayload(false), lastDevicePayload(),
-      hasImmediateSend(false), lastImmediateSend(), hasImmediateSendAll(false), lastImmediateSendAll()
+    : ctx(context), db(bledb), hasIdentifiedOs(false), lastDeviceOS(), hasReadPayload(false), lastDevicePayload()
+      // ,hasImmediateSend(false), lastImmediateSend(), hasImmediateSendAll(false), lastImmediateSendAll()
       HLOGGERINIT(ctx,"TESTS","MockHeraldV1ProtocolProvider")
   {}
   ~MockHeraldV1ProtocolProvider() = default;
@@ -197,23 +197,23 @@ public:
     return {};
   }
 
-  std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
-    HTDBG("immediateSend called");
-    auto& device = db.device(std::get<1>(act.prerequisites.front()).value());
-    hasImmediateSend = true;
-    lastImmediateSend = device.identifier();
-    device.clearImmediateSendData();
-    return {};
-  }
+  // std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
+  //   HTDBG("immediateSend called");
+  //   auto& device = db.device(std::get<1>(act.prerequisites.front()).value());
+  //   hasImmediateSend = true;
+  //   lastImmediateSend = device.identifier();
+  //   device.clearImmediateSendData();
+  //   return {};
+  // }
 
-  std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
-    HTDBG("immediateSendAll called");
-    auto& device = db.device(std::get<1>(act.prerequisites.front()).value());
-    hasImmediateSendAll = true;
-    lastImmediateSendAll = device.identifier();
-    device.clearImmediateSendData();
-    return {};
-  }
+  // std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
+  //   HTDBG("immediateSendAll called");
+  //   auto& device = db.device(std::get<1>(act.prerequisites.front()).value());
+  //   hasImmediateSendAll = true;
+  //   lastImmediateSendAll = device.identifier();
+  //   device.clearImmediateSendData();
+  //   return {};
+  // }
 
   ContextT& ctx;
   BLEDBT& db;
@@ -224,11 +224,11 @@ public:
   bool hasReadPayload;
   std::optional<herald::datatype::TargetIdentifier> lastDevicePayload;
 
-  bool hasImmediateSend;
-  std::optional<herald::datatype::TargetIdentifier> lastImmediateSend;
+  // bool hasImmediateSend;
+  // std::optional<herald::datatype::TargetIdentifier> lastImmediateSend;
 
-  bool hasImmediateSendAll;
-  std::optional<herald::datatype::TargetIdentifier> lastImmediateSendAll;
+  // bool hasImmediateSendAll;
+  // std::optional<herald::datatype::TargetIdentifier> lastImmediateSendAll;
 
   HLOGGER(ContextT);
 };
@@ -280,8 +280,8 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
     REQUIRE(pp.hasIdentifiedOs == true);
     REQUIRE(pp.lastDeviceOS == device1);
     REQUIRE(pp.hasReadPayload == false);
-    REQUIRE(pp.hasImmediateSend == false);
-    REQUIRE(pp.hasImmediateSendAll == false);
+    // REQUIRE(pp.hasImmediateSend == false);
+    // REQUIRE(pp.hasImmediateSendAll == false);
 
   // second iteration should read payload
     c.iteration();
@@ -289,8 +289,8 @@ TEST_CASE("coordinator-complex-iterations", "[coordinator][iterations][complex]"
     REQUIRE(pp.lastDeviceOS == device1);
     REQUIRE(pp.hasReadPayload == true);
     REQUIRE(pp.lastDevicePayload == device1);
-    REQUIRE(pp.hasImmediateSend == false);
-    REQUIRE(pp.hasImmediateSendAll == false);
+    // REQUIRE(pp.hasImmediateSend == false);
+    // REQUIRE(pp.hasImmediateSendAll == false);
 
     // TODO MARK DEVICE FOR IMMEDIATE SEND IN PROVIDER
     // devPtr1.immediateSendData(herald::datatype::Data(std::byte(0x09),4));
