@@ -180,7 +180,8 @@ struct RelevantState {
 
 class BLEDevice : public Device {
 public:
-  BLEDevice(BLESensorConfiguration& config); // default constructor for array instantiation
+  BLEDevice(); // Used for array initialisation, uses dummy static config ONLY
+  BLEDevice(BLESensorConfiguration& config);
   BLEDevice(BLESensorConfiguration& config,BLEDeviceDelegate& delegate, const Date& created = Date()); // default (uninitialised state) constructor
   BLEDevice(BLESensorConfiguration& config,TargetIdentifier identifier, BLEDeviceDelegate& delegate, const Date& created = Date());
   BLEDevice(const BLEDevice& other); // copy ctor
@@ -279,6 +280,7 @@ public:
   // void registerWriteRssi(Date at); // ALWAYS externalise time (now())
   
 private:
+  static BLESensorConfiguration staticConfig; // Used by empty constructor for array construction ONLY
   BLESensorConfiguration& conf; // allows this class to minimise its memory storage space
 
   std::optional<std::reference_wrapper<BLEDeviceDelegate>> delegate; // Optional to avoid catch-22

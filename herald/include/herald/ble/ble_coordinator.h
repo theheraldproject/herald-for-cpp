@@ -196,9 +196,9 @@ public:
         (
           !device.hasService(context.getSensorConfiguration().serviceUUID)
           ||
-          !device.payloadData().has_value() // Know the OS, but not the payload (ID)
-          ||
-          device.immediateSendData().has_value()
+          device.payloadData().size() == 0 // Know the OS, but not the payload (ID)
+          // ||
+          // device.immediateSendData().has_value()
         )
         ;
     });
@@ -222,8 +222,8 @@ public:
         std::string di(" - ");
         BLEMacAddress mac((Data)device.get().identifier());
         di += (std::string)mac;
-        di += ", created=";
-        di += std::to_string(device.get().created());
+        // di += ", created=";
+        // di += std::to_string(device.get().created());
         di += ", pseudoAddress=";
         auto pseudo = device.get().pseudoDeviceAddress();
         if (pseudo.has_value()) {
@@ -233,7 +233,7 @@ public:
         }
         di += ", os=";
         auto os = device.get().operatingSystem();
-        if (os.has_value()) {
+        // if (os.has_value()) {
           if (herald::ble::BLEDeviceOperatingSystem::ios == os) {
             di += "ios";
           } else if (herald::ble::BLEDeviceOperatingSystem::android == os) {
@@ -249,9 +249,9 @@ public:
           } else if (herald::ble::BLEDeviceOperatingSystem::shared == os) {
             di += "shared";
           }
-        } else {
-          di += "unknown/unset";
-        }
+        // } else {
+        //   di += "unknown/unset";
+        // }
         di += ", ignore=";
         auto ignore = device.get().ignore();
         if (ignore) {
@@ -261,10 +261,10 @@ public:
         } else {
           di += "false";
         }
-        di += ", hasServices=";
-        di += (device.get().hasServicesSet() ? "true" : "false");
+        // di += ", hasServices=";
+        // di += (device.get().hasServicesSet() ? "true" : "false");
         di += ", hasReadPayload=";
-        di += (device.get().payloadData().has_value() ? device.get().payloadData().value().hexEncodedString() : "false");
+        di += (device.get().payloadData().size() > 0 ? device.get().payloadData().hexEncodedString() : "false");
         HTDBG(di);
       }
     } else {
@@ -313,21 +313,22 @@ public:
     // });
     auto state1Devices = db.matches([this](const BLEDevice& device) -> bool {
       return !device.ignore() && 
-            !device.receiveOnly() &&
+            // !device.receiveOnly() &&
             !device.hasService(context.getSensorConfiguration().serviceUUID);
     });
     auto state2Devices = db.matches([this](const BLEDevice& device) -> bool {
       return !device.ignore() && 
-            !device.receiveOnly() &&
+            // !device.receiveOnly() &&
               device.hasService(context.getSensorConfiguration().serviceUUID) &&
-            !device.payloadData().has_value(); // TODO check for Herald transferred payload data (not legacy)
+            device.payloadData().size() == 0; // TODO check for Herald transferred payload data (not legacy)
     });
-    auto state4Devices = db.matches([this](const BLEDevice& device) -> bool {
-      return !device.ignore() && 
-            !device.receiveOnly() &&
-              device.hasService(context.getSensorConfiguration().serviceUUID) &&
-              device.immediateSendData().has_value();
-    });
+    // auto state4Devices = db.matches([this](const BLEDevice& device) -> bool {
+    //   return !device.ignore() && 
+    //         // !device.receiveOnly() &&
+    //           device.hasService(context.getSensorConfiguration().serviceUUID) 
+    //           // && device.immediateSendData().has_value()
+    //           ;
+    // });
     // TODO State X (timed out / out of range) devices filter check -> Then remove from BLEDatabase
     
     // NOTE State 0 is handled by the Herald BLE scan function, and so has no specific activity
@@ -384,31 +385,31 @@ public:
     // TODO add BLESensorConfiguration.deviceIntrospectionEnabled && device.supportsDeviceNameCharacteristic() && device.deviceName() == null
     
     // State 4 - Has data for immediate send
-    for (auto& device : state4Devices) {
-      results.emplace_back(Activity{
-        .priority = Priorities::Default + 10,
-        .name = "herald-immediate-send-targeted",
-        .prerequisites =  std::vector<std::tuple<FeatureTag,std::optional<TargetIdentifier>>>{
-          1,
-          std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
-            herald::engine::Features::HeraldBluetoothProtocolConnection,
-            device.get().identifier()
-          }
-        },
-        // For std::async based platforms:-
-        // .executor = [this](const Activity activity, CompletionCallback callback) -> void {
-        //   // fill this out
-        //   pp->immediateSend(activity,callback);
-        // }
-        .executor = [this](const Activity activity) -> std::optional<Activity> {
-          // fill this out
-          pp.immediateSend(activity);
-          return {};
-        }
-      });
-      // TODO add immediate send all support
-      // TODO add read of nearby payload data from remotes
-    }
+    // for (auto& device : state4Devices) {
+    //   results.emplace_back(Activity{
+    //     .priority = Priorities::Default + 10,
+    //     .name = "herald-immediate-send-targeted",
+    //     .prerequisites =  std::vector<std::tuple<FeatureTag,std::optional<TargetIdentifier>>>{
+    //       1,
+    //       std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
+    //         herald::engine::Features::HeraldBluetoothProtocolConnection,
+    //         device.get().identifier()
+    //       }
+    //     },
+    //     // For std::async based platforms:-
+    //     // .executor = [this](const Activity activity, CompletionCallback callback) -> void {
+    //     //   // fill this out
+    //     //   pp->immediateSend(activity,callback);
+    //     // }
+    //     .executor = [this](const Activity activity) -> std::optional<Activity> {
+    //       // fill this out
+    //       pp.immediateSend(activity);
+    //       return {};
+    //     }
+    //   });
+    //   // TODO add immediate send all support
+    //   // TODO add read of nearby payload data from remotes
+    // }
     return results;
   }
 

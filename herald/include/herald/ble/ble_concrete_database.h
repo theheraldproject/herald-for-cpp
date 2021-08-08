@@ -25,7 +25,7 @@
 #include <vector>
 #include <array>
 #include <algorithm>
-#include <optional>
+// #include <optional>
 
 namespace herald {
 namespace ble {
@@ -254,7 +254,7 @@ public:
       // check for all devices with this payload that are NOT THIS device
       auto oldMacsForSamePayload = matches([device](auto& devRef) {
         return devRef.identifier() != device.identifier() && 
-               devRef.payloadData().has_value() && devRef.payloadData() == device.payloadData();
+               devRef.payloadData().size() > 0 && devRef.payloadData() == device.payloadData();
       });
       for (auto& oldMacDevice : oldMacsForSamePayload) {
         remove(oldMacDevice.get().identifier());

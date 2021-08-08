@@ -71,15 +71,15 @@ public:
     return {};
   }
 
-  std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
-    HTDBG("immediateSend called");
-    return {};
-  }
+  // std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
+  //   HTDBG("immediateSend called");
+  //   return {};
+  // }
 
-  std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
-    HTDBG("immediateSendAll called");
-    return {};
-  }
+  // std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
+  //   HTDBG("immediateSendAll called");
+  //   return {};
+  // }
 
   ContextT& ctx;
   HLOGGER(ContextT);
@@ -324,8 +324,8 @@ TEST_CASE("blecoordinator-got-immediate-send-targeted", "[coordinator][got-immed
     devPtr1.services(heraldServiceList);
     devPtr1.operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
     devPtr1.payloadData(herald::datatype::PayloadData(std::byte(5),32));
-    devPtr1.immediateSendData(herald::datatype::ImmediateSendData(
-      herald::datatype::Data(std::byte(0x01),2)));
+    // devPtr1.immediateSendData(herald::datatype::ImmediateSendData(
+    //   herald::datatype::Data(std::byte(0x01),2)));
 
     std::vector<std::tuple<herald::engine::FeatureTag,herald::engine::Priority,
       std::optional<herald::datatype::TargetIdentifier>>> conns = 
@@ -371,8 +371,8 @@ TEST_CASE("blecoordinator-got-three-at-different-states", "[coordinator][got-thr
     devPtr3.services(heraldServiceList);
     devPtr3.operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
     devPtr3.payloadData(herald::datatype::PayloadData(std::byte(5),32));
-    devPtr3.immediateSendData(herald::datatype::ImmediateSendData(
-      herald::datatype::Data(std::byte(0x01),2)));
+    // devPtr3.immediateSendData(herald::datatype::ImmediateSendData(
+    //   herald::datatype::Data(std::byte(0x01),2)));
 
     std::vector<std::tuple<herald::engine::FeatureTag,herald::engine::Priority,
       std::optional<herald::datatype::TargetIdentifier>>> conns = 

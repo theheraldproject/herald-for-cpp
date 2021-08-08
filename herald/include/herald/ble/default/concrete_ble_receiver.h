@@ -34,12 +34,12 @@ public:
     return {};
   }
 
-  bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) {
-    return false;
-  }
-  bool immediateSendAll(Data data) {
-    return false;
-  }
+  // bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) {
+  //   return false;
+  // }
+  // bool immediateSendAll(Data data) {
+  //   return false;
+  // }
 
   // Sensor overrides
   void start() {}
@@ -66,13 +66,13 @@ public:
     return {};
   }
   
-  std::optional<Activity> immediateSend(Activity) override {
-    return {};
-  }
+  // std::optional<Activity> immediateSend(Activity) override {
+  //   return {};
+  // }
   
-  std::optional<Activity> immediateSendAll(Activity) override {
-    return {};
-  }
+  // std::optional<Activity> immediateSendAll(Activity) override {
+  //   return {};
+  // }
   
 };
 

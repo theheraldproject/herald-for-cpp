@@ -34,7 +34,7 @@ add_executable(herald-tests
 	beaconpayload-tests.cpp
 	extendeddata-tests.cpp
 	fixedpayload-tests.cpp
-	simplepayload-tests.cpp
+	# simplepayload-tests.cpp
 	bledevice-tests.cpp
 	sample-tests.cpp
 	ranges-tests.cpp
@@ -43,10 +43,10 @@ add_executable(herald-tests
 	gaussian-tests.cpp
 
   # high level
-	# advertparser-tests.cpp
-	# bledatabase-tests.cpp
-	# blecoordinator-tests.cpp
-	# coordinator-tests.cpp
+	advertparser-tests.cpp
+	bledatabase-tests.cpp
+	blecoordinator-tests.cpp
+	coordinator-tests.cpp
 
 	# main test file
 	main.cpp
