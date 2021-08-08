@@ -40,7 +40,7 @@ public:
   PayloadData legacyPayload(const PayloadTimestamp timestamp, const Device& device);
   PayloadData payload(const PayloadTimestamp timestamp, const Device& device);
   PayloadData payload(const PayloadTimestamp timestamp);
-  std::vector<PayloadData> payload(const Data& data);
+  // std::vector<PayloadData> payload(const Data& data);
 
 private:
   uint16_t country;

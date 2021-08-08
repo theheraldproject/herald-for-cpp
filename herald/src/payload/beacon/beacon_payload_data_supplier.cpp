@@ -21,9 +21,9 @@ ConcreteBeaconPayloadDataSupplierV1::ConcreteBeaconPayloadDataSupplierV1(uint16_
   mPayload.append(stateCode);
   mPayload.append(std::uint32_t(code));
   auto edpl = extendedData.payload();
-  if (edpl) {
-    mPayload.append(*edpl);
-  }
+  // if (edpl.size() > 0) {
+    mPayload.append(edpl);
+  // }
 }
 // ConcreteBeaconPayloadDataSupplierV1::ConcreteBeaconPayloadDataSupplierV1(uint16_t countryCode, uint16_t stateCode, 
 //     unsigned int code, ConcreteExtendedDataV1 extendedData)
@@ -66,11 +66,11 @@ ConcreteBeaconPayloadDataSupplierV1::payload(const PayloadTimestamp timestamp)
   return mPayload;
 }
 
-std::vector<PayloadData>
-ConcreteBeaconPayloadDataSupplierV1::payload(const Data& data)
-{
-  return std::vector<PayloadData>();
-}
+// std::vector<PayloadData>
+// ConcreteBeaconPayloadDataSupplierV1::payload(const Data& data)
+// {
+//   return std::vector<PayloadData>();
+// }
 
 }
 }

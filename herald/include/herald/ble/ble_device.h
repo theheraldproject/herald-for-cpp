@@ -149,6 +149,15 @@ using FilteredState = std::monostate;
 // };
 
 struct RelevantState {
+  RelevantState()
+   : txPower(0), 
+     ignoreForDuration(0),
+     ignoreUntil(0),
+     pseudoAddress(),
+     connectRepeatedFailures(0),
+     payloadUpdated(0)
+  {}
+  
   BLETxPower txPower;
   
   TimeInterval ignoreForDuration; // Isn't this TIME^connectRepeatedFailures?
@@ -195,7 +204,7 @@ public:
   // Date created() const override; // TODO unused, consider removing
 
   // basic descriptors
-  // std::string description() const; // TODO unused, consider removing
+  std::string description() const;
   operator std::string() const;
 
   // GENERAL BLUETOOTH STATE
@@ -222,8 +231,8 @@ public:
   BLEDeviceOperatingSystem operatingSystem() const;
   void operatingSystem(BLEDeviceOperatingSystem newOS);
 
-  // std::optional<RSSI> rssi() const;
-  // void rssi(RSSI newRSSI);
+  RSSI rssi() const;
+  void rssi(RSSI newRSSI);
 
   std::optional<BLETxPower> txPower() const;
   void txPower(BLETxPower newPower);
@@ -253,8 +262,8 @@ public:
   std::optional<BLEMacAddress> pseudoDeviceAddress() const;
   void pseudoDeviceAddress(BLEMacAddress newAddress);
 
-  // std::optional<PayloadData> payloadData() const;
-  // void payloadData(PayloadData newPayloadData);
+  PayloadData payloadData() const;
+  void payloadData(PayloadData newPayloadData);
 
   // std::optional<ImmediateSendData> immediateSendData() const;
   // void immediateSendData(ImmediateSendData toSend);
@@ -291,9 +300,9 @@ private:
 
   // std::optional<BLEDeviceState> mState; // hasPotential, relevant, identified
   // std::optional<BLEDeviceOperatingSystem> os; // hasPotential, relevant, identified
-  // std::optional<PayloadData> payload; // TODO make ephemeral (other than ID portion) - identified
+  PayloadData payload; // TODO make ephemeral (other than ID portion) - identified
   // std::optional<ImmediateSendData> mImmediateSendData; // TODO make ephemeral - identified
-  // std::optional<RSSI> mRssi; // TODO make ephemeral - all
+  RSSI mRssi; // TODO make ephemeral - all
   // std::optional<BLETxPower> mTxPower; // hasPotential, relevant, identified
   // bool mReceiveOnly; // TODO make convenience method based on other settings
 

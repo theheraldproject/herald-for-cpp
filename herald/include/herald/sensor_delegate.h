@@ -85,7 +85,7 @@ public:
   }
 
   /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
-  void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) {
+  void sensor(SensorType sensor, const DataSections<8>& didShare, const TargetIdentifier& fromTarget) {
 
   }
 

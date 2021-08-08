@@ -71,6 +71,7 @@ BLEDeviceFlags::internalState() const
     }
     // remaining values reserved
   }
+  return BLEInternalState::discovered;
 }
 
 void
@@ -359,7 +360,9 @@ BLEDevice::BLEDevice(BLESensorConfiguration& config)
     id(),
     flags(),
     lastUpdated(Date(0)),
-    stateData(std::monostate())
+    stateData(std::monostate()),
+    payload(),
+    mRssi(0)
 {
   ;
 }
@@ -372,7 +375,9 @@ BLEDevice::BLEDevice(BLESensorConfiguration& config, TargetIdentifier identifier
     id(identifier),
     flags(),
     lastUpdated(createdAt),
-    stateData(DiscoveredState())
+    stateData(DiscoveredState()),
+    payload(),
+    mRssi(0)
 {
   ;
 }
@@ -384,7 +389,9 @@ BLEDevice::BLEDevice(const BLEDevice& other)
     id(other.id),
     flags(other.flags),
     lastUpdated(other.lastUpdated),
-    stateData(other.stateData)
+    stateData(other.stateData),
+    payload(other.payload),
+    mRssi(other.mRssi)
 {
   ;
 }
@@ -397,6 +404,9 @@ BLEDevice::reset(const TargetIdentifier& newID, BLEDeviceDelegate& newDelegate)
   delegate.emplace(std::reference_wrapper<BLEDeviceDelegate>(newDelegate));
   id = newID;
   stateData = std::monostate();
+  flags.internalState(BLEInternalState::discovered);
+  payload.clear();
+  mRssi = 0;
 }
 
 BLEDevice&
@@ -408,6 +418,8 @@ BLEDevice::operator=(const BLEDevice& other)
   flags = other.flags;
   lastUpdated = other.lastUpdated;
   stateData = other.stateData;
+  payload = other.payload;
+  mRssi = other.mRssi;
   return *this;
 }
 
@@ -443,11 +455,11 @@ BLEDevice::identifier(const TargetIdentifier& toCopyFrom)
 // }
 
 // basic descriptors
-// std::string
-// BLEDevice::description() const
-// {
-//   return (std::string)id;
-// }
+std::string
+BLEDevice::description() const
+{
+  return (std::string)id;
+}
 
 BLEDevice::operator std::string() const
 {
@@ -461,7 +473,7 @@ BLEDevice::timeIntervalSinceLastUpdate() const
   // if (std::monostate == stateData) {
   //   return TimeInterval::zero();
   // }
-  return lastUpdated;
+  return TimeInterval(lastUpdated, Date());;
   // if (!lastUpdated.has_value()) {
   //   return TimeInterval::zero(); // default to new, just seen rather than 'no activity'
   // }
@@ -567,7 +579,8 @@ BLEDevice::state(BLEDeviceState newState)
   if (is == BLEInternalState::discovered ||
       is == BLEInternalState::filtered ||
       is == BLEInternalState::timed_out) {
-    return;
+    flags.internalState(BLEInternalState::relevant);
+    stateData = RelevantState{};
   }
   auto& rs = std::get<RelevantState>(stateData);
 
@@ -594,7 +607,9 @@ BLEDevice::state(BLEDeviceState newState)
   if (changed) {
     flags.state(newState);
     lastUpdated = Date(); // Constructs Date as now
-    delegate->get().device(*this, BLEDeviceAttribute::state);
+    if (delegate.has_value()) {
+      delegate->get().device(*this, BLEDeviceAttribute::state);
+    }
   }
 }
 
@@ -612,8 +627,8 @@ BLEDevice::operatingSystem(BLEDeviceOperatingSystem newOS)
   if (is == BLEInternalState::discovered ||
       is == BLEInternalState::filtered ||
       is == BLEInternalState::timed_out) {
-    // TODO convert to relevant state now?
-    return;
+    flags.internalState(BLEInternalState::relevant);
+    stateData = RelevantState{};
   }
   auto& rs = std::get<RelevantState>(stateData);
 
@@ -647,25 +662,30 @@ BLEDevice::operatingSystem(BLEDeviceOperatingSystem newOS)
   }
 }
 
-// std::optional<PayloadData>
-// BLEDevice::payloadData() const
-// {
-//   return payload;
-// }
+PayloadData
+BLEDevice::payloadData() const
+{
+  return payload;
+}
 
-// void
-// BLEDevice::payloadData(PayloadData newPayloadData)
-// {
-//   bool changed = !payload.has_value() || payload.value() != newPayloadData;
-//   if (changed) {
-//     payload.emplace(newPayloadData);
-//     lastUpdated = Date(); // Constructs Date as now
-//     payloadUpdated.emplace();
-//     if (delegate.has_value()) {
-//       delegate->get().device(*this, BLEDeviceAttribute::payloadData);
-//     }
-//   }
-// }
+void
+BLEDevice::payloadData(PayloadData newPayloadData)
+{
+  if (flags.internalState() != BLEInternalState::identified) {
+    flags.internalState(BLEInternalState::identified);
+    stateData = RelevantState{};
+  }
+  bool changed = payload.size() == 0 || payload != newPayloadData;
+  if (changed) {
+    payload = newPayloadData;
+    lastUpdated.setToNow(); // Constructs Date as now
+    std::get<RelevantState>(stateData).payloadUpdated.setToNow();
+    // payloadUpdated.emplace();
+    if (delegate.has_value()) {
+      delegate.value().get().device(*this, BLEDeviceAttribute::payloadData);
+    }
+  }
+}
 
 // std::optional<ImmediateSendData>
 // BLEDevice::immediateSendData() const
@@ -690,24 +710,24 @@ BLEDevice::operatingSystem(BLEDeviceOperatingSystem newOS)
 //   mImmediateSendData.reset();
 // }
 
-// std::optional<RSSI>
-// BLEDevice::rssi() const
-// {
-//   return mRssi;
-// }
+RSSI
+BLEDevice::rssi() const
+{
+  return mRssi;
+}
 
-// void
-// BLEDevice::rssi(RSSI newRSSI)
-// {
-//   bool changed = !mRssi.has_value() || mRssi.value() != newRSSI;
-//   if (changed) {
-//     mRssi.emplace(newRSSI);
-//     lastUpdated.emplace(); // Constructs Date as now
-//     if (delegate.has_value()) {
-//       delegate->get().device(*this, BLEDeviceAttribute::rssi);
-//     }
-//   }
-// }
+void
+BLEDevice::rssi(RSSI newRSSI)
+{
+  bool changed = (0 == mRssi.intValue()) || (mRssi != newRSSI);
+  if (changed) {
+    mRssi = newRSSI;
+    // lastUpdated.emplace(); // Constructs Date as now
+    if (delegate.has_value()) {
+      delegate.value().get().device(*this, BLEDeviceAttribute::rssi);
+    }
+  }
+}
 
 std::optional<BLETxPower>
 BLEDevice::txPower() const
@@ -731,7 +751,9 @@ BLEDevice::txPower(BLETxPower newPower)
   if (is == BLEInternalState::discovered ||
       is == BLEInternalState::filtered ||
       is == BLEInternalState::timed_out) {
-    return; // TODO convert type to Relevant instead?
+    // return; // TODO convert type to Relevant instead?
+    flags.internalState(BLEInternalState::relevant);
+    stateData = RelevantState{};
   }
   auto& rs = std::get<RelevantState>(stateData);
   bool changed = rs.txPower != newPower;
@@ -779,6 +801,7 @@ BLEDevice::signalCharacteristic(UUID newChar)
   } else {
     flags.signalCharacteristic(false);
   }
+  lastUpdated.setToNow();
 }
 
 std::optional<UUID>
@@ -796,6 +819,7 @@ BLEDevice::payloadCharacteristic(UUID newChar)
   if (conf.payloadCharacteristicUUID == newChar) {
     flags.hasPayloadCharacteristic(true);
   }
+  lastUpdated.setToNow();
 }
 
 // State engine methods
@@ -828,7 +852,9 @@ BLEDevice::ignore(bool newIgnore) // set permanent ignore flag
   // change state to ignored permanently
   if (newIgnore) {
     stateData = FilteredState(); // TODO determine if this breaks end of life detection for android devices with pseudo device address
+    flags.internalState(BLEInternalState::filtered);
   }
+  lastUpdated.setToNow();
 }
 
 void
@@ -839,6 +865,7 @@ BLEDevice::invalidateCharacteristics()
   flags.hasPayloadCharacteristic(false);
   flags.legacyService(BLELegacyService::Unknown);
   flags.signalCharacteristic(SignalCharacteristicType::SpecCompliant); // Assume spec compliant
+  lastUpdated.setToNow();
 }
 
 void
@@ -882,6 +909,7 @@ void
 BLEDevice::advertData(std::vector<BLEAdvertSegment> newSegments)
 {
   stateData = DiscoveredState{newSegments};
+  flags.internalState(BLEInternalState::discovered);
 }
 
 // const std::vector<BLEAdvertSegment>&
