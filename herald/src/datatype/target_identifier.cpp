@@ -55,7 +55,7 @@ TargetIdentifier::TargetIdentifier(const Data& data)
 }
 
 TargetIdentifier::TargetIdentifier(const TargetIdentifier& from)
-  : value((Data)from)
+  : value(from.value)
 {
   ;
 }
@@ -109,6 +109,11 @@ TargetIdentifier::operator std::string() const {
 
 TargetIdentifier::operator Data() const {
   return value;
+}
+
+Data
+TargetIdentifier::underlyingData() const {
+  return Data(value);
 }
 
 } // end namespace
