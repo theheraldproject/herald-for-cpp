@@ -416,6 +416,7 @@ BLEDevice::reset(const TargetIdentifier& newID, BLEDeviceDelegate& newDelegate)
 {
   delegate.emplace(std::reference_wrapper<BLEDeviceDelegate>(newDelegate));
   id = newID;
+  lastUpdated.setToNow();
   stateData = DiscoveredState();
   flags.internalState(BLEInternalState::discovered);
   flags.state(BLEDeviceState::disconnected); // allows action from protocol providers (i.e. no longer uninitialised)

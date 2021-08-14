@@ -240,7 +240,7 @@ public:
     arena.reserve(entry,curSize + checkedLength);
     for (std::size_t i = 0;i < checkedLength;++i) {
       arena.set(entry,curSize + i,
-      rawData.arena.get(rawData.entry,offset + (rawData.entry.byteLength - i - 1)));
+      rawData.arena.get(rawData.entry,offset + (checkedLength - i - 1)));
     // std::reverse_copy(rawData.data.begin() + offset, 
     //                   rawData.data.begin() + offset + checkedLength, 
     //                   std::back_inserter(data)
