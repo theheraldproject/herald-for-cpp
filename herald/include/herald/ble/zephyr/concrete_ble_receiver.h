@@ -321,7 +321,7 @@ public:
     // Create addr from TargetIdentifier data
     ConnectedDeviceState& state = findOrCreateState(toTarget);
     uint8_t val[6] = {0,0,0,0,0,0};
-    Data addrData = (Data)toTarget; // TODO change this to mac for target ID
+    Data addrData = toTarget.underlyingData(); // TODO change this to mac for target ID
     uint8_t t;
     bool cok = addrData.uint8(0,t);
     if (cok)
@@ -547,7 +547,7 @@ public:
       HTDBG("Current connection states cached:-");
       for (auto& [key,value] : connectionStates) {
         std::string ci = " - ";
-        ci += ((Data)value.target).hexEncodedString();
+        ci += value.target.underlyingData().hexEncodedString();
         ci += " state: ";
         switch (value.state) {
           case BLEDeviceState::connected:
@@ -726,7 +726,7 @@ private:
     }
 
     // // Now pass to relevant BLEDatabase API call
-    if (!device.rssi().has_value()) {
+    if (device.rssi().intValue() == 0) { // No RSSI yet, so must be a new device instance
       char addr_str[BT_ADDR_LE_STR_LEN];
       bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
       std::string addrStr(addr_str);

@@ -35,6 +35,8 @@ public:
 
   void bytesBigEndian(std::uint8_t bytesBigEndian[6]) const;
 
+  Data underlyingData() const;
+
 private:
   Data data;
 };

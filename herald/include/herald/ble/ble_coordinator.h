@@ -220,7 +220,7 @@ public:
       });
       for (auto& device : allDevices) {
         std::string di(" - ");
-        BLEMacAddress mac((Data)device.get().identifier());
+        BLEMacAddress mac(device.get().identifier().underlyingData());
         di += (std::string)mac;
         // di += ", created=";
         // di += std::to_string(device.get().created());
@@ -320,7 +320,7 @@ public:
       return !device.ignore() && 
             // !device.receiveOnly() &&
               device.hasService(context.getSensorConfiguration().serviceUUID) &&
-            device.payloadData().size() == 0; // TODO check for Herald transferred payload data (not legacy)
+              device.payloadData().size() == 0; // TODO check for Herald transferred payload data (not legacy)
     });
     // auto state4Devices = db.matches([this](const BLEDevice& device) -> bool {
     //   return !device.ignore() && 
