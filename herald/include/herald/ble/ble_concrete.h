@@ -131,8 +131,8 @@ public:
     switch (attribute) {
       case BLEDeviceAttribute::rssi: {
         auto rssi = device.rssi();
-        if (rssi.has_value()) {
-          double rssiValue = (double)rssi->intValue();
+        if (rssi.intValue() != 0) {
+          double rssiValue = (double)rssi.intValue();
           auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
           for (auto& delegate: delegates) {
             delegate.sensor(SensorType::BLE,
@@ -142,12 +142,12 @@ public:
           }
           // also payload with rssi
           auto payload = device.payloadData();
-          if (payload.has_value()) {
+          if (payload.size() > 0) {
             for (auto& delegate: delegates) {
               delegate.sensor(SensorType::BLE,
                 prox,
                 device.identifier(),
-                *payload
+                payload
               ); // didMeasure withPayload
             }
           }
@@ -156,23 +156,23 @@ public:
       }
       case BLEDeviceAttribute::payloadData: {
         auto payload = device.payloadData();
-        if (payload.has_value()) {
+        if (payload.size() > 0) {
           for (auto& delegate: delegates) {
             delegate.sensor(SensorType::BLE,
-              *payload,
+              payload,
               device.identifier()
             ); // didReadPayload
           }
           // also payload with rssi
           auto rssi = device.rssi();
-          if (rssi.has_value()) {
-            double rssiValue = (double)rssi->intValue();
+          if (rssi.intValue() != 0) {
+            double rssiValue = (double)rssi.intValue();
             auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
             for (auto& delegate: delegates) {
               delegate.sensor(SensorType::BLE,
                 prox,
                 device.identifier(),
-                *payload
+                payload
               ); // didMeasure withPayload
             }
           }

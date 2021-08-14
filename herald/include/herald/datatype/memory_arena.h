@@ -26,7 +26,7 @@ struct MemoryArenaEntry {
   }
 };
 
-constexpr long pagesRequired(std::size_t size,std::size_t pageSize)
+constexpr unsigned long pagesRequired(std::size_t size,std::size_t pageSize)
 {
   return (size + pageSize - 1) / pageSize;
 }
@@ -70,9 +70,9 @@ public:
       return MemoryArenaEntry{0,0};
     }
     // find first page location with enough space
-    long pages = pagesRequired(size,PageSize);
+    unsigned long pages = pagesRequired(size,PageSize);
     bool inEmpty = false;
-    long lastEmptyIndex = 0;
+    unsigned long lastEmptyIndex = 0;
     for (std::size_t i = 0;i < pagesInUse.size();++i) {
       if (!pagesInUse.test(i)) {
         // this one is empty
@@ -82,7 +82,7 @@ public:
         }
         if (i - lastEmptyIndex + 1 == pages) {
           // flip bits and return
-          for (int f = lastEmptyIndex;f <= i;++f) {
+          for (unsigned long f = lastEmptyIndex;f <= i;++f) {
             pagesInUse.set(f,true);
           }
           return MemoryArenaEntry{(unsigned short)lastEmptyIndex,(unsigned short)size};
@@ -92,7 +92,7 @@ public:
       }
     }
     // ran out of memory! Throw! (Causes catastrophic crash)
-    throw std::exception("Unable to allocate memory in arena");
+    throw std::runtime_error("Unable to allocate memory in arena");
   }
 
   void deallocate(MemoryArenaEntry& entry) {

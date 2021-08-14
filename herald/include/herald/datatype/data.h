@@ -170,7 +170,7 @@ public:
 
   /// \brief Returns the individual byte at index position, or a byte value of zero if index is out of bounds.
   std::byte at(std::size_t index) const {
-    if (index > (entry.byteLength - 1)) {
+    if (index > (unsigned short)(entry.byteLength - 1)) {
       return std::byte(0);
     }
     return std::byte(arena.get(entry,index));
@@ -317,7 +317,7 @@ public:
   /// \brief Returns whether reading a single uint8_t to `into` at `fromIndex` was successful
   bool uint8(std::size_t fromIndex, uint8_t& into) const noexcept
   {
-    if (fromIndex > entry.byteLength - 1) {
+    if (fromIndex > (unsigned short)(entry.byteLength - 1)) {
       return false;
     }
     into = std::uint8_t(arena.get(entry,fromIndex));
@@ -327,7 +327,7 @@ public:
   /// \brief Returns whether reading a single uint16_t to `into` at `fromIndex` was successful
   bool uint16(std::size_t fromIndex, uint16_t& into) const noexcept
   {
-    if (fromIndex > entry.byteLength - 2) {
+    if (fromIndex > (unsigned short)(entry.byteLength - 2)) {
       return false;
     }
     into = (std::uint16_t(std::uint8_t(arena.get(entry,fromIndex + 1))) << 8) | std::uint16_t(std::uint8_t(arena.get(entry,fromIndex)));
@@ -513,7 +513,9 @@ public:
 
   /// \brief Adds a new section, if room exists. Otherwise quietly performs a NO OP.
   void append(const Data& toCopy) noexcept {
-    if (sz >= MaxSize) {return};
+    if (sz >= MaxSize) {
+      return;
+    }
     sections[sz] = toCopy; // copy assign operator
     ++sz;
   }
