@@ -60,6 +60,12 @@ BLEMacAddress::operator Data() const
   return data;
 }
 
+Data
+BLEMacAddress::underlyingData() const
+{
+  return data;
+}
+
 // TODO Thorough test of this function with formatting and valid content across numeric range
 BLEMacAddress::operator std::string() const
 {

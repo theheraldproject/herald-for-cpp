@@ -70,7 +70,7 @@ public:
   // Creation overrides
   BLEDevice& device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/) override {
     // Check by MAC first
-    TargetIdentifier targetIdentifier((Data)mac);
+    TargetIdentifier targetIdentifier(mac.underlyingData());
     auto results = matches([&targetIdentifier](const BLEDevice& d) {
       return d.identifier() == targetIdentifier;
     });
@@ -139,7 +139,7 @@ public:
       return d.pseudoDeviceAddress() == pseudo;
     });
     if (0 == samePseudo.size()) {
-      auto& ptr = device(TargetIdentifier((Data)pseudo));
+      auto& ptr = device(TargetIdentifier(pseudo.underlyingData()));
       ptr.pseudoDeviceAddress(pseudo);
       return ptr;
     }
@@ -167,7 +167,7 @@ public:
   }
 
   BLEDevice& device(const BLEMacAddress& mac) override {
-    return device(TargetIdentifier((Data)mac));
+    return device(TargetIdentifier(mac.underlyingData()));
   }
 
   BLEDevice& device(const PayloadData& payloadData) override {

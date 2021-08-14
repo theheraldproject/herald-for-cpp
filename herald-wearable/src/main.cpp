@@ -232,15 +232,15 @@ void herald_entry() {
 	// TESTING ONLY
 	// IF IN TESTING / DEBUG, USE A FIXED PAYLOAD (SO YOU CAN TRACK IT OVER TIME)
 	std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
-	// std::uint8_t uniqueId[8];	
+	std::uint8_t uniqueId[8];	
   // // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
-	// auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
-	// if (hwInfoAvailable > 0) {
-	// 	APP_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
-	// 	clientId = *uniqueId;
-	// } else {
-	// 	APP_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
-	// }
+	auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
+	if (hwInfoAvailable > 0) {
+		APP_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
+		clientId = *uniqueId;
+	} else {
+		APP_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
+	}
 	APP_DBG("Final clientID: %" PRIu64 "", clientId);
 
 	ConcreteFixedPayloadDataSupplierV1 pds(
