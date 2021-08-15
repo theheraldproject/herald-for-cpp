@@ -74,6 +74,8 @@ public:
   {
   }
 
+  // Delete for GCC 8/9. See https://stackoverflow.com/questions/63812165/stdvariant-requires-default-constructor-in-gcc-8-and-9-and-not-require-in-gcc
+  ConcreteBLESensor() = delete;
   ConcreteBLESensor(const ConcreteBLESensor& from) = delete;
   ConcreteBLESensor(ConcreteBLESensor&& from) = delete;
   ~ConcreteBLESensor() = default;
@@ -107,24 +109,24 @@ public:
     }
     transmitter.start();
     receiver.start();
-    for (auto& delegate : delegates) {
-      delegate.sensor(SensorType::BLE, SensorState::on);
-    }
+    // for (auto& delegate : delegates) {
+      delegates.sensor(SensorType::BLE, SensorState::on);
+    // }
   }
 
   void stop() {
     transmitter.stop();
     receiver.stop();
-    for (auto& delegate : delegates) {
-      delegate.sensor(SensorType::BLE, SensorState::off);
-    }
+    // for (auto& delegate : delegates) {
+      delegates.sensor(SensorType::BLE, SensorState::off);
+    // }
   }
 
   // Database overrides
   void bleDatabaseDidCreate(const BLEDevice& device) override {
-    for (auto& delegate : delegates) {
-      delegate.sensor(SensorType::BLE, device.identifier()); // didDetect
-    }
+    // for (auto& delegate : delegates) {
+      delegates.sensor(SensorType::BLE, device.identifier()); // didDetect
+    // }
   }
 
   void bleDatabaseDidUpdate(const BLEDevice& device, const BLEDeviceAttribute attribute) override {
@@ -134,22 +136,22 @@ public:
         if (rssi.intValue() != 0) {
           double rssiValue = (double)rssi.intValue();
           auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
-          for (auto& delegate: delegates) {
-            delegate.sensor(SensorType::BLE,
+          // for (auto& delegate: delegates) {
+            delegates.sensor(SensorType::BLE,
               prox,
               device.identifier()
             ); // didMeasure
-          }
+          // }
           // also payload with rssi
           auto payload = device.payloadData();
           if (payload.size() > 0) {
-            for (auto& delegate: delegates) {
-              delegate.sensor(SensorType::BLE,
+            // for (auto& delegate: delegates) {
+              delegates.sensor(SensorType::BLE,
                 prox,
                 device.identifier(),
                 payload
               ); // didMeasure withPayload
-            }
+            // }
           }
         }
         break;
@@ -157,24 +159,24 @@ public:
       case BLEDeviceAttribute::payloadData: {
         auto payload = device.payloadData();
         if (payload.size() > 0) {
-          for (auto& delegate: delegates) {
-            delegate.sensor(SensorType::BLE,
+          // for (auto& delegate: delegates) {
+            delegates.sensor(SensorType::BLE,
               payload,
               device.identifier()
             ); // didReadPayload
-          }
+          // }
           // also payload with rssi
           auto rssi = device.rssi();
           if (rssi.intValue() != 0) {
             double rssiValue = (double)rssi.intValue();
             auto prox = Proximity{.unit=ProximityMeasurementUnit::RSSI, .value=rssiValue};
-            for (auto& delegate: delegates) {
-              delegate.sensor(SensorType::BLE,
+            // for (auto& delegate: delegates) {
+              delegates.sensor(SensorType::BLE,
                 prox,
                 device.identifier(),
                 payload
               ); // didMeasure withPayload
-            }
+            // }
           }
         }
         break;
@@ -199,9 +201,9 @@ public:
       // start();
     }
     if (BluetoothState::unsupported == didUpdateState) {
-      for (auto& delegate : delegates) {
-        delegate.sensor(SensorType::BLE, SensorState::unavailable);
-      }
+      // for (auto& delegate : delegates) {
+        delegates.sensor(SensorType::BLE, SensorState::unavailable);
+      // }
     }
   }
 

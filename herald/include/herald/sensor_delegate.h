@@ -58,9 +58,29 @@ class SensorDelegateSet {
 public:
   static constexpr std::size_t Size = sizeof...(SensorDelegateTs);
 
-  SensorDelegateSet(SensorDelegateTs&... dels) : delegates() {
-    addDelegates(0,dels...);
+  SensorDelegateSet(SensorDelegateTs&... dels) : 
+    //delegates({std::variant<std::reference_wrapper<SensorDelegateTs&...>>(std::reference_wrapper<SensorDelegateTs&...>(dels...))}) {
+    // delegates(std::experimental::make_array({std::reference_wrapper<SensorDelegateTs&...>(dels...)})) {
+    delegates(std::array<
+      std::variant<std::reference_wrapper<SensorDelegateTs>...>
+      ,Size
+    >({std::variant<std::reference_wrapper<SensorDelegateTs>...>(dels)...})) {
+    // addDelegates(0,dels...);
   }
+
+  // auto begin() -> decltype(std::declval<std::array<
+  //     std::variant<std::reference_wrapper<SensorDelegateTs>...>
+  //     ,Size
+  //   >>().begin()) {
+  //   return delegates.begin();
+  // }
+
+  // auto end() -> decltype(std::declval<std::array<
+  //     std::variant<std::reference_wrapper<SensorDelegateTs>...>
+  //     ,Size
+  //   >>().end()) {
+  //   return delegates.end();
+  // }
 
   /// Detection of a target with an ephemeral identifier, e.g. BLE central detecting a BLE peripheral.
   void sensor(SensorType sensor, const TargetIdentifier& didDetect) {
@@ -73,7 +93,14 @@ public:
       std::visit([sensor,didRead,fromTarget](auto&& arg) {
         // using noref = typename std::remove_reference<decltype(arg)>::type;
         // if constexpr (std::is_same_v<ValT,typename noref::value_type>) {
+
+
+
+          // TODO ONLY INVOKE IF WE KNOW THIS FUNCTION EXISTS
           ((decltype(arg))arg).get().sensor(sensor,didRead,fromTarget); // cast to call derived class function
+
+
+          
         // }
       }, delegateV);
     }
@@ -111,19 +138,23 @@ public:
   }
 
 private:
-  std::array<std::variant<std::reference_wrapper<SensorDelegateTs...>>,Size> delegates;
+  std::array<
+    std::variant<std::reference_wrapper<SensorDelegateTs>...>
+    ,
+    Size
+  > delegates;
 
-  template <typename LastT>
-  constexpr void addDelegates(int nextPos,LastT& last) {
-    delegates[nextPos] = std::reference_wrapper<LastT>(last);
-  }
+  // template <typename LastT>
+  // constexpr void addDelegates(int nextPos,LastT& last) {
+  //   delegates[nextPos] = std::reference_wrapper<LastT>(last);
+  // }
 
-  template <typename FirstT, typename SecondT, typename... RestT>
-  constexpr void addDelegates(int nextPos,FirstT& first, SecondT& second, RestT&... rest) {
-    delegates[nextPos] = std::reference_wrapper<FirstT>(first);
-    ++nextPos;
-    addDelegates(nextPos,second,rest...);
-  }
+  // template <typename FirstT, typename SecondT, typename... RestT>
+  // constexpr void addDelegates(int nextPos,FirstT& first, SecondT& second, RestT&... rest) {
+  //   delegates[nextPos] = std::reference_wrapper<FirstT>(first);
+  //   ++nextPos;
+  //   addDelegates(nextPos,second,rest...);
+  // }
 };
 
 
