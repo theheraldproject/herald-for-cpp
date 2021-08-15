@@ -17,6 +17,8 @@ using namespace sampling;
 template <typename RunnerT>
 struct SensorDelegateRSSISource {
 
+  // Must delete for GCC 8/9. See https://stackoverflow.com/questions/63812165/stdvariant-requires-default-constructor-in-gcc-8-and-9-and-not-require-in-gcc
+  SensorDelegateRSSISource() = delete;
   SensorDelegateRSSISource(RunnerT& runner) : runner(runner) {};
   ~SensorDelegateRSSISource() = default;
 

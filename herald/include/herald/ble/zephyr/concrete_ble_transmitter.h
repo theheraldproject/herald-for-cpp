@@ -91,7 +91,7 @@ public:
 
     HLOGGERINIT(ctx,"Sensor","BLE.ConcreteBLETransmitter")
   {
-    zephyrinternal::setPayloadDataSupplier(m_pds.get());
+    zephyrinternal::setPayloadDataSupplier(m_pds);
   }
 
   ConcreteBLETransmitter(const ConcreteBLETransmitter& from) = delete;

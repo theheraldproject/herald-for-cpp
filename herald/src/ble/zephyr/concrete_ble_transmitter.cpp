@@ -120,17 +120,42 @@ namespace zephyrinternal {
   }
 
   template <typename PayloadDataSupplierT>
-  PayloadDataSupplierT* latestPds = NULL;
+  class PayloadDataSupplierWrapper {
+  public:
+    PayloadDataSupplierWrapper() : latestPds(NULL) {};
+    ~PayloadDataSupplierWrapper() = default;
 
-  template <typename PayloadDataSupplierT>
-  PayloadDataSupplierT* getPayloadDataSupplier() {
-    return latestPds;
-  }
+    void setPayloadDataSupplier(PayloadDataSupplierT* pds) {
+      latestPds = pds;
+    }
 
+    PayloadDataSupplierT* getPayloadDataSupplier() {
+      return latestPds;
+    }
+
+    PayloadDataSupplierT& operator*() {
+      return *latestPds;
+    }
+
+    PayloadDataSupplierT& operator->() {
+      return *latestPds;
+    }
+
+    bool has_value() const noexcept {
+      return NULL != latestPds;
+    }
+
+    void clear() noexcept {
+      latestPds = NULL;
+    }
+    
+  private:
+    PayloadDataSupplierT* latestPds;
+  };
+  
   template <typename PayloadDataSupplierT>
-  void setPayloadDataSupplier(PayloadDataSupplierT* pds) {
-    latestPds = pds;
-  }
+  PayloadDataSupplierWrapper<PayloadDataSupplierT> latestPds{NULL};
+
 
   [[maybe_unused]]
   void get_tx_power(uint8_t handle_type, uint16_t handle, int8_t *tx_pwr_lvl)
@@ -196,13 +221,14 @@ namespace zephyrinternal {
     return len;
   }
 
+  template <typename PayloadDataSupplierT>
   ssize_t read_payload(struct bt_conn *conn, const struct bt_gatt_attr *attr,
         void *buf, uint16_t len, uint16_t offset)
   {
     const char *value = (const char*)attr->user_data;
-    if (NULL != latestPds) {
+    if (latestPds<PayloadDataSupplierT>.has_value()) {
       PayloadTimestamp pts; // now
-      auto payload = latestPds->payload(pts);
+      auto payload = (latestPds<PayloadDataSupplierT>)->payload(pts);
       if (payload.has_value()) {
         char* newvalue = new char[payload->size()]; // TODO replace this with maximal fixed payload char array that we re-use
         std::size_t i;

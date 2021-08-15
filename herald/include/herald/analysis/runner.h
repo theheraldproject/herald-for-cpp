@@ -150,6 +150,8 @@ private:
 /// \brief Convenience wrapper for all AnalysisProvider types used by the analysis API
 template <typename... ProviderTypes>
 struct AnalysisProviderManager {
+  // Set for GCC 8/9. See https://stackoverflow.com/questions/63812165/stdvariant-requires-default-constructor-in-gcc-8-and-9-and-not-require-in-gcc
+  AnalysisProviderManager() = delete;
   AnalysisProviderManager(ProviderTypes... prvs) : providers() {
     addProviders(0, prvs...);
   }

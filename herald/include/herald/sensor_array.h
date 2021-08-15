@@ -50,12 +50,17 @@ public:
   SensorArray(ContextT& ctx, PayloadDataSupplierT& payloadDataSupplier, SensorTs&... sensors)
   : mContext(ctx), 
     mPayloadDataSupplier(payloadDataSupplier),
-    mSensorArray(),
+    mSensorArray(
+      std::array<
+        std::variant<std::reference_wrapper<SensorTs>...>
+        ,Size
+      >({std::variant<std::reference_wrapper<SensorTs>...>(sensors)...})
+    ),
     engine(ctx),
     deviceDescription("")
     HLOGGERINIT(mContext, "Sensor", "SensorArray")
   {
-    addSensors(0,sensors...);
+    // addSensors(0,sensors...);
   }
 
   ~SensorArray() = default;
@@ -114,7 +119,7 @@ private:
   ContextT& mContext;
   PayloadDataSupplierT& mPayloadDataSupplier;
   // std::vector<std::reference_wrapper<Sensor>> mSensorArray;
-  std::array<std::variant<std::reference_wrapper<SensorTs...>>,Size> mSensorArray;
+  std::array<std::variant<std::reference_wrapper<SensorTs>...>,Size> mSensorArray;
 
   Coordinator<ContextT> engine;
 
