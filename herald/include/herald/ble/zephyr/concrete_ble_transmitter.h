@@ -78,7 +78,7 @@ namespace zephyrinternal {
 
 
 template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
-class ConcreteBLETransmitter : public BLETransmitter {
+class ConcreteBLETransmitter {
 public:
   ConcreteBLETransmitter(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels)
@@ -104,12 +104,12 @@ public:
   }
 
   // Coordination overrides - Since v1.2-beta3
-  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() {
     return {};
   }
 
   // Sensor overrides
-  void start() override {
+  void start() {
     HTDBG("ConcreteBLETransmitter::start");
     if (!m_context.getSensorConfiguration().advertisingEnabled) {
       HTDBG("Sensor Configuration has advertising disabled. Returning.");
@@ -131,7 +131,7 @@ public:
     startAdvertising();
   }
 
-  void stop() override {
+  void stop() {
     HTDBG("ConcreteBLETransmitter::stop");
     if (!m_context.getSensorConfiguration().advertisingEnabled) {
       HTDBG("Sensor Configuration has advertising disabled. Returning.");

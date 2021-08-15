@@ -83,7 +83,9 @@ public:
   // SENSOR OVERRIDES
   void start() {
     for (auto& sensor: mSensorArray) {
-      sensor.get().start();
+      std::visit([](auto&& arg) {
+        ((decltype(arg))arg).get().start(); // cast to call derived class function
+      }, sensor);
     }
     engine.start();
   }
@@ -91,7 +93,9 @@ public:
   void stop() {
     engine.stop();
     for (auto& sensor: mSensorArray) {
-      sensor.get().stop();
+      std::visit([](auto&& arg) {
+        ((decltype(arg))arg).get().stop(); // cast to call derived class function
+      }, sensor);
     }
   }
 
