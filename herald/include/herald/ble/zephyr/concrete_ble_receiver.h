@@ -219,7 +219,7 @@ namespace zephyrinternal {
 }
 
 template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
-class ConcreteBLEReceiver : public BLEReceiver, public HeraldProtocolV1Provider, public herald::zephyrinternal::Callbacks /*, public std::enable_shared_from_this<ConcreteBLEReceiver<ContextT>>*/ {
+class ConcreteBLEReceiver : public HeraldProtocolV1Provider, public herald::zephyrinternal::Callbacks /*, public std::enable_shared_from_this<ConcreteBLEReceiver<ContextT>>*/ {
 public:
   ConcreteBLEReceiver(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
     PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels)
@@ -243,22 +243,22 @@ public:
   }
 
   // Coordination overrides - Since v1.2-beta3
-  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider()
   {
     return {}; // we don't provide this, ConcreteBLESensor provides this. We provide HeraldV1ProtocolProvider
   }
 
-  bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) override
-  {
-    return false;
-  }
+  // bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) override
+  // {
+  //   return false;
+  // }
 
-  bool immediateSendAll(Data data) override {
-    return false;
-  }
+  // bool immediateSendAll(Data data) override {
+  //   return false;
+  // }
 
   // Sensor overrides
-  void start() override
+  void start()
   {
     HTDBG("ConcreteBLEReceiver::start");
     if (!m_context.getSensorConfiguration().scanningEnabled) {
@@ -287,7 +287,7 @@ public:
     HTDBG("ConcreteBLEReceiver::start completed successfully");
   }
 
-  void stop() override
+  void stop()
   {
     HTDBG("ConcreteBLEReceiver::stop");
     if (!m_context.getSensorConfiguration().scanningEnabled) {
@@ -584,8 +584,11 @@ public:
         if (NULL != value.connection && value.remoteInstigated) {
           HTDBG("REMOTELY INSTIGATED OR CONNECTED DEVICE TIMED OUT");
           auto& device = db.device(value.target);
-          if (device.timeIntervalSinceConnected() < TimeInterval::never() &&
-              device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+          // if (device.timeIntervalSinceConnected() < TimeInterval::never() &&
+          //     device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+          // TODO verify this is true when the BLEDevice is in the state we require
+          if (device.timeIntervalSinceLastUpdate() < TimeInterval::never() &&
+              device.timeIntervalSinceLastUpdate() > TimeInterval::seconds(30)) {
             // disconnect
             bt_conn_disconnect(value.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
             bt_conn_unref(value.connection);
@@ -600,7 +603,9 @@ public:
         if (NULL != iter->second.connection) {
           // Ones that are not null, but have timed out according to BLE settings (This class doesn't get notified by BLEDatabase)
           auto& device = db.device(iter->second.target);
-          if (device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+          // TODO verify this is true when the BLEDevice is in the state we require
+          // if (device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+          if (device.timeIntervalSinceLastUpdate() > TimeInterval::seconds(30)) {
             bt_conn_disconnect(iter->second.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
             bt_conn_unref(iter->second.connection);
             iter->second.connection = NULL;
@@ -700,14 +705,14 @@ public:
     return {};
   }
 
-  std::optional<Activity> immediateSend(Activity activity) override
-  {
-    return {};
-  }
-  std::optional<Activity> immediateSendAll(Activity activity) override
-  {
-    return {};
-  }
+  // std::optional<Activity> immediateSend(Activity activity) override
+  // {
+  //   return {};
+  // }
+  // std::optional<Activity> immediateSendAll(Activity activity) override
+  // {
+  //   return {};
+  // }
 
 private:  
   // Zephyr OS callbacks
@@ -973,7 +978,7 @@ private:
     // Create target identifier from address
     auto addr = bt_conn_get_dst(conn);
     BLEMacAddress bleMacAddress(addr->a.val);
-    TargetIdentifier target((Data)bleMacAddress);
+    TargetIdentifier target(bleMacAddress.underlyingData());
     auto result = connectionStates.emplace(target, target);
     bt_addr_le_copy(&result.first->second.address,addr);
     result.first->second.remoteInstigated = remoteInstigated;
