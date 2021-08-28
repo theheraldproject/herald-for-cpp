@@ -21,75 +21,53 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/services/bas.h>
 
-// #include <logging/log.h>
-// LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
-// #define APP_DBG(_msg,...) LOG_DBG(_msg,##__VA_ARGS__);
-// #define APP_INF(_msg,...) LOG_INF(_msg,##__VA_ARGS__);
-// 	#define APP_ERR(_msg,...) LOG_ERR(_msg,##__VA_ARGS__);
+#include <kernel_structs.h>
+// #include <sys/thread_stack.h>
+#include <drivers/gpio.h>
+#include <drivers/hwinfo.h>
 
+#include <inttypes.h>
 
-// using namespace herald;
-// using namespace herald::data;
-// using namespace herald::payload;
+#include <logging/log.h>
 
-// char* str(const TargetIdentifier& ti) {
-//   return log_strdup( ((std::string)ti).c_str());
-// }
+LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
+#define APP_DBG(_msg,...) LOG_DBG(_msg,##__VA_ARGS__);
+#define APP_INF(_msg,...) LOG_INF(_msg,##__VA_ARGS__);
+#define APP_ERR(_msg,...) LOG_ERR(_msg,##__VA_ARGS__);
+
+/* 1000 msec = 1 sec */
+#define SLEEP_TIME_MS   1000
+
+/* The devicetree node identifier for the "led0" alias. */
+#define LED0_NODE DT_ALIAS(led0)
+
+#if DT_NODE_HAS_STATUS(LED0_NODE, okay)
+#define LED0	DT_GPIO_LABEL(LED0_NODE, gpios)
+#define PIN	DT_GPIO_PIN(LED0_NODE, gpios)
+#define FLAGS	DT_GPIO_FLAGS(LED0_NODE, gpios)
+#else
+/* A build error here means your board isn't set up to blink an LED. */
+#error "Unsupported board: led0 devicetree alias is not defined"
+#define LED0	""
+#define PIN	0
+#define FLAGS	0
+#endif
+
+struct k_thread herald_thread;
+constexpr int stackMaxSize = 
+#ifdef CONFIG_BT_MAX_CONN
+	2048 + (CONFIG_BT_MAX_CONN * 512)
+	// Was 12288 + (CONFIG_BT_MAX_CONN * 512), but this starved newlibc of HEAP (used in handling BLE connections/devices)
+#else
+	9192
+#endif
+;
+K_THREAD_STACK_DEFINE(herald_stack, 
+	stackMaxSize
+); // Was 9192 for nRF5340 (10 conns), 2048 for nRF52832 (3 conns)
+
 
 struct DummyDelegate {};
-// class AppLoggingDelegate {
-// public:
-// 	AppLoggingDelegate() = default;
-// 	~AppLoggingDelegate() = default;
-
-// 	void sensor(SensorType sensor, const TargetIdentifier& didDetect) {
-// 		// LOG_DBG("sensor didDetect");
-// 		APP_DBG("sensor didDetect: %s", str(didDetect) ); // May want to disable this - logs A LOT of info
-// 	}
-
-//   /// Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
-//   void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) {
-// 		// LOG_DBG("sensor didRead");
-// 		APP_DBG("sensor didRead: %s with payload: %s", str(fromTarget), log_strdup(didRead.hexEncodedString().c_str()));
-// 	}
-
-//   /// Receive written immediate send data from target, e.g. important timing signal.
-//   void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) {
-// 		// LOG_DBG("sensor didReceive");
-// 		APP_DBG("sensor didReceive: %s with immediate send data: %s", str(fromTarget), log_strdup(didReceive.hexEncodedString().c_str()));
-// 	}
-
-//   /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
-//   void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) {
-// 		APP_DBG("sensor didShare");
-// 		// LOG_DBG("sensor didShare: %s", str(fromTarget) );
-// 		// for (auto& p : didShare) {
-// 		// 	LOG_DBG(" - %s", log_strdup(p.hexEncodedString().c_str()));
-// 		// }
-// 	}
-
-//   /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
-//   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {
-// 		APP_DBG("sensor didMeasure");
-// 		// LOG_DBG("sensor didMeasure: %s with proximity: %d", str(fromTarget), didMeasure.value); 
-// 	}
-
-//   /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
-// 	template <typename LocationT>
-//   void sensor(SensorType sensor, const Location<LocationT>& didVisit) {
-// 		APP_DBG("sensor didVisit");
-// 	}
-
-//   /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
-//   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {
-// 		APP_DBG("sensor didMeasure withPayload");
-// 	}
-
-//   /// Sensor state update
-//   void sensor(SensorType sensor, const SensorState& didUpdateState) {
-// 		APP_DBG("sensor didUpdateState");
-// 	}
-// };
 
 using MYUINT32 = unsigned long;
 
@@ -166,8 +144,11 @@ static struct basic_venue adamsLounge = {
 	.name = "Adam's Lounge"
 };
 
-void main(void)
-{
+void herald_entry() {
+	APP_DBG("Herald entry");
+	k_sleep(K_MSEC(10000)); // pause so we have time to see Herald initialisation log messages. Don't do this in production!
+	APP_DBG("Herald setup begins");
+
 	using namespace herald;
 	using namespace herald::payload;
 	using namespace herald::payload::beacon;
@@ -204,18 +185,76 @@ void main(void)
 	// Start array (and thus start advertising)
 	sa.start();
 
+	int iter = 0;
+	// APP_DBG("got iter!");
+	// k_sleep(K_SECONDS(2));
 	Date last;
+	// APP_DBG("got last!");
+	// k_sleep(K_SECONDS(2));
+	int delay = 250; // KEEP THIS SMALL!!! This is how often we check to see if anything needs to happen over a connection.
+	
+	APP_DBG("Entering herald iteration loop");
+	k_sleep(K_SECONDS(2));
+	while (1) {
+		k_sleep(K_MSEC(delay)); 
+		Date now;
+		if (iter > 40 /* && iter < 44 */ ) { // some delay to allow us to see advertising output
+			// You could only do first 3 iterations so we can see the older log messages without continually scrolling through log messages
+			APP_DBG("Calling Sensor Array iteration");
+			// k_sleep(K_SECONDS(2));
+			sa.iteration(now - last);
+		}
+		
+		if (0 == iter % (5000 / delay)) {
+			APP_DBG("herald thread still running. Iteration: %d", iter);
+			// runner.run(Date()); // Note: You may want to do this less or more regularly depending on your requirements
+			APP_ERR("Memory pages free in Data Arena: %d", herald::datatype::Data::getArena().pagesFree());
+		}
+
+		last = now;
+		++iter;
+	}
+}
+
+
+void main(void)
+{
+	const struct device *dev;
+	bool led_is_on = true;
+	int ret;
+
+	dev = device_get_binding(LED0);
+	if (dev == NULL) {
+		return;
+	}
+
+	ret = gpio_pin_configure(dev, PIN, GPIO_OUTPUT_ACTIVE | FLAGS);
+	if (ret < 0) {
+		return;
+	}
+
+	APP_DBG("Logging test");
+
+	// Start herald entry on a new thread in case of errors, or needing to do something on the main thread
+	[[maybe_unused]]
+	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, stackMaxSize,
+			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
+			-1, K_USER,
+			K_NO_WAIT);
+
+  // herald_entry();
+  // NOTE Above only works if CONFIG_MAIN_STACK_SIZE=2048 is set in prj.conf
+
 	/* Implement notification. At the moment there is no suitable way
 	 * of starting delayed work so we do it here
 	 */
 	while (1) {
-		k_sleep(K_SECONDS(1));
+		k_sleep(K_SECONDS(2));
+		gpio_pin_set(dev, PIN, (int)led_is_on);
+		led_is_on = !led_is_on;
 
-    // Periodic Herald tidy up tasks here
-		Date now;
-		sa.iteration(now - last);
-		last = now;
-		
-		// APP_ERR("Memory pages free in Data Arena: %d", herald::datatype::Data::getArena().pagesFree());
+		APP_DBG("main thread still running");
+
+		// TODO Add logic here to detect failure in Herald thread, and restart to resume as necessary
 	}
-}
+};
