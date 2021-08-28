@@ -6,3 +6,4 @@ Output
 *.a
 **/.DS_Store
 **/build-*
+*/.vscode/.cortex-debug.*.json

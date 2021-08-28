@@ -380,6 +380,7 @@ void herald_entry() {
 		if (0 == iter % (5000 / delay)) {
 			APP_DBG("herald thread still running. Iteration: %d", iter);
 			runner.run(Date()); // Note: You may want to do this less or more regularly depending on your requirements
+			APP_ERR("Memory pages free in Data Arena: %d", herald::datatype::Data::getArena().pagesFree());
 		}
 
 		last = now;
