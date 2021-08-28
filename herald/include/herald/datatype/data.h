@@ -471,6 +471,10 @@ public:
   {
     arena.deallocate(entry);
   }
+
+  static MemoryArenaT& getArena() {
+    return arena;
+  }
   
 protected:
   static const char hexChars[];

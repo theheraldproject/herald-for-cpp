@@ -181,7 +181,7 @@ void main(void)
 	// Disable receiver / scanning mode - we're just transmitting our value
 	BLESensorConfiguration config = ctx.getSensorConfiguration(); // copy ctor
 	config.scanningEnabled = false;
-	config.advertisingEnabled = true;
+	// config.advertisingEnabled = true; // default
 	ctx.setSensorConfiguration(config);
 
 	ConcreteExtendedDataV1 extendedData;
@@ -215,5 +215,7 @@ void main(void)
 		Date now;
 		sa.iteration(now - last);
 		last = now;
+		
+		// APP_ERR("Memory pages free in Data Arena: %d", herald::datatype::Data::getArena().pagesFree());
 	}
 }
