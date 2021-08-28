@@ -11,11 +11,6 @@
 #include "herald/data/sensor_logger.h"
 #include "herald/ble/filter/ble_advert_parser.h"
 
-// C++17 includes
-#include <memory>
-#include <vector>
-#include <algorithm>
-
 namespace herald {
 namespace ble {
 

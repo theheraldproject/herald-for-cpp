@@ -31,8 +31,6 @@
 #include <bluetooth/gatt.h>
 
 // C++17 includes
-#include <memory>
-#include <vector>
 #include <algorithm>
 #include <optional>
 #include <cstring>

@@ -195,10 +195,12 @@ public:
   }
 
   BLEDevice& device(const TargetIdentifier& targetIdentifier) override {
-    auto results = matches([&targetIdentifier](const BLEDevice& d) {
+    auto results = matches([this,&targetIdentifier](const BLEDevice& d) {
+      HTDBG(" Testing existing target identifier {} against new target identifier {}",(std::string)d.identifier(),(std::string)targetIdentifier);
       return d.identifier() == targetIdentifier;
     });
     if (results.size() != 0) {
+      HTDBG("Device for target identifier {} already exists",(std::string)targetIdentifier);
       return results.front(); // TODO ensure we send back the latest, not just the first match
     }
     HTDBG("New target identified: {}",(std::string)targetIdentifier);
@@ -341,11 +343,11 @@ private:
     if (toRemove.state() == BLEDeviceState::uninitialised) {
       return;
     }
+    toRemove.state(BLEDeviceState::uninitialised);
+    // TODO validate all other device data is reset
     for (auto& delegate : delegates) {
       delegate.get().bleDatabaseDidDelete(toRemove);
     }
-    toRemove.state(BLEDeviceState::uninitialised);
-    // TODO validate all other device data is reset
   }
 
   std::size_t indexAvailable() noexcept {

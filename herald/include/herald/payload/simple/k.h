@@ -12,8 +12,6 @@
 #include "../../datatype/data.h"
 #include "../../datatype/time_interval.h"
 
-#include <vector>
-
 namespace herald {
 namespace payload {
 namespace simple {

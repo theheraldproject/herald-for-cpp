@@ -37,7 +37,6 @@
 #endif
 
 #include <memory>
-#include <vector>
 #include <algorithm>
 #include <optional>
 

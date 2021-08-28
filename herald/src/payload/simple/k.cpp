@@ -13,8 +13,6 @@
 #include "herald/datatype/data.h"
 #include "herald/datatype/time_interval.h"
 
-#include <vector>
-
 namespace herald {
 namespace payload {
 namespace simple {

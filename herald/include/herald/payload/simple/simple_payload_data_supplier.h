@@ -38,7 +38,7 @@ public:
     SecretKey sk, K k)
   : SimplePayloadDataSupplier(),
     ctx(context), country(countryCode), state(stateCode), secretKey(sk), k(k), 
-    commonPayloadHeader(), extended(), day(-1), contactIdentifiers()
+    commonPayloadHeader(), extended()
     HLOGGERINIT(ctx, "Sensor", "ConcreteSimplePayloadDataSupplierV1")
   {
     commonPayloadHeader.append(std::uint8_t(0x10)); // Simple payload V1
@@ -53,7 +53,7 @@ public:
     SecretKey sk, K k, ConcreteExtendedDataV1 ext)
   : SimplePayloadDataSupplier(),
     ctx(context), country(countryCode), state(stateCode), secretKey(sk), k(k), 
-    commonPayloadHeader(), extended(ext), day(-1), contactIdentifiers()
+    commonPayloadHeader(), extended(ext)
     HLOGGERINIT(ctx, "Sensor", "ConcreteSimplePayloadDataSupplierV1")
   {
     commonPayloadHeader.append(std::uint8_t(0x10)); // Simple payload V1
@@ -114,9 +114,9 @@ public:
     return p;
   }
 
-  std::vector<PayloadData> payload(const Data& data) {
-    return std::vector<PayloadData>();
-  }
+  // std::vector<PayloadData> payload(const Data& data) {
+  //   return std::vector<PayloadData>();
+  // }
 
 private:
   ContextT& ctx;
@@ -126,13 +126,8 @@ private:
   K k;
 
   PayloadData commonPayloadHeader;
-  // std::vector<MatchingKey> matchingKeys;
 
   ConcreteExtendedDataV1 extended;
-
-  // cached day/period info
-  int day;
-  std::vector<ContactIdentifier> contactIdentifiers;
 
   HLOGGER(ContextT);
 };
