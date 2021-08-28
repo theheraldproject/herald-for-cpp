@@ -118,7 +118,6 @@ private:
   // Initialised on entry to Impl constructor:-
   ContextT& mContext;
   PayloadDataSupplierT& mPayloadDataSupplier;
-  // std::vector<std::reference_wrapper<Sensor>> mSensorArray;
   std::array<std::variant<std::reference_wrapper<SensorTs>...>,Size> mSensorArray;
 
   Coordinator<ContextT> engine;

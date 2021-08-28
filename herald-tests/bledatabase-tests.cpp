@@ -127,6 +127,7 @@ TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][same
     std::cout << "Devices:-" << std::endl;
     for (auto& d : devices) {
       std::cout << "Mac: " << d.get().identifier() 
+                << ", State: " << ((d.get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
                 << ", Payload: " << (d.get().payloadData().size() > 0 ? d.get().payloadData().hexEncodedString() : "Empty") << std::endl;
     }
     REQUIRE(db.size() == 1);
@@ -145,6 +146,7 @@ TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][same
     std::cout << "Devices:-" << std::endl;
     for (auto& d : devices) {
       std::cout << "Mac: " << d.get().identifier() 
+                << ", State: " << ((d.get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
                 << ", Payload: " << (d.get().payloadData().size() > 0 ? d.get().payloadData().hexEncodedString() : "Empty") << std::endl;
     }
     REQUIRE(db.size() == 1);
@@ -164,6 +166,7 @@ TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][same
     std::cout << "Devices:-" << std::endl;
     for (auto& d : devices) {
       std::cout << "Mac: " << d.get().identifier() 
+                << ", State: " << ((d.get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
                 << ", Payload: " << (d.get().payloadData().size() > 0 ? d.get().payloadData().hexEncodedString() : "Empty") << std::endl;
     }
     REQUIRE(db.size() == 2);
@@ -183,6 +186,7 @@ TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][same
     std::cout << "Devices:-" << std::endl;
     for (auto& d : devices) {
       std::cout << "Mac: " << d.get().identifier() 
+                << ", State: " << ((d.get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
                 << ", Payload: " << (d.get().payloadData().size() > 0 ? d.get().payloadData().hexEncodedString() : "Empty") << std::endl;
     }
     REQUIRE(db.size() == 3);
@@ -201,6 +205,7 @@ TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][same
     std::cout << "Devices:-" << std::endl;
     for (auto& d : devices) {
       std::cout << "Mac: " << d.get().identifier() 
+                << ", State: " << ((d.get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
                 << ", Payload: " << (d.get().payloadData().size() > 0 ? d.get().payloadData().hexEncodedString() : "Empty") << std::endl;
     }
     REQUIRE(db.size() == 2); // original targetID with this payload should have been deleted

@@ -31,14 +31,15 @@ public:
   void sensor(SensorType sensor, const TargetIdentifier& didDetect) {
     HTDBG("didDetect");
   }
-  void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) {}
-  void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) {}
-  void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget){}
-  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {}
-  template <typename LocationT>
-  void sensor(SensorType sensor, const Location<LocationT>& didVisit) {}
-  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {}
-  void sensor(SensorType sensor, const SensorState& didUpdateState) {}
+  // TODO Log all the other activity
+  // void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) {}
+  // void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) {}
+  // void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget){}
+  // void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {}
+  // template <typename LocationT>
+  // void sensor(SensorType sensor, const Location<LocationT>& didVisit) {}
+  // void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {}
+  // void sensor(SensorType sensor, const SensorState& didUpdateState) {}
 
 private:
   std::string csv(std::string toEscape) const noexcept {

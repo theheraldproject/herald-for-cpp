@@ -65,10 +65,11 @@ public:
       arena.set(entry, i, (unsigned char)from[i]);
     }
   }
-  // Data(std::vector<std::byte> value);
-  /// \brief Initialises a DataRef by refering to the SAME memory allocation
-  DataRef(const DataRef& from) : entry(from.entry) {
-    // copies reference, NOT data
+  /// \brief Initialises a DataRef copying another data object (uses more data, to ensure only one object owns the entry)
+  DataRef(const DataRef& from) : entry(arena.allocate(from.entry.byteLength)) {
+    for (std::size_t i = 0;i < from.size(); ++i) {
+      arena.set(entry, i, from.arena.get(from.entry,i));
+    }
   }
 
   /// \brief Initialises a DataRef with count number of repeating bytes
@@ -84,12 +85,15 @@ public:
 
 
   // Data(Base64String from); // use Base64String.from(std::string).decode() instea
-  /// \brief Copy assign operator. Copies the entry (make the object SHARE the memory entry)
+  /// \brief Copy assign operator. Copies the data to be sure only one object owns the entry
   DataRef& operator=(const DataRef& other)
-{
-  entry = other.entry;
-  return *this;
-}
+  {
+    entry = arena.allocate(other.entry.byteLength);
+    for (std::size_t i = 0;i < other.size(); ++i) {
+      arena.set(entry, i, other.arena.get(other.entry,i));
+    }
+    return *this;
+  }
 
   /// \brief Default destructor
   ~DataRef() {
@@ -458,7 +462,6 @@ public:
   std::size_t hashCode() const noexcept
   {
     // TODO consider a faster (E.g. SIMD) algorithm or one with less hotspots (see hashdos attacks)
-    // return std::hash<std::vector<std::byte>>{}(data);
     return std::hash<DataRef<MemoryArenaT>>{}(*this);
   }
 
@@ -481,7 +484,6 @@ public:
 protected:
   static const char hexChars[];
   static MemoryArenaT arena;
-  //std::vector<std::byte> data;
   MemoryArenaEntry entry;
 };
 
@@ -568,27 +570,12 @@ namespace std {
   {
     seed ^= value + 0x9e3779b9 + (seed<<6) + (seed>>2);
   }
-  
-  // std::hash function for std::vector<T>
-  // template<typename T>
-  // struct hash<std::vector<T>>
-  // {
-  //   size_t operator()(const std::vector<T>& v) const
-  //   {
-  //     std::size_t hv = 0;
-  //     for (auto& vpart : v) {
-  //       hash_combine_impl(hv, std::hash<T>()(vpart));
-  //     }
-  //     return hv;
-  //   }
-  // };
 
   template<typename MemoryArenaT>
   struct hash<herald::datatype::DataRef<MemoryArenaT>>
   {
     size_t operator()(const herald::datatype::DataRef<MemoryArenaT>& v) const
     {
-      // return v.hashCode();
       std::size_t hv = 0;
       std::uint8_t ui = 0;
       bool ok;
