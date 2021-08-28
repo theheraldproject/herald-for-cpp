@@ -49,6 +49,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/immediate_send_data.h
   ${HERALD_BASE}/include/herald/datatype/location_reference.h
   ${HERALD_BASE}/include/herald/datatype/location.h
+  ${HERALD_BASE}/include/herald/datatype/memory_arena.h
   ${HERALD_BASE}/include/herald/datatype/payload_data.h
   ${HERALD_BASE}/include/herald/datatype/payload_sharing_data.h
   ${HERALD_BASE}/include/herald/datatype/payload_timestamp.h

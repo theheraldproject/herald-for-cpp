@@ -218,16 +218,16 @@ namespace zephyrinternal {
   const struct bt_gatt_dm_cb* getDiscoveryCallbacks();
 }
 
-template <typename ContextT, typename BLEDatabaseT>
-class ConcreteBLEReceiver : public BLEReceiver, public HeraldProtocolV1Provider, public herald::zephyrinternal::Callbacks /*, public std::enable_shared_from_this<ConcreteBLEReceiver<ContextT>>*/ {
+template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
+class ConcreteBLEReceiver : public HeraldProtocolV1Provider, public herald::zephyrinternal::Callbacks /*, public std::enable_shared_from_this<ConcreteBLEReceiver<ContextT>>*/ {
 public:
   ConcreteBLEReceiver(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, BLEDatabaseT& bleDatabase)
+    PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels)
     : m_context(ctx), // Herald API guarantees this to be safe
       m_stateManager(bluetoothStateManager),
       m_pds(payloadDataSupplier),
       db(bleDatabase),
-      delegates(),
+      delegates(dels),
       connectionStates(),
       isScanning(false)
       HLOGGERINIT(ctx,"Sensor","BLE.ConcreteBLEReceiver")
@@ -243,27 +243,22 @@ public:
   }
 
   // Coordination overrides - Since v1.2-beta3
-  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider()
   {
     return {}; // we don't provide this, ConcreteBLESensor provides this. We provide HeraldV1ProtocolProvider
   }
 
-  bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) override
-  {
-    return false;
-  }
+  // bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) override
+  // {
+  //   return false;
+  // }
 
-  bool immediateSendAll(Data data) override {
-    return false;
-  }
+  // bool immediateSendAll(Data data) override {
+  //   return false;
+  // }
 
   // Sensor overrides
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override
-  {
-    delegates.push_back(delegate);
-  }
-
-  void start() override
+  void start()
   {
     HTDBG("ConcreteBLEReceiver::start");
     if (!m_context.getSensorConfiguration().scanningEnabled) {
@@ -292,7 +287,7 @@ public:
     HTDBG("ConcreteBLEReceiver::start completed successfully");
   }
 
-  void stop() override
+  void stop()
   {
     HTDBG("ConcreteBLEReceiver::stop");
     if (!m_context.getSensorConfiguration().scanningEnabled) {
@@ -300,7 +295,7 @@ public:
       return;
     }
     
-    herald::ble::zephyrinternal::resetReceiverInstance(); // destroys the shared_ptr not necessarily the underlying value
+    herald::ble::zephyrinternal::resetReceiverInstance(); // may not destroy the underlying value
 
     stopScanning();
 
@@ -326,7 +321,7 @@ public:
     // Create addr from TargetIdentifier data
     ConnectedDeviceState& state = findOrCreateState(toTarget);
     uint8_t val[6] = {0,0,0,0,0,0};
-    Data addrData = (Data)toTarget; // TODO change this to mac for target ID
+    Data addrData = toTarget.underlyingData(); // TODO change this to mac for target ID
     uint8_t t;
     bool cok = addrData.uint8(0,t);
     if (cok)
@@ -552,7 +547,7 @@ public:
       HTDBG("Current connection states cached:-");
       for (auto& [key,value] : connectionStates) {
         std::string ci = " - ";
-        ci += ((Data)value.target).hexEncodedString();
+        ci += value.target.underlyingData().hexEncodedString();
         ci += " state: ";
         switch (value.state) {
           case BLEDeviceState::connected:
@@ -589,8 +584,11 @@ public:
         if (NULL != value.connection && value.remoteInstigated) {
           HTDBG("REMOTELY INSTIGATED OR CONNECTED DEVICE TIMED OUT");
           auto& device = db.device(value.target);
-          if (device.timeIntervalSinceConnected() < TimeInterval::never() &&
-              device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+          // if (device.timeIntervalSinceConnected() < TimeInterval::never() &&
+          //     device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+          // TODO verify this is true when the BLEDevice is in the state we require
+          if (device.timeIntervalSinceLastUpdate() < TimeInterval::never() &&
+              device.timeIntervalSinceLastUpdate() > TimeInterval::seconds(30)) {
             // disconnect
             bt_conn_disconnect(value.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
             bt_conn_unref(value.connection);
@@ -605,7 +603,9 @@ public:
         if (NULL != iter->second.connection) {
           // Ones that are not null, but have timed out according to BLE settings (This class doesn't get notified by BLEDatabase)
           auto& device = db.device(iter->second.target);
-          if (device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+          // TODO verify this is true when the BLEDevice is in the state we require
+          // if (device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
+          if (device.timeIntervalSinceLastUpdate() > TimeInterval::seconds(30)) {
             bt_conn_disconnect(iter->second.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
             bt_conn_unref(iter->second.connection);
             iter->second.connection = NULL;
@@ -705,14 +705,14 @@ public:
     return {};
   }
 
-  std::optional<Activity> immediateSend(Activity activity) override
-  {
-    return {};
-  }
-  std::optional<Activity> immediateSendAll(Activity activity) override
-  {
-    return {};
-  }
+  // std::optional<Activity> immediateSend(Activity activity) override
+  // {
+  //   return {};
+  // }
+  // std::optional<Activity> immediateSendAll(Activity activity) override
+  // {
+  //   return {};
+  // }
 
 private:  
   // Zephyr OS callbacks
@@ -731,7 +731,7 @@ private:
     }
 
     // // Now pass to relevant BLEDatabase API call
-    if (!device.rssi().has_value()) {
+    if (device.rssi().intValue() == 0) { // No RSSI yet, so must be a new device instance
       char addr_str[BT_ADDR_LE_STR_LEN];
       bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
       std::string addrStr(addr_str);
@@ -978,7 +978,7 @@ private:
     // Create target identifier from address
     auto addr = bt_conn_get_dst(conn);
     BLEMacAddress bleMacAddress(addr->a.val);
-    TargetIdentifier target((Data)bleMacAddress);
+    TargetIdentifier target(bleMacAddress.underlyingData());
     auto result = connectionStates.emplace(target, target);
     bt_addr_le_copy(&result.first->second.address,addr);
     result.first->second.remoteInstigated = remoteInstigated;
@@ -1034,10 +1034,10 @@ private:
 
   ContextT& m_context;
   BluetoothStateManager& m_stateManager;
-  std::shared_ptr<PayloadDataSupplier> m_pds;
+  PayloadDataSupplierT& m_pds;
   BLEDatabaseT& db;
 
-  std::vector<std::shared_ptr<SensorDelegate>> delegates;
+  SensorDelegateSetT& delegates;
 
   std::map<TargetIdentifier,ConnectedDeviceState> connectionStates;
   bool isScanning;

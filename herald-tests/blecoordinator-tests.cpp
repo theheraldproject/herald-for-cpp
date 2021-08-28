@@ -71,47 +71,19 @@ public:
     return {};
   }
 
-  std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
-    HTDBG("immediateSend called");
-    return {};
-  }
+  // std::optional<herald::engine::Activity> immediateSend(herald::engine::Activity act) override {
+  //   HTDBG("immediateSend called");
+  //   return {};
+  // }
 
-  std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
-    HTDBG("immediateSendAll called");
-    return {};
-  }
+  // std::optional<herald::engine::Activity> immediateSendAll(herald::engine::Activity act) override {
+  //   HTDBG("immediateSendAll called");
+  //   return {};
+  // }
 
   ContextT& ctx;
   HLOGGER(ContextT);
 };
-
-/*
-class MockHeraldV1ProtocolProvider : public herald::ble::HeraldProtocolV1Provider {
-public:
-  MockHeraldV1ProtocolProvider(std::shared_ptr<herald::ble::BLEDatabase> bledb)
-    : db(bledb), hasIdentifiedOs(false), lastDeviceOS(), hasReadPayload(false), lastDevicePayload()
-  {}
-  ~MockHeraldV1ProtocolProvider() = default;
-  
-  void identifyOS(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
-    auto device = db->device(std::get<1>(act.prerequisites.front()).value());
-    device->operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
-    cb(act,{});
-  }
-
-  void readPayload(herald::engine::Activity act, herald::engine::CompletionCallback cb) override {
-    auto device = db->device(std::get<1>(act.prerequisites.front()).value());
-    device->payloadData(herald::datatype::Data(std::byte(0x02),2));
-    cb(act,{});
-  }
-
-  std::shared_ptr<herald::ble::BLEDatabase> db;
-  bool hasIdentifiedOs;
-  std::optional<herald::datatype::TargetIdentifier> lastDeviceOS;
-  bool hasReadPayload;
-  std::optional<herald::datatype::TargetIdentifier> lastDevicePayload;
-};
-*/
 
 TEST_CASE("blecoordinator-ctor", "[coordinator][ctor][basic]") {
   SECTION("blecoordinator-ctor") {
@@ -331,39 +303,39 @@ TEST_CASE("blecoordinator-got-two-at-different-states", "[coordinator][got-two-a
 }
 
 
-TEST_CASE("blecoordinator-got-immediate-send-targeted", "[coordinator][got-immediate-send-targeted][basic]") {
-  SECTION("blecoordinator-got-immediate-send-targeted") {
-    DummyLoggingSink dls;
-    DummyBluetoothStateManager dbsm;
-    herald::DefaultPlatformType dpt;
-    herald::Context ctx(dpt,dls,dbsm); // default context include
-    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
-    herald::ble::ConcreteBLEDatabase<CT> db(ctx);
-    NoOpHeraldV1ProtocolProvider pp(ctx,db);
-    herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);
+// TEST_CASE("blecoordinator-got-immediate-send-targeted", "[coordinator][got-immediate-send-targeted][basic]") {
+//   SECTION("blecoordinator-got-immediate-send-targeted") {
+//     DummyLoggingSink dls;
+//     DummyBluetoothStateManager dbsm;
+//     herald::DefaultPlatformType dpt;
+//     herald::Context ctx(dpt,dls,dbsm); // default context include
+//     using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
+//     herald::ble::ConcreteBLEDatabase<CT> db(ctx);
+//     NoOpHeraldV1ProtocolProvider pp(ctx,db);
+//     herald::ble::HeraldProtocolBLECoordinationProvider coord(ctx,db,pp);
 
-    herald::datatype::Data devMac1(std::byte(0x1d),6);
-    herald::datatype::TargetIdentifier device1(devMac1);
-    herald::ble::BLEDevice& devPtr1 = db.device(device1);
+//     herald::datatype::Data devMac1(std::byte(0x1d),6);
+//     herald::datatype::TargetIdentifier device1(devMac1);
+//     herald::ble::BLEDevice& devPtr1 = db.device(device1);
 
-    // Specify that some activity has already happened with the device
-    std::vector<herald::datatype::UUID> heraldServiceList;
-    heraldServiceList.push_back(ctx.getSensorConfiguration().serviceUUID);
-    devPtr1.services(heraldServiceList);
-    devPtr1.operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
-    devPtr1.payloadData(herald::datatype::PayloadData(std::byte(5),32));
-    devPtr1.immediateSendData(herald::datatype::ImmediateSendData(
-      herald::datatype::Data(std::byte(0x01),2)));
+//     // Specify that some activity has already happened with the device
+//     std::vector<herald::datatype::UUID> heraldServiceList;
+//     heraldServiceList.push_back(ctx.getSensorConfiguration().serviceUUID);
+//     devPtr1.services(heraldServiceList);
+//     devPtr1.operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
+//     devPtr1.payloadData(herald::datatype::PayloadData(std::byte(5),32));
+//     devPtr1.immediateSendData(herald::datatype::ImmediateSendData(
+//       herald::datatype::Data(std::byte(0x01),2)));
 
-    std::vector<std::tuple<herald::engine::FeatureTag,herald::engine::Priority,
-      std::optional<herald::datatype::TargetIdentifier>>> conns = 
-      coord.requiredConnections();
-    REQUIRE(conns.size() == 1);
+//     std::vector<std::tuple<herald::engine::FeatureTag,herald::engine::Priority,
+//       std::optional<herald::datatype::TargetIdentifier>>> conns = 
+//       coord.requiredConnections();
+//     REQUIRE(conns.size() == 1);
 
-    std::vector<herald::engine::Activity> acts = coord.requiredActivities();
-    REQUIRE(acts.size() == 1);
-  }
-}
+//     std::vector<herald::engine::Activity> acts = coord.requiredActivities();
+//     REQUIRE(acts.size() == 1);
+//   }
+// }
 
 TEST_CASE("blecoordinator-got-three-at-different-states", "[coordinator][got-three-at-different-states][basic]") {
   SECTION("blecoordinator-got-three-at-different-states") {
@@ -399,34 +371,34 @@ TEST_CASE("blecoordinator-got-three-at-different-states", "[coordinator][got-thr
     devPtr3.services(heraldServiceList);
     devPtr3.operatingSystem(herald::ble::BLEDeviceOperatingSystem::android);
     devPtr3.payloadData(herald::datatype::PayloadData(std::byte(5),32));
-    devPtr3.immediateSendData(herald::datatype::ImmediateSendData(
-      herald::datatype::Data(std::byte(0x01),2)));
+    // devPtr3.immediateSendData(herald::datatype::ImmediateSendData(
+    //   herald::datatype::Data(std::byte(0x01),2)));
 
     std::vector<std::tuple<herald::engine::FeatureTag,herald::engine::Priority,
       std::optional<herald::datatype::TargetIdentifier>>> conns = 
       coord.requiredConnections();
-    REQUIRE(conns.size() == 2);
+    REQUIRE(conns.size() == 1); // 2 with immediateSend enabled
     auto firstConn = conns.front();
     REQUIRE(std::get<0>(firstConn) == herald::engine::Features::HeraldBluetoothProtocolConnection);
     REQUIRE(std::get<1>(firstConn) > 0);
     REQUIRE(std::get<2>(firstConn).has_value());
     REQUIRE(std::get<2>(firstConn).value() == device2);
-    auto secondConn = conns[1];
-    REQUIRE(std::get<1>(secondConn) > 0);
-    REQUIRE(std::get<2>(secondConn).has_value());
-    REQUIRE(std::get<2>(secondConn).value() == device3);
+    // auto secondConn = conns[1];
+    // REQUIRE(std::get<1>(secondConn) > 0);
+    // REQUIRE(std::get<2>(secondConn).has_value());
+    // REQUIRE(std::get<2>(secondConn).value() == device3);
 
     std::vector<herald::engine::Activity> acts = coord.requiredActivities();
-    REQUIRE(acts.size() == 2); // just read payload (ID) for ONE device, and immediate send for another
+    REQUIRE(acts.size() == 1); // just read payload (ID) for ONE device, and immediate send for another
     auto firstAct = acts.front();
     REQUIRE(firstAct.prerequisites.size() == 1);
     REQUIRE(std::get<1>(firstAct.prerequisites.front()).has_value());
     REQUIRE(std::get<1>(firstAct.prerequisites.front()).value() == device2);
-    auto secondAct = acts[1];
-    REQUIRE(secondAct.prerequisites.size() == 1);
-    REQUIRE(secondAct.prerequisites.size() == 1);
-    REQUIRE(std::get<1>(secondAct.prerequisites.front()).has_value());
-    REQUIRE(std::get<1>(secondAct.prerequisites.front()).value() == device3);
+    // auto secondAct = acts[1];
+    // REQUIRE(secondAct.prerequisites.size() == 1);
+    // REQUIRE(secondAct.prerequisites.size() == 1);
+    // REQUIRE(std::get<1>(secondAct.prerequisites.front()).has_value());
+    // REQUIRE(std::get<1>(secondAct.prerequisites.front()).value() == device3);
   }
 }
 

@@ -35,6 +35,8 @@ public:
 
   operator Data() const;
 
+  Data underlyingData() const;
+
 private:
   Data value;
 
@@ -48,7 +50,7 @@ private:
 namespace std {
   inline std::ostream& operator<<(std::ostream &os, const herald::datatype::TargetIdentifier& d)
   {
-    return os << ((herald::datatype::Data)d).reversed().hexEncodedString();
+    return os << d.underlyingData().reversed().hexEncodedString();
   }
 
   template<>

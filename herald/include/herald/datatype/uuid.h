@@ -20,11 +20,29 @@ public:
   using value_type = uint8_t;
 
   static UUID fromString(const std::string& from) noexcept;
-  static UUID random(RandomnessGenerator& from) noexcept;
+  // static UUID fromString(const char* from) noexcept;
 
-  UUID(UUID&& from);
-  UUID(const UUID& from);
-  ~UUID();
+  template <typename RandomnessSourceT>
+  static UUID random(RandomnessGenerator<RandomnessSourceT>& from) noexcept {
+    std::array<value_type, 16> data{ {0} };
+    Data randomness;
+    from.nextBytes(16,randomness);
+    for (std::size_t i = 0;i < 16;i++) {
+      data[i] = (value_type)randomness.at(i);
+    }
+    // Now set bits for v4 UUID explicitly
+    constexpr value_type M = 0x40; // 7th byte = 0100 in binary for MSB 0000 for LSB - v4 UUID
+    constexpr value_type N = 0x80; // 9th byte = 1000 in binary for MSB 0000 for LSB - variant 1
+    data[6] = (0x0f & data[6]) | M; // blanks out first 4 bits
+    data[8] = (0x3f & data[8]) | N; // blanks out first 2 bits
+    UUID uuid(data,false); // TODO generate random data and tag as v4
+    return uuid; // returns copy
+  }
+
+  UUID(const char* from) noexcept;
+  UUID(UUID&& from) noexcept;
+  UUID(const UUID& from) noexcept;
+  ~UUID() noexcept = default;
 
   UUID& operator=(const UUID& other) noexcept; // copy assign
 

@@ -130,8 +130,15 @@ TEST_CASE("datatypes-placename-basics", "[datatypes][placename][ctor][basics]") 
 
 
 
-
-
+TEST_CASE("datatypes-uuid-notblank", "[datatypes][uuid][notblank]") {
+  SECTION("datatypes-uuid-notblank") {
+    auto serviceUUID = herald::datatype::UUID::fromString("428132af-4746-42d3-801e-4572d65bfd9b");
+    // INFO("Service UUID " << std::string(serviceUUID));
+    auto blankUUID = herald::datatype::UUID::fromString("");
+    // INFO("Blank UUID " << std::string(blankUUID));
+    REQUIRE(serviceUUID != blankUUID);
+  }
+}
 
 
 

@@ -7,10 +7,6 @@
 
 #include "ble_device.h"
 
-#include <memory>
-#include <vector>
-#include <optional>
-
 namespace herald {
 namespace ble {
 

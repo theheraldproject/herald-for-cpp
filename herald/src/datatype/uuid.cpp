@@ -5,12 +5,16 @@
 #include "herald/datatype/uuid.h"
 #include "herald/datatype/data.h"
 #include "herald/datatype/randomness.h"
+#include "herald/datatype/base64_string.h"
 
 #include <string>
+#include <algorithm>
 #include <array>
 #include <sstream>
 #include <iosfwd>
 #include <iomanip>
+
+#include <type_traits>
 
 namespace herald {
 namespace datatype {
@@ -44,37 +48,37 @@ namespace datatype {
 // Static functions
 UUID
 UUID::fromString(const std::string& from) noexcept {
-  std::array<value_type, 16> data{ {0} };
-  UUID uuid(data,false); // TODO parse string, determine if valid, and tag as v4
-  return uuid; // returns copy
-}
+  Base64String asString;
+  // remove hyphens before using hex decoding
+  std::string newFrom = from; // copy
+  newFrom.erase(std::remove(newFrom.begin(),newFrom.end(),'-'), newFrom.end());
+  auto dataInstance = Data::fromHexEncodedString(newFrom);
 
-UUID
-UUID::random(RandomnessGenerator& from) noexcept {
   std::array<value_type, 16> data{ {0} };
-  Data randomness;
-  from.nextBytes(16,randomness);
-  for (std::size_t i = 0;i < 16;i++) {
-    data[i] = (value_type)randomness.at(i);
+  if (dataInstance.size() != 16) {
+    return UUID(data,false);
   }
-  // Now set bits for v4 UUID explicitly
-  constexpr value_type M = 0x40; // 7th byte = 0100 in binary for MSB 0000 for LSB - v4 UUID
-  constexpr value_type N = 0x80; // 9th byte = 1000 in binary for MSB 0000 for LSB - variant 1
-  data[6] = (0x0f & data[6]) | M; // blanks out first 4 bits
-  data[8] = (0x3f & data[8]) | N; // blanks out first 2 bits
-  UUID uuid(data,false); // TODO generate random data and tag as v4
-  return uuid; // returns copy
+  for (std::size_t pos = 0;pos < 16;++pos) {
+    data[pos] = (value_type)dataInstance.at(pos);
+  }
+  UUID uuid(data,true); // TODO check UUID is a V4 format
+  return uuid;
 }
 
 // Instance functions
+UUID::UUID(const char* from) noexcept
+ : mData({0}), mValid(true)
+{
+  // TODO actually copy the value from the string
+}
 
-UUID::UUID(UUID&& from) 
+UUID::UUID(UUID&& from) noexcept
  : mData(std::move(from.mData)), mValid(from.mValid)
 {
   ;
 }
 
-UUID::UUID(const UUID& from) 
+UUID::UUID(const UUID& from) noexcept
  : mData(from.mData),mValid(from.mValid)
 {
   ;
@@ -86,8 +90,6 @@ UUID::UUID(std::array<value_type, 16> data, bool isValid) noexcept
 {
   ;
 }
-
-UUID::~UUID() = default;
 
 
 UUID&
@@ -144,6 +146,11 @@ UUID::string() const noexcept {
        << hexString.substr(20,12);
   return fstr.str();
 }
+
+// Static assertions on this classes compiler contract
+static_assert(std::is_constructible_v<UUID,const char*>,"UUID Cannot be string constructed");
+static_assert(std::is_copy_constructible_v<UUID>,"UUID Cannot be copy constructed");
+static_assert(std::is_move_constructible_v<UUID>,"UUID Cannot be move constructed");
 
 } // end namespace
 } // end namespace

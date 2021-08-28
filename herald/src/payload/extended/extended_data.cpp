@@ -5,51 +5,29 @@
 #include "herald/payload/extended/extended_data.h"
 #include "herald/datatype/data.h"
 
-#include <vector>
 #include <string>
 
 namespace herald {
 namespace payload {
 namespace extended {
 
-class ConcreteExtendedDataV1::Impl {
-public:
-  Impl();
-  ~Impl();
-
-  bool hasData;
-  std::vector<ConcreteExtendedDataSectionV1> sections;
-};
-
-ConcreteExtendedDataV1::Impl::Impl()
-  : hasData(false), sections()
-{
-  ;
-}
-
-ConcreteExtendedDataV1::Impl::~Impl()
-{
-  ;
-}
-
-
-
-
 ConcreteExtendedDataV1::ConcreteExtendedDataV1()
-  : mImpl(std::make_unique<Impl>())
+  : sections(),
+    inUse(0)
 {
   ;
 }
 
 ConcreteExtendedDataV1::ConcreteExtendedDataV1(const ConcreteExtendedDataV1& other)
-  : mImpl(std::make_unique<Impl>())
+  : sections(other.sections),
+    inUse(other.inUse)
 {
-  mImpl->hasData = other.mImpl->hasData;
-  mImpl->sections = other.mImpl->sections;
+  ;
 }
 
 ConcreteExtendedDataV1::ConcreteExtendedDataV1(ConcreteExtendedDataV1&& other)
-  : mImpl(std::move(other.mImpl))
+  : sections(std::move(other.sections)),
+    inUse(other.inUse)
 {
   ;
 }
@@ -57,8 +35,8 @@ ConcreteExtendedDataV1::ConcreteExtendedDataV1(ConcreteExtendedDataV1&& other)
 // ConcreteExtendedDataV1&
 // ConcreteExtendedDataV1::operator=(const ConcreteExtendedDataV1& other)
 // {
-//   mImpl->hasData = other.mImpl->hasData;
-//   mImpl->sections = other.mImpl->sections;
+//   mHasData = other.mHasData;
+//   sections = other.sections;
 
 //   return *this;
 // }
@@ -66,8 +44,8 @@ ConcreteExtendedDataV1::ConcreteExtendedDataV1(ConcreteExtendedDataV1&& other)
 // ConcreteExtendedDataV1&
 // ConcreteExtendedDataV1::operator=(ConcreteExtendedDataV1&& other)
 // {
-//   mImpl->hasData = other.mImpl->hasData;
-//   mImpl->sections = std::move(other.mImpl->sections);
+//   mHasData = other.mHasData;
+//   sections = std::move(other.sections);
 
 //   return *this;
 // }
@@ -82,76 +60,92 @@ ConcreteExtendedDataV1::~ConcreteExtendedDataV1()
 bool
 ConcreteExtendedDataV1::hasData() const
 {
-  return mImpl->hasData;
+  return inUse > 0;
 }
 
 void
 ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, uint8_t value)
 {
-  std::vector<std::byte> d;
-  d.push_back(std::byte(value));
-  mImpl->sections.emplace_back(code, 1, std::move(d));
-  mImpl->hasData = true;
+  if (inUse >= sections.size()) {
+    return;
+  }
+  sections[inUse].code = code;
+  sections[inUse].length = sizeof(float);
+  sections[inUse].data.append(std::byte(value));
+  ++inUse;
 }
 
 void
 ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, uint16_t value)
 {
-  std::vector<std::byte> d;
-  d.push_back(std::byte(value >> 8));
-  d.push_back(std::byte(value & 0xff));
-  mImpl->sections.emplace_back(code, 1, std::move(d));
-  mImpl->hasData = true;
+  if (inUse >= sections.size()) {
+    return;
+  }
+  sections[inUse].code = code;
+  sections[inUse].length = sizeof(float);
+  sections[inUse].data.append(std::byte(value >> 8));
+  sections[inUse].data.append(std::byte(value & 0xff));
+  ++inUse;
 }
 
 void
 ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, float value)
 {
-  std::vector<std::byte> d;
-  for (std::size_t i = sizeof(float);i > 0 ;--i) {
-    d.push_back(std::byte(((std::size_t)value) >> (8 * (i - 1))));
+  if (inUse >= sections.size()) {
+    return;
   }
-  mImpl->sections.emplace_back(code,sizeof(float), std::move(d));
-  mImpl->hasData = true;
+  sections[inUse].code = code;
+  sections[inUse].length = sizeof(float);
+  for (std::size_t i = sizeof(float);i > 0 ;--i) {
+    sections[inUse].data.append(std::byte(((std::size_t)value) >> (8 * (i - 1))));
+  }
+  ++inUse;
 }
 
 void
 ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, const std::string value)
 {
-  std::vector<std::byte> d;
-  for (auto c : value) {
-    d.push_back(std::byte(c));
+  if (inUse >= sections.size()) {
+    return;
   }
-  mImpl->sections.emplace_back(code, value.size(), std::move(d));
-  mImpl->hasData = true;
+  sections[inUse].data.append(value);
+  sections[inUse].code = code;
+  sections[inUse].length = value.size();
+  ++inUse;
 }
 
 void
 ConcreteExtendedDataV1::addSection(ExtendedDataSegmentCode code, const Data& value)
 {
-  mImpl->sections.emplace_back(code, value.size(), value);
-  mImpl->hasData = true;
+  if (inUse >= sections.size()) {
+    return;
+  }
+  sections[inUse].data.append(value);
+  sections[inUse].code = code;
+  sections[inUse].length = value.size();
+  ++inUse;
 }
 
-const std::vector<ConcreteExtendedDataSectionV1>&
-ConcreteExtendedDataV1::getSections() const
+const ConcreteExtendedDataSectionV1&
+ConcreteExtendedDataV1::getSection(std::size_t index) const
 {
-  return mImpl->sections;
+  return sections[index];
 }
 
-std::optional<PayloadData>
+PayloadData
 ConcreteExtendedDataV1::payload()
 {
-  if (mImpl->hasData) {
+  if (inUse > 0) {
     PayloadData result;
-    for (auto s : mImpl->sections) {
+    for (std::size_t i = 0;i < inUse;++i) {
+      auto s = sections[i];
       result.append(s.code);
       result.append(s.length);
       result.append(s.data);
     }
     return result;
   }
-  return std::optional<PayloadData>(); // empty optional
+  return PayloadData(); // empty
 }
 
 }

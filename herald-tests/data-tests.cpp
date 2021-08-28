@@ -18,6 +18,23 @@ TEST_CASE("datatypes-data-ctor-empty", "[datatypes][data][ctor][empty]") {
   }
 }
 
+TEST_CASE("datatypes-data-ctor-rawarray", "[datatypes][data][ctor][rawarray]") {
+  SECTION("datatypes-data-ctor-rawarray") {
+    std::uint8_t rawData[] {0,1,5,6,7,8,12,13,14};
+    herald::datatype::Data data(rawData,9);
+    REQUIRE(data.size() == 9);
+    REQUIRE(data.at(0) == std::byte(0));
+    REQUIRE(data.at(1) == std::byte(1));
+    REQUIRE(data.at(2) == std::byte(5));
+    REQUIRE(data.at(3) == std::byte(6));
+    REQUIRE(data.at(4) == std::byte(7));
+    REQUIRE(data.at(5) == std::byte(8));
+    REQUIRE(data.at(6) == std::byte(12));
+    REQUIRE(data.at(7) == std::byte(13));
+    REQUIRE(data.at(8) == std::byte(14));
+  }
+}
+
 TEST_CASE("datatypes-data-ctor-move", "[datatypes][data][ctor][move]") {
   SECTION("datatypes-data-ctor-move") {
     const uint8_t bytes[] = {0,1,2,3};

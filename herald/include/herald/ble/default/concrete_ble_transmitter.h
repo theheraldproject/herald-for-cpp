@@ -22,8 +22,6 @@
 #include "../../datatype/bluetooth_state.h"
 
 // C++17 includes
-#include <memory>
-#include <vector>
 #include <algorithm>
 #include <optional>
 #include <cstring>
@@ -37,11 +35,11 @@ using namespace herald::payload;
 
 
 /// \brief Dummy implementation of a ConcreteBLETransmitter that does nothing (used for testing)
-template <typename ContextT, typename BLEDatabaseT>
-class ConcreteBLETransmitter : public BLETransmitter {
+template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
+class ConcreteBLETransmitter {
 public:
   ConcreteBLETransmitter(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, BLEDatabaseT& bleDatabase) {}
+    PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels) {}
 
   ConcreteBLETransmitter(const ConcreteBLETransmitter& from) = delete;
   ConcreteBLETransmitter(ConcreteBLETransmitter&& from) = delete;
@@ -49,16 +47,14 @@ public:
   ~ConcreteBLETransmitter() {}
 
   // Coordination overrides - Since v1.2-beta3
-  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() {
     return {};
   }
 
   // Sensor overrides
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override {}
+  void start() {}
 
-  void start() override {}
-
-  void stop() override {}
+  void stop() {}
 
 };
 

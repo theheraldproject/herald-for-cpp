@@ -15,16 +15,6 @@ namespace payload {
 using namespace herald;
 using namespace herald::datatype;
 
-class PayloadDataSupplier {
-public:
-  PayloadDataSupplier() = default;
-  virtual ~PayloadDataSupplier() = default;
-
-  virtual std::optional<PayloadData> legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) = 0;
-  virtual std::optional<PayloadData> payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) = 0;
-  virtual std::vector<PayloadData> payload(const Data& data) = 0;
-};
-
 } // end namespace
 } // end namespace
 

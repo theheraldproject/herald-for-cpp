@@ -25,7 +25,7 @@
 #include <vector>
 #include <array>
 #include <algorithm>
-#include <optional>
+// #include <optional>
 
 namespace herald {
 namespace ble {
@@ -70,7 +70,7 @@ public:
   // Creation overrides
   BLEDevice& device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/) override {
     // Check by MAC first
-    TargetIdentifier targetIdentifier((Data)mac);
+    TargetIdentifier targetIdentifier(mac.underlyingData());
     auto results = matches([&targetIdentifier](const BLEDevice& d) {
       return d.identifier() == targetIdentifier;
     });
@@ -139,7 +139,7 @@ public:
       return d.pseudoDeviceAddress() == pseudo;
     });
     if (0 == samePseudo.size()) {
-      auto& ptr = device(TargetIdentifier((Data)pseudo));
+      auto& ptr = device(TargetIdentifier(pseudo.underlyingData()));
       ptr.pseudoDeviceAddress(pseudo);
       return ptr;
     }
@@ -167,43 +167,46 @@ public:
   }
 
   BLEDevice& device(const BLEMacAddress& mac) override {
-    return device(TargetIdentifier((Data)mac));
+    return device(TargetIdentifier(mac.underlyingData()));
   }
 
   BLEDevice& device(const PayloadData& payloadData) override {
-    auto results = matches([&payloadData](const BLEDevice& d) {
-      auto payload = d.payloadData();
-      if (!payload.has_value()) {
-        return false;
-      }
-      return (*payload)==payloadData;
+    auto pti = TargetIdentifier(payloadData);
+    auto results = matches([&pti](const BLEDevice& d) {
+      return d.identifier() == pti;
+      // auto payload = d.payloadData();
+      // if (!payload.has_value()) {
+      //   return false;
+      // }
+      // return (*payload)==payloadData;
     });
     if (results.size() != 0) {
       return results.front(); // TODO ensure we send back the latest, not just the first match
     }
     BLEDevice& newDevice = devices[indexAvailable()];
-    newDevice.reset(TargetIdentifier(payloadData),*this);
-    // std::shared_ptr<BLEDevice> newDevice = std::make_shared<BLEDevice>(
-    //   TargetIdentifier(payloadData), *this); //this->shared_from_this());
-    // devices.push_back(newDevice);
+    newDevice.reset(pti,*this);
+
     for (auto& delegate : delegates) {
       delegate.get().bleDatabaseDidCreate(newDevice);
     }
-    newDevice.payloadData(payloadData); // has to be AFTER create called
+    // newDevice.payloadData(payloadData); // has to be AFTER create called
+    device(newDevice,BLEDeviceAttribute::payloadData); // moved from BLEDevice.payloadData()
     return newDevice;
   }
 
   BLEDevice& device(const TargetIdentifier& targetIdentifier) override {
-    auto results = matches([&targetIdentifier](const BLEDevice& d) {
+    auto results = matches([this,&targetIdentifier](const BLEDevice& d) {
+      HTDBG(" Testing existing target identifier {} against new target identifier {}",(std::string)d.identifier(),(std::string)targetIdentifier);
       return d.identifier() == targetIdentifier;
     });
     if (results.size() != 0) {
+      HTDBG("Device for target identifier {} already exists",(std::string)targetIdentifier);
       return results.front(); // TODO ensure we send back the latest, not just the first match
     }
     HTDBG("New target identified: {}",(std::string)targetIdentifier);
     BLEDevice& newDevice = devices[indexAvailable()];
     newDevice.reset(targetIdentifier,*this);
-    // devices.push_back(newDevice);
+
     for (auto& delegate : delegates) {
       delegate.get().bleDatabaseDidCreate(newDevice);
     }
@@ -233,8 +236,6 @@ public:
     return results;
   }
 
-  // std::vector<std::shared_ptr<BLEDevice>> devices() const override;
-
   /// Cannot name a function delete in C++. remove is common.
   void remove(const TargetIdentifier& targetIdentifier) override {
     auto found = std::find_if(devices.begin(),devices.end(),
@@ -248,8 +249,6 @@ public:
     }
   }
 
-  // std::optional<PayloadSharingData> payloadSharingData(const std::shared_ptr<BLEDevice>& peer) override;
-
   // BLE Device Delegate overrides
   void device(const BLEDevice& device, BLEDeviceAttribute didUpdate) override {
     // Update any internal DB state as necessary (E.g. payload received and its a duplicate as mac has rotated)
@@ -257,7 +256,7 @@ public:
       // check for all devices with this payload that are NOT THIS device
       auto oldMacsForSamePayload = matches([device](auto& devRef) {
         return devRef.identifier() != device.identifier() && 
-               devRef.payloadData().has_value() && devRef.payloadData() == device.payloadData();
+               devRef.payloadData().size() > 0 && devRef.payloadData() == device.payloadData();
       });
       for (auto& oldMacDevice : oldMacsForSamePayload) {
         remove(oldMacDevice.get().identifier());
@@ -344,17 +343,17 @@ private:
     if (toRemove.state() == BLEDeviceState::uninitialised) {
       return;
     }
+    toRemove.state(BLEDeviceState::uninitialised);
+    // TODO validate all other device data is reset
     for (auto& delegate : delegates) {
       delegate.get().bleDatabaseDidDelete(toRemove);
     }
-    toRemove.state(BLEDeviceState::uninitialised);
-    // TODO validate all other device data is reset
   }
 
   std::size_t indexAvailable() noexcept {
     for (std::size_t idx = 0;idx < devices.size();++idx) {
       auto& device = devices[idx];
-      if (device.state().has_value() && BLEDeviceState::uninitialised == device.state().value()) {
+      if (BLEDeviceState::uninitialised == device.state()) {
         return idx;
       }
     }

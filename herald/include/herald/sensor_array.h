@@ -19,8 +19,8 @@
 
 #include <memory>
 #include <string>
-#include <vector>
-#include <optional>
+#include <array>
+#include <variant>
 #include <functional>
 
 namespace herald {
@@ -41,18 +41,26 @@ using namespace engine;
 /// available on each platform. In Zephyr RTOS, for example,
 /// This is a simple 250ms delay within a special Herald-only
 /// Zephyr kernel thread.
-template <typename ContextT>
-class SensorArray : public Sensor {
+template <typename ContextT, typename PayloadDataSupplierT, typename... SensorTs>
+class SensorArray {
 public:
+  static constexpr std::size_t Size = sizeof...(SensorTs);
+
   /// \brief Takes ownership of payloadDataSupplier (std::move)
-  SensorArray(ContextT& ctx, std::shared_ptr<PayloadDataSupplier> payloadDataSupplier)
+  SensorArray(ContextT& ctx, PayloadDataSupplierT& payloadDataSupplier, SensorTs&... sensors)
   : mContext(ctx), 
     mPayloadDataSupplier(payloadDataSupplier),
-    mSensorArray(),
+    mSensorArray(
+      std::array<
+        std::variant<std::reference_wrapper<SensorTs>...>
+        ,Size
+      >({std::variant<std::reference_wrapper<SensorTs>...>(sensors)...})
+    ),
     engine(ctx),
     deviceDescription("")
     HLOGGERINIT(mContext, "Sensor", "SensorArray")
   {
+    // addSensors(0,sensors...);
   }
 
   ~SensorArray() = default;
@@ -67,38 +75,36 @@ public:
   //   return concrete->immediateSendAll(data);
   // }
 
-  std::optional<PayloadData> payloadData() {
-    return mPayloadDataSupplier->payload(PayloadTimestamp(),nullptr);
+  PayloadData payloadData() {
+    return mPayloadDataSupplier.payload(PayloadTimestamp());
   }
 
   /// \brief Adds a new sensor to the array, and add its coordination provider to the engine
-  void add(Sensor& sensor) {
-    mSensorArray.emplace_back(sensor); // adds in links to BLE transmitter, receiver
-    engine.add(sensor);
-  }
+  // void add(Sensor& sensor) {
+  //   mSensorArray.emplace_back(sensor); // adds in links to BLE transmitter, receiver
+  //   engine.add(sensor);
+  // }
 
-  // SENSOR OVERRIDES 
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override {
+  // SENSOR OVERRIDES
+  void start() {
     for (auto& sensor: mSensorArray) {
-      sensor.get().add(delegate);
-    }
-  }
-
-  void start() override {
-    for (auto& sensor: mSensorArray) {
-      sensor.get().start();
+      std::visit([](auto&& arg) {
+        ((decltype(arg))arg).get().start(); // cast to call derived class function
+      }, sensor);
     }
     engine.start();
   }
 
-  void stop() override {
+  void stop() {
     engine.stop();
     for (auto& sensor: mSensorArray) {
-      sensor.get().stop();
+      std::visit([](auto&& arg) {
+        ((decltype(arg))arg).get().stop(); // cast to call derived class function
+      }, sensor);
     }
   }
 
-  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() {
     return {};
   }
 
@@ -111,8 +117,8 @@ public:
 private:
   // Initialised on entry to Impl constructor:-
   ContextT& mContext;
-  std::shared_ptr<PayloadDataSupplier> mPayloadDataSupplier;
-  std::vector<std::reference_wrapper<Sensor>> mSensorArray;
+  PayloadDataSupplierT& mPayloadDataSupplier;
+  std::array<std::variant<std::reference_wrapper<SensorTs>...>,Size> mSensorArray;
 
   Coordinator<ContextT> engine;
 
@@ -120,6 +126,18 @@ private:
   std::string deviceDescription;
 
   HLOGGER(ContextT);
+
+  template <typename LastT>
+  constexpr void addSensors(int nextPos,LastT& last) {
+    mSensorArray[nextPos] = std::reference_wrapper<LastT>(last);
+  }
+
+  template <typename FirstT, typename SecondT, typename... RestT>
+  constexpr void addSensors(int nextPos,FirstT& first, SecondT& second, RestT&... rest) {
+    mSensorArray[nextPos] = std::reference_wrapper<FirstT>(first);
+    ++nextPos;
+    addSensors(nextPos,second,rest...);
+  }
 };
 
 

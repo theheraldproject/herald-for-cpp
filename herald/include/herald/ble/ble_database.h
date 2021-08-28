@@ -39,8 +39,6 @@ public:
 
   virtual BLEDevice& device(const TargetIdentifier& targetIdentifier) = 0;
 
-  // virtual std::vector<std::shared_ptr<BLEDevice>> devices() const = 0;
-
   virtual std::size_t size() const = 0;
 
   virtual std::vector<std::reference_wrapper<BLEDevice>> matches(
@@ -48,8 +46,6 @@ public:
 
   /// Cannot name a function delete in C++. remove is common.
   virtual void remove(const TargetIdentifier& targetIdentifier) = 0;
-
-  // virtual PayloadSharingData payloadSharingData(const std::shared_ptr<BLEDevice>& peer) = 0;
 };
 
 } // end namespace

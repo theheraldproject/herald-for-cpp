@@ -5,7 +5,6 @@
 #include "herald/datatype/payload_data.h"
 #include "herald/datatype/base64_string.h"
 
-#include <vector>
 #include <algorithm>
 #include <string>
 

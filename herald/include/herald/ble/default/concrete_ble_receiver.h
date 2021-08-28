@@ -20,31 +20,30 @@ using namespace herald::datatype;
 using namespace herald::payload;
 
 /// \brief Dummy implementation of a ConcreteBLEReceiver that does nothing (used for testing)
-template <typename ContextT, typename BLEDatabaseT>
-class ConcreteBLEReceiver : public BLEReceiver, public HeraldProtocolV1Provider {
+template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
+class ConcreteBLEReceiver : public HeraldProtocolV1Provider {
 public:
   ConcreteBLEReceiver(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, BLEDatabaseT& bleDatabase) {}
+    PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels) {}
   ConcreteBLEReceiver(const ConcreteBLEReceiver& from) = delete;
   ConcreteBLEReceiver(ConcreteBLEReceiver&& from) = delete;
   ~ConcreteBLEReceiver() {}
 
   // Coordination overrides - Since v1.2-beta3
-  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() {
     return {};
   }
 
-  bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) override {
-    return false;
-  }
-  bool immediateSendAll(Data data) override {
-    return false;
-  }
+  // bool immediateSend(Data data, const TargetIdentifier& targetIdentifier) {
+  //   return false;
+  // }
+  // bool immediateSendAll(Data data) {
+  //   return false;
+  // }
 
   // Sensor overrides
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override {}
-  void start() override {}
-  void stop() override {}
+  void start() {}
+  void stop() {}
 
   // Herald V1 Protocol Provider methods
   bool openConnection(const TargetIdentifier& toTarget) override {
@@ -67,13 +66,13 @@ public:
     return {};
   }
   
-  std::optional<Activity> immediateSend(Activity) override {
-    return {};
-  }
+  // std::optional<Activity> immediateSend(Activity) override {
+  //   return {};
+  // }
   
-  std::optional<Activity> immediateSendAll(Activity) override {
-    return {};
-  }
+  // std::optional<Activity> immediateSendAll(Activity) override {
+  //   return {};
+  // }
   
 };
 

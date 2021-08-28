@@ -6,6 +6,7 @@ add_executable(herald-tests
 	test-util.h 
 
   # base data types
+	memoryarena-tests.cpp
 	datatypes-tests.cpp
 	base64string-tests.cpp
 	datetime-tests.cpp
@@ -33,7 +34,7 @@ add_executable(herald-tests
 	beaconpayload-tests.cpp
 	extendeddata-tests.cpp
 	fixedpayload-tests.cpp
-	simplepayload-tests.cpp
+	# simplepayload-tests.cpp
 	bledevice-tests.cpp
 	sample-tests.cpp
 	ranges-tests.cpp

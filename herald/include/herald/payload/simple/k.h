@@ -12,8 +12,6 @@
 #include "../../datatype/data.h"
 #include "../../datatype/time_interval.h"
 
-#include <vector>
-
 namespace herald {
 namespace payload {
 namespace simple {
@@ -51,8 +49,10 @@ public:
   // const ContactIdentifier contactIdentifier(const ContactKey& contactKey) noexcept;
   
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl;
+  const int keyLength;
+  const int daysFor;
+  const int periodsInDay;
+  const TimeInterval epoch;
 };
 
 }

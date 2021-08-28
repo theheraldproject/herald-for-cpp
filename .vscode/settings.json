@@ -83,7 +83,9 @@
     "strstream": "cpp",
     "resumable": "cpp",
     "codecvt": "cpp",
-    "*.rh": "cpp"
+    "*.rh": "cpp",
+    "bitset": "cpp",
+    "cfenv": "cpp"
   },
   "cSpell.words": [
     "backoff"

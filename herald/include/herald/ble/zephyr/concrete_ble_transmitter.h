@@ -31,8 +31,6 @@
 #include <bluetooth/gatt.h>
 
 // C++17 includes
-#include <memory>
-#include <vector>
 #include <algorithm>
 #include <optional>
 #include <cstring>
@@ -49,9 +47,12 @@ using namespace herald::payload;
 
 
 namespace zephyrinternal {
-  PayloadDataSupplier* getPayloadDataSupplier();
 
-  void setPayloadDataSupplier(PayloadDataSupplier* pds);
+  typedef std::function<PayloadData(const PayloadTimestamp)> GetPayloadFunction;
+  
+  GetPayloadFunction getPayloadDataSupplier();
+
+  void setPayloadDataSupplier(GetPayloadFunction pds);
 
   
   struct bt_data* getAdvertData();
@@ -75,21 +76,23 @@ namespace zephyrinternal {
 
 
 
-template <typename ContextT, typename BLEDatabaseT>
-class ConcreteBLETransmitter : public BLETransmitter {
+template <typename ContextT, typename PayloadDataSupplierT, typename BLEDatabaseT, typename SensorDelegateSetT>
+class ConcreteBLETransmitter {
 public:
   ConcreteBLETransmitter(ContextT& ctx, BluetoothStateManager& bluetoothStateManager, 
-    std::shared_ptr<PayloadDataSupplier> payloadDataSupplier, BLEDatabaseT& bleDatabase)
+    PayloadDataSupplierT& payloadDataSupplier, BLEDatabaseT& bleDatabase, SensorDelegateSetT& dels)
     : m_context(ctx),
       m_stateManager(bluetoothStateManager),
       m_pds(payloadDataSupplier),
       m_db(bleDatabase),
-      delegates(),
+      delegates(dels),
       isAdvertising(false)
 
     HLOGGERINIT(ctx,"Sensor","BLE.ConcreteBLETransmitter")
   {
-    zephyrinternal::setPayloadDataSupplier(m_pds.get());
+    zephyrinternal::setPayloadDataSupplier([this](const PayloadTimestamp pts) -> PayloadData {
+      return m_pds.payload(pts);
+    });
   }
 
   ConcreteBLETransmitter(const ConcreteBLETransmitter& from) = delete;
@@ -98,20 +101,16 @@ public:
   ~ConcreteBLETransmitter()
   {
     stop();
-    zephyrinternal::setPayloadDataSupplier(NULL);
+    // zephyrinternal::setPayloadDataSupplier(NULL);
   }
 
   // Coordination overrides - Since v1.2-beta3
-  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() override {
+  std::optional<std::reference_wrapper<CoordinationProvider>> coordinationProvider() {
     return {};
   }
 
   // Sensor overrides
-  void add(const std::shared_ptr<SensorDelegate>& delegate) override {
-    delegates.push_back(delegate);
-  }
-
-  void start() override {
+  void start() {
     HTDBG("ConcreteBLETransmitter::start");
     if (!m_context.getSensorConfiguration().advertisingEnabled) {
       HTDBG("Sensor Configuration has advertising disabled. Returning.");
@@ -133,7 +132,7 @@ public:
     startAdvertising();
   }
 
-  void stop() override {
+  void stop() {
     HTDBG("ConcreteBLETransmitter::stop");
     if (!m_context.getSensorConfiguration().advertisingEnabled) {
       HTDBG("Sensor Configuration has advertising disabled. Returning.");
@@ -145,10 +144,10 @@ public:
 private:
   ContextT& m_context;
   BluetoothStateManager& m_stateManager;
-  std::shared_ptr<PayloadDataSupplier> m_pds;
+  PayloadDataSupplierT& m_pds;
   BLEDatabaseT& m_db;
 
-  std::vector<std::shared_ptr<SensorDelegate>> delegates;
+  SensorDelegateSetT& delegates;
 
   bool isAdvertising;
 

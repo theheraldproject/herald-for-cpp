@@ -35,9 +35,10 @@ public:
 
   void bytesBigEndian(std::uint8_t bytesBigEndian[6]) const;
 
+  Data underlyingData() const;
+
 private:
-  class Impl;
-  std::unique_ptr<Impl> mImpl; // PIMPL IDIOM
+  Data data;
 };
 
 

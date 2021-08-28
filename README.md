@@ -138,6 +138,8 @@ We also use noexcept rather than throw exceptions for the same reason.
 See the [Zephyr C++ limitations](https://docs.zephyrproject.org/latest/reference/kernel/other/cxx_support.html) [External] page for details.
 Note that this page is out of date somewhat. The 'new' keyword, for example, is supported in Zephyr although it is very buggy.
 
+Note: In the v2.0 release we have removed all internal use of std::unique_ptr and std::shared_ptr in favour of templates and static sizes for things like SensorDelegates throughout the code base. This is to avoid Zephyr memory management bugs and improve (lower) memory use (SRAM) on Nordic Semiconductor devices.
+
 ## Building with Code Coverage
 
 1. Open Visual Studio Code

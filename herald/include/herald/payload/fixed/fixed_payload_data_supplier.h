@@ -19,7 +19,7 @@ using namespace herald::datatype;
 
 using MYUINT32 = unsigned long;
 
-class FixedPayloadDataSupplier : public PayloadDataSupplier {
+class FixedPayloadDataSupplier {
 public:
   FixedPayloadDataSupplier() = default;
   virtual ~FixedPayloadDataSupplier() = default;
@@ -31,13 +31,17 @@ public:
     std::uint64_t clientId);
   ~ConcreteFixedPayloadDataSupplierV1();
 
-  std::optional<PayloadData> legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override;
-  std::optional<PayloadData> payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override;
-  std::vector<PayloadData> payload(const Data& data) override;
+  PayloadData legacyPayload(const PayloadTimestamp timestamp, const Device& device);
+  PayloadData payload(const PayloadTimestamp timestamp, const Device& device);
+  PayloadData payload(const PayloadTimestamp timestamp);
+  PayloadData payload(const Data& data);
 
 private:
-  class Impl; // fwd decl
-  std::unique_ptr<Impl> mImpl; // PIMPL idiom
+  uint16_t country;
+  uint16_t state;
+  uint64_t clientIdentifier;
+
+  PayloadData mPayload;
 };
 
 }

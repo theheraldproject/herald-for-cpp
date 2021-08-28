@@ -25,7 +25,7 @@ using namespace herald::payload::extended;
 
 using MYUINT32 = unsigned long;
 
-class SimplePayloadDataSupplier : public PayloadDataSupplier {
+class SimplePayloadDataSupplier {
 public:
   SimplePayloadDataSupplier() = default;
   virtual ~SimplePayloadDataSupplier() = default;
@@ -38,7 +38,7 @@ public:
     SecretKey sk, K k)
   : SimplePayloadDataSupplier(),
     ctx(context), country(countryCode), state(stateCode), secretKey(sk), k(k), 
-    commonPayloadHeader(), extended(), day(-1), contactIdentifiers()
+    commonPayloadHeader(), extended()
     HLOGGERINIT(ctx, "Sensor", "ConcreteSimplePayloadDataSupplierV1")
   {
     commonPayloadHeader.append(std::uint8_t(0x10)); // Simple payload V1
@@ -53,7 +53,7 @@ public:
     SecretKey sk, K k, ConcreteExtendedDataV1 ext)
   : SimplePayloadDataSupplier(),
     ctx(context), country(countryCode), state(stateCode), secretKey(sk), k(k), 
-    commonPayloadHeader(), extended(ext), day(-1), contactIdentifiers()
+    commonPayloadHeader(), extended(ext)
     HLOGGERINIT(ctx, "Sensor", "ConcreteSimplePayloadDataSupplierV1")
   {
     commonPayloadHeader.append(std::uint8_t(0x10)); // Simple payload V1
@@ -64,12 +64,11 @@ public:
   ConcreteSimplePayloadDataSupplierV1(ConcreteSimplePayloadDataSupplierV1&& from) = delete; // move ctor deletion
   ~ConcreteSimplePayloadDataSupplierV1() = default;
 
-  std::optional<PayloadData> legacyPayload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override {
-    return {};
+  PayloadData legacyPayload(const PayloadTimestamp timestamp, const Device& device) {
+    return PayloadData();
   }
 
-  std::optional<PayloadData> payload(const PayloadTimestamp timestamp, const std::shared_ptr<Device> device) override {
-    
+  PayloadData payload(const PayloadTimestamp timestamp, const Device& device) {
     const int day = k.day(timestamp.value);
     const int period = k.period(timestamp.value);
 
@@ -78,7 +77,7 @@ public:
     PayloadData p(commonPayloadHeader);
     // length
     if (extended.hasData()) {
-      p.append(std::uint16_t(2 + extended.payload().value().size()));
+      p.append(std::uint16_t(2 + extended.payload().size()));
     } else {
       p.append(std::uint16_t(2));
     }
@@ -86,15 +85,38 @@ public:
     p.append(cid);
     // extended data
     if (extended.hasData()) {
-      p.append(extended.payload().value());
+      p.append(extended.payload());
     }
 
-    return std::optional<PayloadData>{p};
+    return p;
   }
 
-  std::vector<PayloadData> payload(const Data& data) override {
-    return std::vector<PayloadData>();
+  PayloadData payload(const PayloadTimestamp timestamp) {
+    const int day = k.day(timestamp.value);
+    const int period = k.period(timestamp.value);
+
+    auto cid = k.contactIdentifier(secretKey,day,period);
+
+    PayloadData p(commonPayloadHeader);
+    // length
+    if (extended.hasData()) {
+      p.append(std::uint16_t(2 + extended.payload().size()));
+    } else {
+      p.append(std::uint16_t(2));
+    }
+    // contact id
+    p.append(cid);
+    // extended data
+    if (extended.hasData()) {
+      p.append(extended.payload());
+    }
+
+    return p;
   }
+
+  // std::vector<PayloadData> payload(const Data& data) {
+  //   return std::vector<PayloadData>();
+  // }
 
 private:
   ContextT& ctx;
@@ -104,13 +126,8 @@ private:
   K k;
 
   PayloadData commonPayloadHeader;
-  // std::vector<MatchingKey> matchingKeys;
 
   ConcreteExtendedDataV1 extended;
-
-  // cached day/period info
-  int day;
-  std::vector<ContactIdentifier> contactIdentifiers;
 
   HLOGGER(ContextT);
 };
