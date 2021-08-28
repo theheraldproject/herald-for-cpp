@@ -49,11 +49,12 @@ using namespace herald::payload;
 
 
 namespace zephyrinternal {
-  template <typename PayloadDataSupplierT>
-  PayloadDataSupplierT& getPayloadDataSupplier();
 
-  template <typename PayloadDataSupplierT>
-  void setPayloadDataSupplier(PayloadDataSupplierT& pds);
+  typedef std::function<PayloadData(const PayloadTimestamp)> GetPayloadFunction;
+  
+  GetPayloadFunction getPayloadDataSupplier();
+
+  void setPayloadDataSupplier(GetPayloadFunction pds);
 
   
   struct bt_data* getAdvertData();
@@ -91,7 +92,9 @@ public:
 
     HLOGGERINIT(ctx,"Sensor","BLE.ConcreteBLETransmitter")
   {
-    zephyrinternal::setPayloadDataSupplier(m_pds);
+    zephyrinternal::setPayloadDataSupplier([this](const PayloadTimestamp pts) -> PayloadData {
+      return m_pds.payload(pts);
+    });
   }
 
   ConcreteBLETransmitter(const ConcreteBLETransmitter& from) = delete;
