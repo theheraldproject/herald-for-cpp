@@ -89,59 +89,59 @@ char* str(const TargetIdentifier& ti) {
   return log_strdup( ((std::string)ti).c_str());
 }
 
-class AppLoggingDelegate {
-public:
-	AppLoggingDelegate() = default;
-	~AppLoggingDelegate() = default;
+// class AppLoggingDelegate {
+// public:
+// 	AppLoggingDelegate() = default;
+// 	~AppLoggingDelegate() = default;
 
-	void sensor(SensorType sensor, const TargetIdentifier& didDetect) {
-		// LOG_DBG("sensor didDetect");
-		APP_DBG("sensor didDetect: %s", str(didDetect) ); // May want to disable this - logs A LOT of info
-	}
+// 	void sensor(SensorType sensor, const TargetIdentifier& didDetect) {
+// 		// LOG_DBG("sensor didDetect");
+// 		APP_DBG("sensor didDetect: %s", str(didDetect) ); // May want to disable this - logs A LOT of info
+// 	}
 
-  /// Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
-  void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) {
-		// LOG_DBG("sensor didRead");
-		APP_DBG("sensor didRead: %s with payload: %s", str(fromTarget), log_strdup(didRead.hexEncodedString().c_str()));
-	}
+//   /// Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
+//   void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) {
+// 		// LOG_DBG("sensor didRead");
+// 		APP_DBG("sensor didRead: %s with payload: %s", str(fromTarget), log_strdup(didRead.hexEncodedString().c_str()));
+// 	}
 
-  /// Receive written immediate send data from target, e.g. important timing signal.
-  void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) {
-		// LOG_DBG("sensor didReceive");
-		APP_DBG("sensor didReceive: %s with immediate send data: %s", str(fromTarget), log_strdup(didReceive.hexEncodedString().c_str()));
-	}
+//   /// Receive written immediate send data from target, e.g. important timing signal.
+//   void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) {
+// 		// LOG_DBG("sensor didReceive");
+// 		APP_DBG("sensor didReceive: %s with immediate send data: %s", str(fromTarget), log_strdup(didReceive.hexEncodedString().c_str()));
+// 	}
 
-  /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
-  void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) {
-		APP_DBG("sensor didShare");
-		// LOG_DBG("sensor didShare: %s", str(fromTarget) );
-		// for (auto& p : didShare) {
-		// 	LOG_DBG(" - %s", log_strdup(p.hexEncodedString().c_str()));
-		// }
-	}
+//   /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
+//   void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) {
+// 		APP_DBG("sensor didShare");
+// 		// LOG_DBG("sensor didShare: %s", str(fromTarget) );
+// 		// for (auto& p : didShare) {
+// 		// 	LOG_DBG(" - %s", log_strdup(p.hexEncodedString().c_str()));
+// 		// }
+// 	}
 
-  /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
-  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {
-		APP_DBG("sensor didMeasure");
-		// LOG_DBG("sensor didMeasure: %s with proximity: %d", str(fromTarget), didMeasure.value); 
-	}
+//   /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
+//   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {
+// 		APP_DBG("sensor didMeasure");
+// 		// LOG_DBG("sensor didMeasure: %s with proximity: %d", str(fromTarget), didMeasure.value); 
+// 	}
 
-  /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
-	template <typename LocationT>
-  void sensor(SensorType sensor, const Location<LocationT>& didVisit) {
-		APP_DBG("sensor didVisit");
-	}
+//   /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
+// 	template <typename LocationT>
+//   void sensor(SensorType sensor, const Location<LocationT>& didVisit) {
+// 		APP_DBG("sensor didVisit");
+// 	}
 
-  /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
-  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {
-		APP_DBG("sensor didMeasure withPayload");
-	}
+//   /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
+//   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {
+// 		APP_DBG("sensor didMeasure withPayload");
+// 	}
 
-  /// Sensor state update
-  void sensor(SensorType sensor, const SensorState& didUpdateState) {
-		APP_DBG("sensor didUpdateState");
-	}
-};
+//   /// Sensor state update
+//   void sensor(SensorType sensor, const SensorState& didUpdateState) {
+// 		APP_DBG("sensor didUpdateState");
+// 	}
+// };
 
 #ifdef CC3XX_BACKEND
 void cc3xx_init() {
@@ -199,7 +199,7 @@ void herald_entry() {
 	using CT = Context<ZephyrContextProvider,ZephyrLoggingSink,BluetoothStateManager>;
 
 
-	AppLoggingDelegate appDelegate;
+	// AppLoggingDelegate appDelegate;
 	
 	// 4. Now create a live analysis pipeline and enable RSSI to be sent to it for distance estimation
 // #ifdef HERALD_ANALYSIS_ENABLED
@@ -219,7 +219,7 @@ void herald_entry() {
 	// sa.add(src);
 // #endif
 
-	SensorDelegateSet sensorDelegates(appDelegate, src); // just the one from the app, and one for the analysis API
+	SensorDelegateSet sensorDelegates(/*appDelegate,*/ src); // just the one from the app, and one for the analysis API
 	
 
   // Now prepare your device's Herald identity payload - this is what gets sent to other devices when they request it
@@ -232,15 +232,15 @@ void herald_entry() {
 	// TESTING ONLY
 	// IF IN TESTING / DEBUG, USE A FIXED PAYLOAD (SO YOU CAN TRACK IT OVER TIME)
 	std::uint64_t clientId = 1234567890; // TODO generate unique device ID from device hardware info (for static, test only, payload)
-	std::uint8_t uniqueId[8];	
+	// std::uint8_t uniqueId[8];	
   // // 7. Implement a consistent post restart valid ID from a hardware identifier (E.g. nRF serial number)
-	auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
-	if (hwInfoAvailable > 0) {
-		APP_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
-		clientId = *uniqueId;
-	} else {
-		APP_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
-	}
+	// auto hwInfoAvailable = hwinfo_get_device_id(uniqueId,sizeof(uniqueId));
+	// if (hwInfoAvailable > 0) {
+	// 	APP_DBG("Read %d bytes for a unique, persistent, device ID", hwInfoAvailable);
+	// 	clientId = *uniqueId;
+	// } else {
+	// 	APP_DBG("Couldn't read hardware info for zephyr device. Error code: %d", hwInfoAvailable);
+	// }
 	APP_DBG("Final clientID: %" PRIu64 "", clientId);
 
 	ConcreteFixedPayloadDataSupplierV1 pds(
@@ -329,7 +329,7 @@ void herald_entry() {
 	k_sleep(K_SECONDS(2));
 	
 	// Create Herald sensor array - this handles both advertising (Transmitter) and scanning/connecting (Receiver)
-	ConcreteBLESensor ble(ctx, ctx.getBluetoothStateManager(), sensorDelegates, pds);
+	ConcreteBLESensor ble(ctx, ctx.getBluetoothStateManager(), pds, sensorDelegates);
 	SensorArray sa(ctx,pds,ble);
 	// sa.add(ble);
 
