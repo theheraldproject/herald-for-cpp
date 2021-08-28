@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # Run this ONCE
 # Then run the make-all-zephyr.sh file
@@ -34,7 +34,7 @@ export GNUARMEMB_TOOLCHAIN_PATH="~/gnuarmemb/gcc-arm-none-eabi-10-2020-q4-major"
 # Now install Nordic connect - https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/nrf/gs_installing.html
 mkdir ~/ncs
 cd ~/ncs
-west init -m https://github.com/nrfconnect/sdk-nrf --mr v1.5.0
+west init -m https://github.com/nrfconnect/sdk-nrf --mr v1.6.1
 west update
 west zephyr-export
 

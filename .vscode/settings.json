@@ -89,5 +89,8 @@
   },
   "cSpell.words": [
     "backoff"
-  ]
+  ],
+  "cmake.configureSettings": {
+    // "CODE_COVERAGE": "ON"
+  }
 }
