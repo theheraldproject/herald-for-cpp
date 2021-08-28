@@ -21,6 +21,76 @@
 #include <bluetooth/gatt.h>
 #include <bluetooth/services/bas.h>
 
+// #include <logging/log.h>
+// LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
+// #define APP_DBG(_msg,...) LOG_DBG(_msg,##__VA_ARGS__);
+// #define APP_INF(_msg,...) LOG_INF(_msg,##__VA_ARGS__);
+// 	#define APP_ERR(_msg,...) LOG_ERR(_msg,##__VA_ARGS__);
+
+
+// using namespace herald;
+// using namespace herald::data;
+// using namespace herald::payload;
+
+// char* str(const TargetIdentifier& ti) {
+//   return log_strdup( ((std::string)ti).c_str());
+// }
+
+struct DummyDelegate {};
+// class AppLoggingDelegate {
+// public:
+// 	AppLoggingDelegate() = default;
+// 	~AppLoggingDelegate() = default;
+
+// 	void sensor(SensorType sensor, const TargetIdentifier& didDetect) {
+// 		// LOG_DBG("sensor didDetect");
+// 		APP_DBG("sensor didDetect: %s", str(didDetect) ); // May want to disable this - logs A LOT of info
+// 	}
+
+//   /// Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
+//   void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) {
+// 		// LOG_DBG("sensor didRead");
+// 		APP_DBG("sensor didRead: %s with payload: %s", str(fromTarget), log_strdup(didRead.hexEncodedString().c_str()));
+// 	}
+
+//   /// Receive written immediate send data from target, e.g. important timing signal.
+//   void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) {
+// 		// LOG_DBG("sensor didReceive");
+// 		APP_DBG("sensor didReceive: %s with immediate send data: %s", str(fromTarget), log_strdup(didReceive.hexEncodedString().c_str()));
+// 	}
+
+//   /// Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
+//   void sensor(SensorType sensor, const std::vector<PayloadData>& didShare, const TargetIdentifier& fromTarget) {
+// 		APP_DBG("sensor didShare");
+// 		// LOG_DBG("sensor didShare: %s", str(fromTarget) );
+// 		// for (auto& p : didShare) {
+// 		// 	LOG_DBG(" - %s", log_strdup(p.hexEncodedString().c_str()));
+// 		// }
+// 	}
+
+//   /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
+//   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {
+// 		APP_DBG("sensor didMeasure");
+// 		// LOG_DBG("sensor didMeasure: %s with proximity: %d", str(fromTarget), didMeasure.value); 
+// 	}
+
+//   /// Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
+// 	template <typename LocationT>
+//   void sensor(SensorType sensor, const Location<LocationT>& didVisit) {
+// 		APP_DBG("sensor didVisit");
+// 	}
+
+//   /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
+//   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {
+// 		APP_DBG("sensor didMeasure withPayload");
+// 	}
+
+//   /// Sensor state update
+//   void sensor(SensorType sensor, const SensorState& didUpdateState) {
+// 		APP_DBG("sensor didUpdateState");
+// 	}
+// };
+
 using MYUINT32 = unsigned long;
 
 struct basic_venue {
@@ -106,11 +176,12 @@ void main(void)
 	// Create Herald sensor array
 	ZephyrContextProvider zcp;
 	Context ctx(zcp,zcp.getLoggingSink(),zcp.getBluetoothStateManager());
-	using CT = Context<ZephyrContextProvider,ZephyrLoggingSink,BluetoothStateManager>;
+	// using CT = Context<ZephyrContextProvider,ZephyrLoggingSink,BluetoothStateManager>;
 	
 	// Disable receiver / scanning mode - we're just transmitting our value
 	BLESensorConfiguration config = ctx.getSensorConfiguration(); // copy ctor
 	config.scanningEnabled = false;
+	config.advertisingEnabled = true;
 	ctx.setSensorConfiguration(config);
 
 	ConcreteExtendedDataV1 extendedData;
@@ -122,10 +193,13 @@ void main(void)
 		erinsStakehouse.code,
 		extendedData
 	);
+
+  // this is unusual, but required. Really we should log activity to serial BLE or similar
+	DummyDelegate appDelegate;
+	SensorDelegateSet sensorDelegates(appDelegate);
 	
-	SensorArray sa(ctx,pds);
-	ConcreteBLESensor ble(ctx,ctx.getBluetoothStateManager(),pds);
-	sa.add(ble);
+	ConcreteBLESensor ble(ctx, ctx.getBluetoothStateManager(), pds, sensorDelegates);
+	SensorArray sa(ctx,pds,ble);
 
 	// Start array (and thus start advertising)
 	sa.start();
