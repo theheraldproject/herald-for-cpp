@@ -79,8 +79,8 @@ public:
   }
   /// \brief Initialises a DataRef with reserveLength bytes of undefined data
   DataRef(std::size_t reserveLength) : entry(arena.allocate(reserveLength)) {
-  ;
-}
+    ;
+  }
 
 
   // Data(Base64String from); // use Base64String.from(std::string).decode() instea
@@ -92,7 +92,9 @@ public:
 }
 
   /// \brief Default destructor
-  ~DataRef() = default;
+  ~DataRef() {
+    clear();
+  }
 
   // std::string base64EncodedString(); // use Base64String.encode(Data) instead
   /// \brief Creates a new DataRef object from a hexadecimal encoded string
