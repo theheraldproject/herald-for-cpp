@@ -48,6 +48,9 @@ add_executable(herald-tests
 	blecoordinator-tests.cpp
 	coordinator-tests.cpp
 
+	# App level
+	nordicuart-tests.cpp
+
 	# main test file
 	main.cpp
 )

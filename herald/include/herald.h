@@ -91,6 +91,9 @@
 #include "herald/ble/ble_concrete.h"
 #include "herald/ble/ble_concrete_database.h"
 
+// ble utilities (safe on non Zephyr)
+#include "herald/ble/zephyr/nordic_uart/nordic_uart_sensor_delegate.h"
+
 // analysis namespace
 #include "herald/analysis/aggregates.h"
 #include "herald/analysis/distance_conversion.h"
