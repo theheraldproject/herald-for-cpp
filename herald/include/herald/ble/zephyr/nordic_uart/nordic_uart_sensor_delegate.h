@@ -18,6 +18,8 @@ namespace ble {
 // Platforms (E.g. Zephyr) don't have namespaces included for them, so proceed straight to nordic_uart
 namespace nordic_uart {
 
+/// \brief Compatible platform specific sink functions (E.g. bt_nus_send on Zephyr with NCS v1.6.1)
+/// \since v2.1.0
 using SendFunction = std::function<void(void*,const char*,std::size_t)>;
 
 const SendFunction _DefaultSendFunction = 
@@ -28,6 +30,8 @@ const SendFunction _DefaultSendFunction =
 #endif
 ;
 
+/// \brief Sensor Delegate that transmits all callbacks as CSV over the Nordic Bluetooth UART service (or similar callback mechanism)
+/// \since v2.1.0
 template <typename ContextT>
 class NordicUartSensorDelegate {
 public:
