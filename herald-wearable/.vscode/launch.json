@@ -1,0 +1,225 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "cwd": "${workspaceRoot}",
+      "executable": "./build/zephyr/zephyr.elf",
+      "name": "Debug on NRF5340_XXAA_APP using Cortex-Debug",
+      "request": "launch",
+      "type": "cortex-debug",
+      "showDevDebugOutput": false,
+      "servertype": "jlink",
+      "interface": "swd",
+      "device": "NRF5340_XXAA_APP",
+      "serverpath": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      // "armToolchainPath": "${config:armToolchainPath}/bin", // Only works if you have installed GNU Arm embeeded toolchain external to NCS
+      "armToolchainPath": "${env:ZEPHYR_BASE}/../toolchain/opt/bin", // Works if ZEPHYR_BASE set (which needs to be for our CMake to run)
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "decoders": [
+            {
+                "port": 0,
+                "type": "console"
+            }
+        ]
+      }
+    },
+    {
+      "cwd": "${workspaceRoot}",
+      "executable": "./build/zephyr/zephyr.elf",
+      "name": "Debug on NRF52840_XXAA using Cortex-Debug",
+      "request": "launch",
+      "type": "cortex-debug",
+      "showDevDebugOutput": false,
+      "servertype": "jlink",
+      "interface": "swd",
+      "device": "NRF52840_XXAA",
+      "serverpath": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      // "armToolchainPath": "${config:armToolchainPath}/bin", // Only works if you have installed GNU Arm embeeded toolchain external to NCS
+      "armToolchainPath": "${env:ZEPHYR_BASE}/../toolchain/opt/bin", // Works if ZEPHYR_BASE set (which needs to be for our CMake to run)
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "decoders": [
+            {
+                "port": 0,
+                "type": "console"
+            }
+        ]
+      }
+    },
+    {
+      "cwd": "${workspaceRoot}",
+      "executable": "./build/zephyr/zephyr.elf",
+      "name": "Debug on NRF52833_XXAA using Cortex-Debug",
+      "request": "launch",
+      "type": "cortex-debug",
+      "showDevDebugOutput": false,
+      "servertype": "jlink",
+      "interface": "swd",
+      "device": "NRF52833_XXAA",
+      "serverpath": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      // "armToolchainPath": "${config:armToolchainPath}/bin", // Only works if you have installed GNU Arm embeeded toolchain external to NCS
+      "armToolchainPath": "${env:ZEPHYR_BASE}/../toolchain/opt/bin", // Works if ZEPHYR_BASE set (which needs to be for our CMake to run)
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "decoders": [
+            {
+                "port": 0,
+                "type": "console"
+            }
+        ]
+      }
+    },
+    {
+      "cwd": "${workspaceRoot}",
+      "executable": "./build/zephyr/zephyr.elf",
+      "name": "Debug on NRF52832_XXAA using Cortex-Debug",
+      "request": "launch",
+      "type": "cortex-debug",
+      "showDevDebugOutput": false,
+      "servertype": "jlink",
+      "interface": "swd",
+      "device": "NRF52832_XXAA",
+      "serverpath": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      // "armToolchainPath": "${config:armToolchainPath}/bin", // Only works if you have installed GNU Arm embeeded toolchain external to NCS
+      "armToolchainPath": "${env:ZEPHYR_BASE}/../toolchain/opt/bin", // Works if ZEPHYR_BASE set (which needs to be for our CMake to run)
+      "rttConfig": {
+        "enabled": true,
+        "address": "auto",
+        "decoders": [
+            {
+                "port": 0,
+                "type": "console"
+            }
+        ]
+      }
+    },
+
+
+
+
+
+
+
+    {
+      "type": "gnu-debugger",
+      "request": "launch",
+      "name": "Debug on NRF5340_XXAA_APP using GNU Debugger",
+      "program": "${workspaceFolder}/build/zephyr/zephyr.elf",
+      "toolchain": "${config:armToolchainPath}/bin",
+      "client": "arm-none-eabi-gdb.exe",
+      "server": "JLinkGDBServer",
+      "windows": {
+        "server": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      },
+      "serverArgs": [
+        "-device", "NRF5340_XXAA_APP",
+        "-if", "SWD",
+        "-speed", "4000"
+      ],
+      "serverHost": "localhost",
+      "serverPort": 2331,
+      "customVariables": [
+        "port0",
+        "port1",
+        "port2",
+      ],
+      "autoRun": false,
+      "debugOutput": false //,
+      //"preLaunchTask": "build firmware"
+    },
+    
+  
+    {
+      "type": "gnu-debugger",
+      "request": "launch",
+      "name": "Debug on NRF52840_XXAA using GNU Debugger",
+      "program": "${workspaceFolder}/build/zephyr/zephyr.elf",
+      "toolchain": "${config:armToolchainPath}/bin",
+      "client": "arm-none-eabi-gdb.exe",
+      "server": "JLinkGDBServer",
+      "windows": {
+        "server": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      },
+      "serverArgs": [
+        "-device", "NRF52840_XXAA",
+        "-if", "SWD",
+        "-speed", "4000"
+      ],
+      "serverHost": "localhost",
+      "serverPort": 2331,
+      "customVariables": [
+        "port0",
+        "port1",
+        "port2",
+      ],
+      "autoRun": false,
+      "debugOutput": false //,
+      //"preLaunchTask": "build firmware"
+    },
+    
+  
+    {
+      "type": "gnu-debugger",
+      "request": "launch",
+      "name": "Debug on NRF52833_XXAA using GNU Debugger",
+      "program": "${workspaceFolder}/build/zephyr/zephyr.elf",
+      "toolchain": "${config:armToolchainPath}/bin",
+      "client": "arm-none-eabi-gdb.exe",
+      "server": "JLinkGDBServer",
+      "windows": {
+        "server": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      },
+      "serverArgs": [
+        "-device", "NRF52833_XXAA",
+        "-if", "SWD",
+        "-speed", "4000"
+      ],
+      "serverHost": "localhost",
+      "serverPort": 2331,
+      "customVariables": [
+        "port0",
+        "port1",
+        "port2",
+      ],
+      "autoRun": false,
+      "debugOutput": false //,
+      //"preLaunchTask": "build firmware"
+    },
+    
+  
+    {
+      "type": "gnu-debugger",
+      "request": "launch",
+      "name": "Debug on NRF52832_XXAA using GNU Debugger",
+      "program": "${workspaceFolder}/build/zephyr/zephyr.elf",
+      "toolchain": "${config:armToolchainPath}/bin",
+      "client": "arm-none-eabi-gdb.exe",
+      "server": "JLinkGDBServer",
+      "windows": {
+        "server": "C:/Program Files (x86)/SEGGER/JLink/JLinkGDBServerCL.exe",
+      },
+      "serverArgs": [
+        "-device", "NRF52832_XXAA",
+        "-if", "SWD",
+        "-speed", "4000"
+      ],
+      "serverHost": "localhost",
+      "serverPort": 2331,
+      "customVariables": [
+        "port0",
+        "port1",
+        "port2",
+      ],
+      "autoRun": false,
+      "debugOutput": false //,
+      //"preLaunchTask": "build firmware"
+    }
+  ]
+}
