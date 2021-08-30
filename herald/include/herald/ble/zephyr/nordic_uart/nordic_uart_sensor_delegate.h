@@ -53,7 +53,7 @@ public:
   /// \brief Measure proximity to target
   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {
     newline("didMeasure");
-    column(didDetect.identifier());
+    column((std::string)fromTarget);
     column(std::to_string(didMeasure.value));
     sendline();
   }
@@ -61,7 +61,7 @@ public:
   /// \brief Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {
     newline("didMeasureWithPayload");
-    column(didDetect.identifier());
+    column((std::string)fromTarget);
     column(std::to_string(didMeasure.value));
     column(withPayload);
     sendline();
@@ -75,38 +75,38 @@ private:
 
   void newline(const char* callbackType) {
     position = 15;
-    while (position < 127 && *callbackType != '\0') {
+    while (position < 126 && *callbackType != '\0') {
       buffer[position++] = *callbackType;
       ++callbackType;
     }
   }
 
   void column(const Data& value) {
-    if (position >= 127) {
+    if (position >= 126) {
       return; // safety
     }
     buffer[position++] = ',';
     const std::size_t l = value.size();
     std::size_t dp = 0;
-    while (position < 127 && dp < l) {
+    while (position < 126 && dp < l) {
       buffer[position++] = (char)value.at(dp);
       ++dp;
     }
   }
 
   void column(const char* value) {
-    if (position >= 127) {
+    if (position >= 126) {
       return; // safety
     }
     buffer[position++] = ',';
-    while (position < 127 && *value != '\0') {
+    while (position < 126 && *value != '\0') {
       buffer[position++] = *value;
       ++value;
     }
   }
 
   void sendline() {
-    if (position >= 127) {
+    if (position >= 126) {
       buffer[126] = '\n';
       buffer[127] = '\0';
       position = 128;
