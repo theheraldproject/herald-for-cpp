@@ -12,6 +12,7 @@
 #include "bluetooth_state_manager_delegate.h"
 
 #include <bitset>
+#include <functional>
 
 namespace herald {
 namespace ble {
@@ -50,6 +51,7 @@ private:
 /// \since v2.1.0
 enum class BluetoothUUIDSize : short {
   EMPTY, SHORT_16, MEDIUM_32, LONG_64, FULL_128
+
 };
 
 /// \brief Represents a Bluetooth Service or Characteristic UUID. May have a size of EMPTY if invalid.
@@ -58,8 +60,13 @@ class BluetoothUUID {
 public:
   /// \brief Constructor that creates a BluetoothUUID from a Data object (which may itself be created from a hex string)
   BluetoothUUID(Data&& from);
+  /// \brief Conversion constructor from a byte size
+  BluetoothUUID(const std::size_t sz);
   /// \brief Default destructor
   ~BluetoothUUID() = default;
+
+  /// \brief Conversion operator to explicit byte size
+  explicit operator std::size_t() const;
 
   /// \brief The Size of the value. Note if the passed in value is too short, will round the size down. Users MUST checkfor EMPTY size.
   BluetoothUUIDSize size() const;
@@ -157,49 +164,5 @@ public:
 
 } // end namespace
 } // end namespace
-
-namespace std {
-
-using namespace herald::ble;
-
-/// MARK: Conversion functions to/from Bluetooth primitives
-
-/// \brief Convert a herald::ble::BluetoothUUIDSize into its length in BYTES (not bits). For use with Data size manipulations.
-/// \since v2.1.0
-std::size_t operator=(const BluetoothUUIDSize sz) {
-  switch (sz) {
-    case BluetoothUUIDSize::SHORT_16:
-      return 2; // 2 bytes = 16 bits
-    case BluetoothUUIDSize::MEDIUM_32:
-      return 4;
-    case BluetoothUUIDSize::LONG_64:
-      return 8;
-    case BluetoothUUIDSize::FULL_128:
-      return 16;
-    case BluetoothUUIDSize::EMPTY:
-    default:
-      return 0;
-  }
-}
-
-/// \brief Convert a byte size to the longest BluetoothUUIDSize that can be filled.
-/// \since v2.1.0
-BluetoothUUIDSize operator=(const std::size_t sz) {
-  if (sz < 2) {
-    return BluetoothUUIDSize::EMPTY;
-  }
-  if (sz < 4) {
-    return BluetoothUUIDSize::SHORT_16;
-  }
-  if (sz < 8) {
-    return BluetoothUUIDSize::MEDIUM_32;
-  }
-  if (sz < 16) {
-    return BluetoothUUIDSize::LONG_64;
-  }
-  return BluetoothUUIDSize::FULL_128;
-}
-
-}
 
 #endif
