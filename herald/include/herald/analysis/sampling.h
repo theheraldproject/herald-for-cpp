@@ -13,17 +13,17 @@
 
 namespace herald {
 namespace analysis {
-/// A set of structs compatible with, but not reliant upon, views and ranges in Herald
+/// \brief A set of structs compatible with, but not reliant upon, views and ranges in Herald
 namespace sampling {
 
 using namespace herald::datatype;
 
-/// The unique ID of a source instance that has been sampled. 
+/// \brief The unique ID of a source instance that has been sampled. 
 /// E.g. 64 bit hash of some unique identifier in the source physical realm 
 /// (unknown to the analysis engine)
 using SampledID = std::size_t;
 
-/// The Sample taken from an object with ID of type SampledID
+/// \brief The Sample taken from an object with ID of type SampledID
 template <typename ValT>
 struct Sample {
   using value_type = ValT;
@@ -93,7 +93,7 @@ template <typename SampleListT,
           typename ValT = typename SampleListT::value_type>
 struct SampleIterator;
 
-/// A Circular container for Samples
+/// \brief A Circular container for Samples
 /// Can be used as a container in the views library
 template <typename SampleT, // This is Sample<SampleValueT>
           std::size_t MaxSize,

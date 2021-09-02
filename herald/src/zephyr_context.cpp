@@ -216,5 +216,47 @@ ZephyrContextProvider::getNow() noexcept {
   return datatype::Date();
 }
 
+// Methods added in v2.1
+
+bool
+ZephyrContextProvider::addCustomService(const herald::ble::BluetoothUUID& serviceId)
+{
+  return true;
+}
+
+void
+ZephyrContextProvider::removeCustomService(const herald::ble::BluetoothUUID& serviceId)
+{
+  ;
+}
+
+bool
+ZephyrContextProvider::addCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, 
+  const herald::ble::BluetoothUUID& charId, const herald::ble::CharacteristicType& charType, 
+  const herald::ble::BLECallbacks& callbacks)
+{
+  return true;
+}
+
+void
+ZephyrContextProvider::removeCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, 
+  const herald::ble::BluetoothUUID& charId)
+{
+  ;
+}
+
+void
+ZephyrContextProvider::notifyAllSubscribers(const herald::ble::BluetoothUUID& serviceId, 
+  const herald::ble::BluetoothUUID& charId, const herald::datatype::Data& newValue)
+{
+  ;
+}
+
+void
+ZephyrContextProvider::notifySubscriber(const herald::ble::BluetoothUUID& serviceId, 
+  const herald::ble::BluetoothUUID& charId, const herald::datatype::Data& newValue, const herald::ble::BLEMacAddress& toNotify)
+{
+  ;
+}
 
 } // end namespace

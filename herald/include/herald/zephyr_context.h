@@ -78,6 +78,20 @@ public:
 
   Date getNow() noexcept;
 
+  // MARK: v2.1 Bluetooth State Manager functions
+  
+  bool addCustomService(const herald::ble::BluetoothUUID& serviceId) override;
+
+  void removeCustomService(const herald::ble::BluetoothUUID& serviceId) override;
+
+  bool addCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId, const herald::ble::CharacteristicType& charType, const herald::ble::BLECallbacks& callbacks) override;
+
+  void removeCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId) override;
+
+  void notifyAllSubscribers(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId, const herald::datatype::Data& newValue) override;
+
+  void notifySubscriber(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId, const herald::datatype::Data& newValue, const herald::ble::BLEMacAddress& toNotify) override;
+
 private:
   ZephyrLoggingSink sink;
 

@@ -39,7 +39,8 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/data/payload_data_formatter.h
   ${HERALD_BASE}/include/herald/data/sensor_logger.h
   ${HERALD_BASE}/include/herald/data/stdout_logging_sink.h
-  ${HERALD_BASE}/include/herald/datatype/base64_string.h 
+  ${HERALD_BASE}/include/herald/datatype/allocatable_array.h
+  ${HERALD_BASE}/include/herald/datatype/base64_string.h
   ${HERALD_BASE}/include/herald/datatype/bluetooth_state.h
   ${HERALD_BASE}/include/herald/datatype/data.h
   ${HERALD_BASE}/include/herald/datatype/date.h

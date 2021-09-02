@@ -31,6 +31,7 @@
 #endif
 
 // Datatype namespace
+#include "herald/datatype/allocatable_array.h"
 #include "herald/datatype/base64_string.h"
 #include "herald/datatype/bluetooth_state.h"
 #include "herald/datatype/data.h"

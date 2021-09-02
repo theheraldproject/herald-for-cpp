@@ -5,6 +5,7 @@
 #ifndef HERALD_BLUETOOTH_STATE_MANAGER_H
 #define HERALD_BLUETOOTH_STATE_MANAGER_H
 
+#include "../datatype/allocatable_array.h"
 #include "../datatype/bluetooth_state.h"
 #include "../datatype/data.h"
 #include "../datatype/proximity.h"
@@ -107,6 +108,63 @@ struct BLECallbacks {
   BLENotifySubscribeCallback notifySubscribeCallback = _DummyNotifySubscribeCallback;
   BLENotifyUnsubscribeCallback notifyUnsubscribeCallback = _DummyNotifyUnsubscribeCallback;
 };
+
+/// \brief Holds a single Characteristic and its callbacks
+struct BLECharacteristic {
+  CharacteristicType type;
+  BluetoothUUID uuid;
+  BLECallbacks callbacks;
+
+  // TODO equality and inequality operators
+};
+
+/// \brief Holds a list of Bluetooth Characteristics
+using BLECharacteristicList = AllocatableArray<BLECharacteristic, 8, true>;
+
+/// \brief Holds a single Service and its Characteristics
+struct BLEService {
+  BluetoothUUID uuid;
+  BLECharacteristicList characteristics;
+
+  // TODO equality and inequality operators
+  // TODO assignment operator that appends characteristic(s) if the uuids of the services match
+};
+
+/// \brief Holds a list of Bluetooth Services, including their Characteristics
+using BLEServiceList = AllocatableArray<BLEService, 8, true>;
+
+// /// \brief Holds a fixed (max) size list of characteristics and their callbacks
+// /// \since v2.1.0
+// template <std::size_t Size>
+// class BLECharacteristicList {
+// public:
+//   static constexpr std::size_t MaxSize = Size;
+//   BLECharacteristicList() : m_chars() {};
+//   ~BLECharacteristicList() = default;
+
+//   bool addCharacteristic(BLECharacteristic&& toAdd) {
+
+//   }
+
+//   void removeCharacteristic(const BluetoothUUID& toRemove) {
+
+//   }
+
+// private:
+//   AllocatableArray<BLECharacteristic, MaxSize> m_chars;
+// };
+
+// /// \brief Holds a fixed (max) size list of services, their characteristics, and those characteristics' callbacks
+// /// \since v2.1.0
+// template <std::size_t Size>
+// class BLEServiceList {
+// public:
+//   static constexpr std::size_t MaxSize = Size;
+
+// private:
+//   AllocatableArray<BLEService, MaxSize> m_services;
+// };
+
 
 
 
