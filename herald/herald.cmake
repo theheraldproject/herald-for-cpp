@@ -17,6 +17,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/analysis/runner.h
   ${HERALD_BASE}/include/herald/analysis/sampling.h
   ${HERALD_BASE}/include/herald/analysis/sensor_source.h
+  ${HERALD_BASE}/include/herald/ble/ble.h
   ${HERALD_BASE}/include/herald/ble/ble_concrete.h
   ${HERALD_BASE}/include/herald/ble/ble_coordinator.h
   ${HERALD_BASE}/include/herald/ble/ble_database_delegate.h
@@ -102,6 +103,7 @@ set(HERALD_HEADERS_WINDOWS
 
 )
 set(HERALD_SOURCES
+  ${HERALD_BASE}/src/ble/ble.cpp
   ${HERALD_BASE}/src/ble/ble_mac_address.cpp
   ${HERALD_BASE}/src/ble/ble_coordinator.cpp
   ${HERALD_BASE}/src/ble/ble_device.cpp

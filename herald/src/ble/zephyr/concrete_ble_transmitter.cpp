@@ -98,7 +98,7 @@ namespace zephyrinternal {
     BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
     // BT_DATA_BYTES(BT_DATA_TX_POWER, 0x00 ), // See https://github.com/theheraldproject/herald-for-cpp/issues/26
     BT_DATA_BYTES(BT_DATA_UUID16_ALL, 
-            BT_UUID_16_ENCODE(BT_UUID_DIS_VAL),
+            //BT_UUID_16_ENCODE(BT_UUID_DIS_VAL),
             BT_UUID_16_ENCODE(BT_UUID_GATT_VAL),
             BT_UUID_16_ENCODE(BT_UUID_GAP_VAL)
     ),

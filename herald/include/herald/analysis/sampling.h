@@ -298,7 +298,7 @@ struct SampleIterator {
 
   // postfix operator
   SampleIterator<SampleListT> operator++(int) {
-    SampleIterator<SampleListT> cp =  *this; // copy of instance
+    SampleIterator<SampleListT> cp = *this; // copy of instance
     ++(*this);
     return cp;
   }
@@ -316,7 +316,7 @@ private:
   std::size_t pos;
 };
 
-/// for std::distance
+/// \brief Distance operator for std::distance
 template<typename T>
 typename SampleIterator<T>::difference_type distance(SampleIterator<T> first, SampleIterator<T> last) {
   return last - first;

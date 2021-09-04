@@ -477,6 +477,10 @@ public:
     arena.deallocate(entry);
   }
 
+  unsigned char* rawMemoryStartAddress() const {
+    return arena.rawStartAddress(entry);
+  }
+
   static MemoryArenaT& getArena() {
     return arena;
   }

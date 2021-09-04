@@ -31,19 +31,42 @@ namespace herald {
 using namespace herald::ble;
 using namespace herald::data;
 
+// FWD DECL
+class ZephyrContextProvider;
+
 /// \brief Internal zephyr namespace DO NOT USE - API MAY CHANGE WITHOUT WARNING
 namespace zephyrinternal {
   class Advertiser {
+  friend class herald::ZephyrContextProvider; // gives direct access to customServices private variable
   public:
-    Advertiser();
-    ~Advertiser();
+    Advertiser() noexcept;
+    ~Advertiser() noexcept;
+    /// \brief Stop advertising
     void stopAdvertising() noexcept;
+    /// \brief Start advertising if Bluetooth is enabled
     void startAdvertising() noexcept;
-    void registerStopCallback(std::function<void()> cb);
-    void registerStartCallback(std::function<void()> cb);
+    /// \brief Restart advertising if, and only if, it is already advertising
+    void restartAdvertising() noexcept;
+    /// \brief Inform the advertiser that its advert needs refreshing. Does not force the advert to change immediately.
+    /// See restartAdvertising for that
+    void markAdvertAsDirty() noexcept;
+
+    /// \brief Used by a Bluetooth transmitter to register a callback to tell it when to stop advertising
+    void registerStopCallback(std::function<void()> cb) noexcept;
+    /// \brief Used by a Bluetooth transmitter to register a callback to tell it when to start advertising
+    void registerStartCallback(std::function<void(const BLEServiceList& customServices)> cb) noexcept;
+    /// \brief Used by a Bluetooth transmitter to register a callback to tell it when to restart advertising
+    void registerRestartCallback(std::function<void(const BLEServiceList& customServices)> cb) noexcept;
+    /// \brief Used by a Bluetooth transmitter to register a callback to tell it when its advert is dirty
+    void registerIsDirtyCallback(std::function<void(const BLEServiceList& customServices)> cb) noexcept;
+    /// \brief Safety function to deregister callbacks when transmitter shuts down
+    void unregisterAllCallbacks() noexcept;
   private:
-    std::optional<std::function<void()>> startCallback;
     std::optional<std::function<void()>> stopCallback;
+    std::optional<std::function<void(const BLEServiceList&)>> startCallback;
+    std::optional<std::function<void(const BLEServiceList&)>> restartCallback;
+    std::optional<std::function<void(const BLEServiceList&)>> isDirtyCallback;
+    BLEServiceList customServices;
   };
 }
 
@@ -84,7 +107,7 @@ public:
 
   void removeCustomService(const herald::ble::BluetoothUUID& serviceId) override;
 
-  bool addCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId, const herald::ble::CharacteristicType& charType, const herald::ble::BLECallbacks& callbacks) override;
+  bool addCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId, const herald::ble::BLECharacteristicType& charType, const herald::ble::BLECallbacks& callbacks) override;
 
   void removeCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId) override;
 

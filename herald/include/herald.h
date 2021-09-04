@@ -71,6 +71,7 @@
 #include "herald/engine/coordinator.h"
 
 // ble namespace
+#include "herald/ble/ble.h"
 #include "herald/ble/ble_coordinator.h"
 #include "herald/ble/ble_database_delegate.h"
 #include "herald/ble/ble_database.h"

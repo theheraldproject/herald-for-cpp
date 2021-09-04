@@ -77,7 +77,7 @@ public:
     ;
   }
 
-  bool addCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId, const herald::ble::CharacteristicType& charType, const herald::ble::BLECallbacks& callbacks) override {
+  bool addCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId, const herald::ble::BLECharacteristicType& charType, const herald::ble::BLECallbacks& callbacks) override {
     return true;
   }
 

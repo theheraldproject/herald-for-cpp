@@ -122,6 +122,14 @@ public:
     return arena[(entry.startPageIndex * PageSize) + bytePosition];
   }
 
+  unsigned char* rawStartAddress(const MemoryArenaEntry& entry) {
+    if (!entry.isInitialised()) {
+      return 0;
+    }
+    // The following is guaranteed by the STL 23.3.2.1
+    return &arena[(entry.startPageIndex * PageSize)];
+  }
+
   std::size_t pagesFree() const {
     return pagesRequired(Size,PageSize) - pagesInUse.count();
   }
