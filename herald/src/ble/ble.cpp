@@ -4,6 +4,8 @@
 
 #include "herald/ble/ble.h"
 
+#include <utility> // C++17 std::as_const
+
 namespace herald {
 namespace ble {
 
@@ -25,16 +27,16 @@ BLECharacteristicType&
 operator|=(BLECharacteristicType& toUpdate, const BLECharacteristicTypeValue& from) noexcept
 {
   switch (from) {
-    case BLECharacteristicTypeValue::WRITE_WITHOUT_ACK:
+    case BLECharacteristicTypeValue::WriteWithoutAck:
       toUpdate.m_type.set(1,true);
       break;
-    case BLECharacteristicTypeValue::WRITE_WITH_ACK:
+    case BLECharacteristicTypeValue::WriteWithAck:
       toUpdate.m_type.set(2,true);
       break;
-    case BLECharacteristicTypeValue::NOTIFY:
+    case BLECharacteristicTypeValue::Notify:
       toUpdate.m_type.set(3,true);
       break;
-    case BLECharacteristicTypeValue::READ:
+    case BLECharacteristicTypeValue::Read:
     default:
       toUpdate.m_type.set(0,true);
       break;
@@ -53,13 +55,13 @@ bool
 BLECharacteristicType::operator==(const BLECharacteristicTypeValue& value) const noexcept
 {
   switch (value) {
-    case BLECharacteristicTypeValue::WRITE_WITHOUT_ACK:
+    case BLECharacteristicTypeValue::WriteWithoutAck:
       return m_type.test(1);
-    case BLECharacteristicTypeValue::WRITE_WITH_ACK:
+    case BLECharacteristicTypeValue::WriteWithAck:
       return m_type.test(2);
-    case BLECharacteristicTypeValue::NOTIFY:
+    case BLECharacteristicTypeValue::Notify:
       return m_type.test(3);
-    case BLECharacteristicTypeValue::READ:
+    case BLECharacteristicTypeValue::Read:
       return m_type.test(0);
     default:
       return false;
@@ -88,63 +90,63 @@ BLECharacteristicType::operator!=(const BLECharacteristicType& other) const noex
 
 
 BluetoothUUID::BluetoothUUID() noexcept
-  : m_size(BluetoothUUIDSize::EMPTY),
+  : m_size(BluetoothUUIDSize::Empty),
     m_data()
 {
   ;
 }
 
 BluetoothUUID::BluetoothUUID(Data&& from) noexcept
-  : m_size(BluetoothUUIDSize::EMPTY),
+  : m_size(BluetoothUUIDSize::Empty),
     m_data(from) 
 {
   auto sz = m_data.size();
   if (sz < 2) {
-    m_size = BluetoothUUIDSize::EMPTY;
+    m_size = BluetoothUUIDSize::Empty;
   }
   if (sz < 4) {
-    m_size = BluetoothUUIDSize::SHORT_16;
+    m_size = BluetoothUUIDSize::Short16;
   }
   if (sz < 8) {
-    m_size = BluetoothUUIDSize::MEDIUM_32;
+    m_size = BluetoothUUIDSize::Medium32;
   }
   if (sz < 16) {
-    m_size = BluetoothUUIDSize::LONG_64;
+    m_size = BluetoothUUIDSize::Long64;
   }
-  m_size = BluetoothUUIDSize::FULL_128;
+  m_size = BluetoothUUIDSize::Full128;
 }
 
 BluetoothUUID::BluetoothUUID(const std::size_t sz) noexcept
-  : m_size(BluetoothUUIDSize::EMPTY),
+  : m_size(BluetoothUUIDSize::Empty),
     m_data(sz)
 {
   if (sz < 2) {
-    m_size = BluetoothUUIDSize::EMPTY;
+    m_size = BluetoothUUIDSize::Empty;
   }
   if (sz < 4) {
-    m_size = BluetoothUUIDSize::SHORT_16;
+    m_size = BluetoothUUIDSize::Short16;
   }
   if (sz < 8) {
-    m_size = BluetoothUUIDSize::MEDIUM_32;
+    m_size = BluetoothUUIDSize::Medium32;
   }
   if (sz < 16) {
-    m_size = BluetoothUUIDSize::LONG_64;
+    m_size = BluetoothUUIDSize::Long64;
   }
-  m_size = BluetoothUUIDSize::FULL_128;
+  m_size = BluetoothUUIDSize::Full128;
 }
 
 BluetoothUUID::operator std::size_t() const noexcept
 {
   switch (m_size) {
-    case BluetoothUUIDSize::SHORT_16:
+    case BluetoothUUIDSize::Short16:
       return 2; // 2 bytes = 16 bits
-    case BluetoothUUIDSize::MEDIUM_32:
+    case BluetoothUUIDSize::Medium32:
       return 4;
-    case BluetoothUUIDSize::LONG_64:
+    case BluetoothUUIDSize::Long64:
       return 8;
-    case BluetoothUUIDSize::FULL_128:
+    case BluetoothUUIDSize::Full128:
       return 16;
-    case BluetoothUUIDSize::EMPTY:
+    case BluetoothUUIDSize::Empty:
     default:
       return 0;
   }
@@ -373,11 +375,13 @@ BLEService::operator!=(const BLEService& other) const noexcept
 
 
 BLEService&
-operator|=(BLEService& toUpdate, const BLEService& toMerge) noexcept
+operator|=(BLEService& toUpdate, BLEService& toMerge) noexcept
 {
   // for each characteristic, either merge a matching char or add one
-  for (const auto& ch : toMerge.characteristics) {
+  // for(auto chit = toMerge.characteristics.cbegin(), chend = toMerge.characteristics.cend();chit != chend;++chit) {
+  for (auto& ch : toMerge.characteristics) {
     bool found = false;
+    // for (auto it = toUpdate.characteristics.begin(), end = toUpdate.characteristics.end(); it != end;++it) {
     for (auto& mych : toUpdate.characteristics) {
       if (mych == ch) {
         found = true;

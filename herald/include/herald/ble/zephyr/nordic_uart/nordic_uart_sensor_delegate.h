@@ -8,8 +8,10 @@
 #include "../../../sensor_delegate.h"
 
 #ifdef __ZEPHYR__
+#ifdef BT_NUS
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/services/nus.h>
+#endif
 #endif
 
 #include <functional>
@@ -25,7 +27,11 @@ using SendFunction = std::function<void(void*,const char*,std::size_t)>;
 
 const SendFunction _DefaultSendFunction = 
 #ifdef __ZEPHYR__
+#ifdef BT_NUS
   [](void* vp,const char* cp,std::size_t l) {bt_nus_send((bt_conn*)vp,(const unsigned char*)cp,l);};
+#else
+  [](void* vp,const char* cp,std::size_t l) {};
+#endif
 #else
   [](void* vp,const char* cp,std::size_t l) {};
 #endif

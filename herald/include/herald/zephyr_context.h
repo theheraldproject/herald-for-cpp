@@ -54,18 +54,18 @@ namespace zephyrinternal {
     /// \brief Used by a Bluetooth transmitter to register a callback to tell it when to stop advertising
     void registerStopCallback(std::function<void()> cb) noexcept;
     /// \brief Used by a Bluetooth transmitter to register a callback to tell it when to start advertising
-    void registerStartCallback(std::function<void(const BLEServiceList& customServices)> cb) noexcept;
+    void registerStartCallback(std::function<void(BLEServiceList& customServices)> cb) noexcept;
     /// \brief Used by a Bluetooth transmitter to register a callback to tell it when to restart advertising
-    void registerRestartCallback(std::function<void(const BLEServiceList& customServices)> cb) noexcept;
+    void registerRestartCallback(std::function<void(BLEServiceList& customServices)> cb) noexcept;
     /// \brief Used by a Bluetooth transmitter to register a callback to tell it when its advert is dirty
-    void registerIsDirtyCallback(std::function<void(const BLEServiceList& customServices)> cb) noexcept;
+    void registerIsDirtyCallback(std::function<void(BLEServiceList& customServices)> cb) noexcept;
     /// \brief Safety function to deregister callbacks when transmitter shuts down
     void unregisterAllCallbacks() noexcept;
   private:
     std::optional<std::function<void()>> stopCallback;
-    std::optional<std::function<void(const BLEServiceList&)>> startCallback;
-    std::optional<std::function<void(const BLEServiceList&)>> restartCallback;
-    std::optional<std::function<void(const BLEServiceList&)>> isDirtyCallback;
+    std::optional<std::function<void(BLEServiceList&)>> startCallback;
+    std::optional<std::function<void(BLEServiceList&)>> restartCallback;
+    std::optional<std::function<void(BLEServiceList&)>> isDirtyCallback;
     BLEServiceList customServices;
   };
 }

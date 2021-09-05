@@ -89,21 +89,21 @@ Advertiser::registerStopCallback(std::function<void()> cb) noexcept
 }
 
 void
-Advertiser::registerStartCallback(std::function<void(const BLEServiceList& customServices)> cb) noexcept
+Advertiser::registerStartCallback(std::function<void(BLEServiceList& customServices)> cb) noexcept
 {
   // LOG_DBG("registerStartCallback called");
   startCallback = cb;
 }
 
 void
-Advertiser::registerRestartCallback(std::function<void(const BLEServiceList& customServices)> cb) noexcept
+Advertiser::registerRestartCallback(std::function<void(BLEServiceList& customServices)> cb) noexcept
 {
   // LOG_DBG("registerRestartCallback called");
   restartCallback = cb;
 }
 
 void
-Advertiser::registerIsDirtyCallback(std::function<void(const BLEServiceList& customServices)> cb) noexcept
+Advertiser::registerIsDirtyCallback(std::function<void(BLEServiceList& customServices)> cb) noexcept
 {
   // LOG_DBG("registerIsDirtyCallback called");
   isDirtyCallback = cb;

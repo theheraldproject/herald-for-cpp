@@ -7,6 +7,7 @@
 
 #include <array>
 #include <bitset>
+#include <type_traits>
 
 namespace herald {
 namespace datatype {
@@ -21,7 +22,7 @@ struct AllocatableArrayIterator;
 /// This class is noexcept compliant.
 /// This class defaults to a container size of 8, but this can be changed.
 /// This class also defaults to ensuring UniqueMembers, but this too can be changed.
-template <typename ValT, std::size_t Size = 8, bool UniqueMembers = true>
+template <typename ValT, std::size_t Size = 8, bool UniqueMembers = true, typename ValBaseT = typename std::remove_cv<ValT>::type>
 class AllocatableArray {
 public:
   /// \brief Reference to the value type within this container
@@ -30,6 +31,8 @@ public:
   using difference_type = std::size_t;
   /// \brief The iterator type for this container
   using iterator = AllocatableArrayIterator<AllocatableArray<ValT,Size,UniqueMembers>>;
+  /// \brief Constant iterator type
+  using const_iterator = const iterator;
   /// \brief Reference to the size type of this container
   using size_type = std::size_t;
   // using pointer = value_type*;
@@ -38,11 +41,14 @@ public:
   /// \brief The maximum size of this container
   static constexpr std::size_t max_size = Size;
   /// \brief Whether this container ensures its contents is unique
-  // static constexpr bool EnsureUnique = UniqueMembers;
+  static constexpr bool unique_members = UniqueMembers;
 
   /// \brief Default noexcept constructor
   AllocatableArray() noexcept : m_allocated(), m_members() {};
-  AllocatableArray(ValT&& first) : m_allocated(), m_members() {
+  /// \brief Copy constructor (relies on std::array copy constructor)
+  AllocatableArray(const AllocatableArray& from) noexcept : m_allocated(from.m_allocated), m_members(from.m_members) {};
+  /// \brief Single value constructor for convenience
+  AllocatableArray(ValT&& first) noexcept : m_allocated(), m_members() {
     add(first);
   };
   /// \brief Default noexcept destructor
@@ -90,26 +96,52 @@ public:
   }
 
   /// \brief Returns the idx'th set value within the AllocatableArray
-  value_type& operator[](std::size_t idx) noexcept {
+  constexpr value_type& operator[](std::size_t idx) noexcept {
     return m_members[realIndex(idx)];
   }
 
+  /// \brief Returns the idx'th set value within the AllocatableArray as const
+  // constexpr const value_type& operator[](std::size_t idx) const noexcept {
+  //   return m_members[realIndex(idx)];
+  // }
+
+  /// \brief Support for const iterator begin
+  // constexpr const_iterator cbegin() const noexcept {
+  //   return const_iterator(*this);
+  // }
+
+  /// \brief Support for const iterator end
+  // constexpr const_iterator cend() const noexcept {
+  //   if (size() == 0) return const_iterator(*this);
+  //   return const_iterator(*this, size());
+  // }
+
+  // constexpr const_iterator begin() const noexcept {
+  //   return const_iterator(*this);
+  // }
+
+  /// \brief Support for const iterator end
+  // constexpr const_iterator end() const noexcept {
+  //   if (size() == 0) return const_iterator(*this);
+  //   return const_iterator(*this, size());
+  // }
+
   /// \brief Support for iterator begin
-  AllocatableArrayIterator<AllocatableArray<ValT,Size,UniqueMembers>> begin() {
-    return AllocatableArrayIterator<AllocatableArray<ValT,Size,UniqueMembers>>(*this);
+  iterator begin() noexcept {
+    return iterator(*this);
   }
 
-  // \brief Support for iterator end
-  AllocatableArrayIterator<AllocatableArray<ValT,Size,UniqueMembers>> end() {
-    if (size() == 0) return AllocatableArrayIterator<AllocatableArray<ValT,Size,UniqueMembers>>(*this);
-    return AllocatableArrayIterator<AllocatableArray<ValT,Size,UniqueMembers>>(*this, size());
+  /// \brief Support for iterator end
+  iterator end() noexcept {
+    if (size() == 0) return iterator(*this);
+    return iterator(*this, size());
   }
 
   // TODO consider adding a find method
 
 private:
   std::bitset<max_size> m_allocated;
-  std::array<ValT,max_size> m_members;
+  std::array<value_type,max_size> m_members;
 
   /// \brief Returns the next available unassigned index
   /// Returns Size if full
@@ -166,6 +198,9 @@ private:
   }
 };
 
+// template <typename... ValT, typename CommonValT = typename std::common_type_t<ValT...>, typename CommonValTValue = typename CommonValT::value_type>
+// AllocatableArray(ValT... valueList) -> AllocatableArray<CommonValT,8,true>;
+
 
 /// \brief Provides a forward and reverse iterator for an AllocatableArray
 /// \brief Implements noexcept guarantees
@@ -176,7 +211,9 @@ struct AllocatableArrayIterator {
   using value_type = ValT;
   using iterator_category = std::forward_iterator_tag;
   using pointer = value_type*;
+  using const_pointer = const value_type*;
   using reference = value_type&;
+  using const_reference = const value_type&;
 
   /// \brief Iterator constructor starting at virtual index 0
   AllocatableArrayIterator(AllocatableArrayT& aa) noexcept : m_aa(aa), pos(0) {}
@@ -189,8 +226,13 @@ struct AllocatableArrayIterator {
   /// \brief Default destructor
   ~AllocatableArrayIterator() noexcept = default;
 
-  /// Dereference operator to return the value behind this iterator
+  /// \brief Dereference operator to return the value behind this iterator
+  // template <typename Ref = reference, typename = std::enable_if_t<!std::is_same_v<reference,const_reference>> >
   reference operator*() noexcept {
+    return m_aa[pos];
+  }
+
+  constexpr const_reference operator*() const noexcept {
     return m_aa[pos];
   }
 

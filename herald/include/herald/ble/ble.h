@@ -23,10 +23,10 @@ using namespace herald::datatype;
 /// \since v2.1.0
 /// Note: Short value is the internal bitset position (not to be relied upon in application code).
 enum class BLECharacteristicTypeValue : short {
-  READ = 1,
-  WRITE_WITHOUT_ACK = 2,
-  WRITE_WITH_ACK = 3,
-  NOTIFY = 4
+  Read = 1,
+  WriteWithoutAck = 2,
+  WriteWithAck = 3,
+  Notify = 4
 };
 
 /// \brief Characteristic Type utility class
@@ -61,7 +61,7 @@ private:
 /// \brief Represents the Bluetooth UUID Size in bits. May be Empty if invalid.
 /// \since v2.1.0
 enum class BluetoothUUIDSize : short {
-  EMPTY, SHORT_16, MEDIUM_32, LONG_64, FULL_128
+  Empty, Short16, Medium32, Long64, Full128
 };
 
 /// \brief Represents a Bluetooth Service or Characteristic UUID. May have a size of EMPTY if invalid.
@@ -133,7 +133,8 @@ struct BLECallbacks {
 };
 
 /// \brief Holds a single Characteristic and its callbacks
-struct BLECharacteristic {
+class BLECharacteristic {
+public:
   BLECharacteristic() noexcept;
   BLECharacteristic(BluetoothUUID id, BLECharacteristicType ctype, BLECallbacks cbs) noexcept;
   BLECharacteristic(BLECharacteristic&& other) noexcept;
@@ -141,7 +142,7 @@ struct BLECharacteristic {
   ~BLECharacteristic() noexcept = default;
 
   BluetoothUUID uuid;
-  mutable BLECharacteristicType type;
+  BLECharacteristicType type;
   BLECallbacks callbacks;
 
   /// \brief Implicit conversion to BluetoothUUID to enable equality comparison
@@ -173,7 +174,8 @@ using BLECharacteristicList = AllocatableArray<BLECharacteristic, HERALD_BLECHAR
 #endif
 
 /// \brief Holds a single Service and its Characteristics
-struct BLEService {
+class BLEService {
+public:
   BLEService() noexcept;
   BLEService(BluetoothUUID id,BLECharacteristicList cl) noexcept;
   BLEService(BLEService&& other) noexcept;
@@ -181,7 +183,7 @@ struct BLEService {
   ~BLEService() noexcept = default;
   
   BluetoothUUID uuid;
-  mutable BLECharacteristicList characteristics;
+  BLECharacteristicList characteristics;
 
   /// \brief Implicit conversion to BluetoothUUID to enable equality comparison
   operator BluetoothUUID() const noexcept;
@@ -198,7 +200,7 @@ struct BLEService {
   bool operator!=(const BLEService& other) const noexcept;
 
   /// MARK: Assignment operators that append characteristic(s)
-  friend BLEService& operator|=(BLEService& toUpdate, const BLEService& toMerge) noexcept;
+  friend BLEService& operator|=(BLEService& toUpdate, BLEService& toMerge) noexcept;
   friend BLEService& operator|=(BLEService& toUpdate, const BLECharacteristic& toMerge) noexcept;
 };
 

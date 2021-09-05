@@ -20,6 +20,7 @@
 #include "../ble_sensor_configuration.h"
 #include "../ble_coordinator.h"
 #include "../../datatype/bluetooth_state.h"
+#include "../../datatype/allocatable_array.h"
 
 // nRF Connect SDK includes
 #include <bluetooth/bluetooth.h>
@@ -121,13 +122,13 @@ public:
     m_context.getPlatform().getAdvertiser().registerStopCallback([this] () -> void {
       stopAdvertising();
     });
-    m_context.getPlatform().getAdvertiser().registerStartCallback([this] (const BLEServiceList& customServices) -> void {
+    m_context.getPlatform().getAdvertiser().registerStartCallback([this] (BLEServiceList& customServices) -> void {
       startAdvertising(customServices);
     });
-    m_context.getPlatform().getAdvertiser().registerRestartCallback([this] (const BLEServiceList& customServices) -> void {
+    m_context.getPlatform().getAdvertiser().registerRestartCallback([this] (BLEServiceList& customServices) -> void {
       restartAdvertising(customServices);
     });
-    m_context.getPlatform().getAdvertiser().registerIsDirtyCallback([this] (const BLEServiceList& customServices) -> void {
+    m_context.getPlatform().getAdvertiser().registerIsDirtyCallback([this] (BLEServiceList& customServices) -> void {
       markAdvertAsDirty(customServices);
     });
     HTDBG("Advertising callbacks registered");
@@ -163,7 +164,7 @@ private:
   HLOGGER(ContextT);
 
   // Internal methods
-  void restartAdvertising(const BLEServiceList& customServices)
+  void restartAdvertising(BLEServiceList& customServices)
   {
     // Only restart if we're already advertising
     if (!isAdvertising) {
@@ -173,12 +174,12 @@ private:
     startAdvertising(customServices);
   }
 
-  void markAdvertAsDirty(const BLEServiceList& customServices)
+  void markAdvertAsDirty(BLEServiceList& customServices)
   {
     restartAdvertising(customServices);
   }
 
-  void startAdvertising(const BLEServiceList& customServices)
+  void startAdvertising(BLEServiceList& customServices)
   {
     // HTDBG("startAdvertising called");
     if (!m_context.getSensorConfiguration().advertisingEnabled) {
@@ -217,7 +218,7 @@ private:
     auto e = customServices.end();
     for (;b != e;++b) {
       // Ignore incorrectly initialised services
-      if (b->uuid.size() == herald::ble::BluetoothUUIDSize::EMPTY) {
+      if (b->uuid.size() == herald::ble::BluetoothUUIDSize::Empty) {
         continue; // does not increment newIdx (this is correct)
       }
       // Check for a valid data entry object
@@ -227,14 +228,16 @@ private:
       }
       newAdvert[newIdx].type = BT_DATA_UUID128_ALL;
       switch (b->uuid.size()) {
-        case BluetoothUUIDSize::SHORT_16:
+        case BluetoothUUIDSize::Short16:
           newAdvert[newIdx].type = BT_DATA_UUID16_ALL;
           break;
-        case BluetoothUUIDSize::MEDIUM_32:
+        case BluetoothUUIDSize::Medium32:
           newAdvert[newIdx].type = BT_DATA_UUID32_ALL;
           break;
-        case BluetoothUUIDSize::LONG_64:
+        case BluetoothUUIDSize::Long64:
           newAdvert[newIdx].type = BT_DATA_UUID32_ALL; // TODO VERIFY THAT 64 BITS IS NOT A VALID VALUE IN BLE SPEC
+          break;
+        default:
           break;
       }
       newAdvert[newIdx].data_len = (std::size_t)b->uuid; // guaranteed to be less than or equal to uuid.value().size()

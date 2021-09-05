@@ -139,7 +139,7 @@ struct SampleList {
     data[newestPosition] = SampleT{taken,val};
   }
 
-  std::size_t size() const {
+  std::size_t size() const noexcept {
     if (newestPosition == SIZE_MAX) return 0;
     if (newestPosition >= oldestPosition) {
       // not overlapping the end
@@ -149,7 +149,7 @@ struct SampleList {
     return (1 + newestPosition) + (data.size() - oldestPosition);
   }
 
-  const SampleT& operator[](std::size_t idx) const {
+  const SampleT& operator[](std::size_t idx) const noexcept {
     if (newestPosition >= oldestPosition) {
       return data[idx + oldestPosition];
     }
@@ -160,7 +160,7 @@ struct SampleList {
     return data[idx + oldestPosition];
   }
 
-  void clearBeforeDate(const Date& before) {
+  void clearBeforeDate(const Date& before) noexcept {
     if (SIZE_MAX == oldestPosition) return;
     while (oldestPosition != newestPosition) {
       if (data[oldestPosition].taken < before) {
@@ -181,7 +181,7 @@ struct SampleList {
     }
   }
 
-  void clear() {
+  void clear() noexcept {
     oldestPosition = SIZE_MAX;
     newestPosition = SIZE_MAX;
   }
@@ -189,7 +189,7 @@ struct SampleList {
   // SampleT latest() {
   //   return data[newestPosition];
   // }
-  Date latest() {
+  Date latest() noexcept {
     return data[newestPosition].taken;
   }
 
@@ -207,7 +207,7 @@ private:
   std::size_t oldestPosition;
   std::size_t newestPosition;
 
-  void incrementNewest() {
+  void incrementNewest() noexcept {
     if (SIZE_MAX == newestPosition) {
       newestPosition = 0;
       oldestPosition = 0;
