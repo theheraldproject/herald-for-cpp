@@ -51,9 +51,9 @@ public:
     ;
   }
 
-  ~MemoryArena() = default;
+  ~MemoryArena() noexcept = default;
 
-  void reserve(MemoryArenaEntry& entry,std::size_t newSize) {
+  void reserve(MemoryArenaEntry& entry,std::size_t newSize) noexcept {
     if (newSize <= entry.byteLength) {
       return;
     }
@@ -92,10 +92,14 @@ public:
       }
     }
     // ran out of memory! Throw! (Causes catastrophic crash)
+#ifdef __ZEPHYR__
+    std::terminate();
+#else
     throw std::runtime_error("Unable to allocate memory in arena");
+#endif
   }
 
-  void deallocate(MemoryArenaEntry& entry) {
+  void deallocate(MemoryArenaEntry& entry) noexcept {
     if (!entry.isInitialised()) {
       return; // guard
     }
@@ -108,21 +112,21 @@ public:
     entry.startPageIndex = 0;
   }
 
-  void set(const MemoryArenaEntry& entry, unsigned short bytePosition, unsigned char value) {
+  void set(const MemoryArenaEntry& entry, unsigned short bytePosition, unsigned char value) noexcept {
     if (!entry.isInitialised()) {
       return;
     }
     arena[(entry.startPageIndex * PageSize) + bytePosition] = value;
   }
 
-  char get(const MemoryArenaEntry& entry, unsigned short bytePosition) {
+  char get(const MemoryArenaEntry& entry, unsigned short bytePosition) noexcept {
     if (!entry.isInitialised()) {
       return '\0';
     }
     return arena[(entry.startPageIndex * PageSize) + bytePosition];
   }
 
-  unsigned char* rawStartAddress(const MemoryArenaEntry& entry) {
+  unsigned char* rawStartAddress(const MemoryArenaEntry& entry) noexcept {
     if (!entry.isInitialised()) {
       return 0;
     }
@@ -130,7 +134,7 @@ public:
     return &arena[(entry.startPageIndex * PageSize)];
   }
 
-  std::size_t pagesFree() const {
+  std::size_t pagesFree() const noexcept {
     return pagesRequired(Size,PageSize) - pagesInUse.count();
   }
 
