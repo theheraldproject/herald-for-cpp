@@ -216,10 +216,11 @@ void herald_entry() {
 	> runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
 
 	herald::analysis::SensorDelegateRSSISource<decltype(runner)> src(runner);
+	herald::ble::nordic_uart::NordicUartSensorDelegate nus(ctx);
 	// sa.add(src);
 // #endif
 
-	SensorDelegateSet sensorDelegates(appDelegate, src); // just the one from the app, and one for the analysis API
+	SensorDelegateSet sensorDelegates(appDelegate, src, nus); // just the one from the app, and one for the analysis API
 	
 
   // Now prepare your device's Herald identity payload - this is what gets sent to other devices when they request it
