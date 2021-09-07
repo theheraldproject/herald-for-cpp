@@ -21,11 +21,8 @@
 #include "ble_coordinator.h"
 #include "../datatype/bluetooth_state.h"
 
-#include <memory>
-#include <vector>
 #include <array>
 #include <algorithm>
-// #include <optional>
 
 namespace herald {
 namespace ble {
@@ -39,6 +36,15 @@ using namespace herald::payload;
 struct last_updated_descending {
   bool operator()(const BLEDevice& a, const BLEDevice& b) {
     return a.timeIntervalSinceLastUpdate() > b.timeIntervalSinceLastUpdate(); // opposite order
+  }
+  bool operator()(const std::optional<std::reference_wrapper<BLEDevice>>& lhs, const std::optional<std::reference_wrapper<BLEDevice>>& rhs) {
+    if (lhs.has_value() && !rhs.has_value()) {
+      return 1;
+    }
+    if (rhs.has_value()&& !lhs.has_value()) {
+      return 0;
+    }
+    return lhs.value().get().timeIntervalSinceLastUpdate() > rhs.value().get().timeIntervalSinceLastUpdate();
   }
 };
 
@@ -64,7 +70,7 @@ public:
   // BLE Database overrides
 
   void add(BLEDatabaseDelegate& delegate) override {
-    delegates.emplace_back(delegate);
+    delegates.add(std::optional(std::reference_wrapper(delegate)));
   }
 
   // Creation overrides
@@ -74,10 +80,10 @@ public:
     auto results = matches([&targetIdentifier](const BLEDevice& d) {
       return d.identifier() == targetIdentifier;
     });
-    if (results.size() != 0) {
+    if (results.size() != 0 && results[0].has_value()) {
       // HTDBG("DEVICE ALREADY KNOWN BY MAC");
       // Assume advert details are known already
-      return results.front(); // TODO ensure we send back the latest, not just the first match
+      return results[0].value().get(); // TODO ensure we send back the latest, not just the first match
       // res->rssi(rssi);
       // return res;
     }
@@ -111,9 +117,9 @@ public:
       auto samePseudo = matches([&pseudo](const BLEDevice& d) {
         return d.pseudoDeviceAddress() == pseudo;
       });
-      if (0 != samePseudo.size()) {
+      if (0 != samePseudo.size() && samePseudo[0].has_value()) {
         // HTDBG("FOUND EXISTING DEVICE BY PSEUDO");
-        return samePseudo.front();
+        return samePseudo[0].value().get();
       }
       // HTDBG("CREATING NEW DEVICE BY MAC AND PSEUDO ONLY");
       // Now create new device with mac and pseudo
@@ -146,7 +152,7 @@ public:
     // get most recent and clone, then attach
     auto comp = last_updated_descending();
     std::sort(samePseudo.begin(),samePseudo.end(), comp); // functional style
-    BLEDevice& updatedDevice = samePseudo.front();
+    BLEDevice& updatedDevice = samePseudo[0].value().get();
     // TODO support calling card
     // auto toShare = shareDataAcrossDevices(pseudo);
     // if (toShare.has_value()) {
@@ -161,7 +167,9 @@ public:
 
     // devices.push_back(updatedDevice);
     for (auto& delegate : delegates) {
-      delegate.get().bleDatabaseDidCreate(updatedDevice); // may be new with a new service
+      if (delegate.has_value()) {
+        delegate.value().get().bleDatabaseDidCreate(updatedDevice); // may be new with a new service
+      }
     }
     return updatedDevice;
   }
@@ -180,14 +188,16 @@ public:
       // }
       // return (*payload)==payloadData;
     });
-    if (results.size() != 0) {
-      return results.front(); // TODO ensure we send back the latest, not just the first match
+    if (results.size() != 0 && results[0].has_value()) {
+      return results[0].value().get(); // TODO ensure we send back the latest, not just the first match
     }
     BLEDevice& newDevice = devices[indexAvailable()];
     newDevice.reset(pti,*this);
 
     for (auto& delegate : delegates) {
-      delegate.get().bleDatabaseDidCreate(newDevice);
+      if (delegate.has_value()) {
+        delegate.value().get().bleDatabaseDidCreate(newDevice);
+      }
     }
     // newDevice.payloadData(payloadData); // has to be AFTER create called
     device(newDevice,BLEDeviceAttribute::payloadData); // moved from BLEDevice.payloadData()
@@ -199,16 +209,18 @@ public:
       HTDBG(" Testing existing target identifier {} against new target identifier {}",(std::string)d.identifier(),(std::string)targetIdentifier);
       return d.identifier() == targetIdentifier;
     });
-    if (results.size() != 0) {
+    if (results.size() != 0 && results[0].has_value()) {
       HTDBG("Device for target identifier {} already exists",(std::string)targetIdentifier);
-      return results.front(); // TODO ensure we send back the latest, not just the first match
+      return results[0].value().get(); // TODO ensure we send back the latest, not just the first match
     }
     HTDBG("New target identified: {}",(std::string)targetIdentifier);
     BLEDevice& newDevice = devices[indexAvailable()];
     newDevice.reset(targetIdentifier,*this);
 
     for (auto& delegate : delegates) {
-      delegate.get().bleDatabaseDidCreate(newDevice);
+      if (delegate.has_value()) {
+        delegate.value().get().bleDatabaseDidCreate(newDevice);
+      }
     }
     return newDevice;
   }
@@ -224,13 +236,13 @@ public:
     return count;
   }
 
-  std::vector<std::reference_wrapper<BLEDevice>> matches(
+  BLEDeviceList matches(
     const std::function<bool(const BLEDevice&)>& matcher) override {
-    std::vector<std::reference_wrapper<BLEDevice>> results;
+    BLEDeviceList results;
     // in the absence of copy_if in C++20... Just copies the pointers not the objects
     for (auto iter = devices.begin();iter != devices.end();++iter) {
       if (BLEDeviceState::uninitialised != iter->state() && matcher(*iter)) {
-        results.push_back(std::reference_wrapper<BLEDevice>(*iter));
+        results.add(std::reference_wrapper<BLEDevice>(*iter));
       }
     }
     return results;
@@ -259,13 +271,17 @@ public:
                devRef.payloadData().size() > 0 && devRef.payloadData() == device.payloadData();
       });
       for (auto& oldMacDevice : oldMacsForSamePayload) {
-        remove(oldMacDevice.get().identifier());
+        if (oldMacDevice.has_value()) {
+          remove(oldMacDevice.value().get().identifier());
+        }
       }
     }
 
     // Now send update to delegates
     for (auto& delegate : delegates) {
-      delegate.get().bleDatabaseDidUpdate(device, didUpdate); // TODO verify this is the right onward call
+      if (delegate.has_value()) {
+        delegate.value().get().bleDatabaseDidUpdate(device, didUpdate); // TODO verify this is the right onward call
+      }
     }
   }
 
@@ -346,7 +362,9 @@ private:
     toRemove.state(BLEDeviceState::uninitialised);
     // TODO validate all other device data is reset
     for (auto& delegate : delegates) {
-      delegate.get().bleDatabaseDidDelete(toRemove);
+      if (delegate.has_value()) {
+        delegate.value().get().bleDatabaseDidDelete(toRemove);
+      }
     }
   }
 
@@ -375,7 +393,7 @@ private:
   }
 
   ContextT& ctx;
-  std::vector<std::reference_wrapper<BLEDatabaseDelegate>> delegates;
+  BLEDatabaseDelegateList delegates;
   std::array<BLEDevice,MaxDevices> devices; // bool = in-use (not 'removed' from DB)
 
   HLOGGER(ContextT);

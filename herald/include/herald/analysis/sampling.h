@@ -286,7 +286,7 @@ struct SampleIterator {
   }
 
   // to allow std::distance to work
-  difference_type operator-(const SampleIterator<SampleListT>& other) {
+  difference_type operator-(const SampleIterator<SampleListT>& other) const noexcept {
     return pos - other.pos;
   }
 

@@ -41,7 +41,7 @@ public:
 
   virtual std::size_t size() const = 0;
 
-  virtual std::vector<std::reference_wrapper<BLEDevice>> matches(
+  virtual BLEDeviceList matches(
     const std::function<bool(const BLEDevice&)>& matcher) = 0;
 
   /// Cannot name a function delete in C++. remove is common.

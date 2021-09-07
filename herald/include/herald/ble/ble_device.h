@@ -11,6 +11,7 @@
 
 #include "../device.h"
 
+#include "../datatype/allocatable_array.h"
 #include "../datatype/payload_data.h"
 #include "../datatype/payload_sharing_data.h"
 #include "../datatype/immediate_send_data.h"
@@ -336,7 +337,20 @@ private:
   // int connectRepeatedFailures; // hasPotential, relevant
 };
 
+using BLEDeviceList = ReferenceArray<BLEDevice, 150, true>;
+
 } // end namespace
 } // end namespace
+
+namespace std {
+// Equality comparison operators for std::optional<BLEDevice>
+
+/// \brief Equality operator overload for BLEDevice in std::reference_wrapper
+bool operator==(const std::reference_wrapper<herald::ble::BLEDevice>& lhs, const std::reference_wrapper<herald::ble::BLEDevice>& rhs) noexcept;
+
+/// \brief Inequality operator overload for BLEDevice in std::reference_wrapper
+bool operator!=(const std::reference_wrapper<herald::ble::BLEDevice>& lhs, const std::reference_wrapper<herald::ble::BLEDevice>& rhs) noexcept;
+
+}
 
 #endif

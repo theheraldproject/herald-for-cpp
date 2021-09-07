@@ -8,6 +8,8 @@
 #include <array>
 #include <bitset>
 #include <type_traits>
+#include <optional>
+#include <functional>
 
 namespace herald {
 namespace datatype {
@@ -19,6 +21,15 @@ struct AllocatableArrayIterator;
 
 /// \brief An array with a max size at compile time, but a tracked max size at runtime.
 /// \since v2.1.0
+///
+/// This container provides a fixed max-size container whilst managing the assigned/unassigned
+/// nature internally to the container, and not exposing unassigned elements via its
+/// iterators.
+///
+/// A specialisation is provided for arrays of references whose types cannot be default constructed
+/// and thus is an array of std::optional of std::reference_wrapper of ValT. This is called
+/// ReferenceArray.
+///
 /// This class is noexcept compliant.
 /// This class defaults to a container size of 8, but this can be changed.
 /// This class also defaults to ensuring UniqueMembers, but this too can be changed.
@@ -32,7 +43,7 @@ public:
   /// \brief The iterator type for this container
   using iterator = AllocatableArrayIterator<AllocatableArray<ValT,Size,UniqueMembers>>;
   /// \brief Constant iterator type
-  using const_iterator = const iterator;
+  using const_iterator = AllocatableArrayIterator<const AllocatableArray<ValT,Size,UniqueMembers>>;;
   /// \brief Reference to the size type of this container
   using size_type = std::size_t;
   // using pointer = value_type*;
@@ -106,25 +117,26 @@ public:
   // }
 
   /// \brief Support for const iterator begin
-  // constexpr const_iterator cbegin() const noexcept {
-  //   return const_iterator(*this);
-  // }
+  constexpr const_iterator cbegin() const noexcept {
+    return const_iterator(*this);
+  }
 
   /// \brief Support for const iterator end
-  // constexpr const_iterator cend() const noexcept {
-  //   if (size() == 0) return const_iterator(*this);
-  //   return const_iterator(*this, size());
-  // }
+  constexpr const_iterator cend() const noexcept {
+    if (size() == 0) return const_iterator(*this);
+    return const_iterator(*this, size());
+  }
 
-  // constexpr const_iterator begin() const noexcept {
-  //   return const_iterator(*this);
-  // }
+  /// \brief Support for const iterator begin
+  constexpr const_iterator begin() const noexcept {
+    return const_iterator(*this);
+  }
 
   /// \brief Support for const iterator end
-  // constexpr const_iterator end() const noexcept {
-  //   if (size() == 0) return const_iterator(*this);
-  //   return const_iterator(*this, size());
-  // }
+  constexpr const_iterator end() const noexcept {
+    if (size() == 0) return const_iterator(*this);
+    return const_iterator(*this, size());
+  }
 
   /// \brief Support for iterator begin
   iterator begin() noexcept {
@@ -202,6 +214,10 @@ private:
 // AllocatableArray(ValT... valueList) -> AllocatableArray<CommonValT,8,true>;
 
 
+template <typename T, std::size_t Size = 8, bool UniqueMembers = true>
+using ReferenceArray = AllocatableArray<std::optional<std::reference_wrapper<T>>,Size,UniqueMembers>;
+
+
 /// \brief Provides a forward and reverse iterator for an AllocatableArray
 /// \brief Implements noexcept guarantees
 template <typename AllocatableArrayT,
@@ -225,6 +241,12 @@ struct AllocatableArrayIterator {
   AllocatableArrayIterator(AllocatableArrayIterator&& other) noexcept : m_aa(other.m_aa), pos(other.pos) {}
   /// \brief Default destructor
   ~AllocatableArrayIterator() noexcept = default;
+
+  AllocatableArrayIterator& operator=(const AllocatableArrayIterator& other) noexcept {
+    m_aa = other.m_aa;
+    pos = other.pos;
+    return *this;
+  }
 
   /// \brief Dereference operator to return the value behind this iterator
   // template <typename Ref = reference, typename = std::enable_if_t<!std::is_same_v<reference,const_reference>> >
@@ -261,8 +283,16 @@ struct AllocatableArrayIterator {
   }
 
   /// \brief Minus operator to allow std::distance to work
-  difference_type operator-(const AllocatableArrayIterator<AllocatableArrayT>& other) noexcept {
+  difference_type operator-(const AllocatableArrayIterator<AllocatableArrayT>& other) const noexcept {
     return pos - other.pos;
+  }
+
+  bool operator<(const AllocatableArrayIterator<AllocatableArrayT>& other) const noexcept {
+    return pos < other.pos;
+  }
+
+  bool operator>(const AllocatableArrayIterator<AllocatableArrayT>& other) const noexcept {
+    return pos > other.pos;
   }
 
   /// \brief Prefix increment operator
@@ -275,6 +305,19 @@ struct AllocatableArrayIterator {
   AllocatableArrayIterator<AllocatableArrayT>& operator++(int) noexcept {
     AllocatableArrayIterator<AllocatableArrayT> cp = *this;
     ++(*this);
+    return cp;
+  }
+
+  /// \brief Prefix decrement operator
+  AllocatableArrayIterator<AllocatableArrayT>& operator--() noexcept {
+    --pos;
+    return *this;
+  }
+
+  /// \brief Postfix decrement operator
+  AllocatableArrayIterator<AllocatableArrayT>& operator--(int) noexcept {
+    AllocatableArrayIterator<AllocatableArrayT> cp = *this;
+    --(*this);
     return cp;
   }
 
@@ -299,7 +342,46 @@ typename AllocatableArrayIterator<T>::difference_type distance(AllocatableArrayI
   return last - first;
 }
 
+
 }
+}
+
+namespace std {
+
+/// \brief Less than operator overload for std::optional
+template <typename T>
+std::size_t operator<(const std::optional<std::reference_wrapper<T>>& lhs,const std::optional<std::reference_wrapper<T>>& rhs) noexcept {
+  if (lhs.has_value() && !rhs.has_value()) {
+    return 1;
+  }
+  if (rhs.has_value() && !lhs.has_value()) {
+    return 0;
+  }
+  return lhs.value().get() < rhs.value().get();
+}
+
+template <typename T>
+bool operator==(const std::optional<std::reference_wrapper<T>>& lhs,const std::optional<std::reference_wrapper<T>>& rhs) noexcept {
+  if (lhs.has_value() && !rhs.has_value()) {
+    return false;
+  }
+  if (rhs.has_value() && !lhs.has_value()) {
+    return false;
+  }
+  return lhs.value().get() == rhs.value().get();
+}
+
+template <typename T>
+bool operator!=(const std::optional<std::reference_wrapper<T>>& lhs,const std::optional<std::reference_wrapper<T>>& rhs) noexcept {
+  if (lhs.has_value() && !rhs.has_value()) {
+    return true;
+  }
+  if (rhs.has_value() && !lhs.has_value()) {
+    return true;
+  }
+  return lhs.value().get() != rhs.value().get();
+}
+
 }
 
 #endif

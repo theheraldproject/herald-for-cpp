@@ -997,3 +997,15 @@ BLEDevice::staticConfig = BLESensorConfiguration();
 
 }
 }
+
+namespace std {
+
+bool operator==(const std::reference_wrapper<herald::ble::BLEDevice>& lhs, const std::reference_wrapper<herald::ble::BLEDevice>& rhs) noexcept {
+  return lhs.get() == rhs.get();
+}
+
+bool operator!=(const std::reference_wrapper<herald::ble::BLEDevice>& lhs, const std::reference_wrapper<herald::ble::BLEDevice>& rhs) noexcept {
+  return lhs.get() != rhs.get();
+}
+
+}

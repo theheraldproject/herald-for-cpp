@@ -75,6 +75,7 @@ constexpr int stackMaxSize =
 #else
 	9192
 #endif
+  + 8192 // Since v2.1 AllocatableArray and removal of vector and map
 ;
 K_THREAD_STACK_DEFINE(herald_stack, 
 	stackMaxSize
@@ -203,24 +204,24 @@ void herald_entry() {
 	
 	// 4. Now create a live analysis pipeline and enable RSSI to be sent to it for distance estimation
 // #ifdef HERALD_ANALYSIS_ENABLED
-	herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
+	// herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
 
-	herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance> myDelegate(ctx);
-	herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
-	herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
+	// herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance> myDelegate(ctx);
+	// herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
+	// herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
 
-	herald::analysis::AnalysisRunner<
-		herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance>>,
-		herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
-		RSSI,Distance
-	> runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
+	// herald::analysis::AnalysisRunner<
+	// 	herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance>>,
+	// 	herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
+	// 	RSSI,Distance
+	// > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
 
-	herald::analysis::SensorDelegateRSSISource<decltype(runner)> src(runner);
-	herald::ble::nordic_uart::NordicUartSensorDelegate nus(ctx);
+	// herald::analysis::SensorDelegateRSSISource<decltype(runner)> src(runner);
+	// herald::ble::nordic_uart::NordicUartSensorDelegate nus(ctx);
 	// sa.add(src);
 // #endif
 
-	SensorDelegateSet sensorDelegates(appDelegate, src, nus); // just the one from the app, and one for the analysis API
+	SensorDelegateSet sensorDelegates(appDelegate/*, src*//*, nus*/); // just the one from the app, and one for the analysis API
 	
 
   // Now prepare your device's Herald identity payload - this is what gets sent to other devices when they request it
@@ -380,7 +381,7 @@ void herald_entry() {
 		
 		if (0 == iter % (5000 / delay)) {
 			APP_DBG("herald thread still running. Iteration: %d", iter);
-			runner.run(Date()); // Note: You may want to do this less or more regularly depending on your requirements
+			// runner.run(Date()); // Note: You may want to do this less or more regularly depending on your requirements
 			APP_ERR("Memory pages free in Data Arena: %d", herald::datatype::Data::getArena().pagesFree());
 		}
 

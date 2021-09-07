@@ -173,11 +173,13 @@ public:
       return notZero && isOld;
     });
     for (auto& exp : expired) {
-      db.remove(exp.get().identifier());
-      HTDBG("Removing expired device with ID: ");
-      HTDBG((std::string)exp.get().identifier());
-      HTDBG("time since last update:-");
-      HTDBG(std::to_string(exp.get().timeIntervalSinceLastUpdate()));
+      if (exp.has_value()) {
+        db.remove(exp.value().get().identifier());
+        HTDBG("Removing expired device with ID: ");
+        HTDBG((std::string)exp.value().get().identifier());
+        HTDBG("time since last update:-");
+        HTDBG(std::to_string(exp.value().get().timeIntervalSinceLastUpdate()));
+      }
     }
 
     // Allow updates from ignored (for a time) status, to retry status
@@ -185,8 +187,10 @@ public:
       return device.operatingSystem() == BLEDeviceOperatingSystem::ignore;
     });
     for (auto& device : tempIgnoredOS) {
-      // don't bother with separate activity right now - no connection required
-      device.get().operatingSystem(BLEDeviceOperatingSystem::unknown);
+      if (device.has_value()) {
+        // don't bother with separate activity right now - no connection required
+        device.value().get().operatingSystem(BLEDeviceOperatingSystem::unknown);
+      }
     }
 
 
@@ -203,10 +207,12 @@ public:
         ;
     });
     for (auto& device : newConns) {
-      results.emplace_back(herald::engine::Features::HeraldBluetoothProtocolConnection,
-        herald::engine::Priorities::High,
-        device.get().identifier()
-      );
+      if (device.has_value()) {
+        results.emplace_back(herald::engine::Features::HeraldBluetoothProtocolConnection,
+          herald::engine::Priorities::High,
+          device.value().get().identifier()
+        );
+      }
     }
 
     // TODO any other devices we may have outstanding work for that requires connections
@@ -219,20 +225,23 @@ public:
         return true;
       });
       for (auto& device : allDevices) {
+        if (!device.has_value()) {
+          continue;
+        }
         std::string di(" - ");
-        BLEMacAddress mac(device.get().identifier().underlyingData());
+        BLEMacAddress mac(device.value().get().identifier().underlyingData());
         di += (std::string)mac;
         // di += ", created=";
         // di += std::to_string(device.get().created());
         di += ", pseudoAddress=";
-        auto pseudo = device.get().pseudoDeviceAddress();
+        auto pseudo = device.value().get().pseudoDeviceAddress();
         if (pseudo.has_value()) {
           di += (std::string)pseudo.value();
         } else {
           di += "unset";
         }
         di += ", os=";
-        auto os = device.get().operatingSystem();
+        auto os = device.value().get().operatingSystem();
         // if (os.has_value()) {
           if (herald::ble::BLEDeviceOperatingSystem::ios == os) {
             di += "ios";
@@ -253,18 +262,18 @@ public:
         //   di += "unknown/unset";
         // }
         di += ", ignore=";
-        auto ignore = device.get().ignore();
+        auto ignore = device.value().get().ignore();
         if (ignore) {
           di += "true (for ";
-          di += std::to_string(device.get().timeIntervalUntilIgnoreExpired().millis());
+          di += std::to_string(device.value().get().timeIntervalUntilIgnoreExpired().millis());
           di += " more secs)";
         } else {
           di += "false";
         }
         // di += ", hasServices=";
-        // di += (device.get().hasServicesSet() ? "true" : "false");
+        // di += (device.value().get().hasServicesSet() ? "true" : "false");
         di += ", hasReadPayload=";
-        di += (device.get().payloadData().size() > 0 ? device.get().payloadData().hexEncodedString() : "false");
+        di += (device.value().get().payloadData().size() > 0 ? device.value().get().payloadData().hexEncodedString() : "false");
         HTDBG(di);
       }
     } else {
@@ -285,9 +294,12 @@ public:
     });
     std::size_t dbSizeBefore = db.size();
     for (auto& device : expiredDevices) {
+      if (!device.has_value()) {
+        continue;
+      }
       // remove now so we don't get tasks later for expired devices
-      HTDBG("taskRemoveExpiredDevices (remove={})", (std::string)device.get().identifier());
-      db.remove(device.get().identifier());
+      HTDBG("taskRemoveExpiredDevices (remove={})", (std::string)device.value().get().identifier());
+      db.remove(device.value().get().identifier());
     }
     std::size_t dbSizeAfter = db.size();
     if (dbSizeAfter < dbSizeBefore) {
@@ -335,6 +347,9 @@ public:
 
     // State 1 - discovery Herald service
     for (auto& device : state1Devices) {
+      if (!device.has_value()) {
+        continue;
+      }
       results.emplace_back(Activity{
         .priority = Priorities::High + 10,
         .name = "herald-service-discovery",
@@ -342,7 +357,7 @@ public:
           1,
           std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
             herald::engine::Features::HeraldBluetoothProtocolConnection,
-            device.get().identifier()
+            device.value().get().identifier()
           }
         },
         // .executor = [this](const Activity activity, CompletionCallback callback) -> void {
@@ -359,6 +374,9 @@ public:
 
     // State 2 - read herald payload(s)
     for (auto& device : state2Devices) {
+      if (!device.has_value()) {
+        continue;
+      }
       results.emplace_back(Activity{
         .priority = Priorities::High + 9,
         .name = "herald-read-payload",
@@ -366,7 +384,7 @@ public:
           1,
           std::tuple<FeatureTag,std::optional<TargetIdentifier>>{
             herald::engine::Features::HeraldBluetoothProtocolConnection,
-            device.get().identifier()
+            device.value().get().identifier()
           }
         },
         // .executor = [this](const Activity activity, CompletionCallback callback) -> void {

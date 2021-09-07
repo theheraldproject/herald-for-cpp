@@ -126,9 +126,12 @@ TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][same
     });
     std::cout << "Devices:-" << std::endl;
     for (auto& d : devices) {
-      std::cout << "Mac: " << d.get().identifier() 
-                << ", State: " << ((d.get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
-                << ", Payload: " << (d.get().payloadData().size() > 0 ? d.get().payloadData().hexEncodedString() : "Empty") << std::endl;
+      if (!d.has_value()) {
+        continue;
+      }
+      std::cout << "Mac: " << d.value().get().identifier() 
+                << ", State: " << ((d.value().get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
+                << ", Payload: " << (d.value().get().payloadData().size() > 0 ? d.value().get().payloadData().hexEncodedString() : "Empty") << std::endl;
     }
     REQUIRE(db.size() == 1);
     REQUIRE(delegate.createCallbackCalled == true);
@@ -145,9 +148,12 @@ TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][same
     });
     std::cout << "Devices:-" << std::endl;
     for (auto& d : devices) {
-      std::cout << "Mac: " << d.get().identifier() 
-                << ", State: " << ((d.get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
-                << ", Payload: " << (d.get().payloadData().size() > 0 ? d.get().payloadData().hexEncodedString() : "Empty") << std::endl;
+      if (!d.has_value()) {
+        continue;
+      }
+      std::cout << "Mac: " << d.value().get().identifier() 
+                << ", State: " << ((d.value().get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
+                << ", Payload: " << (d.value().get().payloadData().size() > 0 ? d.value().get().payloadData().hexEncodedString() : "Empty") << std::endl;
     }
     REQUIRE(db.size() == 1);
     REQUIRE(delegate.createCallbackCalled == true);
@@ -165,9 +171,12 @@ TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][same
     });
     std::cout << "Devices:-" << std::endl;
     for (auto& d : devices) {
-      std::cout << "Mac: " << d.get().identifier() 
-                << ", State: " << ((d.get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
-                << ", Payload: " << (d.get().payloadData().size() > 0 ? d.get().payloadData().hexEncodedString() : "Empty") << std::endl;
+      if (!d.has_value()) {
+        continue;
+      }
+      std::cout << "Mac: " << d.value().get().identifier() 
+                << ", State: " << ((d.value().get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
+                << ", Payload: " << (d.value().get().payloadData().size() > 0 ? d.value().get().payloadData().hexEncodedString() : "Empty") << std::endl;
     }
     REQUIRE(db.size() == 2);
     REQUIRE(delegate.createCallbackCalled == true);
@@ -185,9 +194,12 @@ TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][same
     });
     std::cout << "Devices:-" << std::endl;
     for (auto& d : devices) {
-      std::cout << "Mac: " << d.get().identifier() 
-                << ", State: " << ((d.get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
-                << ", Payload: " << (d.get().payloadData().size() > 0 ? d.get().payloadData().hexEncodedString() : "Empty") << std::endl;
+      if (!d.has_value()) {
+        continue;
+      }
+      std::cout << "Mac: " << d.value().get().identifier() 
+                << ", State: " << ((d.value().get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
+                << ", Payload: " << (d.value().get().payloadData().size() > 0 ? d.value().get().payloadData().hexEncodedString() : "Empty") << std::endl;
     }
     REQUIRE(db.size() == 3);
     REQUIRE(delegate.createCallbackCalled == true);
@@ -204,9 +216,12 @@ TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][same
     });
     std::cout << "Devices:-" << std::endl;
     for (auto& d : devices) {
-      std::cout << "Mac: " << d.get().identifier() 
-                << ", State: " << ((d.get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
-                << ", Payload: " << (d.get().payloadData().size() > 0 ? d.get().payloadData().hexEncodedString() : "Empty") << std::endl;
+      if (!d.has_value()) {
+        continue;
+      }
+      std::cout << "Mac: " << d.value().get().identifier() 
+                << ", State: " << ((d.value().get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
+                << ", Payload: " << (d.value().get().payloadData().size() > 0 ? d.value().get().payloadData().hexEncodedString() : "Empty") << std::endl;
     }
     REQUIRE(db.size() == 2); // original targetID with this payload should have been deleted
     REQUIRE(delegate.createCallbackCalled == true);
