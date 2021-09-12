@@ -68,8 +68,12 @@ constexpr int stackMaxSize =
 #else
 	9192
 #endif
-  // + 16000
-	+ 9192 // nRF52840 Data memory arena size allocation reservation
+// Since v2.1 - MEMORY ARENA extra stack reservation - See herald/datatype/data.h
+#ifdef HERALD_MEMORYARENA_MAX
+  + HERALD_MEMORYARENA_MAX
+#else
+  + 8192
+#endif
 ;
 K_THREAD_STACK_DEFINE(herald_stack, 
 	stackMaxSize
@@ -183,10 +187,12 @@ void herald_entry() {
 		erinsStakehouse.code,
 		extendedData
 	);
+	
+	herald::ble::nordic_uart::NordicUartSensorDelegate nus(ctx);
 
   // this is unusual, but required. Really we should log activity to serial BLE or similar
 	DummyDelegate appDelegate;
-	SensorDelegateSet sensorDelegates(appDelegate);
+	SensorDelegateSet sensorDelegates(appDelegate, nus);
 	
 	ConcreteBLESensor ble(ctx, ctx.getBluetoothStateManager(), pds, sensorDelegates);
 	SensorArray sa(ctx,pds,ble);

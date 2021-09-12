@@ -205,50 +205,50 @@ private:
     // };
 
     // Since v2.1: Merge in customServices too
-    // bt_data* heraldAdData = zephyrinternal::getAdvertData();
-    // const std::size_t heraldAdDataLen = zephyrinternal::getAdvertDataSize();
-    // bt_data newAdvert[heraldAdDataLen + customServices.size()];
-    // for (std::size_t idx = 0;idx < heraldAdDataLen;++idx) {
-    //   newAdvert[idx].type = heraldAdData[idx].type;
-    //   newAdvert[idx].data_len = heraldAdData[idx].data_len;
-    //   newAdvert[idx].data = heraldAdData[idx].data;
-    // }
-    // std::size_t newIdx = heraldAdDataLen;
-    // auto b = customServices.begin();
-    // auto e = customServices.end();
-    // for (;b != e;++b) {
-    //   // Ignore incorrectly initialised services
-    //   if (b->uuid.size() == herald::ble::BluetoothUUIDSize::Empty) {
-    //     continue; // does not increment newIdx (this is correct)
-    //   }
-    //   // Check for a valid data entry object
-    //   unsigned char* rawAddress = b->uuid.value().rawMemoryStartAddress();
-    //   if (0 == rawAddress) { // uninitialised memory in the memory arena
-    //     continue;
-    //   }
-    //   newAdvert[newIdx].type = BT_DATA_UUID128_ALL;
-    //   switch (b->uuid.size()) {
-    //     case BluetoothUUIDSize::Short16:
-    //       newAdvert[newIdx].type = BT_DATA_UUID16_ALL;
-    //       break;
-    //     case BluetoothUUIDSize::Medium32:
-    //       newAdvert[newIdx].type = BT_DATA_UUID32_ALL;
-    //       break;
-    //     case BluetoothUUIDSize::Long64:
-    //       newAdvert[newIdx].type = BT_DATA_UUID32_ALL; // TODO VERIFY THAT 64 BITS IS NOT A VALID VALUE IN BLE SPEC
-    //       break;
-    //     default:
-    //       break;
-    //   }
-    //   newAdvert[newIdx].data_len = (std::size_t)b->uuid; // guaranteed to be less than or equal to uuid.value().size()
-    //   newAdvert[newIdx].data = rawAddress;
-    //   ++newIdx;
-    // }
+    bt_data* heraldAdData = zephyrinternal::getAdvertData();
+    const std::size_t heraldAdDataLen = zephyrinternal::getAdvertDataSize();
+    bt_data newAdvert[heraldAdDataLen + customServices.size()];
+    for (std::size_t idx = 0;idx < heraldAdDataLen;++idx) {
+      newAdvert[idx].type = heraldAdData[idx].type;
+      newAdvert[idx].data_len = heraldAdData[idx].data_len;
+      newAdvert[idx].data = heraldAdData[idx].data;
+    }
+    std::size_t newIdx = heraldAdDataLen;
+    auto b = customServices.begin();
+    auto e = customServices.end();
+    for (;b != e;++b) {
+      // Ignore incorrectly initialised services
+      if (b->uuid.size() == herald::ble::BluetoothUUIDSize::Empty) {
+        continue; // does not increment newIdx (this is correct)
+      }
+      // Check for a valid data entry object
+      const unsigned char* rawAddress = b->uuid.value().rawMemoryStartAddress();
+      if (0 == rawAddress) { // uninitialised memory in the memory arena
+        continue;
+      }
+      newAdvert[newIdx].type = BT_DATA_UUID128_ALL;
+      switch (b->uuid.size()) {
+        case BluetoothUUIDSize::Short16:
+          newAdvert[newIdx].type = BT_DATA_UUID16_ALL;
+          break;
+        case BluetoothUUIDSize::Medium32:
+          newAdvert[newIdx].type = BT_DATA_UUID32_ALL;
+          break;
+        case BluetoothUUIDSize::Long64:
+          newAdvert[newIdx].type = BT_DATA_UUID32_ALL; // TODO VERIFY THAT 64 BITS IS NOT A VALID VALUE IN BLE SPEC
+          break;
+        default:
+          break;
+      }
+      newAdvert[newIdx].data_len = (std::size_t)b->uuid; // guaranteed to be less than or equal to uuid.value().size()
+      newAdvert[newIdx].data = rawAddress;
+      ++newIdx;
+    }
 
     // Now start advertising
     // See https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/reference/bluetooth/gap.html#group__bt__gap_1gac45d16bfe21c3c38e834c293e5ebc42b
-    // int success = bt_le_adv_start(zephyrinternal::getAdvertParams(), newAdvert, newIdx, NULL, 0);
-    int success = bt_le_adv_start(zephyrinternal::getAdvertParams(), zephyrinternal::getAdvertData(), zephyrinternal::getAdvertDataSize(), NULL, 0);
+    int success = bt_le_adv_start(zephyrinternal::getAdvertParams(), newAdvert, newIdx, NULL, 0);
+    // int success = bt_le_adv_start(zephyrinternal::getAdvertParams(), zephyrinternal::getAdvertData(), zephyrinternal::getAdvertDataSize(), NULL, 0);
     // int success = 0;
     if (0 != success) {
       HTDBG("Start advertising failed");

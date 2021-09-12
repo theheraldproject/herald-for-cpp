@@ -481,7 +481,7 @@ public:
     getArena().deallocate(entry);
   }
 
-  unsigned char* rawMemoryStartAddress() const {
+  const unsigned char* rawMemoryStartAddress() const {
     return getArena().rawStartAddress(entry);
   }
 
