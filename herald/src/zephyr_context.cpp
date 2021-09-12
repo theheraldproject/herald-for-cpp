@@ -8,6 +8,7 @@
 #include "herald/data/sensor_logger.h"
 #include "herald/ble/bluetooth_state_manager.h"
 #include "herald/ble/bluetooth_state_manager_delegate.h"
+#include "herald/datatype/allocatable_array.h"
 #include "herald/datatype/bluetooth_state.h"
 #include "herald/datatype/date.h"
 
@@ -156,7 +157,7 @@ ZephyrContextProvider::getBluetoothStateManager()
 void
 ZephyrContextProvider::add(BluetoothStateManagerDelegate& delegate)
 {
-  stateDelegates.emplace_back(delegate);
+  stateDelegates.add(delegate);
 }
 
 BluetoothState
@@ -220,7 +221,8 @@ ZephyrContextProvider::enableBluetooth() noexcept
     bluetoothEnabled = true;
 
     for (auto& delegate : stateDelegates) {
-      delegate.get().bluetoothStateManager(BluetoothState::poweredOn);
+      if (!delegate.has_value()) continue;
+      delegate.value().get().bluetoothStateManager(BluetoothState::poweredOn);
     }
   } else {
     // LOG_INF("Error enabling Zephyr Bluetooth: %d", success);
@@ -242,7 +244,8 @@ int
 ZephyrContextProvider::stopBluetooth() noexcept
 {
   for (auto& delegate : stateDelegates) {
-    delegate.get().bluetoothStateManager(BluetoothState::poweredOff);
+    if (!delegate.has_value()) continue;
+    delegate.value().get().bluetoothStateManager(BluetoothState::poweredOff);
   }
   return 0;
 }

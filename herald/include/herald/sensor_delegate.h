@@ -12,6 +12,7 @@
 #include "datatype/immediate_send_data.h"
 #include "datatype/location.h"
 #include "datatype/sensor_state.h"
+#include "util/is_valid.h"
 
 #include <variant>
 #include <array>
@@ -53,32 +54,7 @@ using namespace datatype;
 //   virtual void sensor(SensorType sensor, const SensorState& didUpdateState) = 0;
 // };
 
-// TODO move this into a general header
-template<typename F, typename... Args, typename = decltype(std::declval<F>()(std::declval<Args&&>()...))>
-std::true_type isValidImpl(void*);
-
-template<typename F, typename... Args>
-std::false_type isValidImpl(...);
-
-inline constexpr auto isValid = [] (auto f) {
-  return [](auto&&... args) {
-    return decltype(isValidImpl<decltype(f),decltype(args)&&...>(nullptr)){};
-  };
-};
-
-template<typename T>
-struct TypeT {
-  using Type = T;
-};
-
-template<typename T>
-constexpr auto type = TypeT<T>{};
-
-template<typename T>
-T valueT(TypeT<T>);
-
-
-constexpr auto hasSensorFunction = isValid(
+constexpr auto hasSensorFunction = herald::util::isValid(
   [](auto&& s,auto&& sensor,auto&& didRead,auto&& fromTarget) ->
     decltype(((decltype(s))s).get().sensor(sensor,didRead,fromTarget)) {}
 );

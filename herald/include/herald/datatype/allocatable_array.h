@@ -5,6 +5,8 @@
 #ifndef HERALD_ALLOCATABLE_ARRAY_H
 #define HERALD_ALLOCATABLE_ARRAY_H
 
+#include "../util/is_valid.h"
+
 #include <array>
 #include <bitset>
 #include <type_traits>
@@ -346,6 +348,10 @@ typename AllocatableArrayIterator<T>::difference_type distance(AllocatableArrayI
 }
 }
 
+namespace {
+
+}
+
 namespace std {
 
 /// \brief Less than operator overload for std::optional
@@ -368,7 +374,12 @@ bool operator==(const std::optional<std::reference_wrapper<T>>& lhs,const std::o
   if (rhs.has_value() && !lhs.has_value()) {
     return false;
   }
-  return lhs.value().get() == rhs.value().get();
+  // Check for presence of operator== on base type T
+  if constexpr (herald::util::HasEqualityFunctionV<decltype(lhs),decltype(lhs),decltype(rhs)>) {
+    return lhs.value().get() == rhs.value().get();
+  } else {
+    return (&lhs) == (&rhs);
+  }
 }
 
 template <typename T>
@@ -379,7 +390,12 @@ bool operator!=(const std::optional<std::reference_wrapper<T>>& lhs,const std::o
   if (rhs.has_value() && !lhs.has_value()) {
     return true;
   }
-  return lhs.value().get() != rhs.value().get();
+  // Check for presence of operator!= on base type T
+  if constexpr (herald::util::HasInequalityFunctionV<decltype(lhs),decltype(lhs),decltype(rhs)>) {
+    return lhs.value().get() != rhs.value().get();
+  } else {
+    return (&lhs) != (&rhs);
+  }
 }
 
 }

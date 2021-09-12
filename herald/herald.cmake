@@ -1,7 +1,9 @@
 
 set(HERALD_HEADERS 
   ${HERALD_BASE}/include/herald.h
+  ${HERALD_BASE}/include/herald/platform.h
   ${HERALD_BASE}/include/herald/datatype/stdlib.h
+  ${HERALD_BASE}/include/herald/util/is_valid.h
 
   ${HERALD_BASE}/include/herald/context.h
   ${HERALD_BASE}/include/herald/device.h
@@ -109,6 +111,7 @@ set(HERALD_SOURCES
   ${HERALD_BASE}/src/ble/ble_device.cpp
   ${HERALD_BASE}/src/ble/ble_sensor_configuration.cpp
   ${HERALD_BASE}/src/ble/bluetooth_state_manager.cpp
+  ${HERALD_BASE}/src/ble/bluetooth_state_manager_delegate.cpp
   ${HERALD_BASE}/src/ble/concrete_ble_sensor.cpp
   ${HERALD_BASE}/src/ble/concrete_ble_database.cpp
   ${HERALD_BASE}/src/ble/filter/ble_advert_parser.cpp

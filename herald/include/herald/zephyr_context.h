@@ -15,6 +15,7 @@
 
 #include "data/zephyr/zephyr_logging_sink.h"
 #include "data/sensor_logger.h"
+#include "datatype/allocatable_array.h"
 
 #include <memory>
 #include <iosfwd>
@@ -120,7 +121,7 @@ private:
 
   herald::zephyrinternal::Advertiser advertiser;
 
-  std::vector<std::reference_wrapper<BluetoothStateManagerDelegate>> stateDelegates;
+  ReferenceArray<BluetoothStateManagerDelegate> stateDelegates;
 
   bool bluetoothEnabled;
 };

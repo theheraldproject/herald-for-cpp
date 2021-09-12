@@ -24,4 +24,10 @@ public:
 } // end namespace
 } // end namespace
 
+namespace std {
+
+bool operator!=(const herald::ble::BluetoothStateManagerDelegate& lhs,const herald::ble::BluetoothStateManagerDelegate& rhs) noexcept;
+
+}
+
 #endif

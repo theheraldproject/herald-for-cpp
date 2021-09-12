@@ -108,10 +108,10 @@ TEST_CASE("memoryarena-entry-rawlocation","[memoryarena][entry][rawlocation]") {
     herald::datatype::MemoryArena<64,8> arena; // 8 byte boundary for address size offset test calculation!
     REQUIRE(0 == arena.rawStartAddress(emptyEntry));
     auto entry1 = arena.allocate(16);
-    unsigned char* entry1Address = arena.rawStartAddress(entry1);
+    const unsigned char* entry1Address = arena.rawStartAddress(entry1);
     REQUIRE(0 != entry1Address);
     auto entry2 = arena.allocate(8);
-    unsigned char* entry2Address = arena.rawStartAddress(entry2);
+    const unsigned char* entry2Address = arena.rawStartAddress(entry2);
     REQUIRE(0 != entry2Address);
     auto difference = entry2Address - entry1Address;
     REQUIRE(16 == difference);

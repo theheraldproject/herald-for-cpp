@@ -2,11 +2,15 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
+// PLATFORM SPECIFIC OVERRIDES FIRST
+#include "herald/platform.h"
+
 // FORCE CORRECT UINT32_t TYPES
 #include <cstdint>
 
 // Now include STDLIB extensions
 #include "herald/datatype/stdlib.h"
+#include "herald/util/is_valid.h"
 
 /// Main Herald library include for C++ Native platforms
 // Convenience include file

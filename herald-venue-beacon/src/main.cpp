@@ -53,6 +53,13 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 #define FLAGS	0
 #endif
 
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf) {
+	// LOG_PANIC();
+	while (1) {
+		// do nothing
+	}
+}
+
 struct k_thread herald_thread;
 constexpr int stackMaxSize = 
 #ifdef CONFIG_BT_MAX_CONN
@@ -61,6 +68,8 @@ constexpr int stackMaxSize =
 #else
 	9192
 #endif
+  // + 16000
+	+ 9192 // nRF52840 Data memory arena size allocation reservation
 ;
 K_THREAD_STACK_DEFINE(herald_stack, 
 	stackMaxSize

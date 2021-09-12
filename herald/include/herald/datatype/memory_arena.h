@@ -45,7 +45,7 @@ public:
   /// Thus for MemoryArena<2048,10>() you use 2048 + (2048 / 10) = 2253 bytes
   static constexpr std::size_t PageSize = AllocationSize;
 
-  MemoryArena() noexcept
+  constexpr MemoryArena() noexcept
    : arena(), pagesInUse(false)
   {
     ;
@@ -119,14 +119,14 @@ public:
     arena[(entry.startPageIndex * PageSize) + bytePosition] = value;
   }
 
-  char get(const MemoryArenaEntry& entry, unsigned short bytePosition) noexcept {
+  char get(const MemoryArenaEntry& entry, unsigned short bytePosition) const noexcept {
     if (!entry.isInitialised()) {
       return '\0';
     }
     return arena[(entry.startPageIndex * PageSize) + bytePosition];
   }
 
-  unsigned char* rawStartAddress(const MemoryArenaEntry& entry) noexcept {
+  const unsigned char* rawStartAddress(const MemoryArenaEntry& entry) const noexcept {
     if (!entry.isInitialised()) {
       return 0;
     }
