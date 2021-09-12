@@ -25,6 +25,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/services/bas.h>
+#include <bluetooth/services/nus.h>
 
 #ifdef CC3XX_BACKEND
 // Cryptocell - nRF52840/nRF9160/nRF53x only. See prj.conf too to enable this Hardware
@@ -74,6 +75,12 @@ constexpr int stackMaxSize =
 	// Was 12288 + (CONFIG_BT_MAX_CONN * 512), but this starved newlibc of HEAP (used in handling BLE connections/devices)
 #else
 	9192
+#endif
+// Since v2.1 - MEMORY ARENA extra stack reservation - See herald/datatype/data.h
+#ifdef HERALD_MEMORYARENA_MAX
+  + HERALD_MEMORYARENA_MAX
+#else
+  + 8192
 #endif
 + 2048 // Since v2.1 test for debug
   // + 5120 // Since v2.1 AllocatableArray and removal of vector and map
@@ -232,11 +239,11 @@ void herald_entry() {
 	// > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
 
 	// herald::analysis::SensorDelegateRSSISource<decltype(runner)> src(runner);
-	// herald::ble::nordic_uart::NordicUartSensorDelegate nus(ctx);
+	herald::ble::nordic_uart::NordicUartSensorDelegate nus(ctx);
 	// sa.add(src);
 // #endif
 
-	SensorDelegateSet sensorDelegates(appDelegate/*, src*/ /*, nus*/); // just the one from the app, and one for the analysis API
+	SensorDelegateSet sensorDelegates(appDelegate/*, src*/ , nus); // just the one from the app, and one for the analysis API
 	
 
   // Now prepare your device's Herald identity payload - this is what gets sent to other devices when they request it
@@ -362,7 +369,13 @@ void herald_entry() {
 
 	// 3. Create and add a Logging sensor delegate to enable testing of discovery
 
+	// Enable Bluetooth explicitly now so we can initialise bt_nus_init
+	zcp.enableBluetooth();
 
+	APP_DBG("Initialising NUS service");
+  k_sleep(K_SECONDS(5));
+  bt_nus_init(NULL);
+	APP_DBG("Post NUS init");
 
 	
 	APP_DBG("Starting sensor array");
@@ -372,8 +385,8 @@ void herald_entry() {
 	sa.start(); // There's a corresponding stop() call too
 	
 	APP_DBG("Sensor array running!");
-	k_sleep(K_SECONDS(20));
-	APP_DBG("Post running wait");
+	k_sleep(K_SECONDS(10));
+
 
 	int iter = 0;
 	// APP_DBG("got iter!");

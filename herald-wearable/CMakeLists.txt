@@ -43,12 +43,13 @@ elseif($ENV{BOARD} MATCHES .*nrf52840.*)
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf52840.conf
   )
+  add_definitions(-DHERALD_MEMORYARENA_MAX=4096)
 elseif($ENV{BOARD} MATCHES .*nrf52832.*)
   set(OVERLAY_CONFIG 
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf52832.conf
   )
-  add_definitions(-DHERALD_MEMORYARENA_MAX=512)
+  add_definitions(-DHERALD_MEMORYARENA_MAX=4096)
 elseif($ENV{BOARD} MATCHES .*nrf52833.*)
   set(OVERLAY_CONFIG 
     ${OVERLAY_CONFIG} 
