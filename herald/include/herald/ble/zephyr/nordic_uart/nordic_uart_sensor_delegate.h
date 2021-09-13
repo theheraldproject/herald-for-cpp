@@ -65,7 +65,7 @@ public:
   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {
     newline("didMeasure");
     column((std::string)fromTarget);
-    // column(std::to_string(didMeasure.value));
+    column(std::to_string((int)didMeasure.value));
     sendline();
   }
 
@@ -73,8 +73,8 @@ public:
   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {
     newline("didMeasureWithPayload");
     column((std::string)fromTarget);
-    // column(std::to_string(didMeasure.value));
-    column((std::string)withPayload);
+    column(std::to_string((int)didMeasure.value));
+    column(withPayload.hexEncodedString());
     sendline();
   }
 
