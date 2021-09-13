@@ -12,10 +12,10 @@ namespace ble {
 
 class BLEDeviceDelegate {
 public:
-  BLEDeviceDelegate() = default;
-  virtual ~BLEDeviceDelegate() = default;
+  BLEDeviceDelegate() noexcept = default;
+  virtual ~BLEDeviceDelegate() noexcept = default;
 
-  virtual void device(const BLEDevice& device, const BLEDeviceAttribute didUpdate) = 0;  
+  virtual void device(const BLEDevice& device, const BLEDeviceAttribute didUpdate) noexcept = 0;  
 };
 
 } // end namespace

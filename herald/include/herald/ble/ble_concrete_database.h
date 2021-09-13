@@ -34,10 +34,10 @@ using namespace herald::payload;
 
 /// \brief Provides a callable that assists in ordering for most recently updated BLEDevice
 struct last_updated_descending {
-  bool operator()(const BLEDevice& a, const BLEDevice& b) {
+  bool operator()(const BLEDevice& a, const BLEDevice& b) noexcept {
     return a.timeIntervalSinceLastUpdate() > b.timeIntervalSinceLastUpdate(); // opposite order
   }
-  bool operator()(const std::optional<std::reference_wrapper<BLEDevice>>& lhs, const std::optional<std::reference_wrapper<BLEDevice>>& rhs) {
+  bool operator()(const std::optional<std::reference_wrapper<BLEDevice>>& lhs, const std::optional<std::reference_wrapper<BLEDevice>>& rhs) noexcept {
     if (lhs.has_value() && !rhs.has_value()) {
       return 1;
     }
@@ -53,7 +53,7 @@ class ConcreteBLEDatabase : public BLEDatabase, public BLEDeviceDelegate /*, pub
 public:
   static constexpr std::size_t MaxDevices = MaxDevicesCached;
 
-  ConcreteBLEDatabase(ContextT& context)
+  ConcreteBLEDatabase(ContextT& context) noexcept
   : ctx(context),
     delegates(),
     devices()
@@ -65,16 +65,16 @@ public:
   ConcreteBLEDatabase(const ConcreteBLEDatabase& from) = delete;
   ConcreteBLEDatabase(ConcreteBLEDatabase&& from) = delete;
 
-  ~ConcreteBLEDatabase() = default;
+  ~ConcreteBLEDatabase() noexcept = default;
 
   // BLE Database overrides
 
-  void add(BLEDatabaseDelegate& delegate) override {
+  void add(BLEDatabaseDelegate& delegate) noexcept override {
     delegates.add(std::optional(std::reference_wrapper(delegate)));
   }
 
   // Creation overrides
-  BLEDevice& device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/) override {
+  BLEDevice& device(const BLEMacAddress& mac, const Data& advert/*, const RSSI& rssi*/) noexcept override {
     // Check by MAC first
     TargetIdentifier targetIdentifier(mac.underlyingData());
     auto results = matches([&targetIdentifier](const BLEDevice& d) {
@@ -140,7 +140,7 @@ public:
     return newDevice;
   }
 
-  BLEDevice& device(const BLEMacAddress& mac, const BLEMacAddress& pseudo) override {
+  BLEDevice& device(const BLEMacAddress& mac, const BLEMacAddress& pseudo) noexcept override {
     auto samePseudo = matches([&pseudo](const BLEDevice& d) {
       return d.pseudoDeviceAddress() == pseudo;
     });
@@ -174,11 +174,11 @@ public:
     return updatedDevice;
   }
 
-  BLEDevice& device(const BLEMacAddress& mac) override {
+  BLEDevice& device(const BLEMacAddress& mac) noexcept override {
     return device(TargetIdentifier(mac.underlyingData()));
   }
 
-  BLEDevice& device(const PayloadData& payloadData) override {
+  BLEDevice& device(const PayloadData& payloadData) noexcept override {
     auto pti = TargetIdentifier(payloadData);
     auto results = matches([&pti,&payloadData](const BLEDevice& d) {
       if (d.identifier() == pti) {
@@ -206,7 +206,7 @@ public:
     return newDevice;
   }
 
-  BLEDevice& device(const TargetIdentifier& targetIdentifier) override {
+  BLEDevice& device(const TargetIdentifier& targetIdentifier) noexcept override {
     auto results = matches([this,&targetIdentifier](const BLEDevice& d) {
       HTDBG(" Testing existing target identifier {} against new target identifier {}",(std::string)d.identifier(),(std::string)targetIdentifier);
       return d.identifier() == targetIdentifier;
@@ -228,7 +228,7 @@ public:
   }
   
   // Introspection overrides
-  std::size_t size() const override {
+  std::size_t size() const noexcept override {
     std::size_t count = 0;
     for (auto& d : devices) {
       if (d.state() != BLEDeviceState::uninitialised) {
@@ -239,7 +239,7 @@ public:
   }
 
   BLEDeviceList matches(
-    const std::function<bool(const BLEDevice&)>& matcher) override {
+    const std::function<bool(const BLEDevice&)>& matcher) noexcept override {
     BLEDeviceList results;
     // in the absence of copy_if in C++20... Just copies the pointers not the objects
     for (auto iter = devices.begin();iter != devices.end();++iter) {
@@ -251,7 +251,7 @@ public:
   }
 
   /// Cannot name a function delete in C++. remove is common.
-  void remove(const TargetIdentifier& targetIdentifier) override {
+  void remove(const TargetIdentifier& targetIdentifier) noexcept override {
     auto found = std::find_if(devices.begin(),devices.end(),
       [&targetIdentifier](BLEDevice& d) -> bool {
         return d.identifier() == targetIdentifier;
@@ -264,7 +264,7 @@ public:
   }
 
   // BLE Device Delegate overrides
-  void device(const BLEDevice& device, BLEDeviceAttribute didUpdate) override {
+  void device(const BLEDevice& device, BLEDeviceAttribute didUpdate) noexcept override {
     // Update any internal DB state as necessary (E.g. payload received and its a duplicate as mac has rotated)
     if (BLEDeviceAttribute::payloadData == didUpdate) {
       // check for all devices with this payload that are NOT THIS device
@@ -289,7 +289,7 @@ public:
 
 private:
   void assignAdvertData(BLEDevice& newDevice, std::vector<BLEAdvertSegment>&& toMove, 
-    const std::vector<BLEAdvertManufacturerData>& manuData)
+    const std::vector<BLEAdvertManufacturerData>& manuData) noexcept
   {
     newDevice.advertData(std::move(toMove));
 
@@ -356,7 +356,7 @@ private:
     }
   }
 
-  void remove(BLEDevice& toRemove) {
+  void remove(BLEDevice& toRemove) noexcept {
     // Don't call delete/update if this device has never been initialised
     if (toRemove.state() == BLEDeviceState::uninitialised) {
       return;

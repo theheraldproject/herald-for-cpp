@@ -13,11 +13,11 @@
 
 class DummyBLEDeviceDelegate : public herald::ble::BLEDeviceDelegate {
 public:
-  DummyBLEDeviceDelegate() : callbackCalled(false), dev(), attr() {};
-  ~DummyBLEDeviceDelegate() = default;
+  DummyBLEDeviceDelegate() noexcept : callbackCalled(false), dev(), attr() {};
+  ~DummyBLEDeviceDelegate() noexcept = default;
 
   // overrides
-  void device(const herald::ble::BLEDevice& device, const herald::ble::BLEDeviceAttribute didUpdate) override {
+  void device(const herald::ble::BLEDevice& device, const herald::ble::BLEDeviceAttribute didUpdate) noexcept override {
     callbackCalled = true;
     dev.emplace(std::reference_wrapper<const herald::ble::BLEDevice>(device));
     attr.emplace(didUpdate);
