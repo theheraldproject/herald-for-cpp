@@ -34,15 +34,15 @@ TEST_CASE("nordicuart-callbacks-basics", "[nordicuart][callbacks][basics]") {
     // Call didMeasure
     herald::datatype::Proximity prox{.unit=herald::datatype::ProximityMeasurementUnit::RSSI, .value=-41};
     nusd.sensor(herald::datatype::SensorType::BLE, prox, t1);
-    expected = "SensorDelegate,didMeasure,616161616161,-41.000000\n"; // NOTE Will this work on every platform??? (Float approximation to string)
+    expected = "SensorDelegate,didMeasure,616161616161,-41\n"; // NOTE Will this work on every platform??? (Float approximation to string)
     INFO("Callback value: '" << buffer << "', expected: '" << expected << "'");
     REQUIRE(0 == std::strcmp(buffer,expected.c_str()));
 
     // Call didMeasureWithPayload
-    herald::datatype::Data payload{std::byte('5'),10}; 
+    herald::datatype::Data payload{std::byte(0x55),10}; 
     herald::datatype::Proximity prox2{.unit=herald::datatype::ProximityMeasurementUnit::RSSI, .value=-5};
     nusd.sensor(herald::datatype::SensorType::BLE, prox2, t1, payload);
-    expected = "SensorDelegate,didMeasureWithPayload,616161616161,-5.000000,5555555555\n"; // NOTE Will this work on every platform??? (Float approximation to string)
+    expected = "SensorDelegate,didMeasureWithPayload,616161616161,-5,55555555555555555555\n"; // NOTE Will this work on every platform??? (Float approximation to string)
     INFO("Callback value: '" << buffer << "', expected: '" << expected << "'");
     REQUIRE(0 == std::strcmp(buffer,expected.c_str()));
   }
@@ -84,15 +84,15 @@ TEST_CASE("nordicuart-callbacks-bounds", "[nordicuart][callbacks][bounds]") {
     herald::datatype::Data payload; 
     herald::datatype::Proximity prox{.unit=herald::datatype::ProximityMeasurementUnit::RSSI, .value=-5};
     nusd.sensor(herald::datatype::SensorType::BLE, prox, t1, payload);
-    std::string expected = "SensorDelegate,didMeasureWithPayload,616161616161,-5.000000,\n"; // NOTE Will this work on every platform??? (Float approximation to string)
+    std::string expected = "SensorDelegate,didMeasureWithPayload,616161616161,-5,\n";
     INFO("Callback value: '" << buffer << "', expected: '" << expected << "'");
     REQUIRE(0 == std::strcmp(buffer,expected.c_str()));
 
     // Call didMeasureWithPayload - overlarge payload
-    herald::datatype::Data large{std::byte('5'),128}; 
+    herald::datatype::Data large{std::byte(0x55),128}; 
     herald::datatype::Proximity prox2{.unit=herald::datatype::ProximityMeasurementUnit::RSSI, .value=-5};
     REQUIRE_NOTHROW(nusd.sensor(herald::datatype::SensorType::BLE, prox2, t1, large));
-    expected = "SensorDelegate,didMeasureWithPayload,616161616161,-5.000000,555555555555555555555555555555555555555555555555555555555555555555\n"; // NOTE Will this work on every platform??? (Float approximation to string)
+    expected = "SensorDelegate,didMeasureWithPayload,616161616161,-5,5555555555555555555555555555555555555555555555555555555555555555555555555\n"; // NOTE Will this work on every platform??? (Float approximation to string)
     INFO("Callback value: '" << buffer << "', expected: '" << expected << "'");
     REQUIRE(0 == std::strcmp(buffer,expected.c_str()));
   }

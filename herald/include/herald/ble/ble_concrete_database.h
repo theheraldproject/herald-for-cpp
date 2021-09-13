@@ -180,13 +180,15 @@ public:
 
   BLEDevice& device(const PayloadData& payloadData) override {
     auto pti = TargetIdentifier(payloadData);
-    auto results = matches([&pti](const BLEDevice& d) {
-      return d.identifier() == pti;
-      // auto payload = d.payloadData();
-      // if (!payload.has_value()) {
-      //   return false;
-      // }
-      // return (*payload)==payloadData;
+    auto results = matches([&pti,&payloadData](const BLEDevice& d) {
+      if (d.identifier() == pti) {
+        return true;
+      }
+      auto payload = d.payloadData();
+      if (payload.size() == 0) {
+        return false;
+      }
+      return payload==payloadData;
     });
     if (results.size() != 0 && results[0].has_value()) {
       return results[0].value().get(); // TODO ensure we send back the latest, not just the first match
@@ -199,7 +201,7 @@ public:
         delegate.value().get().bleDatabaseDidCreate(newDevice);
       }
     }
-    // newDevice.payloadData(payloadData); // has to be AFTER create called
+    newDevice.payloadData(payloadData); // has to be AFTER create called
     device(newDevice,BLEDeviceAttribute::payloadData); // moved from BLEDevice.payloadData()
     return newDevice;
   }

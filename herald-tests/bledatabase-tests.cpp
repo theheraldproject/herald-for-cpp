@@ -231,3 +231,111 @@ TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][same
     REQUIRE(delegate.dev.value().get() == devRefreshPtr);
   }
 }
+
+
+
+TEST_CASE("ble-database-device-bymac", "[ble][database][device][bymac]") {
+  SECTION("ble-database-device-bymac") {
+    DummyLoggingSink dls;
+    DummyBluetoothStateManager dbsm;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::ble::ConcreteBLEDatabase<CT> db(ctx);
+    DummyBLEDBDelegate delegate;
+    db.add(delegate);
+
+    REQUIRE(db.size() == 0);
+    REQUIRE(delegate.createCallbackCalled == false);
+    REQUIRE(delegate.updateCallbackCalled == false);
+    REQUIRE(delegate.deleteCallbackCalled == false);
+
+    herald::datatype::Data devMac(std::byte(0x02),6);
+    herald::ble::BLEMacAddress devblema(devMac);
+
+    // add in new device
+    herald::ble::BLEDevice& devPtr = db.device(devblema);
+    auto devices = db.matches([](auto& deviceRef) {
+      return true;
+    });
+    std::cout << "Devices:-" << std::endl;
+    for (auto& d : devices) {
+      if (!d.has_value()) {
+        continue;
+      }
+      std::cout << "Mac: " << d.value().get().identifier() 
+                << ", State: " << ((d.value().get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
+                << ", Payload: " << (d.value().get().payloadData().size() > 0 ? d.value().get().payloadData().hexEncodedString() : "Empty") << std::endl;
+    }
+    REQUIRE(db.size() == 1);
+    REQUIRE(delegate.createCallbackCalled == true);
+    REQUIRE(delegate.updateCallbackCalled == false);
+    REQUIRE(delegate.deleteCallbackCalled == false);
+    REQUIRE(delegate.dev.has_value());
+    REQUIRE(delegate.dev.value().get() == devPtr);
+
+    // verify that fetching a different object representing the same mac works and doesn't create a new device
+    herald::ble::BLEMacAddress devblema2(devMac);
+    herald::ble::BLEDevice& devPtr2 = db.device(devblema2);
+    REQUIRE(db.size() == 1);
+
+
+
+    // Now create via a TargetIdentifier, and try to lookup via a blemacaddress from that identifier
+    herald::datatype::Data devMac2(std::byte(0x04),6);
+    herald::datatype::TargetIdentifier ti2(devMac2);
+
+    // add in new device
+    herald::ble::BLEDevice& devPtrti = db.device(ti2);
+    devices = db.matches([](auto& deviceRef) {
+      return true;
+    });
+    std::cout << "Devices:-" << std::endl;
+    for (auto& d : devices) {
+      if (!d.has_value()) {
+        continue;
+      }
+      std::cout << "Mac: " << d.value().get().identifier() 
+                << ", State: " << ((d.value().get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
+                << ", Payload: " << (d.value().get().payloadData().size() > 0 ? d.value().get().payloadData().hexEncodedString() : "Empty") << std::endl;
+    }
+    REQUIRE(db.size() == 2);
+    REQUIRE(delegate.createCallbackCalled == true);
+    REQUIRE(delegate.updateCallbackCalled == false);
+    REQUIRE(delegate.deleteCallbackCalled == false);
+    REQUIRE(delegate.dev.has_value());
+    REQUIRE(delegate.dev.value().get() == devPtrti);
+
+    // Now fake connecting
+    // discovery
+    devPtrti.rssi(herald::datatype::RSSI(-14));
+    // find services
+    std::vector<herald::datatype::UUID> serviceList;
+    serviceList.push_back(ctx.getSensorConfiguration().serviceUUID);
+    devPtrti.services(serviceList);
+    // introspect services
+    devPtrti.payloadCharacteristic(ctx.getSensorConfiguration().payloadCharacteristicUUID);
+    devPtrti.signalCharacteristic(ctx.getSensorConfiguration().iosSignalCharacteristicUUID);
+    devPtrti.operatingSystem(herald::ble::BLEDeviceOperatingSystem::ios);
+    // connect
+    devPtrti.state(herald::ble::BLEDeviceState::connected);
+
+    // verify that fetching a different object representing the same mac works and doesn't create a new device
+    herald::ble::BLEMacAddress devblemati(devMac2);
+    herald::ble::BLEDevice& devPtrti2 = db.device(devblemati);
+    REQUIRE(db.size() == 2);
+
+
+
+
+    // Now set payload, then lookup via TI and payload, same number of devices
+    herald::datatype::PayloadData pl(std::byte(0x19),20);
+    devPtrti.payloadData(pl);
+    REQUIRE(db.size() == 2);
+
+    herald::ble::BLEDevice& sameDev = db.device(pl);
+    REQUIRE(db.size() == 2);
+    REQUIRE(sameDev.identifier() == ti2);
+    REQUIRE(devPtrti2.payloadData() == pl);
+  }
+}
