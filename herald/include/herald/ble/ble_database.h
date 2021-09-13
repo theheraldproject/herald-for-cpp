@@ -13,8 +13,6 @@
 #include "../datatype/rssi.h"
 #include "../datatype/target_identifier.h"
 
-#include <memory>
-#include <vector>
 #include <functional>
 
 namespace herald {
