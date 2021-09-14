@@ -175,10 +175,14 @@ public:
   }
 
   BLEDevice& device(const BLEMacAddress& mac) noexcept override {
+    // HTDBG("device(BLEMacAddress)");
+    // HTDBG((std::string)mac);
     return device(TargetIdentifier(mac.underlyingData()));
   }
 
   BLEDevice& device(const PayloadData& payloadData) noexcept override {
+    // HTDBG("device(PayloadData)");
+    // HTDBG(payloadData.toString());
     auto pti = TargetIdentifier(payloadData);
     auto results = matches([&pti,&payloadData](const BLEDevice& d) {
       if (d.identifier() == pti) {
@@ -207,10 +211,15 @@ public:
   }
 
   BLEDevice& device(const TargetIdentifier& targetIdentifier) noexcept override {
+    // HTDBG("device(TargetIdentifier)");
+    // HTDBG((std::string)targetIdentifier);
     auto results = matches([this,&targetIdentifier](const BLEDevice& d) {
+      // HTDBG("device(TargetIdentifier) matches callback");
       HTDBG(" Testing existing target identifier {} against new target identifier {}",(std::string)d.identifier(),(std::string)targetIdentifier);
       return d.identifier() == targetIdentifier;
     });
+    // HTDBG("Got matches");
+    // HTDBG(std::to_string(results.size()));
     if (results.size() != 0 && results[0].has_value()) {
       HTDBG("Device for target identifier {} already exists",(std::string)targetIdentifier);
       return results[0].value().get(); // TODO ensure we send back the latest, not just the first match
@@ -238,15 +247,22 @@ public:
     return count;
   }
 
-  BLEDeviceList matches(
-    const std::function<bool(const BLEDevice&)>& matcher) noexcept override {
+  BLEDeviceList matches(const std::function<bool(const BLEDevice&)>& matcher) noexcept override {
+    // HTDBG("matches()");
     BLEDeviceList results;
     // in the absence of copy_if in C++20... Just copies the pointers not the objects
+    // HTDBG("----");
     for (auto iter = devices.begin();iter != devices.end();++iter) {
+      // HTDBG("ITER");
+      // HTDBG((std::string)iter->identifier());
+      // HTDBG(std::to_string((int)iter->state())); // Fails - like state is invalid...
       if (BLEDeviceState::uninitialised != iter->state() && matcher(*iter)) {
+        // HTDBG("Match");
         results.add(std::reference_wrapper<BLEDevice>(*iter));
       }
+      // HTDBG(".");
     }
+    // HTDBG("Fin");
     return results;
   }
 

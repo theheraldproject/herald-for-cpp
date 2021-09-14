@@ -577,10 +577,12 @@ namespace std {
     {
       std::size_t hv = 0;
       std::uint8_t ui = 0;
-      bool ok;
-      for (std::size_t pos = 0;pos < v.size();++pos) {
+      bool ok = true;
+      for (std::size_t pos = 0;ok && pos < v.size();++pos) {
         ok = v.uint8(pos,ui);
-        hash_combine_impl(hv, std::hash<std::uint8_t>()(ui));
+        if (ok) {
+          hash_combine_impl(hv, std::hash<std::uint8_t>()(ui));
+        }
       }
       return hv;
     }

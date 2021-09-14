@@ -63,7 +63,7 @@ BLEMacAddress::operator Data() const
 Data
 BLEMacAddress::underlyingData() const
 {
-  return data;
+  return Data(data);
 }
 
 // TODO Thorough test of this function with formatting and valid content across numeric range

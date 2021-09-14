@@ -28,7 +28,7 @@ public:
   BLEMacAddress& operator=(const BLEMacAddress& other) noexcept;
 
   operator Data() const;
-  /** Print mac address format with colon separators, little endian **/
+  /// \brief Print mac address format with colon separators, little endian
   operator std::string() const;
   bool operator==(const BLEMacAddress& other) const;
   bool operator!=(const BLEMacAddress& other) const;

@@ -817,6 +817,8 @@ private:
       // 0x19 = Unknown LMP PDU (Issued if nRF Connect iOS app disconnects from this device)
       // 0x20 = Unsupported LL parameter value
     }
+    // Do this before calling unref
+    auto& device = db.device(bleMacAddress); // Find by actual current physical address
     
     // TODO log disconnection time in ble database
     
@@ -827,13 +829,9 @@ private:
     state.connection = NULL;
 
     // Log last disconnected time in BLE database
-    // TODO find the cause of the following line causing an MPU Fault
+    // TODO find the cause of the following line causing an MPU Fault (Using CONFIG_ARM_MPU=n for now)
     // TODO Also find out why the above code does not result in the connection being able to reconnect in future (opcode 9)
-
-    // auto& device = db.device(bleMacAddress); // Find by actual current physical address
-    // HTDBG("set device state disconnected");
-    // device.state(BLEDeviceState::disconnected);
-    // HTDBG("end of func");
+    device.state(BLEDeviceState::disconnected);
   }
   
   void discovery_completed_cb(struct bt_gatt_dm *dm, void *context) override

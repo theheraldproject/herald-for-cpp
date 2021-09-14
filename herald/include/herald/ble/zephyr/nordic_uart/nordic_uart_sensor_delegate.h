@@ -6,6 +6,9 @@
 #define HERALD_NORDIC_UART_SENSOR_DELEGATE_H
 
 #include "../../../sensor_delegate.h"
+// #include "../../../datatype/data.h"
+// #include "../../../datatype/uuid.h"
+// #include "../../ble.h"
 
 #ifdef __ZEPHYR__
 // #ifdef BT_NUS
@@ -48,7 +51,16 @@ public:
       position(0),
       sender(sendFunc)
   {
-    ; // TODO ensure our NUS service is advertised appropriately by BLETransmitter
+    // Ensure our NUS service is advertised appropriately by BLETransmitter
+    // Doing this here results in 'too big advertising data' alongside Herald. Use GATT discovery to find NUS service instead
+    // auto uuid = herald::datatype::UUID::fromString("6e400001-b5a3-f393-e0a9-e50e24dcca9e").data();
+    // ctx.getBluetoothStateManager().addCustomService(
+    //   herald::ble::BluetoothUUID(
+    //     herald::datatype::Data(
+    //       &uuid[0],uuid.size() // 16 bytes if valid
+    //     )
+    //   )
+    // ); // Nordic UART service
   }
   ~NordicUartSensorDelegate() = default;
 
