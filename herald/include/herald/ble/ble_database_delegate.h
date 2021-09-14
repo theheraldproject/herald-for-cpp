@@ -6,12 +6,16 @@
 #define HERALD_BLE_DATABASE_DELEGATE_H
 
 #include "ble_device.h"
+#include "../datatype/allocatable_array.h"
 
 namespace herald {
 namespace ble {
 
 using namespace herald::datatype;
 
+// TODO replace this class entirely with a template class and a variant list type
+
+/// \brief BLEDatabaseDelegat tagging class
 class BLEDatabaseDelegate {
 public:
   BLEDatabaseDelegate() = default;
@@ -23,6 +27,9 @@ public:
   
   virtual void bleDatabaseDidDelete(const BLEDevice& device) = 0;
 };
+
+/// \brief List of BLEDatabaseDelegate references
+using BLEDatabaseDelegateList = ReferenceArray<BLEDatabaseDelegate,4,false>;
 
 } // end namespace
 } // end namespace

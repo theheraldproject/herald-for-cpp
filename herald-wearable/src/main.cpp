@@ -25,6 +25,7 @@
 #include <bluetooth/uuid.h>
 #include <bluetooth/gatt.h>
 #include <bluetooth/services/bas.h>
+#include <bluetooth/services/nus.h>
 
 #ifdef CC3XX_BACKEND
 // Cryptocell - nRF52840/nRF9160/nRF53x only. See prj.conf too to enable this Hardware
@@ -75,6 +76,28 @@ constexpr int stackMaxSize =
 #else
 	9192
 #endif
+// Since v2.1 - MEMORY ARENA extra stack reservation - See herald/datatype/data.h
+#ifdef HERALD_MEMORYARENA_MAX
+  + HERALD_MEMORYARENA_MAX
+#else
+  + 8192
+#endif
+  + 4508 // Since v2.1 test for debug
+  // + 5120 // Since v2.1 AllocatableArray and removal of vector and map
+	// Note +0 crashes at Herald entry, +1024 crashes at PAST DATE, +2048 crashes at creating sensor array
+	// +3072 crashes at herald entry with Illegal load of EXC_RETURN into PC
+	// +4096 crashes at BEFORE DATE          with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20006304
+	// +5120 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20008ae0
+	// +6144 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20008ee0
+	// +7168 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x200092e0
+	// +8192 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x200096e0
+	// +9216 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20009ae0
+	// +10240 crashes zephyr in main thread loop - likely due to memory exhaustion for the heap (over 96% SRAM used at this level)
+	// Changed heap for nRF52832 to 1024, max conns to 4 from 2
+	// +0 crashes BEFORE DATE with Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20006504
+	// Changed heap for nRF52832 to 2048. max conns back to 2
+	// +4096 crashes BEFORE DATE with Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20006904
+	// +5120 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x200090e0
 ;
 K_THREAD_STACK_DEFINE(herald_stack, 
 	stackMaxSize
@@ -185,11 +208,11 @@ void herald_entry() {
 	APP_DBG("Herald setup begins");
 
 	// Test date/time based things on Zephyr - interesting issues with compliance!
-	Date now;
-	APP_DBG("BEFORE DATE");
-	std::string s = now.iso8601DateTime();
-	APP_DBG("DATE: %s", log_strdup(s.c_str()));
-	APP_DBG("PAST DATE");
+	// Date now;
+	// APP_DBG("BEFORE DATE");
+	// std::string s = now.iso8601DateTime();
+	// APP_DBG("DATE: %s", log_strdup(s.c_str()));
+	// APP_DBG("PAST DATE");
 
 	
 	// IMPLEMENTORS GUIDANCE - USING HERALD
@@ -203,23 +226,24 @@ void herald_entry() {
 	
 	// 4. Now create a live analysis pipeline and enable RSSI to be sent to it for distance estimation
 // #ifdef HERALD_ANALYSIS_ENABLED
-	herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
+	// herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(0, -50, -24); // 0 = run every time run() is called
 
-	herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance> myDelegate(ctx);
-	herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
-	herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
+	// herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance> myDelegate(ctx);
+	// herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
+	// herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
 
-	herald::analysis::AnalysisRunner<
-		herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance>>,
-		herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
-		RSSI,Distance
-	> runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
+	// herald::analysis::AnalysisRunner<
+	// 	herald::analysis::AnalysisDelegateManager<herald::analysis::LoggingAnalysisDelegate<CT,herald::datatype::Distance>>,
+	// 	herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::distance::FowlerBasicAnalyser>,
+	// 	RSSI,Distance
+	// > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
 
-	herald::analysis::SensorDelegateRSSISource<decltype(runner)> src(runner);
+	// herald::analysis::SensorDelegateRSSISource<decltype(runner)> src(runner);
+	herald::ble::nordic_uart::NordicUartSensorDelegate nus(ctx);
 	// sa.add(src);
 // #endif
 
-	SensorDelegateSet sensorDelegates(appDelegate, src); // just the one from the app, and one for the analysis API
+	SensorDelegateSet sensorDelegates(appDelegate/*, src*/ , nus); // just the one from the app, and one for the analysis API
 	
 
   // Now prepare your device's Herald identity payload - this is what gets sent to other devices when they request it
@@ -302,22 +326,22 @@ void herald_entry() {
 	APP_DBG("Have created Payload data supplier");
 	k_sleep(K_SECONDS(2));
 
-	auto& sink = ctx.getLoggingSink();
-	sink.log("subsys1","cat1",SensorLoggerLevel::debug,"Here's some info for you");
-	// auto payload = pds.payload(PayloadTimestamp(),nullptr);
-	// sink.log("subsys1","cat1",SensorLoggerLevel::debug,"I've got some payload data");
-	// sink.log("subsys1","cat1",SensorLoggerLevel::debug,payload->hexEncodedString());
+	// auto& sink = ctx.getLoggingSink();
+	// sink.log("subsys1","cat1",SensorLoggerLevel::debug,"Here's some info for you");
+	// // auto payload = pds.payload(PayloadTimestamp(),nullptr);
+	// // sink.log("subsys1","cat1",SensorLoggerLevel::debug,"I've got some payload data");
+	// // sink.log("subsys1","cat1",SensorLoggerLevel::debug,payload->hexEncodedString());
 	
-	auto& sink2 = ctx.getLoggingSink();
-	sink2.log("subsys2","cat2",SensorLoggerLevel::debug,"Here's some more info for you");
+	// auto& sink2 = ctx.getLoggingSink();
+	// sink2.log("subsys2","cat2",SensorLoggerLevel::debug,"Here's some more info for you");
 
-	// LOGGING LEVEL TESTING
-	APP_DBG("Zephyr debug message");
-	APP_INF("Zephyr info message");
-	APP_ERR("Zephyr error message");
-	sink2.log("subsys2","cat2",SensorLoggerLevel::debug,"Herald debug message");
-	sink2.log("subsys2","cat2",SensorLoggerLevel::info,"Herald info message");
-	sink2.log("subsys2","cat2",SensorLoggerLevel::fault,"Herald error message");
+	// // LOGGING LEVEL TESTING
+	// APP_DBG("Zephyr debug message");
+	// APP_INF("Zephyr info message");
+	// APP_ERR("Zephyr error message");
+	// sink2.log("subsys2","cat2",SensorLoggerLevel::debug,"Herald debug message");
+	// sink2.log("subsys2","cat2",SensorLoggerLevel::info,"Herald info message");
+	// sink2.log("subsys2","cat2",SensorLoggerLevel::fault,"Herald error message");
 	
 	// Enable transmitter (i.e. this is a Herald device)
 	BLESensorConfiguration config = ctx.getSensorConfiguration(); // copy ctor
@@ -345,7 +369,13 @@ void herald_entry() {
 
 	// 3. Create and add a Logging sensor delegate to enable testing of discovery
 
+	// Enable Bluetooth explicitly now so we can initialise bt_nus_init
+	zcp.enableBluetooth();
 
+	APP_DBG("Initialising NUS service");
+  k_sleep(K_SECONDS(5));
+  bt_nus_init(NULL);
+	APP_DBG("Post NUS init");
 
 	
 	APP_DBG("Starting sensor array");
@@ -355,7 +385,8 @@ void herald_entry() {
 	sa.start(); // There's a corresponding stop() call too
 	
 	APP_DBG("Sensor array running!");
-	k_sleep(K_SECONDS(2));
+	k_sleep(K_SECONDS(10));
+
 
 	int iter = 0;
 	// APP_DBG("got iter!");
@@ -366,7 +397,7 @@ void herald_entry() {
 	int delay = 250; // KEEP THIS SMALL!!! This is how often we check to see if anything needs to happen over a connection.
 	
 	APP_DBG("Entering herald iteration loop");
-	k_sleep(K_SECONDS(2));
+	k_sleep(K_SECONDS(10));
 	while (1) {
 		k_sleep(K_MSEC(delay)); 
 		Date now;
@@ -379,7 +410,7 @@ void herald_entry() {
 		
 		if (0 == iter % (5000 / delay)) {
 			APP_DBG("herald thread still running. Iteration: %d", iter);
-			runner.run(Date()); // Note: You may want to do this less or more regularly depending on your requirements
+			// runner.run(Date()); // Note: You may want to do this less or more regularly depending on your requirements
 			APP_ERR("Memory pages free in Data Arena: %d", herald::datatype::Data::getArena().pagesFree());
 		}
 
@@ -404,9 +435,9 @@ void main(void)
 		return;
 	}
 
-	APP_DBG("Logging test");
-	APP_DBG("Const char* param test: %s","some string param");
-	APP_DBG("int param test: %d",1234);
+	// APP_DBG("Logging test");
+	// APP_DBG("Const char* param test: %s","some string param");
+	// APP_DBG("int param test: %d",1234);
 
 #ifdef CC3XX_BACKEND
 	cc3xx_init();
@@ -418,6 +449,8 @@ void main(void)
 			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
 			-1, K_USER,
 			K_NO_WAIT);
+	int nameOk = k_thread_name_set(herald_pid,"herald");
+	nameOk = k_thread_name_set(NULL,"main");
 
   // herald_entry();
   // NOTE Above only works if CONFIG_MAIN_STACK_SIZE=2048 is set in prj.conf

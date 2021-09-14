@@ -38,22 +38,25 @@ if($ENV{BOARD} MATCHES .*nrf5340.*)
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf5340.conf
   )
+  add_definitions(-DHERALD_MEMORYARENA_MAX=4096)
 elseif($ENV{BOARD} MATCHES .*nrf52840.*)
   set(OVERLAY_CONFIG 
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf52840.conf
   )
+  add_definitions(-DHERALD_MEMORYARENA_MAX=4096)
 elseif($ENV{BOARD} MATCHES .*nrf52832.*)
   set(OVERLAY_CONFIG 
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf52832.conf
   )
-  add_definitions(-DHERALD_MEMORYARENA_MAX=4096)
+  add_definitions(-DHERALD_MEMORYARENA_MAX=512)
 elseif($ENV{BOARD} MATCHES .*nrf52833.*)
   set(OVERLAY_CONFIG 
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf52833.conf
   )
+  add_definitions(-DHERALD_MEMORYARENA_MAX=4096)
 endif()
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   set(OVERLAY_CONFIG 
@@ -98,7 +101,7 @@ endif()
 #HERALD_LOG_LEVEL 4 = debug, 3 = info, 2 = warn / errors (Zephyr LOG_WARN), 1 = info contacts log only (Zephyr LOG_ERR)
 
 # gcc arm does not warn about missing defs until runtime
-add_compile_options(--no-undefined -ffunction-sections -fdata-sections -s -fexceptions -fno-rtti -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
+add_compile_options(--no-undefined -ffunction-sections -fdata-sections -s -fno-unaligned-access -fno-exceptions -fno-rtti -Wall -Wextra -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
 
 target_sources(app PRIVATE
   ${HERALD_SOURCES}

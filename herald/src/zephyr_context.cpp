@@ -2,21 +2,15 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
-// #include "herald/datatype/stdlib.h" // hashing of std::pair
-
 #include "herald/zephyr_context.h"
+#include "herald/ble/ble.h"
 #include "herald/data/zephyr/zephyr_logging_sink.h"
 #include "herald/data/sensor_logger.h"
 #include "herald/ble/bluetooth_state_manager.h"
 #include "herald/ble/bluetooth_state_manager_delegate.h"
+#include "herald/datatype/allocatable_array.h"
 #include "herald/datatype/bluetooth_state.h"
 #include "herald/datatype/date.h"
-
-#include <memory>
-#include <iosfwd>
-#include <vector>
-#include <map>
-#include <utility>
 
 #include <settings/settings.h>
 #include <bluetooth/bluetooth.h>
@@ -31,14 +25,17 @@ using namespace herald::ble;
 // ADVERTISER SPECIFICATION
 namespace zephyrinternal {
   
-Advertiser::Advertiser()
-  : startCallback(),
-    stopCallback()
+Advertiser::Advertiser() noexcept
+  : stopCallback(),
+    startCallback(),
+    restartCallback(),
+    isDirtyCallback(),
+    customServices()
 {
   // LOG_DBG("Advertiser::ctor");
 }
 
-Advertiser::~Advertiser()
+Advertiser::~Advertiser() noexcept
 {
   // LOG_DBG("Advertiser::dtor");
   startCallback.reset();
@@ -61,29 +58,76 @@ Advertiser::startAdvertising() noexcept
   // LOG_DBG("startAdvertising called");
   if (startCallback.has_value()) {
     // LOG_DBG("startAdvertising callback exists. Calling.");
-    startCallback.value()();
+    startCallback.value()(customServices);
   }
 }
 
 void
-Advertiser::registerStopCallback(std::function<void()> cb)
+Advertiser::restartAdvertising() noexcept
+{
+  // LOG_DBG("restartAdvertising called");
+  if (restartCallback.has_value()) {
+    // LOG_DBG("restartAdvertising callback exists. Calling.");
+    restartCallback.value()(customServices);
+  }
+}
+
+void
+Advertiser::markAdvertAsDirty() noexcept
+{
+  // LOG_DBG("markAdvertAsDirty called");
+  if (isDirtyCallback.has_value()) {
+    // LOG_DBG("markAdvertAsDirty callback exists. Calling.");
+    isDirtyCallback.value()(customServices);
+  }
+}
+
+void
+Advertiser::registerStopCallback(std::function<void()> cb) noexcept
 {
   // LOG_DBG("registerStopCallback called");
   stopCallback = cb;
 }
 
 void
-Advertiser::registerStartCallback(std::function<void()> cb)
+Advertiser::registerStartCallback(std::function<void(BLEServiceList& customServices)> cb) noexcept
 {
   // LOG_DBG("registerStartCallback called");
   startCallback = cb;
 }
 
-// TODO add functions for unregister, and call from transmitter destructor
+void
+Advertiser::registerRestartCallback(std::function<void(BLEServiceList& customServices)> cb) noexcept
+{
+  // LOG_DBG("registerRestartCallback called");
+  restartCallback = cb;
+}
+
+void
+Advertiser::registerIsDirtyCallback(std::function<void(BLEServiceList& customServices)> cb) noexcept
+{
+  // LOG_DBG("registerIsDirtyCallback called");
+  isDirtyCallback = cb;
+}
+
+void
+Advertiser::unregisterAllCallbacks() noexcept
+{
+  // LOG_DBG("unregisterAllCallbacks called");
+  startCallback.reset();
+  restartCallback.reset();
+  isDirtyCallback.reset();
+  stopCallback.reset();
+}
 
 } // end namespace
 
+
+
+
 // ZEPHYR CONTEXT PUBLIC INTERFACE METHODS
+
+
 
 
 // Zephyr RTOS implementation of Context
@@ -113,7 +157,7 @@ ZephyrContextProvider::getBluetoothStateManager()
 void
 ZephyrContextProvider::add(BluetoothStateManagerDelegate& delegate)
 {
-  stateDelegates.emplace_back(delegate);
+  stateDelegates.add(delegate);
 }
 
 BluetoothState
@@ -177,7 +221,8 @@ ZephyrContextProvider::enableBluetooth() noexcept
     bluetoothEnabled = true;
 
     for (auto& delegate : stateDelegates) {
-      delegate.get().bluetoothStateManager(BluetoothState::poweredOn);
+      if (!delegate.has_value()) continue;
+      delegate.value().get().bluetoothStateManager(BluetoothState::poweredOn);
     }
   } else {
     // LOG_INF("Error enabling Zephyr Bluetooth: %d", success);
@@ -199,7 +244,8 @@ int
 ZephyrContextProvider::stopBluetooth() noexcept
 {
   for (auto& delegate : stateDelegates) {
-    delegate.get().bluetoothStateManager(BluetoothState::poweredOff);
+    if (!delegate.has_value()) continue;
+    delegate.value().get().bluetoothStateManager(BluetoothState::poweredOff);
   }
   return 0;
 }
@@ -216,5 +262,63 @@ ZephyrContextProvider::getNow() noexcept {
   return datatype::Date();
 }
 
+// Methods added in v2.1
+
+bool
+ZephyrContextProvider::addCustomService(const herald::ble::BluetoothUUID& serviceId)
+{
+  advertiser.customServices.add(BLEService{.uuid=serviceId,.characteristics={}});
+  advertiser.markAdvertAsDirty();
+  return true;
+}
+
+void
+ZephyrContextProvider::removeCustomService(const herald::ble::BluetoothUUID& serviceId)
+{
+  advertiser.customServices.remove(serviceId);
+  advertiser.markAdvertAsDirty();
+}
+
+bool
+ZephyrContextProvider::addCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, 
+  const herald::ble::BluetoothUUID& charId, const herald::ble::BLECharacteristicType& charType, 
+  const herald::ble::BLECallbacks& callbacks)
+{
+  advertiser.customServices.add(BLEService(serviceId,BLECharacteristicList{BLECharacteristic(charId,charType,callbacks)}));
+  advertiser.markAdvertAsDirty();
+  return true;
+}
+
+void
+ZephyrContextProvider::removeCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, 
+  const herald::ble::BluetoothUUID& charId)
+{
+  bool changed = false;
+  for (auto& svc : advertiser.customServices) {
+    if (svc == serviceId) {
+      svc.characteristics.remove(charId);
+      changed = true;
+    }
+  }
+  if (changed) {
+    advertiser.markAdvertAsDirty();
+  }
+}
+
+void
+ZephyrContextProvider::notifyAllSubscribers(const herald::ble::BluetoothUUID& serviceId, 
+  const herald::ble::BluetoothUUID& charId, const herald::datatype::Data& newValue)
+{
+  // TODO add functionality here
+  ;
+}
+
+void
+ZephyrContextProvider::notifySubscriber(const herald::ble::BluetoothUUID& serviceId, 
+  const herald::ble::BluetoothUUID& charId, const herald::datatype::Data& newValue, const herald::ble::BLEMacAddress& toNotify)
+{
+  // TODO add functionality here
+  ;
+}
 
 } // end namespace

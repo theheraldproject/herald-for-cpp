@@ -68,6 +68,30 @@ public:
   herald::ble::BluetoothState state() override {
     return herald::ble::BluetoothState::poweredOn;
   }
+
+  bool addCustomService(const herald::ble::BluetoothUUID& serviceId) override {
+    return true;
+  }
+
+  void removeCustomService(const herald::ble::BluetoothUUID& serviceId) override {
+    ;
+  }
+
+  bool addCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId, const herald::ble::BLECharacteristicType& charType, const herald::ble::BLECallbacks& callbacks) override {
+    return true;
+  }
+
+  void removeCustomServiceCharacteristic(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId) override {
+    ;
+  }
+
+  void notifyAllSubscribers(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId, const herald::datatype::Data& newValue) override {
+    ;
+  }
+
+  void notifySubscriber(const herald::ble::BluetoothUUID& serviceId, const herald::ble::BluetoothUUID& charId, const herald::datatype::Data& newValue, const herald::ble::BLEMacAddress& toNotify) override {
+    ;
+  }
 };
 
 

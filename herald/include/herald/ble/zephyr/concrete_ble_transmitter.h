@@ -5,6 +5,7 @@
 #ifndef HERALD_BLE_CONCRETE_TRANSMITTER_H
 #define HERALD_BLE_CONCRETE_TRANSMITTER_H
 
+#include "../ble.h"
 #include "../ble_database.h"
 #include "../ble_receiver.h"
 #include "../ble_sensor.h"
@@ -19,6 +20,7 @@
 #include "../ble_sensor_configuration.h"
 #include "../ble_coordinator.h"
 #include "../../datatype/bluetooth_state.h"
+#include "../../datatype/allocatable_array.h"
 
 // nRF Connect SDK includes
 #include <bluetooth/bluetooth.h>
@@ -102,6 +104,7 @@ public:
   {
     stop();
     // zephyrinternal::setPayloadDataSupplier(NULL);
+    m_context.getPlatform().getAdvertiser().unregisterAllCallbacks();
   }
 
   // Coordination overrides - Since v1.2-beta3
@@ -119,8 +122,14 @@ public:
     m_context.getPlatform().getAdvertiser().registerStopCallback([this] () -> void {
       stopAdvertising();
     });
-    m_context.getPlatform().getAdvertiser().registerStartCallback([this] () -> void {
-      startAdvertising();
+    m_context.getPlatform().getAdvertiser().registerStartCallback([this] (BLEServiceList& customServices) -> void {
+      startAdvertising(customServices);
+    });
+    m_context.getPlatform().getAdvertiser().registerRestartCallback([this] (BLEServiceList& customServices) -> void {
+      restartAdvertising(customServices);
+    });
+    m_context.getPlatform().getAdvertiser().registerIsDirtyCallback([this] (BLEServiceList& customServices) -> void {
+      markAdvertAsDirty(customServices);
     });
     HTDBG("Advertising callbacks registered");
 
@@ -129,7 +138,8 @@ public:
 
     HTDBG("Bluetooth started. Requesting start of adverts");
 
-    startAdvertising();
+    // Ensures the latest customServices are passed
+    m_context.getPlatform().getAdvertiser().startAdvertising();
   }
 
   void stop() {
@@ -154,7 +164,22 @@ private:
   HLOGGER(ContextT);
 
   // Internal methods
-  void startAdvertising()
+  void restartAdvertising(BLEServiceList& customServices)
+  {
+    // Only restart if we're already advertising
+    if (!isAdvertising) {
+      return;
+    }
+    stopAdvertising();
+    startAdvertising(customServices);
+  }
+
+  void markAdvertAsDirty(BLEServiceList& customServices)
+  {
+    restartAdvertising(customServices);
+  }
+
+  void startAdvertising(BLEServiceList& customServices)
   {
     // HTDBG("startAdvertising called");
     if (!m_context.getSensorConfiguration().advertisingEnabled) {
@@ -162,7 +187,7 @@ private:
       return;
     }
     if (isAdvertising) {
-      // HTDBG("Already advertising. Returning.");
+      HTDBG("Already advertising. Returning.");
       return;
     }
 
@@ -179,9 +204,52 @@ private:
     //   .data=(const uint8_t *)uint8_t(txp_get)
     // };
 
+    // Since v2.1: Merge in customServices too
+    bt_data* heraldAdData = zephyrinternal::getAdvertData();
+    const std::size_t heraldAdDataLen = zephyrinternal::getAdvertDataSize();
+    bt_data newAdvert[heraldAdDataLen + customServices.size()];
+    for (std::size_t idx = 0;idx < heraldAdDataLen;++idx) {
+      newAdvert[idx].type = heraldAdData[idx].type;
+      newAdvert[idx].data_len = heraldAdData[idx].data_len;
+      newAdvert[idx].data = heraldAdData[idx].data;
+    }
+    std::size_t newIdx = heraldAdDataLen;
+    auto b = customServices.begin();
+    auto e = customServices.end();
+    for (;b != e;++b) {
+      // Ignore incorrectly initialised services
+      if (b->uuid.size() == herald::ble::BluetoothUUIDSize::Empty) {
+        continue; // does not increment newIdx (this is correct)
+      }
+      // Check for a valid data entry object
+      const unsigned char* rawAddress = b->uuid.value().rawMemoryStartAddress();
+      if (0 == rawAddress) { // uninitialised memory in the memory arena
+        continue;
+      }
+      newAdvert[newIdx].type = BT_DATA_UUID128_ALL;
+      switch (b->uuid.size()) {
+        case BluetoothUUIDSize::Short16:
+          newAdvert[newIdx].type = BT_DATA_UUID16_ALL;
+          break;
+        case BluetoothUUIDSize::Medium32:
+          newAdvert[newIdx].type = BT_DATA_UUID32_ALL;
+          break;
+        case BluetoothUUIDSize::Long64:
+          newAdvert[newIdx].type = BT_DATA_UUID32_ALL; // TODO VERIFY THAT 64 BITS IS NOT A VALID VALUE IN BLE SPEC
+          break;
+        default:
+          break;
+      }
+      newAdvert[newIdx].data_len = (std::size_t)b->uuid; // guaranteed to be less than or equal to uuid.value().size()
+      newAdvert[newIdx].data = rawAddress;
+      ++newIdx;
+    }
+
     // Now start advertising
     // See https://developer.nordicsemi.com/nRF_Connect_SDK/doc/latest/zephyr/reference/bluetooth/gap.html#group__bt__gap_1gac45d16bfe21c3c38e834c293e5ebc42b
-    int success = bt_le_adv_start(zephyrinternal::getAdvertParams(), zephyrinternal::getAdvertData(), zephyrinternal::getAdvertDataSize(), NULL, 0);
+    int success = bt_le_adv_start(zephyrinternal::getAdvertParams(), newAdvert, newIdx, NULL, 0);
+    // int success = bt_le_adv_start(zephyrinternal::getAdvertParams(), zephyrinternal::getAdvertData(), zephyrinternal::getAdvertDataSize(), NULL, 0);
+    // int success = 0;
     if (0 != success) {
       HTDBG("Start advertising failed");
       return;
@@ -203,7 +271,7 @@ private:
       return;
     }
     if (!isAdvertising) {
-      // HTDBG("Not advertising already. Returning.");
+      HTDBG("Not advertising already. Returning.");
       return;
     }
     isAdvertising = false;

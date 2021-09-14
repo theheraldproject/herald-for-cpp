@@ -392,7 +392,13 @@ BLEDevice::BLEDevice(BLESensorConfiguration& config, TargetIdentifier identifier
     payload(),
     mRssi(0)
 {
-  ;
+  flags.internalState(BLEInternalState::discovered);
+  flags.state(BLEDeviceState::disconnected);
+  // need to call  the callback immediately as not in the uninitialised state, and not an existing device
+  if (delegate.has_value()) {
+    delegate->get().device(*this, BLEDeviceAttribute::state);
+  }
+
 }
 
 BLEDevice::BLEDevice(const BLEDevice& other)
@@ -418,6 +424,7 @@ BLEDevice::reset(const TargetIdentifier& newID, BLEDeviceDelegate& newDelegate)
   id = newID;
   lastUpdated.setToNow();
   stateData = DiscoveredState();
+  flags.reset();
   flags.internalState(BLEInternalState::discovered);
   flags.state(BLEDeviceState::disconnected); // allows action from protocol providers (i.e. no longer uninitialised)
   payload.clear();
@@ -580,6 +587,7 @@ BLEDevice::pseudoDeviceAddress(BLEMacAddress newAddress)
       is == BLEInternalState::filtered ||
       is == BLEInternalState::timed_out) {
     flags.internalState(BLEInternalState::relevant);
+    flags.state(BLEDeviceState::disconnected);
     stateData = RelevantState{};
   }
   const auto pa = pseudoDeviceAddress();
@@ -604,6 +612,7 @@ BLEDevice::state(BLEDeviceState newState)
       is == BLEInternalState::filtered ||
       is == BLEInternalState::timed_out) {
     flags.internalState(BLEInternalState::relevant);
+    flags.state(BLEDeviceState::disconnected);
     stateData = RelevantState{};
   }
   auto& rs = std::get<RelevantState>(stateData);
@@ -652,6 +661,7 @@ BLEDevice::operatingSystem(BLEDeviceOperatingSystem newOS)
       is == BLEInternalState::filtered ||
       is == BLEInternalState::timed_out) {
     flags.internalState(BLEInternalState::relevant);
+    flags.state(BLEDeviceState::disconnected);
     stateData = RelevantState{};
   }
   auto& rs = std::get<RelevantState>(stateData);
@@ -697,6 +707,7 @@ BLEDevice::payloadData(PayloadData newPayloadData)
 {
   if (flags.internalState() != BLEInternalState::identified) {
     flags.internalState(BLEInternalState::identified);
+    flags.state(BLEDeviceState::disconnected);
     stateData = RelevantState{};
   }
   bool changed = payload.size() == 0 || payload != newPayloadData;
@@ -777,6 +788,7 @@ BLEDevice::txPower(BLETxPower newPower)
       is == BLEInternalState::timed_out) {
     // return; // TODO convert type to Relevant instead?
     flags.internalState(BLEInternalState::relevant);
+    flags.state(BLEDeviceState::disconnected);
     stateData = RelevantState{};
   }
   auto& rs = std::get<RelevantState>(stateData);
@@ -934,6 +946,7 @@ BLEDevice::advertData(std::vector<BLEAdvertSegment> newSegments)
 {
   stateData = DiscoveredState{newSegments};
   flags.internalState(BLEInternalState::discovered);
+  flags.state(BLEDeviceState::disconnected);
 }
 
 // const std::vector<BLEAdvertSegment>&
@@ -996,4 +1009,16 @@ BLESensorConfiguration
 BLEDevice::staticConfig = BLESensorConfiguration();
 
 }
+}
+
+namespace std {
+
+bool operator==(const std::reference_wrapper<herald::ble::BLEDevice>& lhs, const std::reference_wrapper<herald::ble::BLEDevice>& rhs) noexcept {
+  return lhs.get() == rhs.get();
+}
+
+bool operator!=(const std::reference_wrapper<herald::ble::BLEDevice>& lhs, const std::reference_wrapper<herald::ble::BLEDevice>& rhs) noexcept {
+  return lhs.get() != rhs.get();
+}
+
 }

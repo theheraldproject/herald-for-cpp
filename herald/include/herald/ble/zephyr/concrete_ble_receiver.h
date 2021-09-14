@@ -814,8 +814,11 @@ private:
       HTDBG("Disconnection: Reason value:-");
       HTDBG(std::to_string(reason));
       // Note: See Bluetooth Specification, Vol 2. Part D (Error codes)
+      // 0x19 = Unknown LMP PDU (Issued if nRF Connect iOS app disconnects from this device)
       // 0x20 = Unsupported LL parameter value
     }
+    // Do this before calling unref
+    auto& device = db.device(bleMacAddress); // Find by actual current physical address
     
     // TODO log disconnection time in ble database
     
@@ -826,7 +829,8 @@ private:
     state.connection = NULL;
 
     // Log last disconnected time in BLE database
-    auto& device = db.device(bleMacAddress); // Find by actual current physical address
+    // TODO find the cause of the following line causing an MPU Fault (Using CONFIG_ARM_MPU=n for now)
+    // TODO Also find out why the above code does not result in the connection being able to reconnect in future (opcode 9)
     device.state(BLEDeviceState::disconnected);
   }
   

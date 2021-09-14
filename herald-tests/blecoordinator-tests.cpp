@@ -218,7 +218,7 @@ TEST_CASE("blecoordinator-two-mixed-no-id", "[coordinator][two-mixed-no-id][basi
     REQUIRE(std::get<0>(firstConn) == herald::engine::Features::HeraldBluetoothProtocolConnection);
     REQUIRE(std::get<1>(firstConn) > 0);
     REQUIRE(std::get<2>(firstConn).has_value());
-    REQUIRE(std::get<2>(firstConn).value() == device1);
+    REQUIRE((std::get<2>(firstConn).value() == device1) | (std::get<2>(firstConn).value() == device2)); // both introduced at same time point
 
     std::vector<herald::engine::Activity> acts = coord.requiredActivities();
     REQUIRE(acts.size() == 2); // just read payload (ID) for BOTH devices

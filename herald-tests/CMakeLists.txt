@@ -6,6 +6,7 @@ add_executable(herald-tests
 	test-util.h 
 
   # base data types
+	allocatablearray-tests.cpp
 	memoryarena-tests.cpp
 	datatypes-tests.cpp
 	base64string-tests.cpp
@@ -47,6 +48,9 @@ add_executable(herald-tests
 	bledatabase-tests.cpp
 	blecoordinator-tests.cpp
 	coordinator-tests.cpp
+
+	# App level
+	nordicuart-tests.cpp
 
 	# main test file
 	main.cpp

@@ -53,6 +53,13 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 #define FLAGS	0
 #endif
 
+void k_sys_fatal_error_handler(unsigned int reason, const z_arch_esf_t *esf) {
+	// LOG_PANIC();
+	while (1) {
+		// do nothing
+	}
+}
+
 struct k_thread herald_thread;
 constexpr int stackMaxSize = 
 #ifdef CONFIG_BT_MAX_CONN
@@ -60,6 +67,12 @@ constexpr int stackMaxSize =
 	// Was 12288 + (CONFIG_BT_MAX_CONN * 512), but this starved newlibc of HEAP (used in handling BLE connections/devices)
 #else
 	9192
+#endif
+// Since v2.1 - MEMORY ARENA extra stack reservation - See herald/datatype/data.h
+#ifdef HERALD_MEMORYARENA_MAX
+  + HERALD_MEMORYARENA_MAX
+#else
+  + 8192
 #endif
 ;
 K_THREAD_STACK_DEFINE(herald_stack, 
@@ -174,10 +187,12 @@ void herald_entry() {
 		erinsStakehouse.code,
 		extendedData
 	);
+	
+	herald::ble::nordic_uart::NordicUartSensorDelegate nus(ctx);
 
   // this is unusual, but required. Really we should log activity to serial BLE or similar
 	DummyDelegate appDelegate;
-	SensorDelegateSet sensorDelegates(appDelegate);
+	SensorDelegateSet sensorDelegates(appDelegate, nus);
 	
 	ConcreteBLESensor ble(ctx, ctx.getBluetoothStateManager(), pds, sensorDelegates);
 	SensorArray sa(ctx,pds,ble);

@@ -45,41 +45,41 @@ public:
   }
   /// \brief Initialises a DataRef from a std::uint8_t array of length `length`
   DataRef(const std::uint8_t* value, std::size_t length) : 
-  entry(arena.allocate(length)) {
+  entry(getArena().allocate(length)) {
     for (std::size_t i = 0;i < length; ++i) {
       // data[i] = std::byte(value[i]);
-      arena.set(entry, i, (unsigned char)value[i]);
+      getArena().set(entry, i, (unsigned char)value[i]);
     }
   }
   /// \brief Initialises a DataRef from a std::byte array of length `length`
-  DataRef(const std::byte* value, std::size_t length) : entry(arena.allocate(length)) {
+  DataRef(const std::byte* value, std::size_t length) : entry(getArena().allocate(length)) {
     for (std::size_t i = 0;i < length; ++i) {
       // data[i] = value[i];
-      arena.set(entry, i, (unsigned char)value[i]);
+      getArena().set(entry, i, (unsigned char)value[i]);
     }
   }
   /// \brief Initialises a DataRef from a string of chars
-  DataRef(const std::string& from) : entry(arena.allocate(from.size())) {
+  DataRef(const std::string& from) : entry(getArena().allocate(from.size())) {
     for (std::size_t i = 0;i < from.size(); ++i) {
       // data[i] = value[i];
-      arena.set(entry, i, (unsigned char)from[i]);
+      getArena().set(entry, i, (unsigned char)from[i]);
     }
   }
   /// \brief Initialises a DataRef copying another data object (uses more data, to ensure only one object owns the entry)
-  DataRef(const DataRef& from) : entry(arena.allocate(from.entry.byteLength)) {
+  DataRef(const DataRef& from) : entry(getArena().allocate(from.entry.byteLength)) {
     for (std::size_t i = 0;i < from.size(); ++i) {
-      arena.set(entry, i, from.arena.get(from.entry,i));
+      getArena().set(entry, i, from.getArena().get(from.entry,i));
     }
   }
 
   /// \brief Initialises a DataRef with count number of repeating bytes
-  DataRef(std::byte repeating, std::size_t count) : entry(arena.allocate(count)) {
+  DataRef(std::byte repeating, std::size_t count) : entry(getArena().allocate(count)) {
     for (std::size_t i = 0;i < count; ++i) {
-      arena.set(entry,i,(unsigned char)repeating);
+      getArena().set(entry,i,(unsigned char)repeating);
     }
   }
   /// \brief Initialises a DataRef with reserveLength bytes of undefined data
-  DataRef(std::size_t reserveLength) : entry(arena.allocate(reserveLength)) {
+  DataRef(std::size_t reserveLength) : entry(getArena().allocate(reserveLength)) {
     ;
   }
 
@@ -88,9 +88,9 @@ public:
   /// \brief Copy assign operator. Copies the data to be sure only one object owns the entry
   DataRef& operator=(const DataRef& other)
   {
-    entry = arena.allocate(other.entry.byteLength);
+    entry = getArena().allocate(other.entry.byteLength);
     for (std::size_t i = 0;i < other.size(); ++i) {
-      arena.set(entry, i, other.arena.get(other.entry,i));
+      getArena().set(entry, i, other.getArena().get(other.entry,i));
     }
     return *this;
   }
@@ -121,7 +121,7 @@ public:
       std::string byteString = hexInput.substr(i, 2);
       std::byte byte = std::byte(strtol(byteString.c_str(), NULL, 16));
       // d.data.push_back(byte);
-      arena.set(d.entry,i / 2, (unsigned char)byte);
+      getArena().set(d.entry,i / 2, (unsigned char)byte);
     }
 
     return d;
@@ -141,7 +141,7 @@ public:
     }
     DataRef copy(entry.byteLength - offset);
     for (std::size_t i = 0;i < entry.byteLength - offset;++i) {
-      copy.arena.set(copy.entry,i,arena.get(entry,i + offset));
+      copy.getArena().set(copy.entry,i,getArena().get(entry,i + offset));
     }
     // std::copy(data.begin() + offset, data.end(), std::back_inserter(copy.data));
     return copy;
@@ -162,12 +162,12 @@ public:
     // Note the below is necessary as calling with (4,-1), the second condition IS valid!
     // if (length > entry.byteLength || offset + length > entry.byteLength) {
     //   for (std::size_t i = 0;i < entry.byteLength - offset;++i) {
-    //     copy.arena.set(copy.entry,i,arena.get(entry,offset + i));
+    //     copy.getArena().set(copy.entry,i,getArena().get(entry,offset + i));
     //   }
     //   // std::copy(data.begin() + offset, data.end(), std::back_inserter(copy.data));
     // } else {
       for (std::size_t i = 0;i < correctedLength;++i) {
-        copy.arena.set(copy.entry,i,arena.get(entry,offset + i));
+        copy.getArena().set(copy.entry,i,getArena().get(entry,offset + i));
       }
       // std::copy(data.begin() + offset, data.begin() + offset + length, std::back_inserter(copy.data));
     // }
@@ -179,7 +179,7 @@ public:
     if (index > (unsigned short)(entry.byteLength - 1)) {
       return std::byte(0);
     }
-    return std::byte(arena.get(entry,index));
+    return std::byte(getArena().get(entry,index));
   }
 
   /// \brief 
@@ -190,10 +190,10 @@ public:
   void assign(const DataRef& other)
   {
     if (other.size() > entry.byteLength) {
-      arena.reserve(entry,other.size());
+      getArena().reserve(entry,other.size());
     }
     for (std::size_t pos = 0; pos < other.size();++pos) {
-      arena.set(entry,pos,other.arena.get(other.entry,pos));
+      getArena().set(entry,pos,other.getArena().get(other.entry,pos));
     }
   }
 
@@ -201,9 +201,9 @@ public:
   void append(const DataRef& rawData, std::size_t offset, std::size_t length)
   {
     auto curSize = entry.byteLength;
-    arena.reserve(entry,curSize + length);
+    getArena().reserve(entry,curSize + length);
     for (std::size_t pos = 0; pos < length;++pos) {
-      arena.set(entry,curSize + pos,rawData.arena.get(rawData.entry,pos + offset));
+      getArena().set(entry,curSize + pos,rawData.getArena().get(rawData.entry,pos + offset));
     }
     // std::copy(rawData.data.begin() + offset, 
     //           rawData.data.begin() + offset + length, 
@@ -215,9 +215,9 @@ public:
   void append(const std::string& rawData)
   {
     auto curSize = entry.byteLength;
-    arena.reserve(entry,curSize + rawData.size());
+    getArena().reserve(entry,curSize + rawData.size());
     for (std::size_t pos = 0; pos < rawData.size();++pos) {
-      arena.set(entry,curSize + pos,rawData[pos]);
+      getArena().set(entry,curSize + pos,rawData[pos]);
     }
   }
 
@@ -225,10 +225,10 @@ public:
   void append(const std::uint8_t* rawData, std::size_t offset, std::size_t length)
   {
     auto curSize = entry.byteLength;
-    arena.reserve(entry,curSize + length);
+    getArena().reserve(entry,curSize + length);
     for (std::size_t i = 0;i < length;++i) {
-      arena.set(entry,curSize + i,(unsigned char)(rawData[offset + i]));
-      // arena.set(entry,curSize,std::byte(rawData[offset + i]));
+      getArena().set(entry,curSize + i,(unsigned char)(rawData[offset + i]));
+      // getArena().set(entry,curSize,std::byte(rawData[offset + i]));
     }
   }
 
@@ -243,10 +243,10 @@ public:
       checkedLength = rawData.size() - offset;
     }
     auto curSize = entry.byteLength;
-    arena.reserve(entry,curSize + checkedLength);
+    getArena().reserve(entry,curSize + checkedLength);
     for (std::size_t i = 0;i < checkedLength;++i) {
-      arena.set(entry,curSize + i,
-      rawData.arena.get(rawData.entry,offset + (checkedLength - i - 1)));
+      getArena().set(entry,curSize + i,
+      rawData.getArena().get(rawData.entry,offset + (checkedLength - i - 1)));
     // std::reverse_copy(rawData.data.begin() + offset, 
     //                   rawData.data.begin() + offset + checkedLength, 
     //                   std::back_inserter(data)
@@ -258,9 +258,9 @@ public:
   void append(const DataRef& rawData)
   {
     auto orig = entry.byteLength;
-    arena.reserve(entry,rawData.size() + orig);
+    getArena().reserve(entry,rawData.size() + orig);
     for (std::size_t pos = 0; pos < rawData.size();++pos) {
-      arena.set(entry,orig + pos,rawData.arena.get(rawData.entry,pos));
+      getArena().set(entry,orig + pos,rawData.getArena().get(rawData.entry,pos));
     }
     // std::copy(rawData.data.begin(), rawData.data.end(), std::back_inserter(data));
   }
@@ -269,9 +269,9 @@ public:
   void append(std::byte rawData)
   {
     std::size_t curSize = entry.byteLength;
-    arena.reserve(entry,curSize + 1);
+    getArena().reserve(entry,curSize + 1);
     // data.push_back(rawData);
-    arena.set(entry,curSize,(unsigned char)rawData);
+    getArena().set(entry,curSize,(unsigned char)rawData);
     // curSize++;
   }
 
@@ -279,9 +279,9 @@ public:
   void append(uint8_t rawData)
   {
     std::size_t curSize = entry.byteLength;
-    arena.reserve(entry,curSize + 1); // C++ ensures types are AT LEAST x bits
-    // arena.set(entry,curSize,std::byte(rawData));
-    arena.set(entry,curSize,(unsigned char)(rawData));
+    getArena().reserve(entry,curSize + 1); // C++ ensures types are AT LEAST x bits
+    // getArena().set(entry,curSize,std::byte(rawData));
+    getArena().set(entry,curSize,(unsigned char)(rawData));
     // curSize++;
   }
 
@@ -289,35 +289,35 @@ public:
   void append(uint16_t rawData)
   {
     std::size_t curSize = entry.byteLength;
-    arena.reserve(entry,curSize + 2); // C++ ensures types are AT LEAST x bits
-    arena.set(entry,curSize,(unsigned char)(rawData & 0xff));
-    arena.set(entry,curSize + 1,(unsigned char)(rawData >> 8));
+    getArena().reserve(entry,curSize + 2); // C++ ensures types are AT LEAST x bits
+    getArena().set(entry,curSize,(unsigned char)(rawData & 0xff));
+    getArena().set(entry,curSize + 1,(unsigned char)(rawData >> 8));
   }
 
   /// \brief Appends a single uint32_t
   void append(uint32_t rawData)
   {
     std::size_t curSize = entry.byteLength;
-    arena.reserve(entry,curSize + 4); // C++ ensures types are AT LEAST x bits
-    arena.set(entry,curSize,(unsigned char)(rawData & 0xff));
-    arena.set(entry,curSize + 1,(unsigned char)(rawData >> 8));
-    arena.set(entry,curSize + 2,(unsigned char)(rawData >> 16));
-    arena.set(entry,curSize + 3,(unsigned char)(rawData >> 24));
+    getArena().reserve(entry,curSize + 4); // C++ ensures types are AT LEAST x bits
+    getArena().set(entry,curSize,(unsigned char)(rawData & 0xff));
+    getArena().set(entry,curSize + 1,(unsigned char)(rawData >> 8));
+    getArena().set(entry,curSize + 2,(unsigned char)(rawData >> 16));
+    getArena().set(entry,curSize + 3,(unsigned char)(rawData >> 24));
   }
 
   /// \brief Appends a single uint64_t
   void append(uint64_t rawData)
   {
     std::size_t curSize = entry.byteLength;
-    arena.reserve(entry,curSize + 8); // C++ ensures types are AT LEAST x bits
-    arena.set(entry,curSize,(unsigned char)(rawData & 0xff));
-    arena.set(entry,curSize + 1,(unsigned char)(rawData >> 8));
-    arena.set(entry,curSize + 2,(unsigned char)(rawData >> 16));
-    arena.set(entry,curSize + 3,(unsigned char)(rawData >> 24));
-    arena.set(entry,curSize + 4,(unsigned char)(rawData >> 32));
-    arena.set(entry,curSize + 5,(unsigned char)(rawData >> 40));
-    arena.set(entry,curSize + 6,(unsigned char)(rawData >> 48));
-    arena.set(entry,curSize + 7,(unsigned char)(rawData >> 56));
+    getArena().reserve(entry,curSize + 8); // C++ ensures types are AT LEAST x bits
+    getArena().set(entry,curSize,(unsigned char)(rawData & 0xff));
+    getArena().set(entry,curSize + 1,(unsigned char)(rawData >> 8));
+    getArena().set(entry,curSize + 2,(unsigned char)(rawData >> 16));
+    getArena().set(entry,curSize + 3,(unsigned char)(rawData >> 24));
+    getArena().set(entry,curSize + 4,(unsigned char)(rawData >> 32));
+    getArena().set(entry,curSize + 5,(unsigned char)(rawData >> 40));
+    getArena().set(entry,curSize + 6,(unsigned char)(rawData >> 48));
+    getArena().set(entry,curSize + 7,(unsigned char)(rawData >> 56));
   }
 
   /// \brief Returns whether reading a single uint8_t to `into` at `fromIndex` was successful
@@ -326,7 +326,7 @@ public:
     if (fromIndex > (unsigned short)(entry.byteLength - 1)) {
       return false;
     }
-    into = std::uint8_t(arena.get(entry,fromIndex));
+    into = std::uint8_t(getArena().get(entry,fromIndex));
     return true;
   }
 
@@ -336,7 +336,7 @@ public:
     if (fromIndex > (unsigned short)(entry.byteLength - 2)) {
       return false;
     }
-    into = (std::uint16_t(std::uint8_t(arena.get(entry,fromIndex + 1))) << 8) | std::uint16_t(std::uint8_t(arena.get(entry,fromIndex)));
+    into = (std::uint16_t(std::uint8_t(getArena().get(entry,fromIndex + 1))) << 8) | std::uint16_t(std::uint8_t(getArena().get(entry,fromIndex)));
     return true;
   }
 
@@ -346,8 +346,8 @@ public:
     if (fromIndex > entry.byteLength - 4) {
       return false;
     }
-    into =  std::uint32_t(std::uint8_t(arena.get(entry,fromIndex)))            | (std::uint32_t(std::uint8_t(arena.get(entry,fromIndex + 1))) << 8) |
-          (std::uint32_t(std::uint8_t(arena.get(entry,fromIndex + 2))) << 16) | (std::uint32_t(std::uint8_t(arena.get(entry,fromIndex + 3))) << 24);
+    into =  std::uint32_t(std::uint8_t(getArena().get(entry,fromIndex)))            | (std::uint32_t(std::uint8_t(getArena().get(entry,fromIndex + 1))) << 8) |
+          (std::uint32_t(std::uint8_t(getArena().get(entry,fromIndex + 2))) << 16) | (std::uint32_t(std::uint8_t(getArena().get(entry,fromIndex + 3))) << 24);
     return true;
   }
 
@@ -357,10 +357,10 @@ public:
     if (entry.byteLength < 8 || fromIndex > entry.byteLength - 8) {
       return false;
     }
-    into = (std::uint64_t(std::uint8_t(arena.get(entry,fromIndex + 7))) << 56) | (std::uint64_t(std::uint8_t(arena.get(entry,fromIndex + 6))) << 48) |
-          (std::uint64_t(std::uint8_t(arena.get(entry,fromIndex + 5))) << 40) | (std::uint64_t(std::uint8_t(arena.get(entry,fromIndex + 4))) << 32) |
-          (std::uint64_t(std::uint8_t(arena.get(entry,fromIndex + 3))) << 24) | (std::uint64_t(std::uint8_t(arena.get(entry,fromIndex + 2))) << 16) |
-          (std::uint64_t(std::uint8_t(arena.get(entry,fromIndex + 1))) << 8)  |  std::uint64_t(std::uint8_t(arena.get(entry,fromIndex)));
+    into = (std::uint64_t(std::uint8_t(getArena().get(entry,fromIndex + 7))) << 56) | (std::uint64_t(std::uint8_t(getArena().get(entry,fromIndex + 6))) << 48) |
+          (std::uint64_t(std::uint8_t(getArena().get(entry,fromIndex + 5))) << 40) | (std::uint64_t(std::uint8_t(getArena().get(entry,fromIndex + 4))) << 32) |
+          (std::uint64_t(std::uint8_t(getArena().get(entry,fromIndex + 3))) << 24) | (std::uint64_t(std::uint8_t(getArena().get(entry,fromIndex + 2))) << 16) |
+          (std::uint64_t(std::uint8_t(getArena().get(entry,fromIndex + 1))) << 8)  |  std::uint64_t(std::uint8_t(getArena().get(entry,fromIndex)));
     return true;
   }
 
@@ -407,7 +407,7 @@ public:
     DataRef result(entry.byteLength);
     // result.reserve(entry.byteLength);
     for (std::size_t pos = 0;pos < entry.byteLength;++pos) {
-      result.arena.set(result.entry,pos,arena.get(entry,entry.byteLength - pos - 1));
+      result.getArena().set(result.entry,pos,getArena().get(entry,entry.byteLength - pos - 1));
     }
     // std::reverse_copy(data.begin(),data.end(),
     //   std::back_inserter(result.data)
@@ -425,7 +425,7 @@ public:
     // but reverse the order of the individual bits by each byte
     std::uint8_t value, original;
     for (std::size_t i = 0;i < entry.byteLength;++i) {
-      original = std::uint8_t(arena.get(entry,i));
+      original = std::uint8_t(getArena().get(entry,i));
       value = 0;
       for (int b = 0;b < 8;++b) {
         if ((original & (1 << b)) > 0) {
@@ -433,7 +433,7 @@ public:
         }
       }
       // result.data[i] = std::byte(value);
-      result.arena.set(result.entry,entry.byteLength - i - 1,value);
+      result.getArena().set(result.entry,entry.byteLength - i - 1,value);
     }
 
     return result;
@@ -442,6 +442,10 @@ public:
   /// \brief Returns a hex encoded string of this binary data
   std::string hexEncodedString() const noexcept
   {
+    static constexpr char hexChars[] {
+      '0','1','2','3','4','5','6','7',
+      '8','9','a','b','c','d','e','f'
+    };
     if (0 == entry.byteLength) {
       return "";
     }
@@ -451,7 +455,7 @@ public:
     std::size_t v;
     for (std::size_t i = 0; i < size; ++i) {
       // v = std::size_t(data.at(i));
-      v = std::size_t(arena.get(entry,i));
+      v = std::size_t(getArena().get(entry,i));
       result += hexChars[0x0F & (v >> 4)]; // MSB
       result += hexChars[0x0F &  v      ]; // LSB
     }
@@ -474,36 +478,31 @@ public:
   /// \brief Clears (deallocates) the bytes referred to by this instance
   void clear() noexcept
   {
-    arena.deallocate(entry);
+    getArena().deallocate(entry);
+  }
+
+  const unsigned char* rawMemoryStartAddress() const {
+    return getArena().rawStartAddress(entry);
   }
 
   static MemoryArenaT& getArena() {
+    static MemoryArenaT arena = MemoryArenaT();
     return arena;
   }
   
 protected:
-  static const char hexChars[];
-  static MemoryArenaT arena;
   MemoryArenaEntry entry;
 };
 
 
 
-
-/// \brief Instantiates the MemoryArena instance used by all DataRefs that share it
-template <typename MemoryArenaT>
-MemoryArenaT DataRef<MemoryArenaT>::arena = MemoryArenaT();
-
-template <typename MemoryArenaT>
-const char DataRef<MemoryArenaT>::hexChars[] = {
-  '0','1','2','3','4','5','6','7',
-  '8','9','a','b','c','d','e','f'
-};
-
 /// \brief Defaults references to Data to equal the DataRef with the default Memory Arena dimensions, unless HERALD_MEMORYARENA_MAX is specified
 /// May also have its allocation size set by HERALD_MEMORYARENA_PAGE. Note this only takes
 /// affect if HERALD_MEMORYARENA_MAX is also specified.
 using Data = DataRef<>; // uses MemoryArenaT<4096,8>
+
+
+
 
 
 
@@ -578,10 +577,12 @@ namespace std {
     {
       std::size_t hv = 0;
       std::uint8_t ui = 0;
-      bool ok;
-      for (std::size_t pos = 0;pos < v.size();++pos) {
+      bool ok = true;
+      for (std::size_t pos = 0;ok && pos < v.size();++pos) {
         ok = v.uint8(pos,ui);
-        hash_combine_impl(hv, std::hash<std::uint8_t>()(ui));
+        if (ok) {
+          hash_combine_impl(hv, std::hash<std::uint8_t>()(ui));
+        }
       }
       return hv;
     }

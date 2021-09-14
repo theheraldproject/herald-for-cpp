@@ -1,10 +1,12 @@
 
 set(HERALD_HEADERS 
-	${HERALD_BASE}/include/herald.h
-	${HERALD_BASE}/include/herald/datatype/stdlib.h
+  ${HERALD_BASE}/include/herald.h
+  ${HERALD_BASE}/include/herald/platform.h
+  ${HERALD_BASE}/include/herald/datatype/stdlib.h
+  ${HERALD_BASE}/include/herald/util/is_valid.h
 
-	${HERALD_BASE}/include/herald/context.h
-	${HERALD_BASE}/include/herald/device.h
+  ${HERALD_BASE}/include/herald/context.h
+  ${HERALD_BASE}/include/herald/device.h
   ${HERALD_BASE}/include/herald/default_sensor_delegate.h
   ${HERALD_BASE}/include/herald/sensor_array.h 
   ${HERALD_BASE}/include/herald/sensor_delegate.h
@@ -17,6 +19,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/analysis/runner.h
   ${HERALD_BASE}/include/herald/analysis/sampling.h
   ${HERALD_BASE}/include/herald/analysis/sensor_source.h
+  ${HERALD_BASE}/include/herald/ble/ble.h
   ${HERALD_BASE}/include/herald/ble/ble_concrete.h
   ${HERALD_BASE}/include/herald/ble/ble_coordinator.h
   ${HERALD_BASE}/include/herald/ble/ble_database_delegate.h
@@ -34,11 +37,13 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/ble/bluetooth_state_manager_delegate.h
   ${HERALD_BASE}/include/herald/ble/filter/ble_advert_parser.h
   ${HERALD_BASE}/include/herald/ble/filter/ble_advert_types.h
+  ${HERALD_BASE}/include/herald/ble/zephyr/nordic_uart/nordic_uart_sensor_delegate.h
   ${HERALD_BASE}/include/herald/data/contact_log.h
   ${HERALD_BASE}/include/herald/data/payload_data_formatter.h
   ${HERALD_BASE}/include/herald/data/sensor_logger.h
   ${HERALD_BASE}/include/herald/data/stdout_logging_sink.h
-  ${HERALD_BASE}/include/herald/datatype/base64_string.h 
+  ${HERALD_BASE}/include/herald/datatype/allocatable_array.h
+  ${HERALD_BASE}/include/herald/datatype/base64_string.h
   ${HERALD_BASE}/include/herald/datatype/bluetooth_state.h
   ${HERALD_BASE}/include/herald/datatype/data.h
   ${HERALD_BASE}/include/herald/datatype/date.h
@@ -100,10 +105,13 @@ set(HERALD_HEADERS_WINDOWS
 
 )
 set(HERALD_SOURCES
+  ${HERALD_BASE}/src/ble/ble.cpp
   ${HERALD_BASE}/src/ble/ble_mac_address.cpp
   ${HERALD_BASE}/src/ble/ble_coordinator.cpp
   ${HERALD_BASE}/src/ble/ble_device.cpp
   ${HERALD_BASE}/src/ble/ble_sensor_configuration.cpp
+  ${HERALD_BASE}/src/ble/bluetooth_state_manager.cpp
+  ${HERALD_BASE}/src/ble/bluetooth_state_manager_delegate.cpp
   ${HERALD_BASE}/src/ble/concrete_ble_sensor.cpp
   ${HERALD_BASE}/src/ble/concrete_ble_database.cpp
   ${HERALD_BASE}/src/ble/filter/ble_advert_parser.cpp
@@ -111,29 +119,29 @@ set(HERALD_SOURCES
   ${HERALD_BASE}/src/data/concrete_payload_data_formatter.cpp
   ${HERALD_BASE}/src/data/sensor_logger.cpp
   ${HERALD_BASE}/src/data/stdout_logging_sink.cpp
-	${HERALD_BASE}/src/datatype/base64_string.cpp
-	${HERALD_BASE}/src/datatype/data.cpp
-	${HERALD_BASE}/src/datatype/date.cpp
-	${HERALD_BASE}/src/datatype/distance.cpp
-	${HERALD_BASE}/src/datatype/distribution.cpp
-	${HERALD_BASE}/src/datatype/encounter.cpp
-	${HERALD_BASE}/src/datatype/immediate_send_data.cpp
-	${HERALD_BASE}/src/datatype/location.cpp
-	${HERALD_BASE}/src/datatype/payload_data.cpp
-	${HERALD_BASE}/src/datatype/rssi.cpp
-	${HERALD_BASE}/src/datatype/sensor_type.cpp
-	${HERALD_BASE}/src/datatype/signal_characteristic_data.cpp
-	${HERALD_BASE}/src/datatype/target_identifier.cpp
-	${HERALD_BASE}/src/datatype/time_interval.cpp
-	${HERALD_BASE}/src/datatype/uuid.cpp
-	${HERALD_BASE}/src/engine/activities.cpp
-	${HERALD_BASE}/src/engine/coordinator.cpp
-	${HERALD_BASE}/src/payload/beacon/beacon_payload_data_supplier.cpp
-	${HERALD_BASE}/src/payload/fixed/fixed_payload_data_supplier.cpp
-	${HERALD_BASE}/src/payload/simple/f.cpp
-	${HERALD_BASE}/src/payload/simple/k.cpp
-	${HERALD_BASE}/src/payload/simple/simple_payload_data_supplier.cpp
-	${HERALD_BASE}/src/payload/extended/extended_data.cpp
+  ${HERALD_BASE}/src/datatype/base64_string.cpp
+  ${HERALD_BASE}/src/datatype/data.cpp
+  ${HERALD_BASE}/src/datatype/date.cpp
+  ${HERALD_BASE}/src/datatype/distance.cpp
+  ${HERALD_BASE}/src/datatype/distribution.cpp
+  ${HERALD_BASE}/src/datatype/encounter.cpp
+  ${HERALD_BASE}/src/datatype/immediate_send_data.cpp
+  ${HERALD_BASE}/src/datatype/location.cpp
+  ${HERALD_BASE}/src/datatype/payload_data.cpp
+  ${HERALD_BASE}/src/datatype/rssi.cpp
+  ${HERALD_BASE}/src/datatype/sensor_type.cpp
+  ${HERALD_BASE}/src/datatype/signal_characteristic_data.cpp
+  ${HERALD_BASE}/src/datatype/target_identifier.cpp
+  ${HERALD_BASE}/src/datatype/time_interval.cpp
+  ${HERALD_BASE}/src/datatype/uuid.cpp
+  ${HERALD_BASE}/src/engine/activities.cpp
+  ${HERALD_BASE}/src/engine/coordinator.cpp
+  ${HERALD_BASE}/src/payload/beacon/beacon_payload_data_supplier.cpp
+  ${HERALD_BASE}/src/payload/fixed/fixed_payload_data_supplier.cpp
+  ${HERALD_BASE}/src/payload/simple/f.cpp
+  ${HERALD_BASE}/src/payload/simple/k.cpp
+  ${HERALD_BASE}/src/payload/simple/simple_payload_data_supplier.cpp
+  ${HERALD_BASE}/src/payload/extended/extended_data.cpp
   ${HERALD_BASE}/src/default_sensor_delegate.cpp
   #${HERALD_BASE}/src/context.cpp
   ${HERALD_BASE}/src/sensor_array.cpp

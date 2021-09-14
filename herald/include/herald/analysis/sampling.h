@@ -13,17 +13,17 @@
 
 namespace herald {
 namespace analysis {
-/// A set of structs compatible with, but not reliant upon, views and ranges in Herald
+/// \brief A set of structs compatible with, but not reliant upon, views and ranges in Herald
 namespace sampling {
 
 using namespace herald::datatype;
 
-/// The unique ID of a source instance that has been sampled. 
+/// \brief The unique ID of a source instance that has been sampled. 
 /// E.g. 64 bit hash of some unique identifier in the source physical realm 
 /// (unknown to the analysis engine)
 using SampledID = std::size_t;
 
-/// The Sample taken from an object with ID of type SampledID
+/// \brief The Sample taken from an object with ID of type SampledID
 template <typename ValT>
 struct Sample {
   using value_type = ValT;
@@ -93,7 +93,7 @@ template <typename SampleListT,
           typename ValT = typename SampleListT::value_type>
 struct SampleIterator;
 
-/// A Circular container for Samples
+/// \brief A Circular container for Samples
 /// Can be used as a container in the views library
 template <typename SampleT, // This is Sample<SampleValueT>
           std::size_t MaxSize,
@@ -139,7 +139,7 @@ struct SampleList {
     data[newestPosition] = SampleT{taken,val};
   }
 
-  std::size_t size() const {
+  std::size_t size() const noexcept {
     if (newestPosition == SIZE_MAX) return 0;
     if (newestPosition >= oldestPosition) {
       // not overlapping the end
@@ -149,7 +149,7 @@ struct SampleList {
     return (1 + newestPosition) + (data.size() - oldestPosition);
   }
 
-  const SampleT& operator[](std::size_t idx) const {
+  const SampleT& operator[](std::size_t idx) const noexcept {
     if (newestPosition >= oldestPosition) {
       return data[idx + oldestPosition];
     }
@@ -160,7 +160,7 @@ struct SampleList {
     return data[idx + oldestPosition];
   }
 
-  void clearBeforeDate(const Date& before) {
+  void clearBeforeDate(const Date& before) noexcept {
     if (SIZE_MAX == oldestPosition) return;
     while (oldestPosition != newestPosition) {
       if (data[oldestPosition].taken < before) {
@@ -181,7 +181,7 @@ struct SampleList {
     }
   }
 
-  void clear() {
+  void clear() noexcept {
     oldestPosition = SIZE_MAX;
     newestPosition = SIZE_MAX;
   }
@@ -189,7 +189,7 @@ struct SampleList {
   // SampleT latest() {
   //   return data[newestPosition];
   // }
-  Date latest() {
+  Date latest() noexcept {
     return data[newestPosition].taken;
   }
 
@@ -207,7 +207,7 @@ private:
   std::size_t oldestPosition;
   std::size_t newestPosition;
 
-  void incrementNewest() {
+  void incrementNewest() noexcept {
     if (SIZE_MAX == newestPosition) {
       newestPosition = 0;
       oldestPosition = 0;
@@ -286,7 +286,7 @@ struct SampleIterator {
   }
 
   // to allow std::distance to work
-  difference_type operator-(const SampleIterator<SampleListT>& other) {
+  difference_type operator-(const SampleIterator<SampleListT>& other) const noexcept {
     return pos - other.pos;
   }
 
@@ -298,7 +298,7 @@ struct SampleIterator {
 
   // postfix operator
   SampleIterator<SampleListT> operator++(int) {
-    SampleIterator<SampleListT> cp =  *this; // copy of instance
+    SampleIterator<SampleListT> cp = *this; // copy of instance
     ++(*this);
     return cp;
   }
@@ -316,7 +316,7 @@ private:
   std::size_t pos;
 };
 
-/// for std::distance
+/// \brief Distance operator for std::distance
 template<typename T>
 typename SampleIterator<T>::difference_type distance(SampleIterator<T> first, SampleIterator<T> last) {
   return last - first;

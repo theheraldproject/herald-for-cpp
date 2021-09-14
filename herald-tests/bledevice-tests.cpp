@@ -3,7 +3,6 @@
 //
 
 #include <memory>
-#include <vector>
 
 #include "catch.hpp"
 
@@ -13,11 +12,11 @@
 
 class DummyBLEDeviceDelegate : public herald::ble::BLEDeviceDelegate {
 public:
-  DummyBLEDeviceDelegate() : callbackCalled(false), dev(), attr() {};
-  ~DummyBLEDeviceDelegate() = default;
+  DummyBLEDeviceDelegate() noexcept : callbackCalled(false), dev(), attr() {};
+  ~DummyBLEDeviceDelegate() noexcept = default;
 
   // overrides
-  void device(const herald::ble::BLEDevice& device, const herald::ble::BLEDeviceAttribute didUpdate) override {
+  void device(const herald::ble::BLEDevice& device, const herald::ble::BLEDeviceAttribute didUpdate) noexcept override {
     callbackCalled = true;
     dev.emplace(std::reference_wrapper<const herald::ble::BLEDevice>(device));
     attr.emplace(didUpdate);
@@ -47,7 +46,7 @@ TEST_CASE("ble-device-ctor", "[ble][device][ctor]") {
     // REQUIRE(device.timeIntervalSinceLastWritePayloadSharing() == herald::datatype::TimeInterval::never());
     // REQUIRE(device.timeIntervalSinceLastWriteRssi() == herald::datatype::TimeInterval::never());
     
-    REQUIRE(device.state() == herald::ble::BLEDeviceState::uninitialised);
+    REQUIRE(device.state() == herald::ble::BLEDeviceState::disconnected);
     REQUIRE(device.operatingSystem() == herald::ble::BLEDeviceOperatingSystem::unknown);
     REQUIRE(device.payloadData().size() == 0); // Uninitialised, to data must be empty
     // REQUIRE(!device.immediateSendData().has_value());
@@ -71,6 +70,7 @@ TEST_CASE("ble-device-update-state", "[ble][device][update][state]") {
     herald::ble::BLEDeviceState s = herald::ble::BLEDeviceState::disconnected;
     device.state(s);
 
+    INFO("State is: " << (int)device.state() << " Expected: " << (int)s);
     REQUIRE(device.state() == s);
     REQUIRE(delegate.callbackCalled);
     const herald::ble::BLEDevice& dev = delegate.dev.value().get();
@@ -264,7 +264,7 @@ TEST_CASE("ble-device-update-pseudo", "[ble][device][update][pseudo]") {
     REQUIRE(device.pseudoDeviceAddress().value() == pseudo);
 
     // delegates
-    REQUIRE(!delegate.callbackCalled);
+    REQUIRE(delegate.callbackCalled); // we provided a target id, and thus it is discovered
 
     herald::datatype::TimeInterval lu = device.timeIntervalSinceLastUpdate();
     REQUIRE(lu != herald::datatype::TimeInterval::never()); // pseudo address counts as update
@@ -316,7 +316,7 @@ TEST_CASE("ble-device-update-ignore", "[ble][device][update][ignore]") {
     REQUIRE(device.ignore() == true);
 
     // delegates
-    REQUIRE(!delegate.callbackCalled);
+    REQUIRE(delegate.callbackCalled); // we provided a target id, and thus it is discovered
 
     herald::datatype::TimeInterval lu = device.timeIntervalSinceLastUpdate();
     REQUIRE(lu == herald::datatype::TimeInterval::zero());
@@ -348,7 +348,7 @@ TEST_CASE("ble-device-update-payloadchar", "[ble][device][update][payloadchar]")
     // REQUIRE(device.payloadCharacteristic().value() == uuid);
 
     // delegates
-    REQUIRE(!delegate.callbackCalled);
+    REQUIRE(delegate.callbackCalled); // we provided a target id, and thus it is discovered
 
     herald::datatype::TimeInterval lu = device.timeIntervalSinceLastUpdate();
     REQUIRE(lu == herald::datatype::TimeInterval::zero());
@@ -424,7 +424,7 @@ TEST_CASE("ble-device-invalidate-chars", "[ble][device][update][invalidatechars]
     REQUIRE(device.payloadCharacteristic().has_value() == false);
 
     // delegates
-    REQUIRE(!delegate.callbackCalled);
+    REQUIRE(delegate.callbackCalled); // we provided a target id, and thus it is discovered
 
     herald::datatype::TimeInterval lu = device.timeIntervalSinceLastUpdate();
     REQUIRE(lu == herald::datatype::TimeInterval::zero());

@@ -45,15 +45,15 @@ public:
   /// Thus for MemoryArena<2048,10>() you use 2048 + (2048 / 10) = 2253 bytes
   static constexpr std::size_t PageSize = AllocationSize;
 
-  MemoryArena() noexcept
+  constexpr MemoryArena() noexcept
    : arena(), pagesInUse(false)
   {
     ;
   }
 
-  ~MemoryArena() = default;
+  ~MemoryArena() noexcept = default;
 
-  void reserve(MemoryArenaEntry& entry,std::size_t newSize) {
+  void reserve(MemoryArenaEntry& entry,std::size_t newSize) noexcept {
     if (newSize <= entry.byteLength) {
       return;
     }
@@ -92,10 +92,14 @@ public:
       }
     }
     // ran out of memory! Throw! (Causes catastrophic crash)
+#ifdef __ZEPHYR__
+    std::terminate();
+#else
     throw std::runtime_error("Unable to allocate memory in arena");
+#endif
   }
 
-  void deallocate(MemoryArenaEntry& entry) {
+  void deallocate(MemoryArenaEntry& entry) noexcept {
     if (!entry.isInitialised()) {
       return; // guard
     }
@@ -108,21 +112,29 @@ public:
     entry.startPageIndex = 0;
   }
 
-  void set(const MemoryArenaEntry& entry, unsigned short bytePosition, unsigned char value) {
+  void set(const MemoryArenaEntry& entry, unsigned short bytePosition, unsigned char value) noexcept {
     if (!entry.isInitialised()) {
       return;
     }
     arena[(entry.startPageIndex * PageSize) + bytePosition] = value;
   }
 
-  char get(const MemoryArenaEntry& entry, unsigned short bytePosition) {
+  char get(const MemoryArenaEntry& entry, unsigned short bytePosition) const noexcept {
     if (!entry.isInitialised()) {
       return '\0';
     }
     return arena[(entry.startPageIndex * PageSize) + bytePosition];
   }
 
-  std::size_t pagesFree() const {
+  const unsigned char* rawStartAddress(const MemoryArenaEntry& entry) const noexcept {
+    if (!entry.isInitialised()) {
+      return 0;
+    }
+    // The following is guaranteed by the STL 23.3.2.1
+    return &arena[(entry.startPageIndex * PageSize)];
+  }
+
+  std::size_t pagesFree() const noexcept {
     return pagesRequired(Size,PageSize) - pagesInUse.count();
   }
 

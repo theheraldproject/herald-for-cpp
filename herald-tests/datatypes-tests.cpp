@@ -26,6 +26,12 @@ TEST_CASE("datatypes-proximity-basics", "[datatypes][proximity][basics]") {
 
     REQUIRE(p.unit == herald::datatype::ProximityMeasurementUnit::RSSI);
     REQUIRE(p.value == 11.0);
+
+    std::string desc = p.description();
+    std::string desc2 = (std::string)p;
+    std::string expected{"0:11"}; // 0 == RSSI
+    REQUIRE(desc == expected);
+    REQUIRE(desc2 == expected);
   }
 }
 

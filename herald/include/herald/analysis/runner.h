@@ -71,7 +71,11 @@ struct VariantSet {
         return *pval;
       }
     }
+#ifdef __ZEPHYR__
+    std::terminate();
+#else
     throw std::bad_variant_access();
+#endif
   }
 
   const std::size_t size() const {
@@ -128,7 +132,11 @@ struct AnalysisDelegateManager {
         return *pval;
       }
     }
+#ifdef __ZEPHYR__
+    std::terminate();
+#else
     throw std::bad_variant_access();
+#endif
   }
 
 private:
@@ -181,7 +189,11 @@ struct AnalysisProviderManager {
         return *pval;
       }
     }
+#ifdef __ZEPHYR__
+    std::terminate();
+#else
     throw std::bad_variant_access();
+#endif
   }
 
   template <typename InputT,typename OutputT>

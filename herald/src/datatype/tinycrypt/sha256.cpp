@@ -34,7 +34,7 @@ SHA256::digest(const Data& with) noexcept
 
   /* Simulating multiple fragments */
   uint8_t buffer[32]; // temp buffer
-  std::uint8_t temp;
+  std::uint8_t temp = 0;
   std::size_t idx = 0; // index in original Data with object
   std::size_t read = 0; // number of bytes read into buffer
   while (idx < with.size()) {

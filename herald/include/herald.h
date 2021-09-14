@@ -2,11 +2,15 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
+// PLATFORM SPECIFIC OVERRIDES FIRST
+#include "herald/platform.h"
+
 // FORCE CORRECT UINT32_t TYPES
 #include <cstdint>
 
 // Now include STDLIB extensions
 #include "herald/datatype/stdlib.h"
+#include "herald/util/is_valid.h"
 
 /// Main Herald library include for C++ Native platforms
 // Convenience include file
@@ -31,6 +35,7 @@
 #endif
 
 // Datatype namespace
+#include "herald/datatype/allocatable_array.h"
 #include "herald/datatype/base64_string.h"
 #include "herald/datatype/bluetooth_state.h"
 #include "herald/datatype/data.h"
@@ -70,6 +75,7 @@
 #include "herald/engine/coordinator.h"
 
 // ble namespace
+#include "herald/ble/ble.h"
 #include "herald/ble/ble_coordinator.h"
 #include "herald/ble/ble_database_delegate.h"
 #include "herald/ble/ble_database.h"
@@ -90,6 +96,9 @@
 
 #include "herald/ble/ble_concrete.h"
 #include "herald/ble/ble_concrete_database.h"
+
+// ble utilities (safe on non Zephyr)
+#include "herald/ble/zephyr/nordic_uart/nordic_uart_sensor_delegate.h"
 
 // analysis namespace
 #include "herald/analysis/aggregates.h"

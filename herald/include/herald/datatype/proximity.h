@@ -19,7 +19,7 @@ struct Proximity {
   double value;
 
   std::string description() const noexcept {
-    return std::to_string((short)unit) + ":" + std::to_string(value);
+    return std::to_string((short)unit) + ":" + std::to_string((int)value);
   }
 
   operator std::string() const noexcept {
