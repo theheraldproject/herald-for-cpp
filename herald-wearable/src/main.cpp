@@ -82,7 +82,7 @@ constexpr int stackMaxSize =
 #else
   + 8192
 #endif
-+ 2048 // Since v2.1 test for debug
+  + 4508 // Since v2.1 test for debug
   // + 5120 // Since v2.1 AllocatableArray and removal of vector and map
 	// Note +0 crashes at Herald entry, +1024 crashes at PAST DATE, +2048 crashes at creating sensor array
 	// +3072 crashes at herald entry with Illegal load of EXC_RETURN into PC
@@ -449,6 +449,8 @@ void main(void)
 			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
 			-1, K_USER,
 			K_NO_WAIT);
+	int nameOk = k_thread_name_set(herald_pid,"herald");
+	nameOk = k_thread_name_set(NULL,"main");
 
   // herald_entry();
   // NOTE Above only works if CONFIG_MAIN_STACK_SIZE=2048 is set in prj.conf

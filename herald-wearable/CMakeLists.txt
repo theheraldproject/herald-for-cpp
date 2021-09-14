@@ -38,6 +38,7 @@ if($ENV{BOARD} MATCHES .*nrf5340.*)
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf5340.conf
   )
+  add_definitions(-DHERALD_MEMORYARENA_MAX=4096)
 elseif($ENV{BOARD} MATCHES .*nrf52840.*)
   set(OVERLAY_CONFIG 
     ${OVERLAY_CONFIG} 
@@ -49,12 +50,13 @@ elseif($ENV{BOARD} MATCHES .*nrf52832.*)
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf52832.conf
   )
-  add_definitions(-DHERALD_MEMORYARENA_MAX=4096)
+  add_definitions(-DHERALD_MEMORYARENA_MAX=512)
 elseif($ENV{BOARD} MATCHES .*nrf52833.*)
   set(OVERLAY_CONFIG 
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf52833.conf
   )
+  add_definitions(-DHERALD_MEMORYARENA_MAX=4096)
 endif()
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   set(OVERLAY_CONFIG 
