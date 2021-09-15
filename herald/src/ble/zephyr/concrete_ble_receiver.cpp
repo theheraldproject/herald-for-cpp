@@ -75,13 +75,19 @@ namespace zephyrinternal {
   bt_conn_le_create_param* BTLECreateParam = BT_CONN_LE_CREATE_CONN; // BT_CONN_LE_CREATE_PARAM(BT_CONN_LE_OPT_NONE, 0x0010,0x0010);// NOT BT_CONN_LE_CREATE_CONN;
 
   struct bt_conn_le_create_param defaultCreateParam = BT_CONN_LE_CREATE_PARAM_INIT(
-    BT_CONN_LE_OPT_NONE, BT_GAP_SCAN_FAST_INTERVAL, BT_GAP_SCAN_FAST_INTERVAL
+    BT_CONN_LE_OPT_NONE, BT_GAP_SCAN_FAST_INTERVAL, BT_GAP_SCAN_FAST_WINDOW
   );
   struct bt_le_conn_param defaultConnParam = BT_LE_CONN_PARAM_INIT(
     //BT_GAP_INIT_CONN_INT_MIN, BT_GAP_INIT_CONN_INT_MAX, 0, 400
     //12, 12 // aka 15ms, default from apple documentation
-    0x50, 0x50, // aka 80ms, from nRF SDK LLPM sample
-    0, 400
+    // 0x50, 0x50, // aka 80ms, from nRF SDK LLPM sample
+    // 16, 16, // aka 80ms (N * 1.25ms)
+    // 12, 48, // aka min 15ms max 60ms
+    // 50,50,
+    // 0, 400 // aka 4000ms=4s (N * 10ms)
+    // The following were observed FROM an iPhone 7
+    24, 24, // aka 30ms
+    0, 72 // aka 0 latency, 720ms timeout
   );
 
   struct bt_conn_le_create_param* getDefaultCreateParam() {
@@ -195,6 +201,13 @@ namespace zephyrinternal {
   }
 
 
+  [[maybe_unused]]
+  void print_cb(struct bt_conn *conn, void *data)
+  {
+    if (concreteReceiverInstance.has_value()) {
+      concreteReceiverInstance.value().get().print(conn, data);
+    }
+  }
 
   
   void discovery_completed_cb(struct bt_gatt_dm *dm,

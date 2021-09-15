@@ -215,13 +215,13 @@ public:
     // HTDBG((std::string)targetIdentifier);
     auto results = matches([this,&targetIdentifier](const BLEDevice& d) {
       // HTDBG("device(TargetIdentifier) matches callback");
-      HTDBG(" Testing existing target identifier {} against new target identifier {}",(std::string)d.identifier(),(std::string)targetIdentifier);
+      // HTDBG(" Testing existing target identifier {} against new target identifier {}",(std::string)d.identifier(),(std::string)targetIdentifier);
       return d.identifier() == targetIdentifier;
     });
     // HTDBG("Got matches");
     // HTDBG(std::to_string(results.size()));
     if (results.size() != 0 && results[0].has_value()) {
-      HTDBG("Device for target identifier {} already exists",(std::string)targetIdentifier);
+      // HTDBG("Device for target identifier {} already exists",(std::string)targetIdentifier);
       return results[0].value().get(); // TODO ensure we send back the latest, not just the first match
     }
     HTDBG("New target identified: {}",(std::string)targetIdentifier);

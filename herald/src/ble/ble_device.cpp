@@ -628,6 +628,7 @@ BLEDevice::state(BLEDeviceState newState)
     if (rs.connectRepeatedFailures >= 5) { // Changed to 5 from 10 for quicker failure in busy areas
       // Ignore for a while (progressive backoff)
       operatingSystem(BLEDeviceOperatingSystem::ignore);
+      ignore(true);
       // Don't backoff again immediately
       rs.connectRepeatedFailures = 0;
     }

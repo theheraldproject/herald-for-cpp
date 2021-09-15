@@ -61,6 +61,13 @@ public:
     HLOGGERINIT(mContext, "Sensor", "SensorArray")
   {
     // addSensors(0,sensors...);
+    // Add these now otherwise coordination providers are not linked
+    // (Causes Herald Protocol to not be obeyed)
+    for (auto& sensor : mSensorArray) {
+      std::visit([this](auto&& arg) {
+        engine.add(((decltype(arg))arg).get()); // cast to call derived class function
+      }, sensor);
+    }
   }
 
   ~SensorArray() = default;

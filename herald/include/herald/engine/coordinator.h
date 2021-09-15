@@ -94,8 +94,8 @@ public:
     for (auto& prov : providers) {
       assignPrereqs.emplace(prov,std::vector<PrioritisedPrerequisite>());
     }
-    // HTDBG("Completed initialisation of provider prerequisities containers");
-    // HTDBG(" - Provider count: {}", providers.size());
+    HTDBG("Completed initialisation of provider prerequisities containers");
+    HTDBG(" - Provider count: {}", providers.size());
     
     std::vector<PrioritisedPrerequisite> connsRequired;
     // Loop over providers and ask for feature pre-requisites
@@ -104,8 +104,8 @@ public:
       std::copy(myConns.begin(),myConns.end(),
         std::back_insert_iterator<std::vector<PrioritisedPrerequisite>>(connsRequired));
     }
-    // HTDBG(std::to_string(connsRequired.size()));
-    // HTDBG("Retrieved providers' current prerequisites");
+    HTDBG(std::to_string(connsRequired.size()));
+    HTDBG("Retrieved providers' current prerequisites");
     // TODO de-duplicate pre-reqs
     // Now link required prereqs to each provider
     for (auto& p : connsRequired) {
@@ -114,14 +114,14 @@ public:
         assignPrereqs[el->second].push_back(p);
       }
     }
-    // HTDBG("Linked pre-reqs to their providers");
+    HTDBG("Linked pre-reqs to their providers");
 
     // // Some debug checks here
-    // int cnt = 0;
-    // for (auto& ass : assignPrereqs) {
-    //   // HTDBG("assign prereqs number {} has this many prereqs to fill {}", cnt, ass.second.size());
-    //   cnt++;
-    // }
+    int cnt = 0;
+    for (auto& ass : assignPrereqs) {
+      // HTDBG("assign prereqs number {} has this many prereqs to fill {}", cnt, ass.second.size());
+      cnt++;
+    }
     
     // Communicate with relevant feature providers and request features for targets (in descending priority order)
     //  - Includes removal of previous features no longer needed
@@ -145,7 +145,7 @@ public:
       std::copy(myProvisioned.begin(),myProvisioned.end(),
         std::back_insert_iterator<std::vector<PrioritisedPrerequisite>>(provisioned));
     }
-    // HTDBG("All pre-requisities requests sent and responses received");
+    HTDBG("All pre-requisities requests sent and responses received");
     // TODO do the above asynchronously and await callback or timeout for all
 
     // For each which are now present, ask for activities (in descending priority order)

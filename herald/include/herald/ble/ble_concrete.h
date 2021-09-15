@@ -207,11 +207,6 @@ public:
   }
 
 private:
-
-  // Internal API private methods here too
-
-  // Data members hidden by PIMPL
-
   ContextT& m_context;
   ConcreteBLEDatabase<ContextT,DBSize> database;
   BluetoothStateManager& stateManager;

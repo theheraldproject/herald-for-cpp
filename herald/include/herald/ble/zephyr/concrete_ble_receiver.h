@@ -148,6 +148,8 @@ namespace zephyrinternal {
   void scan_cb(const bt_addr_le_t *addr, int8_t rssi, uint8_t adv_type,
     struct net_buf_simple *buf);
 
+  [[maybe_unused]]
+  void print_cb(struct bt_conn *conn, void *data);
 
   // BT_SCAN_CB_INIT(scan_cbs, scan_filter_match, );
 
@@ -312,11 +314,36 @@ public:
   // void readPayload(Activity, CompletionCallback) override;
   // void immediateSend(Activity, CompletionCallback) override;
   // void immediateSendAll(Activity, CompletionCallback) override;
-  
+
+  void print(struct bt_conn *conn,void *data) override {
+    struct bt_conn_info info;
+    int success = bt_conn_get_info(conn,&info);
+    if (0 == success) {
+      std::string ci("  ID: ");
+      ci += std::to_string(info.id);
+      ci += ", type: ";
+      ci += (BT_CONN_TYPE_LE==info.type?"LE":"BR");
+      if (BT_CONN_TYPE_LE == info.type) {
+        ci += ", LE timeout: ";
+        ci += std::to_string(info.le.timeout);
+      }
+      HTDBG(ci);
+    } else {
+      HTDBG("  Error reading connection info");
+    }
+  }
+
+  void printZephyrConnectionStates() {
+    HTDBG("EXISTING CONNECTION INFO:-");
+    bt_conn_foreach(BT_CONN_TYPE_LE, zephyrinternal::print_cb, NULL);
+  }
+
   // NON C++17 VERSION:-
   bool openConnection(const TargetIdentifier& toTarget) override
   {
     HTDBG("openConnection");
+
+    printZephyrConnectionStates();
 
     // Create addr from TargetIdentifier data
     ConnectedDeviceState& state = findOrCreateState(toTarget);
@@ -433,10 +460,12 @@ public:
         ok = false;
         if (-EINVAL == success) {
           HTDBG(" - ERROR in passed in parameters");
+          // Remove connection by calling disconnected explicitly (in case connection closed elsewhere)
+          disconnected(state.connection, success);
         } else if (-EAGAIN == success) {
           HTDBG(" - bt device not ready");
         } else if (-EALREADY == success) {
-          HTDBG(" - bt device initiating")
+          HTDBG(" - bt device initiating");
         } else if (-ENOMEM == success) {
           HTDBG(" - bt connect attempt failed with default BT ID. Trying again later.");
           // auto& device = db.device(toTarget);
@@ -445,6 +474,7 @@ public:
           HTDBG(" - bt_hci_cmd_create has no buffers free");
         } else if (-ECONNREFUSED == success) {
           HTDBG(" - Connection refused");
+          // Note: Don't ignore as remote device may support few connections
         } else if (-EIO == success) {
           HTDBG(" - Low level BT HCI opcode IO failure");
         } else {
@@ -542,7 +572,9 @@ public:
 
   void restartScanningAndAdvertising() override
   {
+    HTDBG("RESTART SCANNING AND ADVERTISING CALLED");
     // Print out current list of devices and their info
+    bool hasInUseConnection = false;
     if (!connectionStates.empty()) {
       HTDBG("Current connection states cached:-");
       for (auto& [key,value] : connectionStates) {
@@ -609,6 +641,9 @@ public:
             bt_conn_disconnect(iter->second.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
             bt_conn_unref(iter->second.connection);
             iter->second.connection = NULL;
+          } else {
+            hasInUseConnection = hasInUseConnection && 
+              (iter->second.inDiscovery || iter->second.remoteInstigated || iter->second.isReading);
           }
         }
 
@@ -620,8 +655,13 @@ public:
 
     // Restart scanning
     // HTDBG("restartScanningAndAdvertising - requesting scanning and advertising restarts");
-    startScanning();
-    m_context.getPlatform().getAdvertiser().startAdvertising();
+    if (hasInUseConnection) {
+      HTDBG("CONNECTIONS IN USE - NOT RESTART ADVERTISING AND SCANNING");
+    } else {
+      HTDBG("RESTARTING ADVERTISING AND SCANNING");
+      startScanning();
+      m_context.getPlatform().getAdvertiser().startAdvertising();
+    }
   }
 
   std::optional<Activity> serviceDiscovery(Activity activity) override
@@ -784,6 +824,7 @@ private:
       // }
       return;
     }
+    HTDBG("Connected: Connected successfully");
 
     state.connection = conn;
     bt_addr_le_copy(&state.address,addr);
@@ -810,15 +851,30 @@ private:
     BLEMacAddress bleMacAddress(addr->a.val);
     HTDBG((std::string)bleMacAddress);
 
+    // Do this before calling unref
+    auto& device = db.device(bleMacAddress); // Find by actual current physical address
+
     if (reason) {
       HTDBG("Disconnection: Reason value:-");
-      HTDBG(std::to_string(reason));
+      if (19 == reason) {
+        HTDBG("0x13 (19) remote disconnected from us");
+      } else if (20 == reason) {
+        HTDBG("0x14 (20) remote_device_terminated_connection_due_to_low_resources");
+      } else if (2 == reason) {
+        HTDBG("0x02 (02) Connection does not exist, or connection open request was cancelled.");
+      } else if (22 == reason) {
+        HTDBG("0x16 (22) We closed the connection ourselves");
+      } else if (62 == reason) {
+        HTDBG("0x3e (62) connection_failed_to_be_established (opened, but no packets from remote");
+        // Assume remote doesn't accept connection
+        device.ignore(true);
+      } else {
+        HTDBG(std::to_string(reason));
+      }
       // Note: See Bluetooth Specification, Vol 2. Part D (Error codes)
       // 0x19 = Unknown LMP PDU (Issued if nRF Connect iOS app disconnects from this device)
       // 0x20 = Unsupported LL parameter value
     }
-    // Do this before calling unref
-    auto& device = db.device(bleMacAddress); // Find by actual current physical address
     
     // TODO log disconnection time in ble database
     

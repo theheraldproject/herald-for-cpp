@@ -148,6 +148,9 @@ public:
               struct bt_gatt_read_params *params,
               const void *data, uint16_t length) = 0;
 
+  // Internal info callbacks
+  virtual void print(struct bt_conn *conn, void *data) = 0;
+
   // Connection management
   virtual void le_param_updated(struct bt_conn *conn, uint16_t interval,
             uint16_t latency, uint16_t timeout) = 0;

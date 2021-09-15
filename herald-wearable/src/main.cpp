@@ -204,7 +204,7 @@ void cc3xx_init() {
 
 void herald_entry() {
 	APP_DBG("Herald entry");
-	k_sleep(K_MSEC(10000)); // pause so we have time to see Herald initialisation log messages. Don't do this in production!
+	k_sleep(K_MSEC(6000)); // pause so we have time to see Herald initialisation log messages. Don't do this in production!
 	APP_DBG("Herald setup begins");
 
 	// Test date/time based things on Zephyr - interesting issues with compliance!
@@ -219,7 +219,8 @@ void herald_entry() {
 	// First initialise the Zephyr Context - this links Herald to any Zephyr OS specific constructs or callbacks
 	ZephyrContextProvider zcp;
 	Context ctx(zcp,zcp.getLoggingSink(),zcp.getBluetoothStateManager());
-	using CT = Context<ZephyrContextProvider,ZephyrLoggingSink,BluetoothStateManager>;
+	// Note: The following shows the type of the above, but you don't need a reference to it in your app
+	// using CT = Context<ZephyrContextProvider,ZephyrLoggingSink,BluetoothStateManager>;
 
 
 	AppLoggingDelegate appDelegate;
@@ -346,6 +347,8 @@ void herald_entry() {
 	// Enable transmitter (i.e. this is a Herald device)
 	BLESensorConfiguration config = ctx.getSensorConfiguration(); // copy ctor
 	config.advertisingEnabled = true;
+	config.scanningEnabled = true; // Enables scanning, payload fetching, etc. 
+	// NOTE: ^ PROVIDES BLE COORD PROVIDER FOR THE HERALD PROTOCOL!!!
 	ctx.setSensorConfiguration(config);
 
 	
@@ -385,7 +388,7 @@ void herald_entry() {
 	sa.start(); // There's a corresponding stop() call too
 	
 	APP_DBG("Sensor array running!");
-	k_sleep(K_SECONDS(10));
+	k_sleep(K_SECONDS(2));
 
 
 	int iter = 0;
@@ -397,7 +400,7 @@ void herald_entry() {
 	int delay = 250; // KEEP THIS SMALL!!! This is how often we check to see if anything needs to happen over a connection.
 	
 	APP_DBG("Entering herald iteration loop");
-	k_sleep(K_SECONDS(10));
+	k_sleep(K_SECONDS(2));
 	while (1) {
 		k_sleep(K_MSEC(delay)); 
 		Date now;

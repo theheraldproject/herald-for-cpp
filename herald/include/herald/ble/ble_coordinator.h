@@ -51,6 +51,7 @@ public:
   //   const ConnectionCallback& connCallback) override;
   std::vector<PrioritisedPrerequisite> provision(
     const std::vector<PrioritisedPrerequisite>& requested) override {
+    HTDBG("provision() entry");
     if (requested.empty()) {
       // HTDBG("No connections requested for provisioning");
     } else {
@@ -142,6 +143,7 @@ public:
   // Runtime coordination callbacks
   /** Get a list of what connections are required to which devices now (may start, maintain, end (if not included)) **/
   std::vector<PrioritisedPrerequisite> requiredConnections() override {
+    HTDBG("BLECoordinator.requiredConnections entry");
     std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>> results;
 
     // This ensures we break from making connections to allow advertising and scanning
@@ -218,7 +220,7 @@ public:
     // TODO any other devices we may have outstanding work for that requires connections
 
     // DEBUG ONLY ELEMENTS
-    if (newConns.size() > 0) {
+    // if (newConns.size() > 0) {
       // print debug info about the BLE Database
       HTDBG("BLE DATABASE CURRENT CONTENTS:-");
       auto allDevices = db.matches([](const BLEDevice& device) -> bool {
@@ -276,7 +278,8 @@ public:
         di += (device.value().get().payloadData().size() > 0 ? device.value().get().payloadData().hexEncodedString() : "false");
         HTDBG(di);
       }
-    } else {
+    // } else {
+    if (0 == newConns.size()) {
       // restart scanning when no connection activity is expected
       pp.restartScanningAndAdvertising();
     }
@@ -285,6 +288,7 @@ public:
   }
 
   std::vector<Activity> requiredActivities() override {
+    HTDBG("requiredActivities() entry");
     std::vector<Activity> results;
 
     // General activities first - no connections required
