@@ -41,6 +41,17 @@ uint32_t waitWithTimeout(uint32_t timeoutMillis, k_timeout_t period, std::functi
 }
 
 namespace zephyrinternal {
+  std::string toMacString(const bt_addr_le_t* addr) {
+    Data newAddr(addr->a.val,6);
+    BLEMacAddress newMac(newAddr);
+    return (std::string)newMac;
+  }
+  std::string toIdentityString(const bt_addr_le_t* addr) {
+    Data newAddr(addr->a.val,5);
+    BLEMacAddress newMac(newAddr);
+    return (std::string)newMac;
+  }
+  
   // Items that can only be defined in a single translation unit (cpp file):-
 
   

@@ -60,7 +60,10 @@
     "stdexcept": "cpp",
     "streambuf": "cpp",
     "thread": "cpp",
-    "cinttypes": "cpp"
+    "cinttypes": "cpp",
+    "bit": "cpp",
+    "bitset": "cpp",
+    "netfwd": "cpp"
   },
   "cmake.configureEnvironment": {
     // "BOARD": "nrf52dk_nrf52832"

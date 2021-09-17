@@ -329,9 +329,17 @@ void herald_entry() {
 
 	// auto& sink = ctx.getLoggingSink();
 	// sink.log("subsys1","cat1",SensorLoggerLevel::debug,"Here's some info for you");
-	// // auto payload = pds.payload(PayloadTimestamp(),nullptr);
-	// // sink.log("subsys1","cat1",SensorLoggerLevel::debug,"I've got some payload data");
-	// // sink.log("subsys1","cat1",SensorLoggerLevel::debug,payload->hexEncodedString());
+	// auto payload = pds.payload(PayloadTimestamp(),nullptr);
+	// sink.log("subsys1","cat1",SensorLoggerLevel::debug,"I've got some payload data");
+	// sink.log("subsys1","cat1",SensorLoggerLevel::debug,payload->hexEncodedString());
+
+	// Basic logging type checks
+	HLOGGERINLINE(ctx,"basesys1","cat2");
+	HTDBG("A message with a number with {} value", 124);
+	HTDBG("A message with a double with {} value", 456.789);
+	HTDBG("A message with a double with {} and {} values", 124, 456.789);
+	HTDBG("A message with a double with {} and '{}' and {} values", 124, "flibble", 456.789);
+	// HTDBG("A message with a payload convertible to string with {1} value", payload); // TODO get this working automatically
 	
 	// auto& sink2 = ctx.getLoggingSink();
 	// sink2.log("subsys2","cat2",SensorLoggerLevel::debug,"Here's some more info for you");
