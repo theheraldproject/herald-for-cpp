@@ -24,6 +24,8 @@ ZephyrLoggingSink::log(const std::string& subsystem,const std::string& category,
   switch (level) {
     case SensorLoggerLevel::debug:
       LOG_DBG("%s",log_strdup(finalMessage.c_str()));
+      // The following gives log_strdup allocation failed
+      // LOG_DBG("%s,%s,%s",log_strdup(subsystem.c_str()),log_strdup(category.c_str()),log_strdup(message.c_str()));
       break;
     case SensorLoggerLevel::fault:
       LOG_ERR("%s",log_strdup(finalMessage.c_str()));

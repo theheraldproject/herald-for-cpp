@@ -381,8 +381,8 @@ public:
   // Note: C++11 Variadic template parameter pack expansion
   template <typename ... Types>
   void debug(const std::string& message, const Types&... args) {
-    const int size = sizeof...(args);
-    if (0 == size) {
+    constexpr int size = sizeof...(args);
+    if constexpr (0 == size) {
       log(SensorLoggerLevel::debug,message);
     } else {
       std::stringstream os;
@@ -394,8 +394,8 @@ public:
 
   template <typename ... Types>
   void info(const std::string& message, const Types&... args) {
-    const int size = sizeof...(args);
-    if (0 == size) {
+    constexpr int size = sizeof...(args);
+    if constexpr (0 == size) {
       log(SensorLoggerLevel::debug,message);
     } else {
       std::stringstream os;
@@ -407,8 +407,8 @@ public:
 
   template <typename ... Types>
   void fault(const std::string& message, const Types&... args) {
-    const int size = sizeof...(args);
-    if (0 == size) {
+    constexpr int size = sizeof...(args);
+    if constexpr (0 == size) {
       log(SensorLoggerLevel::debug,message);
     } else {
       std::stringstream os;
@@ -419,7 +419,7 @@ public:
   }
 
 private:
-  inline void log(SensorLoggerLevel lvl, std::string msg) {
+  inline void log(SensorLoggerLevel lvl, const std::string msg) {
     mSink.log(mSubsystem, mCategory, lvl, msg);
   }
 
