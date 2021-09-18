@@ -34,6 +34,12 @@ PayloadData::PayloadData(std::byte repeating, std::size_t count)
 {
   ;
 }
+PayloadData&
+PayloadData::operator=(const PayloadData& other)
+{
+  Data::operator=((Data)other);
+  return *this;
+}
 
 std::string
 PayloadData::shortName() const {

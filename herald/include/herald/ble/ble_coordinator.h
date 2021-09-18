@@ -144,6 +144,7 @@ public:
   /** Get a list of what connections are required to which devices now (may start, maintain, end (if not included)) **/
   std::vector<PrioritisedPrerequisite> requiredConnections() override {
     HTDBG("BLECoordinator.requiredConnections entry");
+    printAllDevices();
     std::vector<std::tuple<FeatureTag,Priority,std::optional<TargetIdentifier>>> results;
 
     // This ensures we break from making connections to allow advertising and scanning
@@ -222,62 +223,7 @@ public:
     // DEBUG ONLY ELEMENTS
     // if (newConns.size() > 0) {
       // print debug info about the BLE Database
-      HTDBG("BLE DATABASE CURRENT CONTENTS:-");
-      auto allDevices = db.matches([](const BLEDevice& device) -> bool {
-        return true;
-      });
-      for (auto& device : allDevices) {
-        if (!device.has_value()) {
-          continue;
-        }
-        std::string di(" - ");
-        BLEMacAddress mac(device.value().get().identifier().underlyingData());
-        di += (std::string)mac;
-        // di += ", created=";
-        // di += std::to_string(device.get().created());
-        di += ", pseudoAddress=";
-        auto pseudo = device.value().get().pseudoDeviceAddress();
-        if (pseudo.has_value()) {
-          di += (std::string)pseudo.value();
-        } else {
-          di += "unset";
-        }
-        di += ", os=";
-        auto os = device.value().get().operatingSystem();
-        // if (os.has_value()) {
-          if (herald::ble::BLEDeviceOperatingSystem::ios == os) {
-            di += "ios";
-          } else if (herald::ble::BLEDeviceOperatingSystem::android == os) {
-            di += "android";
-          } else if (herald::ble::BLEDeviceOperatingSystem::unknown == os) {
-            di += "unknown";
-          } else if (herald::ble::BLEDeviceOperatingSystem::ignore == os) {
-            di += "ignore";
-          } else if (herald::ble::BLEDeviceOperatingSystem::android_tbc == os) {
-            di += "android_tbc";
-          } else if (herald::ble::BLEDeviceOperatingSystem::ios_tbc == os) {
-            di += "ios_tbc";
-          } else if (herald::ble::BLEDeviceOperatingSystem::shared == os) {
-            di += "shared";
-          }
-        // } else {
-        //   di += "unknown/unset";
-        // }
-        di += ", ignore=";
-        auto ignore = device.value().get().ignore();
-        if (ignore) {
-          di += "true (for ";
-          di += std::to_string(device.value().get().timeIntervalUntilIgnoreExpired().millis());
-          di += " more secs)";
-        } else {
-          di += "false";
-        }
-        // di += ", hasServices=";
-        // di += (device.value().get().hasServicesSet() ? "true" : "false");
-        di += ", hasReadPayload=";
-        di += (device.value().get().payloadData().size() > 0 ? device.value().get().payloadData().hexEncodedString() : "false");
-        HTDBG(di);
-      }
+      // printAllDevices();
     // } else {
     if (0 == newConns.size()) {
       // restart scanning when no connection activity is expected
@@ -436,6 +382,65 @@ public:
   }
 
 private:
+  void printAllDevices() {
+    HTDBG("BLE DATABASE CURRENT CONTENTS:-");
+    auto allDevices = db.matches([](const BLEDevice& device) -> bool {
+      return true;
+    });
+    for (auto& device : allDevices) {
+      if (!device.has_value()) {
+        continue;
+      }
+      std::string di(" - ");
+      BLEMacAddress mac(device.value().get().identifier().underlyingData());
+      di += (std::string)mac;
+      // di += ", created=";
+      // di += std::to_string(device.get().created());
+      di += ", pseudoAddress=";
+      auto pseudo = device.value().get().pseudoDeviceAddress();
+      if (pseudo.has_value()) {
+        di += (std::string)pseudo.value();
+      } else {
+        di += "unset";
+      }
+      di += ", os=";
+      auto os = device.value().get().operatingSystem();
+      // if (os.has_value()) {
+        if (herald::ble::BLEDeviceOperatingSystem::ios == os) {
+          di += "ios";
+        } else if (herald::ble::BLEDeviceOperatingSystem::android == os) {
+          di += "android";
+        } else if (herald::ble::BLEDeviceOperatingSystem::unknown == os) {
+          di += "unknown";
+        } else if (herald::ble::BLEDeviceOperatingSystem::ignore == os) {
+          di += "ignore";
+        } else if (herald::ble::BLEDeviceOperatingSystem::android_tbc == os) {
+          di += "android_tbc";
+        } else if (herald::ble::BLEDeviceOperatingSystem::ios_tbc == os) {
+          di += "ios_tbc";
+        } else if (herald::ble::BLEDeviceOperatingSystem::shared == os) {
+          di += "shared";
+        }
+      // } else {
+      //   di += "unknown/unset";
+      // }
+      di += ", ignore=";
+      auto ignore = device.value().get().ignore();
+      if (ignore) {
+        di += "true (for ";
+        di += std::to_string(device.value().get().timeIntervalUntilIgnoreExpired().millis());
+        di += " more secs)";
+      } else {
+        di += "false";
+      }
+      // di += ", hasServices=";
+      // di += (device.value().get().hasServicesSet() ? "true" : "false");
+      di += ", hasReadPayload=";
+      di += (device.value().get().payloadData().size() > 0 ? device.value().get().payloadData().hexEncodedString() : "false");
+      HTDBG(di);
+    }
+  }
+
   ContextT& context; 
   BLEDBT& db;
   ProviderT& pp;

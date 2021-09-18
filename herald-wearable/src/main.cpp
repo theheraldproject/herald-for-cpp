@@ -145,7 +145,10 @@ public:
 
   /// Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {
-		APP_DBG("sensor didMeasure");
+		APP_DBG("didMeasure: %s, fromTarget: %s",
+			log_strdup(didMeasure.description().c_str()),
+			log_strdup(((std::string)BLEMacAddress(fromTarget.underlyingData())).c_str())
+		);
 		// LOG_DBG("sensor didMeasure: %s with proximity: %d", str(fromTarget), didMeasure.value); 
 	}
 
@@ -157,7 +160,12 @@ public:
 
   /// Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
   void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {
-		APP_DBG("sensor didMeasure withPayload");
+		// ERR so it stands out in the logging!
+		APP_ERR("didMeasure=%s, fromTarget=%s, withPayload=%s",
+			log_strdup(didMeasure.description().c_str()),
+			log_strdup(((std::string)BLEMacAddress(fromTarget.underlyingData())).c_str()),
+			log_strdup(withPayload.hexEncodedString().c_str())
+		);
 	}
 
   /// Sensor state update

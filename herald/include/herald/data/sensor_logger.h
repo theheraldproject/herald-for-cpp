@@ -177,10 +177,12 @@ namespace {
     os << std::int16_t(value);
   }
   
+  /// \brief Prints an int value to the stream
+  /// \note Also covers int32_t and int64_t
   [[maybe_unused]]
   void tprintValue(std::stringstream& os, int value)
   {
-    os << std::int16_t(value);
+    os << std::int64_t(value);
   }
   
   [[maybe_unused]]

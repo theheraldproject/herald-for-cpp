@@ -133,51 +133,61 @@ TEST_CASE("sensorlogger-output-intrinsic", "[sensorlogger][output]") {
     int i = 37;
     HTLOG("Intrinsic {} type",i);
     std::string r("testout,mytest,Intrinsic 37 type");
+    INFO(dls.value.c_str());
     REQUIRE(strcmp(r.c_str(),dls.value.c_str()) == 0);
 
     std::uint8_t ui8 = 39;
     HTLOG("Intrinsic {} type",ui8);
     r = "testout,mytest,Intrinsic 39 type";
+    INFO(dls.value.c_str());
     REQUIRE(strcmp(r.c_str(),dls.value.c_str()) == 0);
 
     std::size_t st = 128;
     HTLOG("Intrinsic {} type",st);
     r = "testout,mytest,Intrinsic 128 type";
+    INFO(dls.value.c_str());
     REQUIRE(strcmp(r.c_str(),dls.value.c_str()) == 0);
 
     std::uint16_t ui16 = 3737;
     HTLOG("Intrinsic {} type",ui16);
     r = "testout,mytest,Intrinsic 3737 type";
+    INFO(dls.value.c_str());
     REQUIRE(strcmp(r.c_str(),dls.value.c_str()) == 0);
 
     std::uint32_t ui32 = 373737;
     HTLOG("Intrinsic {} type",ui32);
     r = "testout,mytest,Intrinsic 373737 type";
+    INFO(dls.value.c_str());
     REQUIRE(strcmp(r.c_str(),dls.value.c_str()) == 0);
 
     std::uint32_t ui64 = 3737373737;
     HTLOG("Intrinsic {} type",ui64);
     r = "testout,mytest,Intrinsic 3737373737 type";
+    INFO(dls.value.c_str());
     REQUIRE(strcmp(r.c_str(),dls.value.c_str()) == 0);
 
     std::int8_t i8 = -39;
     HTLOG("Intrinsic {} type",i8);
     r = "testout,mytest,Intrinsic -39 type";
+    INFO(dls.value.c_str());
     REQUIRE(strcmp(r.c_str(),dls.value.c_str()) == 0);
 
     std::int16_t i16 = -3737;
     HTLOG("Intrinsic {} type",i16);
     r = "testout,mytest,Intrinsic -3737 type";
+    INFO(dls.value.c_str());
     REQUIRE(strcmp(r.c_str(),dls.value.c_str()) == 0);
 
     std::int32_t i32 = -373737;
     HTLOG("Intrinsic {} type",i32);
     r = "testout,mytest,Intrinsic -373737 type";
+    INFO(dls.value.c_str());
     REQUIRE(strcmp(r.c_str(),dls.value.c_str()) == 0);
 
     std::int32_t i64 = -37373737;
     HTLOG("Intrinsic {} type",i64);
     r = "testout,mytest,Intrinsic -37373737 type";
+    INFO(dls.value.c_str());
     REQUIRE(strcmp(r.c_str(),dls.value.c_str()) == 0);
   }
 }

@@ -344,7 +344,8 @@ public:
   {
     HTDBG("openConnection");
 
-    printZephyrConnectionStates();
+    printZephyrConnectionStates(); // zephyr's low-level view of live connections
+    printAllStates(); // our state engine cache in this class (holds closed connections)
 
     // Create addr from TargetIdentifier data
     ConnectedDeviceState& state = findOrCreateState(toTarget);
@@ -583,22 +584,7 @@ public:
     if (!connectionStates.empty()) {
       HTDBG("Current connection states cached:-");
       for (auto& [key,value] : connectionStates) {
-        std::string ci = " - ";
-        ci += value.target.underlyingData().hexEncodedString();
-        ci += " state: ";
-        switch (value.state) {
-          case BLEDeviceState::connected:
-            ci += "connected";
-            break;
-          case BLEDeviceState::disconnected:
-            ci += "disconnected";
-            break;
-          default:
-            ci += "connecting";
-        }
-        ci += ", connection is null: ";
-        ci += (NULL == value.connection ? "true" : "false");
-        HTDBG(ci);
+        doStatePrint(key,value);
 
         // Check connection reference is valid by address - has happened with non connectable devices (VR headset bluetooth stations)
         bool nullBefore = (NULL == value.connection);
@@ -673,17 +659,17 @@ public:
   {
     auto currentTargetOpt = std::get<1>(activity.prerequisites.front());
     if (!currentTargetOpt.has_value()) {
-      HTDBG("No target specified for serviceDiscovery activity. Returning.");
+      HTERR("No target specified for serviceDiscovery activity. Returning.");
       return {}; // We've been asked to connect to no specific target - not valid for Bluetooth
     }
     // Ensure we have a cached state (i.e. we are connected)
     auto& state = findOrCreateState(currentTargetOpt.value());
     if (state.state != BLEDeviceState::connected) {
-      HTDBG("Not connected to target of activity. Returning.");
+      HTERR("Not connected to target of activity. Returning.");
       return {};
     }
     if (NULL == state.connection) {
-      HTDBG("State for activity does not have a connection. Returning.");
+      HTERR("State for activity does not have a connection. Returning.");
       return {};
     }
     [[maybe_unused]]
@@ -693,7 +679,7 @@ public:
     gatt_discover(state.connection);
 
     HTDBG("Zephyr waitWithTimeout for serviceDiscovery");
-    uint32_t timedOut = waitWithTimeout(5'000, K_MSEC(25), [/*&device,*/&state] () -> bool {
+    uint32_t timedOut = waitWithTimeout(5'000, K_MSEC(25), [&state] () -> bool {
       // return !device.hasServicesSet();
       return state.inDiscovery || state.isReading;
     });
@@ -702,7 +688,7 @@ public:
     state.inDiscovery = false;
 
     if (0 != timedOut) {
-      HTDBG("service discovery timed out for device after {}ms", timedOut);
+      HTERR("service discovery timed out for {} after {}ms", ((std::string)device.identifier()), timedOut);
       return {};
     }
     return {};
@@ -851,18 +837,29 @@ private:
     // Do this before calling unref
     auto& device = db.device(bleMacAddress); // Find by actual current physical address
 
+    ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
+
     if (reason) {
       HTDBG("Disconnection: Reason value:-");
       if (19 == reason) {
         HTDBG("  0x13 (19) remote disconnected from us");
+        state.remoteInstigated = false;
+        // NOTE: The below solves the 'hanging connection issue' so DO NOT CHANGE OR MOVE
+        // i.e. <wrn> bt_conn: Found valid connection in disconnected state
+        bt_conn_unref(conn); // Unref to signify we don't need this reference any longer either
       } else if (20 == reason) {
         HTDBG("  0x14 (20) remote_device_terminated_connection_due_to_low_resources");
+        state.remoteInstigated = false;
+        bt_conn_unref(conn); // Unref to signify we don't need this reference any longer either
       } else if (2 == reason) {
         HTDBG("  0x02 (02) Connection does not exist, or connection open request was cancelled.");
       } else if (22 == reason) {
         HTDBG("  0x16 (22) We closed the connection ourselves");
       } else if (62 == reason) {
         HTDBG("  0x3e (62) connection_failed_to_be_established (opened, but no packets from remote");
+        // NOTE: The below solves the 'hanging connection issue' so DO NOT CHANGE OR MOVE
+        // i.e. <wrn> bt_conn: Found valid connection in disconnected state
+        bt_conn_unref(conn); // Unref to signify we don't need this reference any longer either
         // Assume remote doesn't accept connection
         device.ignore(true);
       } else {
@@ -875,10 +872,13 @@ private:
     
     // TODO log disconnection time in ble database
     
-    ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
-    // bt_conn_unref(conn); // Causes issues in connect() if we call this here
+    // bt_conn_unref(conn); // Causes issues in openConnection() if we call this here
     state.state = BLEDeviceState::disconnected;
     state.connection = NULL;
+
+    // clear up all (local) state variables to reset for the next interaction (leave local service list copy)
+    state.isReading = false;
+    state.inDiscovery = false;
 
     // Log last disconnected time in BLE database
     // TODO find the cause of the following line causing an MPU Fault (Using CONFIG_ARM_MPU=n for now)
@@ -888,11 +888,11 @@ private:
   
   void discovery_completed_cb(struct bt_gatt_dm *dm, void *context) override
   {
-    HTDBG("The GATT discovery procedure succeeded");
     const struct bt_gatt_dm_attr *prev = NULL;
     bool found = false;
     ConnectedDeviceState& state = findOrCreateStateByConnection(bt_gatt_dm_conn_get(dm));
     auto& device = db.device(state.target);
+    HTDBG("The GATT discovery procedure succeeded for {}", ((std::string)device.identifier()));
     do {
       prev = bt_gatt_dm_char_next(dm,prev);
       if (NULL != prev) {
@@ -981,7 +981,10 @@ private:
 
   void discovery_error_found_cb(struct bt_conn *conn, int err, void *context) override
   {
-    HTDBG("The discovery procedure failed with: {}", err);
+    auto addr = bt_conn_get_dst(conn);
+    char addr_str[BT_ADDR_LE_STR_LEN];
+    bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+    HTERR("The discovery procedure for {} failed with: {}", addr_str, err);
     // TODO decide if we should ignore the device here, or just keep trying
   }
 
@@ -1020,6 +1023,30 @@ private:
     }
     return connectionStates.emplace(forTarget, forTarget).first->second;
     // return connectionStates.find(forTarget)->second;
+  }
+
+  void doStatePrint(const TargetIdentifier& key, const ConnectedDeviceState& value) {
+    HTDBG("  {} is {}, conn==null?: {}, ri: {}, inDiscovery: {}, isReading: {}",
+      (std::string)BLEMacAddress(key.underlyingData()),
+      ((BLEDeviceState::connected==value.state) ? "Connected":
+        ((BLEDeviceState::disconnected==value.state) ? "Disconnected" :
+          ((BLEDeviceState::connecting==value.state) ? "Connecting" : "Uninitialised")
+        )
+      ),
+      (NULL == value.connection) ? "true" : "false",
+      value.remoteInstigated ? "true" : "false",
+      value.inDiscovery ? "true" : "false",
+      value.isReading ? "true" : "false"
+    );
+  }
+
+  void printAllStates()
+  {
+    HTDBG("Printing all current Zephyr Concrete BLE Receiver cached states:-");
+    for (auto& [key, value] : connectionStates) {
+      doStatePrint(key, value);
+    }
+    HTDBG("Done");
   }
 
   ConnectedDeviceState& findOrCreateStateByConnection(struct bt_conn *conn, bool remoteInstigated = false)

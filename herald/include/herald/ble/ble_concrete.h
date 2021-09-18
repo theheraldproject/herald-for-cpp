@@ -177,6 +177,10 @@ public:
               ); // didMeasure withPayload
             // }
           }
+        } else {
+          HTERR("payloadData update called for {} but device has no payload data! No callback called.", 
+            (std::string)BLEMacAddress(device.identifier().underlyingData())
+          );
         }
         break;
       }
