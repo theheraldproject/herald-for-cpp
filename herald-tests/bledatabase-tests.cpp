@@ -98,6 +98,73 @@ TEST_CASE("ble-database-callback-verify", "[ble][database][callback][verify]") {
   }
 }
 
+TEST_CASE("ble-database-duplicate-ids", "[ble][database][duplicate][ids]") {
+  SECTION("ble-callback-duplicate-ids") {
+    DummyLoggingSink dls;
+    DummyBluetoothStateManager dbsm;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+    using CT = typename herald::Context<herald::DefaultPlatformType,DummyLoggingSink,DummyBluetoothStateManager>;
+    herald::ble::ConcreteBLEDatabase<CT> db(ctx);
+    DummyBLEDBDelegate delegate;
+    db.add(delegate);
+
+    REQUIRE(db.size() == 0);
+    REQUIRE(delegate.createCallbackCalled == false);
+    REQUIRE(delegate.updateCallbackCalled == false);
+    REQUIRE(delegate.deleteCallbackCalled == false);
+
+    herald::datatype::Data devMac(std::byte(0x01),6);
+    herald::datatype::TargetIdentifier dev(devMac);
+
+    // add in new device
+    herald::ble::BLEDevice& devPtr = db.device(dev);
+    auto devices = db.matches([](auto& deviceRef) {
+      return true;
+    });
+    std::cout << "Devices:-" << std::endl;
+    for (auto& d : devices) {
+      if (!d.has_value()) {
+        continue;
+      }
+      std::cout << "Mac: " << d.value().get().identifier() 
+                << ", State: " << ((d.value().get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
+                << ", Payload: " << (d.value().get().payloadData().size() > 0 ? d.value().get().payloadData().hexEncodedString() : "Empty") << std::endl;
+    }
+    REQUIRE(db.size() == 1);
+    REQUIRE(delegate.createCallbackCalled == true);
+    REQUIRE(delegate.updateCallbackCalled == false);
+    REQUIRE(delegate.deleteCallbackCalled == false);
+    REQUIRE(delegate.dev.has_value());
+    REQUIRE(delegate.dev.value().get() == devPtr);
+
+
+
+    herald::datatype::Data devMac2(std::byte(0x01),6);
+    herald::datatype::TargetIdentifier dev2(devMac2);
+
+    // add in new device
+    herald::ble::BLEDevice& devPtr2 = db.device(dev2);
+    devices = db.matches([](auto& deviceRef) {
+      return true;
+    });
+    std::cout << "Devices:-" << std::endl;
+    for (auto& d : devices) {
+      if (!d.has_value()) {
+        continue;
+      }
+      std::cout << "Mac: " << d.value().get().identifier() 
+                << ", State: " << ((d.value().get().state() == herald::ble::BLEDeviceState::uninitialised) ? "uninitialised" : "initialised")
+                << ", Payload: " << (d.value().get().payloadData().size() > 0 ? d.value().get().payloadData().hexEncodedString() : "Empty") << std::endl;
+    }
+    REQUIRE(db.size() == 1);
+    REQUIRE(delegate.createCallbackCalled == true);
+    REQUIRE(delegate.updateCallbackCalled == false);
+    REQUIRE(delegate.deleteCallbackCalled == false);
+    REQUIRE(delegate.dev.has_value());
+    REQUIRE(delegate.dev.value().get() == devPtr); // Not devPtr2
+  }
+}
 
 
 TEST_CASE("ble-database-macrotate-samepayload", "[ble][database][macrotate][samepayload]") {

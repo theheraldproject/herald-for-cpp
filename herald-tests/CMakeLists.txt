@@ -7,6 +7,7 @@ add_executable(herald-tests
 
   # base data types
 	allocatablearray-tests.cpp
+	bytearrayprinter-tests.cpp
 	memoryarena-tests.cpp
 	datatypes-tests.cpp
 	base64string-tests.cpp

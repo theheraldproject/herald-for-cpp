@@ -127,6 +127,9 @@
 
 // service namespace
 
+// utilities
+#include "herald/util/byte_array_printer.h"
+
 /// \brief The main Herald Proximity namespace in C++
 namespace herald {
 

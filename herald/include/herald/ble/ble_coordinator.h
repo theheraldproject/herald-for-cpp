@@ -14,6 +14,7 @@
 #include "ble_protocols.h"
 #include "../data/sensor_logger.h"
 #include "ble_sensor_configuration.h"
+#include "../util/byte_array_printer.h"
 
 #include <memory>
 #include <functional>
@@ -383,6 +384,14 @@ public:
 
 private:
   void printAllDevices() {
+    HTDBG("BLE DATABASE ARENA FIRST BYTES USAGE:-");
+    herald::util::ByteArrayPrinter bap(context);
+    auto& arena = Data::getArena();
+    std::array<unsigned char,16> buffer;
+    for (std::size_t offsetIdx = 0; offsetIdx < 20;++offsetIdx) {
+      arena.rawCopy(buffer, offsetIdx * 16);
+      bap.print(buffer, offsetIdx * 16);
+    }
     HTDBG("BLE DATABASE CURRENT CONTENTS:-");
     auto allDevices = db.matches([](const BLEDevice& device) -> bool {
       return true;

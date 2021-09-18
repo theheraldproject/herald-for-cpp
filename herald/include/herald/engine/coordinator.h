@@ -88,6 +88,7 @@ public:
       return;
     }
     HTDBG("################# ITERATION #################");
+    HTDBG("Memory pages free in Data Arena: {}", herald::datatype::Data::getArena().pagesFree());
     // HTDBG("Entered iteration");
     // Create empty list of required prereqs per provider
     std::map<std::reference_wrapper<CoordinationProvider>,std::vector<PrioritisedPrerequisite>> assignPrereqs;
@@ -117,11 +118,11 @@ public:
     HTDBG("Linked pre-reqs to their providers");
 
     // // Some debug checks here
-    int cnt = 0;
-    for (auto& ass : assignPrereqs) {
-      // HTDBG("assign prereqs number {} has this many prereqs to fill {}", cnt, ass.second.size());
-      cnt++;
-    }
+    // int cnt = 0;
+    // for (auto& ass : assignPrereqs) {
+    //   // HTDBG("assign prereqs number {} has this many prereqs to fill {}", cnt, ass.second.size());
+    //   cnt++;
+    // }
     
     // Communicate with relevant feature providers and request features for targets (in descending priority order)
     //  - Includes removal of previous features no longer needed

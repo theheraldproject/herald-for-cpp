@@ -340,25 +340,25 @@ namespace {
 template <typename LoggingSinkT>
 class SensorLogger {
 public:
-  SensorLogger(LoggingSinkT& sink, std::string subsystem, std::string category) 
+  SensorLogger(LoggingSinkT& sink, std::string subsystem, std::string category) noexcept
     : mSink(sink), mSubsystem(subsystem), mCategory(category)
   {
     ;
   }
 
-  SensorLogger(const SensorLogger& other)
+  SensorLogger(const SensorLogger& other) noexcept
     : mSink(other.mSink), mSubsystem(other.mSubsystem), mCategory(other.mCategory)
   {
     ;
   }
 
-  SensorLogger(SensorLogger&& other)
+  SensorLogger(SensorLogger&& other) noexcept
     : mSink(other.mSink), mSubsystem(other.mSubsystem), mCategory(other.mCategory)
   {
     ;
   }
 
-  SensorLogger& operator=(const SensorLogger& other)
+  SensorLogger& operator=(const SensorLogger& other) noexcept
   {
     mSink = other.mSink;
     mSubsystem = other.mSubsystem;
@@ -366,7 +366,7 @@ public:
     return *this;
   }
 
-  SensorLogger& operator=(SensorLogger&& other)
+  SensorLogger& operator=(SensorLogger&& other) noexcept
   {
     mSink = other.mSink;
     mSubsystem = other.mSubsystem;
@@ -376,13 +376,13 @@ public:
   
   // TODO consider supporting multiple sinks in the context - E.g. USB UART and log file
 
-  ~SensorLogger() = default;
+  ~SensorLogger() noexcept = default;
 
   // use std::format to generate the string
   // std::format in C++20, fmt::format library before that
   // Note: C++11 Variadic template parameter pack expansion
   template <typename ... Types>
-  void debug(const std::string& message, const Types&... args) {
+  void debug(const std::string& message, const Types&... args) const noexcept {
     constexpr int size = sizeof...(args);
     if constexpr (0 == size) {
       log(SensorLoggerLevel::debug,message);
@@ -395,7 +395,7 @@ public:
   }
 
   template <typename ... Types>
-  void info(const std::string& message, const Types&... args) {
+  void info(const std::string& message, const Types&... args) const noexcept {
     constexpr int size = sizeof...(args);
     if constexpr (0 == size) {
       log(SensorLoggerLevel::debug,message);
@@ -408,7 +408,7 @@ public:
   }
 
   template <typename ... Types>
-  void fault(const std::string& message, const Types&... args) {
+  void fault(const std::string& message, const Types&... args) const noexcept {
     constexpr int size = sizeof...(args);
     if constexpr (0 == size) {
       log(SensorLoggerLevel::debug,message);
@@ -421,7 +421,7 @@ public:
   }
 
 private:
-  inline void log(SensorLoggerLevel lvl, const std::string msg) {
+  inline void log(SensorLoggerLevel lvl, const std::string msg) const noexcept {
     mSink.log(mSubsystem, mCategory, lvl, msg);
   }
 

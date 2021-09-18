@@ -17,7 +17,7 @@ namespace data {
 
 void
 ZephyrLoggingSink::log(const std::string& subsystem,const std::string& category,
-  SensorLoggerLevel level, const std::string& message)
+  SensorLoggerLevel level, const std::string message) const noexcept
 {
   // TODO be more specific? Filter here or in Zephyr?
   std::string finalMessage = subsystem + "," + category + "," + message;
