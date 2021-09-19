@@ -40,10 +40,17 @@ elseif($ENV{BOARD} MATCHES .*nrf52840.*)
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf52840.conf
   )
+  add_definitions(-DHERALD_MEMORYARENA_MAX=4096)
 elseif($ENV{BOARD} MATCHES .*nrf52832.*)
   set(OVERLAY_CONFIG 
     ${OVERLAY_CONFIG} 
     ${BASE_CONFIG}/nrf52832.conf
+  )
+  add_definitions(-DHERALD_MEMORYARENA_MAX=4096)
+elseif($ENV{BOARD} MATCHES .*nrf52833.*)
+  set(OVERLAY_CONFIG 
+    ${OVERLAY_CONFIG} 
+    ${BASE_CONFIG}/nrf52833.conf
   )
 endif()
 if(CMAKE_BUILD_TYPE MATCHES Debug)
@@ -87,12 +94,13 @@ include_directories(
 if(CMAKE_BUILD_TYPE MATCHES Debug)
   add_definitions(-DHERALD_LOG_LEVEL=4 -DCONFIG_APP_LOG_LEVEL=4)
 else()
-  add_definitions(-DHERALD_LOG_LEVEL=1 -DCONFIG_APP_LOG_LEVEL=1)
+  add_definitions(-DHERALD_LOG_LEVEL=0 -DCONFIG_APP_LOG_LEVEL=0)
 endif()
 #HERALD_LOG_LEVEL 4 = debug, 3 = info, 2 = warn / errors (Zephyr LOG_WARN), 1 = info contacts log only (Zephyr LOG_ERR)
 
 # gcc arm does not warn about missing defs until runtime
 # NOTE: Catch2 uses exceptions, so we enable -fexceptions
+# add_compile_options(--no-undefined -ffunction-sections -fdata-sections -s -fno-unaligned-access -fexceptions -fno-rtti -Wall -Wextra -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
 add_compile_options(--no-undefined -fexceptions -ffunction-sections -fdata-sections -s -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
 
 target_sources(app PRIVATE
@@ -104,8 +112,12 @@ target_sources(app PRIVATE
   # Option 2: TinyCrypt
   ${HERALD_SOURCES_TINYCRYPT}
 
+  # For testing basic catch2 settings:-
+  src/dummy-tests.cpp
+
   # Now tests source
   # root with main
+	# ../herald-tests/bytearrayprinter-tests.cpp
 	#../herald-tests/datatypes-tests.cpp # Passes when split out on 21 Mar 2021
 	#../herald-tests/datetime-tests.cpp # Passes when split out on 21 Mar 2021
 	#../herald-tests/randomuuid-tests.cpp # FAILS silently 21 Mar 2021
@@ -116,7 +128,7 @@ target_sources(app PRIVATE
 	#../herald-tests/datatypesdataderived-tests.cpp # Passes on its own 21 Mar 2021
   # These three passed together on 21 Mar 2021
 	#../herald-tests/errorcontactlog-tests.cpp
-	#../herald-tests/blemacaddress-tests.cpp
+	# ../herald-tests/blemacaddress-tests.cpp
 	#../herald-tests/targetidentifier-tests.cpp
 
   # mid level
@@ -140,9 +152,9 @@ target_sources(app PRIVATE
 
   # SHA-256 and simple payload specific
   # The following tests passed together with zephyronly tests included as of 08 July 2021 21:27+0100
-  ../herald-tests/data-tests.cpp
-  ../herald-tests/sha256-tests.cpp
-  ../herald-tests/simplepayload-tests.cpp
+  # ../herald-tests/data-tests.cpp
+  # ../herald-tests/sha256-tests.cpp
+  # ../herald-tests/simplepayload-tests.cpp
 
   # NOTE: All tests that passed individually on 21 Mar 2021 also passed all together in 15 seconds
   #       This means that the issue is the individual tests, not catch or zephyr specifically, and not RAM issues.

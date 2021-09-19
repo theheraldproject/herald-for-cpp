@@ -343,7 +343,7 @@ public:
   /// \brief Returns whether reading a single uint32_t to `into` at `fromIndex` was successful
   bool uint32(std::size_t fromIndex, uint32_t& into) const noexcept
   {
-    if (fromIndex > entry.byteLength - 4) {
+    if (fromIndex > (unsigned short)(entry.byteLength - 4)) {
       return false;
     }
     into =  std::uint32_t(std::uint8_t(getArena().get(entry,fromIndex)))            | (std::uint32_t(std::uint8_t(getArena().get(entry,fromIndex + 1))) << 8) |
@@ -354,7 +354,7 @@ public:
   /// \brief Returns whether reading a single uint64_t to `into` at `fromIndex` was successful
   bool uint64(std::size_t fromIndex, uint64_t& into) const noexcept
   {
-    if (entry.byteLength < 8 || fromIndex > entry.byteLength - 8) {
+    if (entry.byteLength < 8 || fromIndex > (unsigned short)(entry.byteLength - 8)) {
       return false;
     }
     into = (std::uint64_t(std::uint8_t(getArena().get(entry,fromIndex + 7))) << 56) | (std::uint64_t(std::uint8_t(getArena().get(entry,fromIndex + 6))) << 48) |

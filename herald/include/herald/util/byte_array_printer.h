@@ -72,6 +72,14 @@ public:
     ci += " ";
     ci += hexChars[0x0F & (std::size_t(data[15]) >> 4)];
     ci += hexChars[0x0F & std::size_t(data[15])];
+    // ci += " | ";
+    // for (std::size_t i = 0;i < 8;++i) {
+    //   ci += (char)data[i];
+    // }
+    // ci += " ";
+    // for (std::size_t i = 8;i < 16;++i) {
+    //   ci += (char)data[i];
+    // }
     HTDBG(ci);
   }
 private:

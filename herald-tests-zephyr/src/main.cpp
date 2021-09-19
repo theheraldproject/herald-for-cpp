@@ -2,7 +2,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "../../herald/herald.h"
+// #include "../../herald/herald.h"
 
 #include <zephyr/types.h>
 #include <stddef.h>
@@ -14,8 +14,8 @@
 
 #include <kernel_structs.h>
 // #include <sys/thread_stack.h> // Cannot be found in NCS v1.6.0
-#include <drivers/gpio.h>
-#include <drivers/hwinfo.h>
+// #include <drivers/gpio.h>
+// #include <drivers/hwinfo.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
@@ -31,7 +31,42 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 #include <cstdio>
 
 struct k_thread herald_thread;
-K_THREAD_STACK_DEFINE(herald_stack, 2*8192); // TODO reduce this down
+constexpr int stackMaxSize = 
+// #ifdef CONFIG_BT_MAX_CONN
+// 	2048 + (CONFIG_BT_MAX_CONN * 512)
+// 	// Was 12288 + (CONFIG_BT_MAX_CONN * 512), but this starved newlibc of HEAP (used in handling BLE connections/devices)
+// #else
+// 	9192
+// #endif
+// // Since v2.1 - MEMORY ARENA extra stack reservation - See herald/datatype/data.h
+// #ifdef HERALD_MEMORYARENA_MAX
+//   + HERALD_MEMORYARENA_MAX
+// #else
+//   + 8192
+// #endif
+//   + 4508 // Since v2.1 test for debug
+//   // + 5120 // Since v2.1 AllocatableArray and removal of vector and map
+// 	// Note +0 crashes at Herald entry, +1024 crashes at PAST DATE, +2048 crashes at creating sensor array
+// 	// +3072 crashes at herald entry with Illegal load of EXC_RETURN into PC
+// 	// +4096 crashes at BEFORE DATE          with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20006304
+// 	// +5120 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20008ae0
+// 	// +6144 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20008ee0
+// 	// +7168 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x200092e0
+// 	// +8192 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x200096e0
+// 	// +9216 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20009ae0
+// 	// +10240 crashes zephyr in main thread loop - likely due to memory exhaustion for the heap (over 96% SRAM used at this level)
+// 	// Changed heap for nRF52832 to 1024, max conns to 4 from 2
+// 	// +0 crashes BEFORE DATE with Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20006504
+// 	// Changed heap for nRF52832 to 2048. max conns back to 2
+// 	// +4096 crashes BEFORE DATE with Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x20006904
+// 	// +5120 crashes at sensor array running with  Stacking error (context area might be not valid)... Data Access Violation... MMFAR Address: 0x200090e0
+
+// // Additions for catch2
+//   // + 16384
+
+// ;
+16384;
+K_THREAD_STACK_DEFINE(herald_stack, stackMaxSize);
 
 // Catch normally uses std::cout but Zephyr doesn't use that - so we need this:-
 // from https://github.com/catchorg/Catch2/issues/1290
@@ -49,7 +84,7 @@ public:
         //         break;
         //     }
         // }
-        LOG_ERR("Cacth2: %s",log_strdup(str().c_str()));
+        LOG_ERR("Catch2: %s",log_strdup(str().c_str()));
         // Reset the buffer to avoid printing it multiple times
         str("");
         return ret;
@@ -108,18 +143,20 @@ void herald_entry() {
 
 void main(void)
 {
+	// int nameOk = k_thread_name_set(NULL,"main");
   // Wait for a few seconds for remote to connect
-  LOG_DBG("Waiting for 5 seconds for tests to start");
-  k_sleep(K_SECONDS(5));
+  LOG_DBG("Waiting for 10 seconds for tests to start (so we see thread analyser output)");
+  k_sleep(K_SECONDS(10));
 
   // Now manually initialise catch
   LOG_DBG("Initialising catch");
   k_sleep(K_SECONDS(2));
 
-	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, 16384,
-			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
-			-1, K_USER,
-			K_SECONDS(4));
+	// k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, stackMaxSize,
+	// 		(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
+	// 		-1, K_USER,
+	// 		K_NO_WAIT);
+	// nameOk = k_thread_name_set(herald_pid,"herald");
       
   LOG_DBG("Catch thread started");
 
