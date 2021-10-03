@@ -86,6 +86,7 @@ public:
   void reset();
 
   BLEInternalState internalState() const;
+  std::string internalStateDescription() const;
   void internalState(BLEInternalState newInternalState);
 
   BLEDeviceState state() const;
@@ -228,6 +229,8 @@ public:
 
   BLEDeviceState state() const;
   void state(BLEDeviceState newState);
+
+  std::string internalStateDescription() const;
 
   // TODO decide if operatingSystem is relevant anymore??? - change it to BluetoothComplianceFlag?
   BLEDeviceOperatingSystem operatingSystem() const;

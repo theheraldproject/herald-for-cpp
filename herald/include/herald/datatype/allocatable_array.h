@@ -306,7 +306,7 @@ struct AllocatableArrayIterator {
   /// \brief Postfix increment operator
   AllocatableArrayIterator<AllocatableArrayT>& operator++(int) noexcept {
     AllocatableArrayIterator<AllocatableArrayT> cp = *this;
-    ++(*this);
+    ++pos;
     return cp;
   }
 
@@ -319,7 +319,7 @@ struct AllocatableArrayIterator {
   /// \brief Postfix decrement operator
   AllocatableArrayIterator<AllocatableArrayT>& operator--(int) noexcept {
     AllocatableArrayIterator<AllocatableArrayT> cp = *this;
-    --(*this);
+    --pos;
     return cp;
   }
 

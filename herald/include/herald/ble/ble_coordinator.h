@@ -264,8 +264,9 @@ public:
     // State 3 - Steady state - do nothing
     // State 4 - Has immediateSend data -> Send immediate -> State 3
     // TODO check for nearby payloads
-    // State 3 - Not seen in a while -> State X
+    // State 3 - Not seen in a while -> State Y
     // State X - Out of range. No actions.
+    // State Y - Timed out. No actions.
     // State Z - Ignore (not a relevant device for Herald... right now). Ignore for a period of time. No actions.
 
     // TODO is IOS and needs payload sharing
@@ -379,6 +380,10 @@ public:
     //   // TODO add immediate send all support
     //   // TODO add read of nearby payload data from remotes
     // }
+    if (0 == results.size()) {
+      // No connections being used, so advertise and scan
+      pp.restartScanningAndAdvertising();
+    }
     return results;
   }
 
@@ -405,6 +410,9 @@ private:
       di += (std::string)mac;
       // di += ", created=";
       // di += std::to_string(device.get().created());
+      di += ", state=";
+      auto is = device.value().get().internalStateDescription();
+      di += is;
       di += ", pseudoAddress=";
       auto pseudo = device.value().get().pseudoDeviceAddress();
       if (pseudo.has_value()) {
@@ -436,9 +444,15 @@ private:
       di += ", ignore=";
       auto ignore = device.value().get().ignore();
       if (ignore) {
-        di += "true (for ";
-        di += std::to_string(device.value().get().timeIntervalUntilIgnoreExpired().millis());
-        di += " more secs)";
+        di += "true (for";
+        auto ignoreFor = device.value().get().timeIntervalUntilIgnoreExpired();
+        if (TimeInterval::never() == ignoreFor) {
+          di += "ever)";
+        } else {
+          di += " ";
+          di += std::to_string(ignoreFor.millis());
+          di += " more secs)";
+        }
       } else {
         di += "false";
       }

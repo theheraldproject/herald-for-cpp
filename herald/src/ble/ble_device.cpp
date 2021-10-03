@@ -74,6 +74,36 @@ BLEDeviceFlags::internalState() const
   return BLEInternalState::discovered;
 }
 
+std::string
+BLEDeviceFlags::internalStateDescription() const
+{
+  if (bitFields.test(0)) {
+    if (bitFields.test(1)) {
+      if (bitFields.test(2)) {
+        return "0. Discovered";
+      } else {
+        return "X. Filtered";
+      }
+    } else {
+      if (bitFields.test(2)) {
+        return "1. Has potential";
+      } else {
+        return "2. Relevant";
+      }
+    }
+  } else {
+    if (bitFields.test(1)) {
+      if (bitFields.test(2)) {
+        return "3. Identified";
+      } else {
+        return "Y. Timed out";
+      }
+    }
+    // remaining values reserved
+  }
+  return "0. Discovered";
+}
+
 void
 BLEDeviceFlags::internalState(const BLEInternalState newState)
 {
@@ -553,14 +583,17 @@ BLEDevice::timeIntervalSinceLastPayloadDataUpdate() const
 TimeInterval
 BLEDevice::timeIntervalUntilIgnoreExpired() const
 {
+  if (ignore()) {
+    return TimeInterval::never(); // Always ignore
+  }
   const auto is = flags.internalState();
   if (is != BLEInternalState::relevant &&
       is != BLEInternalState::identified) {
-    return TimeInterval::zero();
+    return TimeInterval::zero(); // Never ignore until we've introspected the device
   }
   const auto ignoreUntil = std::get<RelevantState>(stateData).ignoreUntil;
   if (ignoreUntil == TimeInterval::never()) {
-    return TimeInterval::never();
+    return TimeInterval::never(); // Always ignore
   }
   return TimeInterval(Date(),ignoreUntil);
 }
@@ -628,7 +661,7 @@ BLEDevice::state(BLEDeviceState newState)
     if (rs.connectRepeatedFailures >= 5) { // Changed to 5 from 10 for quicker failure in busy areas
       // Ignore for a while (progressive backoff)
       operatingSystem(BLEDeviceOperatingSystem::ignore);
-      ignore(true);
+      ignore(true); // TODO validate whey we ignore forever here
       // Don't backoff again immediately
       rs.connectRepeatedFailures = 0;
     }
@@ -645,6 +678,27 @@ BLEDevice::state(BLEDeviceState newState)
       delegate->get().device(*this, BLEDeviceAttribute::state);
     }
   }
+}
+
+std::string
+BLEDevice::internalStateDescription() const
+{
+  std::string di = flags.internalStateDescription();
+  // Now add some extra context
+  const auto is = flags.internalState();
+  if (is == BLEInternalState::relevant) {
+    auto& rs = std::get<RelevantState>(stateData);
+    di += "[everConn?: ";
+    di += flags.hasEverConnected() ? "true" : "false";
+    di +=", connFailures: ";
+    di += std::to_string(rs.connectRepeatedFailures);
+    di += ", txPower: ";
+    di += std::to_string(rs.txPower);
+    di += ", payloadUpdated: ";
+    di += std::to_string((std::uint32_t)rs.payloadUpdated.secondsSinceUnixEpoch());
+    di += "]";
+  }
+  return di;
 }
 
 BLEDeviceOperatingSystem

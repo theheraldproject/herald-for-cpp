@@ -220,6 +220,15 @@ namespace zephyrinternal {
     }
   }
 
+
+  [[maybe_unused]]
+  void close_cb(struct bt_conn *conn, void *data)
+  {
+    if (concreteReceiverInstance.has_value()) {
+      concreteReceiverInstance.value().get().close(conn, data);
+    }
+  }
+
   
   void discovery_completed_cb(struct bt_gatt_dm *dm,
             void *context)

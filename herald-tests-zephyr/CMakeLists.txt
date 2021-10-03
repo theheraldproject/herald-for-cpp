@@ -100,7 +100,7 @@ endif()
 
 # gcc arm does not warn about missing defs until runtime
 # NOTE: Catch2 uses exceptions, so we enable -fexceptions
-# add_compile_options(--no-undefined -ffunction-sections -fdata-sections -s -fno-unaligned-access -fexceptions -fno-rtti -Wall -Wextra -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
+# add_compile_options(--no-undefined -ffunction-sections -fdata-sections -s -fno-unaligned-access -fno-exceptions -fno-rtti -Wall -Wextra -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
 add_compile_options(--no-undefined -fexceptions -ffunction-sections -fdata-sections -s -Wl,-z,defs,norelro,--strict,--strict_symbols,--gc-sections,--hash-style=gnu)
 
 target_sources(app PRIVATE

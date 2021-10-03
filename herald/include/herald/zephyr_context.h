@@ -150,6 +150,7 @@ public:
 
   // Internal info callbacks
   virtual void print(struct bt_conn *conn, void *data) = 0;
+  virtual void close(struct bt_conn *conn, void *data) = 0;
 
   // Connection management
   virtual void le_param_updated(struct bt_conn *conn, uint16_t interval,

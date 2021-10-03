@@ -2,8 +2,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-// #include "../../herald/herald.h"
-
 #include <zephyr/types.h>
 #include <stddef.h>
 #include <string.h>
@@ -25,6 +23,7 @@ LOG_MODULE_REGISTER(app, CONFIG_APP_LOG_LEVEL);
 #define SA_ONSTACK 0
 #define CATCH_CONFIG_NO_POSIX_SIGNALS 
 #define CATCH_CONFIG_NOSTDOUT
+// #define CATCH_CONFIG_DISABLE_EXCEPTIONS
 #include "../../herald-tests/catch.hpp"
 
 #include <sstream>
@@ -65,7 +64,7 @@ constexpr int stackMaxSize =
 //   // + 16384
 
 // ;
-16384;
+65536;
 K_THREAD_STACK_DEFINE(herald_stack, stackMaxSize);
 
 // Catch normally uses std::cout but Zephyr doesn't use that - so we need this:-
@@ -121,14 +120,20 @@ void _exit(int status)
 {
   LOG_ERR("FAILURE: exit called with status %d", status);
   while (1) {
-    ;
+    k_sleep(K_SECONDS(10));
   }
 }
 
 void herald_entry() {
   LOG_DBG("Catch thread entry");
+  k_sleep(K_SECONDS(10));
   try {
-    int result = Catch::Session().run();
+    LOG_DBG("In try");
+    k_sleep(K_SECONDS(10));
+    Catch::Session session; 
+    LOG_DBG("Session created. Calling run in 2 seconds");
+    k_sleep(K_SECONDS(10));
+    int result = session.run();
     LOG_DBG("Catch returned a value of: %d",result);
   } catch (const std::exception& e) {
     LOG_ERR("Tests reported problem: %s",log_strdup(e.what()));
@@ -143,20 +148,21 @@ void herald_entry() {
 
 void main(void)
 {
-	// int nameOk = k_thread_name_set(NULL,"main");
+	int nameOk = k_thread_name_set(NULL,"main");
   // Wait for a few seconds for remote to connect
   LOG_DBG("Waiting for 10 seconds for tests to start (so we see thread analyser output)");
   k_sleep(K_SECONDS(10));
 
   // Now manually initialise catch
   LOG_DBG("Initialising catch");
-  k_sleep(K_SECONDS(2));
+  k_sleep(K_SECONDS(10));
 
-	// k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, stackMaxSize,
-	// 		(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
-	// 		-1, K_USER,
-	// 		K_NO_WAIT);
-	// nameOk = k_thread_name_set(herald_pid,"herald");
+  [[maybe_unused]]
+	k_tid_t herald_pid = k_thread_create(&herald_thread, herald_stack, stackMaxSize,
+			(k_thread_entry_t)herald_entry, NULL, NULL, NULL,
+			-1, K_USER,
+			K_SECONDS(2));
+	nameOk = k_thread_name_set(herald_pid,"herald");
       
   LOG_DBG("Catch thread started");
 

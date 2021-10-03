@@ -153,6 +153,9 @@ namespace zephyrinternal {
   [[maybe_unused]]
   void print_cb(struct bt_conn *conn, void *data);
 
+  [[maybe_unused]]
+  void close_cb(struct bt_conn *conn, void *data);
+
   // BT_SCAN_CB_INIT(scan_cbs, scan_filter_match, );
 
   // void scan_filter_match(struct bt_scan_device_info *device_info,
@@ -339,6 +342,15 @@ public:
     bt_conn_foreach(BT_CONN_TYPE_LE, zephyrinternal::print_cb, NULL);
   }
 
+  void close(struct bt_conn *conn, void *data) override {
+    bt_conn_disconnect(conn,BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+    // bt_conn_unref(conn);
+  }
+
+  void forceCloseAll() {
+    bt_conn_foreach(BT_CONN_TYPE_LE, zephyrinternal::close_cb, NULL);
+  }
+
   // NON C++17 VERSION:-
   bool openConnection(const TargetIdentifier& toTarget) override
   {
@@ -414,7 +426,8 @@ public:
     // temporarily stop scan - WORKAROUND for https://github.com/zephyrproject-rtos/zephyr/issues/20660
     // HTDBG("pausing scanning");
     stopScanning();
-    // m_context.getPlatform().getAdvertiser().stopAdvertising(); // removed in v2.1
+    m_context.getPlatform().getAdvertiser().stopAdvertising(); // Forced via ble coordinator, and zephyr internals, not this method
+    // TODO investigate le_ext_adv etc to auto start/stop advertising properly
     // HTDBG("Scanning paused");
 
 
@@ -456,13 +469,25 @@ public:
         &state.connection
       );
       HTDBG(" - post connection attempt");
+      auto& device = db.device(newMac); // Find by actual current physical address
       if (0 != success) {
         HTDBG("Connection call did not succeed");
         ok = false;
         if (-EINVAL == success) {
           HTDBG(" - ERROR in passed in parameters");
+          // NOTE: For whatever reason, having ANY connection reach this point stops advertising working (as if connections are held open)
+          // Thus we MUST find a way to FORCE these connections to die, and potentially be recreated later
+
           // Remove connection by calling disconnected explicitly (in case connection closed elsewhere)
-          disconnected(state.connection, success);
+          // IGNORE THIS NOTE: Note: Explicit disconnect removed to allow remote instigated connections to not be killed too soon
+          //disconnected(state.connection, success);
+
+          // WHY DOES THE BELOW NOT CLEAR THE STRUCT???
+
+          // Force internal disconnect instead
+          bt_conn_disconnect(state.connection,BT_HCI_ERR_REMOTE_USER_TERM_CONN);
+          bt_conn_unref(state.connection);
+
         } else if (-EAGAIN == success) {
           HTDBG(" - bt device not ready");
         } else if (-EALREADY == success) {
@@ -488,8 +513,7 @@ public:
         // device.ignore(true);
         
         // Log last disconnected time in BLE database (records failure, allows progressive backoff)
-        auto& device = db.device(newMac); // Find by actual current physical address
-        device.state(BLEDeviceState::disconnected);
+        device.state(BLEDeviceState::disconnected); // Ensures device.ignore(true) called for those that fail immediately to connect
         state.connection = NULL;
         state.state = BLEDeviceState::disconnected;
         
@@ -511,6 +535,8 @@ public:
         // connCallback(toTarget,connectionState == BLEDeviceState::connected);
 
         // ZEPHYR SPECIFIC VARIANT
+        // REMOVED in v2.1 as Zephyr's own connected callback handles this better
+        /*
         uint32_t timedOut = waitWithTimeout(5'000, K_MSEC(25), [&state] {
           return state.state == BLEDeviceState::connecting;
         });
@@ -521,10 +547,16 @@ public:
           );
           state.state = BLEDeviceState::disconnected;
           state.connection = NULL;
+          device.state(BLEDeviceState::disconnected); // Ensures device.ignore(true) called for those that connect with no response
           return false;
         }
+        // Register success here rather than connected callback, as that is also call when the remote connects to us (wrong direction)
+        device.state(BLEDeviceState::connected);
         // return connectionState == BLEDeviceState::connected;
         return state.state == BLEDeviceState::connected;
+        */
+        // Assume it will work (and accept later errors in service discovery and payload reading)
+        return true;
       }
     } else {
       HTDBG(" - Existing connection exists! Reusing.");
@@ -609,13 +641,14 @@ public:
           // if (device.timeIntervalSinceConnected() < TimeInterval::never() &&
           //     device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
           // TODO verify this is true when the BLEDevice is in the state we require
-          if (device.timeIntervalSinceLastUpdate() < TimeInterval::never() &&
-              device.timeIntervalSinceLastUpdate() > TimeInterval::seconds(30)) {
+          // Force disconnect for all added in v2.1 to ensure that this call has the desired effect (overriding low level connection handling)
+          // if (device.timeIntervalSinceLastUpdate() < TimeInterval::never() &&
+          //     device.timeIntervalSinceLastUpdate() > TimeInterval::seconds(30)) {
             // disconnect
             bt_conn_disconnect(value.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
             bt_conn_unref(value.connection);
             value.connection = NULL;
-          }
+          // }
         }
       }
 
@@ -627,15 +660,16 @@ public:
           // Ones that are not null, but have timed out according to BLE settings (This class doesn't get notified by BLEDatabase)
           auto& device = db.device(iter->second.target);
           // TODO verify this is true when the BLEDevice is in the state we require
-          // if (device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) {
-          if (device.timeIntervalSinceLastUpdate() > TimeInterval::seconds(30)) {
+          // if (device.timeIntervalSinceConnected() > TimeInterval::seconds(30)) { // Replaced pre v2.1 (No longer track initial connection time separately)
+          // Force disconnect for all added in v2.1 to ensure that this call has the desired effect (overriding low level connection handling)
+          // if (device.timeIntervalSinceLastUpdate() > TimeInterval::seconds(30)) {
             bt_conn_disconnect(iter->second.connection, BT_HCI_ERR_REMOTE_USER_TERM_CONN);
             bt_conn_unref(iter->second.connection);
             iter->second.connection = NULL;
-          } else {
-            hasInUseConnection = hasInUseConnection && 
-              (iter->second.inDiscovery || iter->second.remoteInstigated || iter->second.isReading);
-          }
+          // } else {
+          //   hasInUseConnection = hasInUseConnection && 
+          //     (iter->second.inDiscovery || iter->second.remoteInstigated || iter->second.isReading);
+          // }
         }
 
         if (NULL == iter->second.connection) { // means Zephyr callbacks are finished with the connection object (i.e. disconnect was called)
@@ -644,6 +678,9 @@ public:
       }
     }
 
+    // Force any remaining hidden in zephyr to be closed
+    forceCloseAll();
+
     // Restart scanning
     // HTDBG("restartScanningAndAdvertising - requesting scanning and advertising restarts");
     if (hasInUseConnection) {
@@ -651,7 +688,7 @@ public:
     } else {
       HTDBG("RESTARTING ADVERTISING AND SCANNING");
       startScanning();
-      // m_context.getPlatform().getAdvertiser().startAdvertising(); // removed in v2.1
+      m_context.getPlatform().getAdvertiser().startAdvertising(); // REQUIRED as this is intended to FORCE advertising to start (for remote rssi reads)
     }
   }
 
@@ -664,6 +701,10 @@ public:
     }
     // Ensure we have a cached state (i.e. we are connected)
     auto& state = findOrCreateState(currentTargetOpt.value());
+    if (state.inDiscovery) {
+      HTDBG("Already in discovery. Returning until success or failure.");
+      return {};
+    }
     if (state.state != BLEDeviceState::connected) {
       HTERR("Not connected to target of activity. Returning.");
       return {};
@@ -678,22 +719,24 @@ public:
 
     gatt_discover(state.connection);
 
-    HTDBG("Zephyr waitWithTimeout for serviceDiscovery");
-    uint32_t timedOut = waitWithTimeout(5'000, K_MSEC(25), [&state] () -> bool {
-      // return !device.hasServicesSet();
-      return state.inDiscovery || state.isReading;
-    });
-    HTDBG("Zephyr waitWithTimeout completed for serviceDiscovery");
+    // HTDBG("Zephyr waitWithTimeout for serviceDiscovery");
+    // uint32_t timedOut = waitWithTimeout(2'000, K_MSEC(25), [&state] () -> bool {
+    //   // return !device.hasServicesSet();
+    //   return state.inDiscovery || state.isReading;
+    // });
+    // HTDBG("Zephyr waitWithTimeout completed for serviceDiscovery");
 
-    state.inDiscovery = false;
+    // state.inDiscovery = false;
 
-    if (0 != timedOut) {
-      HTERR("service discovery timed out for {} after {}ms", ((std::string)device.identifier()), timedOut);
-      return {};
-    }
+    // if (0 != timedOut) {
+    //   BLEMacAddress mac(device.identifier().underlyingData());
+    //   HTERR("service discovery timed out for {} after {}ms", ((std::string)mac), timedOut);
+    //   return {};
+    // }
     return {};
   }
 
+  // Note: The following is initiated within serviceDiscovery's callback as it's gatt related
   std::optional<Activity> readPayload(Activity activity) override
   {
     // HTDBG("Entered readPayload activity");
@@ -789,7 +832,7 @@ private:
     ConnectedDeviceState& state = findOrCreateStateByConnection(conn, true);
     auto& device = db.device(bleMacAddress); // Find by actual current physical address
 
-    if (err) { // 2 = SMP issues? StreetPass blocker on Android device perhaps. Disabled SMP use?
+    if (0 != err) { // 2 = SMP issues? StreetPass blocker on Android device perhaps. Disabled SMP use?
       // When connecting to some devices (E.g. HTC Vive base station), you will connect BUT get an error code
       // The below ensures that this is counted as a connection failure
 
@@ -811,12 +854,15 @@ private:
     }
     HTDBG("Connected: Connected successfully");
 
+    // do this here now we don't explicitly wait in the openConnection call - Since v2.1
+    device.state(BLEDeviceState::connected);
     state.connection = conn;
     bt_addr_le_copy(&state.address,addr);
     state.state = BLEDeviceState::connected;
 
     // Log last connected time in BLE database
-    device.state(BLEDeviceState::connected);
+    // Note: Do this in the timeout callback instead
+    //device.state(BLEDeviceState::connected);
 
     
     // if (targetForConnection.has_value() && connCallback.has_value()) {
@@ -862,6 +908,8 @@ private:
         bt_conn_unref(conn); // Unref to signify we don't need this reference any longer either
         // Assume remote doesn't accept connection
         device.ignore(true);
+      } else if (8 == reason) {
+        HTDBG("  0x08 (08) Connection timeout - Peripheral or Central did not coordinate connection timeout value.");
       } else {
         HTDBG("  Unknown reason code: {}", reason);
       }
@@ -906,6 +954,7 @@ private:
           // initialise payload data for this state
           state.readPayload.clear();
           state.isReading = true;
+          state.inDiscovery = false; // Only do this after setting the above (timing surety)
 
           // if match, for a read
           found = true;
@@ -977,10 +1026,16 @@ private:
     std::vector<UUID> serviceList; // empty service list // TODO put other listened-for services here
     device.services(serviceList);
     device.ignore(true);
+
+    // Set this last so the above take effect
+    state.inDiscovery = false;
   }
 
   void discovery_error_found_cb(struct bt_conn *conn, int err, void *context) override
   {
+    ConnectedDeviceState& state = findOrCreateStateByConnection(conn);
+    state.inDiscovery = false;
+
     auto addr = bt_conn_get_dst(conn);
     char addr_str[BT_ADDR_LE_STR_LEN];
     bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
@@ -1108,8 +1163,9 @@ private:
     if (err) {
       HTDBG("could not start the discovery procedure, error code: {}", err);
       auto& state = findOrCreateStateByConnection(conn,false);
-      bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN); // ensures disconnect() called, and loop completed
-      bt_conn_unref(conn);
+      // Note: Explicit disconnect removed to allow remote instigated connections to not be killed too soon
+      //bt_conn_disconnect(conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN); // ensures disconnect() called, and loop completed
+      //bt_conn_unref(conn);
       state.connection = NULL;
       return;
     }
