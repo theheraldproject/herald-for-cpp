@@ -11,15 +11,7 @@
 
 #ifdef __ZEPHYR__
 
-void Terminate() noexcept
-{
-  // Does nothing
-}
-
-namespace __cxxabiv1
-{
-    std::terminate_handler __terminate_handler = Terminate;
-}
+void Terminate() noexcept;
 
 #endif
 

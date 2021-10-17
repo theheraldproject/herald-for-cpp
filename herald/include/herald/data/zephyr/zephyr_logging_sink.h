@@ -18,11 +18,11 @@ namespace data {
 
 class ZephyrLoggingSink {
 public:
-  ZephyrLoggingSink() = default;
-  ~ZephyrLoggingSink() = default;
+  ZephyrLoggingSink() noexcept = default;
+  ~ZephyrLoggingSink() noexcept = default;
 
   void log(const std::string& subsystem,const std::string& category,
-    SensorLoggerLevel level, const std::string& message);
+    SensorLoggerLevel level, const std::string message) const noexcept;
 };
 
 } // end namespace

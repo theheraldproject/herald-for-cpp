@@ -83,6 +83,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/payload/simple/secret_key.h
   ${HERALD_BASE}/include/herald/payload/simple/simple_payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/extended/extended_data.h
+  ${HERALD_BASE}/include/herald/util/byte_array_printer.h
 
 )
 set(HERALD_HEADERS_ZEPHYR 

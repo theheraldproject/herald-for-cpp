@@ -24,6 +24,8 @@
 #define HLOGGER(_ctxT) \
   herald::data::SensorLogger<typename _ctxT::logging_sink_type> logger;
 #define HLOGGERINIT(_ctx,_subsystem,_category) ,logger(_ctx.getLoggingSink(),_subsystem,_category)
+#define HLOGGERINLINE(_ctx,_subsystem,_category) \
+  herald::data::SensorLogger logger(_ctx.getLoggingSink(),_subsystem,_category);
 #endif
 
 // HDBG Defines for within main class (more common)
@@ -69,6 +71,7 @@
 
 #define HLOGGER(_ctxT) /* No logger instance */
 #define HLOGGERINIT(...) /* No logger init */
+#define HLOGGERINLINE(...) /* No inline logger */
 #define HDBG(...) /* No debug log */
 #define HERR(...) /* No error log */
 #define HLOG(...) /* No info log */
@@ -82,6 +85,7 @@
 
 #define HLOGGER(_ctxT) /* No logger instance */
 #define HLOGGERINIT(...) /* No logger init */
+#define HLOGGERINLINE(...) /* No inline logger */
 #define HDBG(...) /* No debug log */
 #define HERR(...) /* No error log */
 #define HLOG(...) /* No info log */
@@ -138,44 +142,115 @@ namespace {
       ++pos;
     }
   }
- 
-  template<typename... Targs>
-  void tprintf(std::stringstream& os, const std::string& format, std::uint8_t value, Targs... Fargs) // recursive variadic function
+
+  /// MARK: Individual value streaming support
+
+  /// \brief Fallback method that assumes a << operator exists for type T.
+  template <typename T>
+  void tprintValue(std::stringstream& os, T value)
   {
-    std::size_t pos = 0;
-    for ( auto c : format ) {
-      if ( c == '{' ) {
-        os << std::uint16_t(value);
-        if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
-          tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
-        } else {
-          tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
-        }
-        return;
-      }
-      os << c;
-      ++pos;
-    }
+    os << value;
+  }
+  
+  // template <typename T>
+  // auto tprintValue(std::stringstream& os, T value) -> decltype(operator<<(os,value), void())
+  // {
+  //   os << value;
+  // }
+
+  // /// \brief Partial specialisation for types that std::to_string supports
+  // template <typename T>
+  // auto tprintValue(std::stringstream& os, T value) -> decltype(std::to_string(value), void())
+  // {
+  //   os << std::to_string(value);
+  // }
+  
+  [[maybe_unused]]
+  void tprintValue(std::stringstream& os, std::uint8_t value)
+  {
+    // only uint16 and above on zephyr has a stream operator
+    os << std::uint16_t(value);
+  }
+  
+  [[maybe_unused]]
+  void tprintValue(std::stringstream& os, std::int8_t value)
+  {
+    // only int16 and above on zephyr has a stream operator
+    os << std::int16_t(value);
+  }
+  
+  /// \brief Prints an int value to the stream
+  /// \note Also covers int32_t and int64_t
+  [[maybe_unused]]
+  void tprintValue(std::stringstream& os, int value)
+  {
+    os << std::int64_t(value);
+  }
+  
+  [[maybe_unused]]
+  void tprintValue(std::stringstream& os, double value)
+  {
+    // double may not be supported depending on Zephyr compile flags
+    // TODO check for support for printf(double) rather than just assume it is not there
+    os << "~" << ((int)value) << "d";
   }
  
-  template<typename... Targs>
-  void tprintf(std::stringstream& os, const std::string& format, std::int8_t value, Targs... Fargs) // recursive variadic function
-  {
-    std::size_t pos = 0;
-    for ( auto c : format ) {
-      if ( c == '{' ) {
-        os << std::int16_t(value);
-        if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
-          tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
-        } else {
-          tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
-        }
-        return;
-      }
-      os << c;
-      ++pos;
-    }
-  }
+  // template<typename... Targs>
+  // void tprintf(std::stringstream& os, const std::string& format, std::uint8_t value, Targs... Fargs) // recursive variadic function
+  // {
+  //   std::size_t pos = 0;
+  //   for ( auto c : format ) {
+  //     if ( c == '{' ) {
+  //       os << std::uint16_t(value);
+  //       if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
+  //         tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
+  //       } else {
+  //         tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
+  //       }
+  //       return;
+  //     }
+  //     os << c;
+  //     ++pos;
+  //   }
+  // }
+ 
+  // template<typename... Targs>
+  // void tprintf(std::stringstream& os, const std::string& format, std::int8_t value, Targs... Fargs) // recursive variadic function
+  // {
+  //   std::size_t pos = 0;
+  //   for ( auto c : format ) {
+  //     if ( c == '{' ) {
+  //       os << std::int16_t(value);
+  //       if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
+  //         tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
+  //       } else {
+  //         tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
+  //       }
+  //       return;
+  //     }
+  //     os << c;
+  //     ++pos;
+  //   }
+  // }
+ 
+  // template<typename... Targs>
+  // void tprintf(std::stringstream& os, const std::string& format, double value, Targs... Fargs) // recursive variadic function
+  // {
+  //   std::size_t pos = 0;
+  //   for ( auto c : format ) {
+  //     if ( c == '{' ) {
+  //       os << "~" << (int)(value) << "d";
+  //       if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
+  //         tprintf(os, format.substr(pos + 2), Fargs...); // recursive call
+  //       } else {
+  //         tprintf(os, format.substr(pos + 1), Fargs...); // recursive call
+  //       }
+  //       return;
+  //     }
+  //     os << c;
+  //     ++pos;
+  //   }
+  // }
  
   // template<typename... Targs>
   // void tprintf(std::stringstream& os, const std::string& format, const std::string& value, Targs... Fargs) // recursive variadic function
@@ -204,7 +279,7 @@ namespace {
     std::size_t pos = 0;
     for ( auto c : format ) {
       if ( c == '{' ) {
-        os << value;
+        tprintValue(os,value);
         if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
           tprintf(os, format.substr(pos + 2)); // recursive call
         } else {
@@ -223,7 +298,7 @@ namespace {
     std::size_t pos = 0;
     for ( auto c : format ) {
       if ( c == '{' ) {
-        os << first;
+        tprintValue(os,first);
         if (format.size() > pos + 1 && format.at(pos + 1) == '}') {
           tprintf(os, format.substr(pos + 2), second, rest...); // recursive call
         } else {
@@ -267,25 +342,25 @@ namespace {
 template <typename LoggingSinkT>
 class SensorLogger {
 public:
-  SensorLogger(LoggingSinkT& sink, std::string subsystem, std::string category) 
+  SensorLogger(LoggingSinkT& sink, std::string subsystem, std::string category) noexcept
     : mSink(sink), mSubsystem(subsystem), mCategory(category)
   {
     ;
   }
 
-  SensorLogger(const SensorLogger& other)
+  SensorLogger(const SensorLogger& other) noexcept
     : mSink(other.mSink), mSubsystem(other.mSubsystem), mCategory(other.mCategory)
   {
     ;
   }
 
-  SensorLogger(SensorLogger&& other)
+  SensorLogger(SensorLogger&& other) noexcept
     : mSink(other.mSink), mSubsystem(other.mSubsystem), mCategory(other.mCategory)
   {
     ;
   }
 
-  SensorLogger& operator=(const SensorLogger& other)
+  SensorLogger& operator=(const SensorLogger& other) noexcept
   {
     mSink = other.mSink;
     mSubsystem = other.mSubsystem;
@@ -293,7 +368,7 @@ public:
     return *this;
   }
 
-  SensorLogger& operator=(SensorLogger&& other)
+  SensorLogger& operator=(SensorLogger&& other) noexcept
   {
     mSink = other.mSink;
     mSubsystem = other.mSubsystem;
@@ -303,15 +378,15 @@ public:
   
   // TODO consider supporting multiple sinks in the context - E.g. USB UART and log file
 
-  ~SensorLogger() = default;
+  ~SensorLogger() noexcept = default;
 
   // use std::format to generate the string
   // std::format in C++20, fmt::format library before that
   // Note: C++11 Variadic template parameter pack expansion
   template <typename ... Types>
-  void debug(const std::string& message, const Types&... args) {
-    const int size = sizeof...(args);
-    if (0 == size) {
+  void debug(const std::string& message, const Types&... args) const noexcept {
+    constexpr int size = sizeof...(args);
+    if constexpr (0 == size) {
       log(SensorLoggerLevel::debug,message);
     } else {
       std::stringstream os;
@@ -322,9 +397,9 @@ public:
   }
 
   template <typename ... Types>
-  void info(const std::string& message, const Types&... args) {
-    const int size = sizeof...(args);
-    if (0 == size) {
+  void info(const std::string& message, const Types&... args) const noexcept {
+    constexpr int size = sizeof...(args);
+    if constexpr (0 == size) {
       log(SensorLoggerLevel::debug,message);
     } else {
       std::stringstream os;
@@ -335,9 +410,9 @@ public:
   }
 
   template <typename ... Types>
-  void fault(const std::string& message, const Types&... args) {
-    const int size = sizeof...(args);
-    if (0 == size) {
+  void fault(const std::string& message, const Types&... args) const noexcept {
+    constexpr int size = sizeof...(args);
+    if constexpr (0 == size) {
       log(SensorLoggerLevel::debug,message);
     } else {
       std::stringstream os;
@@ -348,7 +423,7 @@ public:
   }
 
 private:
-  inline void log(SensorLoggerLevel lvl, std::string msg) {
+  inline void log(SensorLoggerLevel lvl, const std::string msg) const noexcept {
     mSink.log(mSubsystem, mCategory, lvl, msg);
   }
 

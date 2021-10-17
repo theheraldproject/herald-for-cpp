@@ -177,6 +177,10 @@ public:
               ); // didMeasure withPayload
             // }
           }
+        } else {
+          HTERR("payloadData update called for {} but device has no payload data! No callback called.", 
+            (std::string)BLEMacAddress(device.identifier().underlyingData())
+          );
         }
         break;
       }
@@ -207,11 +211,6 @@ public:
   }
 
 private:
-
-  // Internal API private methods here too
-
-  // Data members hidden by PIMPL
-
   ContextT& m_context;
   ConcreteBLEDatabase<ContextT,DBSize> database;
   BluetoothStateManager& stateManager;

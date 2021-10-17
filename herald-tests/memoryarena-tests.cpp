@@ -2,6 +2,8 @@
 //  SPDX-License-Identifier: Apache-2.0
 //
 
+#include "test-templates.h"
+
 #include <memory>
 
 #include "catch.hpp"
@@ -32,7 +34,14 @@ TEST_CASE("memoryarena-size","[memoryarena][size]") {
 
 TEST_CASE("memoryarena-set","[memoryarena][set]") {
   SECTION("memoryarena-set") {
-    herald::datatype::MemoryArena<2048,10> arena;
+    DummyLoggingSink dls;
+    DummyBluetoothStateManager dbsm;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+
+    herald::util::ByteArrayPrinter bap(ctx);
+
+    herald::datatype::MemoryArena<96,10> arena;
     char value = 'G';
     char nonvalue = 'T';
     auto entry = arena.allocate(89);
@@ -49,6 +58,12 @@ TEST_CASE("memoryarena-set","[memoryarena][set]") {
     REQUIRE(nonvalue == arena.get(entry,6));
     REQUIRE(nonvalue == arena.get(entry,87));
     REQUIRE(value == arena.get(entry,88));
+
+    std::array<unsigned char,16> buffer;
+    for (std::size_t offsetIdx = 0; offsetIdx < (96 / 16);++offsetIdx) {
+      arena.rawCopy(buffer,offsetIdx * 16);
+      bap.print(buffer, offsetIdx * 16);
+    }
   }
 }
 
@@ -104,6 +119,13 @@ TEST_CASE("memoryarena-useall","[memoryarena][useall]") {
 
 TEST_CASE("memoryarena-entry-rawlocation","[memoryarena][entry][rawlocation]") {
   SECTION("memoryarena-entry-rawlocation") {
+    DummyLoggingSink dls;
+    DummyBluetoothStateManager dbsm;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+
+    herald::util::ByteArrayPrinter bap(ctx);
+
     herald::datatype::MemoryArenaEntry emptyEntry;
     herald::datatype::MemoryArena<64,8> arena; // 8 byte boundary for address size offset test calculation!
     REQUIRE(0 == arena.rawStartAddress(emptyEntry));
@@ -115,5 +137,11 @@ TEST_CASE("memoryarena-entry-rawlocation","[memoryarena][entry][rawlocation]") {
     REQUIRE(0 != entry2Address);
     auto difference = entry2Address - entry1Address;
     REQUIRE(16 == difference);
+
+    std::array<unsigned char,16> buffer;
+    for (std::size_t offsetIdx = 0; offsetIdx < (64 / 16);++offsetIdx) {
+      arena.rawCopy(buffer,offsetIdx * 16);
+      bap.print(buffer, offsetIdx * 16);
+    }
   }
 }

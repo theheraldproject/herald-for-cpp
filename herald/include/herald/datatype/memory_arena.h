@@ -8,6 +8,7 @@
 #include <cstddef>
 #include <bitset>
 #include <array>
+#include <limits>
 
 /// \brief Acts as a non-global memory arena for arbitrary classes
 namespace herald {
@@ -52,6 +53,11 @@ public:
   }
 
   ~MemoryArena() noexcept = default;
+
+  /// \brief Forces all pages to be unset. Effectively clears memory in use.
+  void reset() noexcept {
+    pagesInUse.reset();
+  }
 
   void reserve(MemoryArenaEntry& entry,std::size_t newSize) noexcept {
     if (newSize <= entry.byteLength) {
@@ -136,6 +142,33 @@ public:
 
   std::size_t pagesFree() const noexcept {
     return pagesRequired(Size,PageSize) - pagesInUse.count();
+  }
+
+  /// \brief Copies the segment of raw data from this arena
+  /// \note A template, so if unused in production it compiles out to nothing (zero overhead)
+  template <typename ByteArrayT>
+  void rawCopy(ByteArrayT& toPopulate, const std::size_t offset) noexcept {
+    const std::size_t len = ((Size - offset) < toPopulate.size()) ? (Size - offset) : toPopulate.size();
+    std::size_t pos = 0;
+    std::size_t page = 0;
+    for (;(pos < len) && ((offset + pos) < Size);++pos) {
+      // Note: If deallocated, return 00 always (so as not to confuse the reader) - we don't explicitly zero out memory after use!
+      page = (offset + pos) / PageSize;
+      if (!pagesInUse.test(page)) {
+        // Not in use, return a 0
+        toPopulate[pos] = std::numeric_limits<unsigned char>::min();
+      } else {
+        toPopulate[pos] = arena[offset + pos];
+      }
+    }
+    // we may have ran out of bytes in the arena, so just return empty bytes in the destination array
+    for (;pos < len;++pos) {
+      toPopulate[pos] = std::numeric_limits<unsigned char>::min();
+    }
+  }
+
+  std::size_t size() const noexcept {
+    return Size;
   }
 
 private:

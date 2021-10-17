@@ -17,6 +17,7 @@ public:
   PayloadData(const std::byte* data, std::size_t length);
   PayloadData(std::byte repeating, std::size_t count);
   ~PayloadData() = default;
+  PayloadData& operator=(const PayloadData& other);
 
   std::string shortName() const;
   std::string toString() const;

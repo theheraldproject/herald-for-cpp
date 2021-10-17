@@ -60,13 +60,25 @@
     "stdexcept": "cpp",
     "streambuf": "cpp",
     "thread": "cpp",
-    "cinttypes": "cpp"
+    "cinttypes": "cpp",
+    "bit": "cpp",
+    "bitset": "cpp",
+    "netfwd": "cpp"
   },
   "cmake.configureEnvironment": {
-    "BOARD": "nrf52dk_nrf52832"
+    // "BOARD": "nrf52dk_nrf52832"
     // "BOARD": "nrf52833dk_nrf52833"
-    // "BOARD": "nrf52840dk_nrf52840"
+    "BOARD": "nrf52840dk_nrf52840"
     // "BOARD": "nrf5340dk_nrf5340_cpuapp"
     // ,"HERALD_ANALYSIS_ENABLED":"y"
+  },
+  "kconfig.zephyr.base": "${ZEPHYR_BASE}",
+  "nrf-connect.applications": [
+    "${workspaceFolder}"
+  ],
+  "kconfig.zephyr.board": {
+    "board": "nrf52840dk_nrf52840",
+    "arch": "arm",
+    "dir": "${ZEPHYR_BASE}/boards/arm/nrf52840dk_nrf52840"
   }
 }

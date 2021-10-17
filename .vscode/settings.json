@@ -92,5 +92,18 @@
   ],
   "cmake.configureSettings": {
     // "CODE_COVERAGE": "ON"
+  },
+  "kconfig.zephyr.west": "west",
+  "kconfig.zephyr.base": "${ZEPHYR_BASE}",
+  "nrf-connect.applications": [
+    "${workspaceFolder}/herald-wearable",
+    "${workspaceFolder}/herald-wearable-c",
+    "${workspaceFolder}/herald-venue-beacon",
+    "${workspaceFolder}/herald-tests-zephyr"
+  ],
+  "kconfig.zephyr.board": {
+    "board": "nrf52840dk_nrf52840",
+    "arch": "arm",
+    "dir": "${ZEPHYR_BASE}/boards/arm/nrf52840dk_nrf52840"
   }
 }
