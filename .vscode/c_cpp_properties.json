@@ -1,9 +1,10 @@
 {
     "configurations": [
         {
-            "name": "Win32",
+            "name": "Win64",
             "includePath": [
-                "${default}"
+                "${default}",
+                "${workspaceFolder}/herald/include"
             ],
             "defines": [
                 "_DEBUG",
@@ -15,24 +16,44 @@
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "msvc-x64",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "${workspaceFolder}/herald/include"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         },
         {
             "name": "zephyr",
             "includePath": [
                 "${default}",
-                "${ZEPHYR_BASE}/include"
+                "${workspaceFolder}/herald/include",
+                "${ZEPHYR_BASE}/include",
+                "${ZEPHYR_BASE}/../nrf/include"
             ],
             "defines": [
                 "_DEBUG",
                 "UNICODE",
-                "_UNICODE"
+                "_UNICODE",
+                "__ZEPHYR__",
+                "CONFIG_BT_NUS"
             ],
             "compilerPath": "c:/gnuarmemb/bin/arm-none-eabi-gcc.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
             "intelliSenseMode": "gcc-arm",
-            "configurationProvider": "ms-vscode.cmake-tools"
+            "configurationProvider": "ms-vscode.cmake-tools",
+            "browse": {
+                "path": [
+                    "${workspaceFolder}",
+                    "${workspaceFolder}/herald/include",
+                    "${ZEPHYR_BASE}/include",
+                    "${ZEPHYR_BASE}/../nrf/include"
+                ],
+                "limitSymbolsToIncludedHeaders": true
+            }
         }
     ],
     "version": 4
