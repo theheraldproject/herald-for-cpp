@@ -71,6 +71,7 @@
 
 #define HLOGGER(_ctxT) /* No logger instance */
 #define HLOGGERINIT(...) /* No logger init */
+#define HLOGGERINLINE(...) /* No inline logger */
 #define HDBG(...) /* No debug log */
 #define HERR(...) /* No error log */
 #define HLOG(...) /* No info log */
@@ -84,6 +85,7 @@
 
 #define HLOGGER(_ctxT) /* No logger instance */
 #define HLOGGERINIT(...) /* No logger init */
+#define HLOGGERINLINE(...) /* No inline logger */
 #define HDBG(...) /* No debug log */
 #define HERR(...) /* No error log */
 #define HLOG(...) /* No info log */

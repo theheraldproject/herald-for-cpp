@@ -34,7 +34,7 @@
       "name": "Debug on NRF52840_XXAA using Cortex-Debug",
       "request": "launch",
       "type": "cortex-debug",
-      "showDevDebugOutput": false,
+      "showDevDebugOutput": true,
       "servertype": "jlink",
       "interface": "swd",
       "device": "NRF52840_XXAA",

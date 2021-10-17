@@ -71,5 +71,14 @@
     "BOARD": "nrf52840dk_nrf52840"
     // "BOARD": "nrf5340dk_nrf5340_cpuapp"
     // ,"HERALD_ANALYSIS_ENABLED":"y"
+  },
+  "kconfig.zephyr.base": "${ZEPHYR_BASE}",
+  "nrf-connect.applications": [
+    "${workspaceFolder}"
+  ],
+  "kconfig.zephyr.board": {
+    "board": "nrf52840dk_nrf52840",
+    "arch": "arm",
+    "dir": "${ZEPHYR_BASE}/boards/arm/nrf52840dk_nrf52840"
   }
 }

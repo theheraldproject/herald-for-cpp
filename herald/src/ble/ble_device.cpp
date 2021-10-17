@@ -663,7 +663,7 @@ BLEDevice::state(BLEDeviceState newState)
       operatingSystem(BLEDeviceOperatingSystem::ignore);
       ignore(true); // TODO validate whey we ignore forever here
       // Don't backoff again immediately
-      rs.connectRepeatedFailures = 0;
+      // rs.connectRepeatedFailures = 0;
     }
   }
   if (BLEDeviceState::connected == newState) {
