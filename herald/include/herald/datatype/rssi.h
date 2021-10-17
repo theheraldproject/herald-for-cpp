@@ -13,6 +13,8 @@ namespace datatype {
 
 class RSSI {
 public:
+  static constexpr std::size_t classId = 1;
+
   RSSI(); // default ctor (evaluates to 0)
   RSSI(int value); // int
   RSSI(const RSSI& other); // copy

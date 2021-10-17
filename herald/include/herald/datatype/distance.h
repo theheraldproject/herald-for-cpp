@@ -13,6 +13,8 @@ namespace datatype {
 /// Simple distance value in metres
 /// Has to be a class/struct type to allow template resolution
 struct Distance {
+  static constexpr std::size_t classId = 2;
+  
   double value;
   
   Distance(); // default ctor (evaluates to 0)

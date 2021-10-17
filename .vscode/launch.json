@@ -24,7 +24,7 @@
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/herald-tests/herald-tests.exe",
-      "args": ["[k-matchingkeyseed]"],
+      "args": ["[exposure]"],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/build/herald-tests",
       "environment": [],

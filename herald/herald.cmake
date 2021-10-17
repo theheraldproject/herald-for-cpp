@@ -18,6 +18,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/analysis/risk.h
   ${HERALD_BASE}/include/herald/analysis/runner.h
   ${HERALD_BASE}/include/herald/analysis/sampling.h
+  ${HERALD_BASE}/include/herald/analysis/sample_algorithms.h
   ${HERALD_BASE}/include/herald/analysis/sensor_source.h
   ${HERALD_BASE}/include/herald/ble/ble.h
   ${HERALD_BASE}/include/herald/ble/ble_concrete.h
@@ -62,6 +63,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/proximity.h
   ${HERALD_BASE}/include/herald/datatype/randomness.h
   ${HERALD_BASE}/include/herald/datatype/rssi.h
+  ${HERALD_BASE}/include/herald/datatype/rssi_minute.h
   ${HERALD_BASE}/include/herald/datatype/sensor_state.h
   ${HERALD_BASE}/include/herald/datatype/sensor_type.h
   ${HERALD_BASE}/include/herald/datatype/sha256.h
@@ -71,6 +73,8 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/wgs84.h
   ${HERALD_BASE}/include/herald/engine/activities.h
   ${HERALD_BASE}/include/herald/engine/coordinator.h
+  ${HERALD_BASE}/include/herald/exposure/agent.h
+  ${HERALD_BASE}/include/herald/exposure/exposure_manager.h
   ${HERALD_BASE}/include/herald/payload/payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/beacon/beacon_payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/fixed/fixed_payload_data_supplier.h
@@ -130,6 +134,7 @@ set(HERALD_SOURCES
   ${HERALD_BASE}/src/datatype/location.cpp
   ${HERALD_BASE}/src/datatype/payload_data.cpp
   ${HERALD_BASE}/src/datatype/rssi.cpp
+  ${HERALD_BASE}/src/datatype/rssi_minute.cpp
   ${HERALD_BASE}/src/datatype/sensor_type.cpp
   ${HERALD_BASE}/src/datatype/signal_characteristic_data.cpp
   ${HERALD_BASE}/src/datatype/target_identifier.cpp

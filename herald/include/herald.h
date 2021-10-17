@@ -55,6 +55,7 @@
 #include "herald/datatype/proximity.h"
 #include "herald/datatype/randomness.h"
 #include "herald/datatype/rssi.h"
+#include "herald/datatype/rssi_minute.h"
 #include "herald/datatype/sha256.h"
 #include "herald/datatype/sensor_state.h"
 #include "herald/datatype/sensor_type.h"
@@ -108,7 +109,12 @@
 #include "herald/analysis/risk.h"
 #include "herald/analysis/runner.h"
 #include "herald/analysis/sampling.h"
+#include "herald/analysis/sample_algorithms.h"
 #include "herald/analysis/sensor_source.h"
+
+// exposure namespace
+#include "herald/exposure/agent.h"
+#include "herald/exposure/exposure_manager.h"
 
 // payload namespace
 #include "herald/payload/payload_data_supplier.h"

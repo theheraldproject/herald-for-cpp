@@ -126,4 +126,43 @@ public:
   std::optional<herald::ble::BLEDeviceAttribute> attr;
 };
 
+template <std::size_t Sz>
+struct DummyRSSISource {
+  using value_type = herald::analysis::Sample<herald::datatype::RSSI>; // allows AnalysisRunner to introspect this class at compile time
+
+  DummyRSSISource(const std::size_t srcDeviceKey, 
+    herald::analysis::SampleList<herald::analysis::Sample<herald::datatype::RSSI>,Sz>&& data)
+    : key(srcDeviceKey), data(std::move(data)), lastAddedAt(0), lastRunAdded(0), hasRan(false) {};
+  ~DummyRSSISource() = default;
+
+  template <typename RunnerT>
+  void run(std::uint64_t timeTo, RunnerT& runner) {
+    // push through data at default rate
+    lastRunAdded = 0;
+    for (auto& v: data) {
+      // devList.push(v.taken,v.value); // copy data over (It's unusual taking a SampleList and sending to a SampleList)
+      auto sampleTime = v.taken.secondsSinceUnixEpoch();
+      // Only push data that hasn't been pushed yet, otherwise we get an ever increasing sample list
+      if ((!hasRan || sampleTime > lastAddedAt) && (sampleTime <= timeTo)) {
+        ++lastRunAdded;
+        runner.template newSample<RSSI>(key,v);
+      }
+    }
+    runner.run(Date(timeTo));
+    lastAddedAt = timeTo;
+    hasRan = true;
+  }
+
+  std::uint64_t getLastRunAdded() {
+    return lastRunAdded;
+  }
+
+private:
+  std::size_t key;
+  herald::analysis::SampleList<herald::analysis::Sample<herald::datatype::RSSI>,Sz> data;
+  std::uint64_t lastAddedAt;
+  std::uint64_t lastRunAdded;
+  bool hasRan;
+};
+
 #endif
