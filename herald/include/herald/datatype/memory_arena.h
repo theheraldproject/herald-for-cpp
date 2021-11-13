@@ -162,7 +162,7 @@ public:
       }
     }
     // we may have ran out of bytes in the arena, so just return empty bytes in the destination array
-    for (;pos < len;++pos) {
+    for (;pos < toPopulate.size();++pos) {
       toPopulate[pos] = std::numeric_limits<unsigned char>::min();
     }
   }

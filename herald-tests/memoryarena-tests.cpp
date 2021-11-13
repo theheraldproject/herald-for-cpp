@@ -67,6 +67,30 @@ TEST_CASE("memoryarena-set","[memoryarena][set]") {
   }
 }
 
+TEST_CASE("memoryarena-set-uninitialised","[memoryarena][set][uninitialised") {
+  SECTION("memoryarena-set-uninitialised") {
+    DummyLoggingSink dls;
+    DummyBluetoothStateManager dbsm;
+    herald::DefaultPlatformType dpt;
+    herald::Context ctx(dpt,dls,dbsm); // default context include
+
+    herald::util::ByteArrayPrinter bap(ctx);
+
+    herald::datatype::MemoryArena<96,10> arena;
+    herald::datatype::MemoryArenaEntry notInitialised;
+
+    REQUIRE(0 == notInitialised.byteLength);
+    REQUIRE(arena.pagesFree() == 10);
+
+    arena.set(notInitialised, 2, 'a');
+
+    REQUIRE(0 == notInitialised.byteLength);
+    REQUIRE(arena.pagesFree() == 10);
+
+    REQUIRE('\0' == arena.get(notInitialised,2));
+  }
+}
+
 TEST_CASE("memoryarena-reserve","[memoryarena][reserve]") {
   SECTION("memoryarena-reserve") {
     herald::datatype::MemoryArena<2048,10> arena;
@@ -143,5 +167,11 @@ TEST_CASE("memoryarena-entry-rawlocation","[memoryarena][entry][rawlocation]") {
       arena.rawCopy(buffer,offsetIdx * 16);
       bap.print(buffer, offsetIdx * 16);
     }
+
+    // Now try copy into a buffer bigger than our arena
+    std::array<unsigned char,72> largeBuffer;
+    largeBuffer[71] = ((unsigned char)8);
+    arena.rawCopy(largeBuffer,0);
+    REQUIRE(largeBuffer[71] == ((unsigned char)0));
   }
 }
