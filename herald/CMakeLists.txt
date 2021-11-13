@@ -20,7 +20,7 @@ else()
       ${HERALD_SOURCES_ZEPHYR}
     )
   else()
-    if(NOT (APPLE OR MSVC) )
+    if(NOT (MSVC) )
       set(PLATFORM_SOURCES
         ${HERALD_SOURCES_OPENSSL}
       )
@@ -76,16 +76,12 @@ endif()
 
 add_compile_options(-Wl,-Wno-unused-function)
 
-# NB: This is here to ensure binaries that link us also link stdc++fs for non-Apple targets
-# https://github.com/OpenRCT2/OpenRCT2/pull/10522
-if(NOT (APPLE OR MSVC) )
-#target_link_libraries(herald PRIVATE stdc++fs)
-
+if(NOT (MSVC OR (HERALD_TARGET STREQUAL zephyr)) )
   # Use the DEV location (not system location) to pick up OpenSSL v3
   # see .vscode/settings.json for CMake path overrides
   find_package(OpenSSL 3.1.0 REQUIRED)
   target_link_libraries(herald OpenSSL::Crypto)
-endif(NOT (APPLE OR MSVC) )
+endif()
 
 install(TARGETS herald 
     EXPORT herald
