@@ -9,7 +9,7 @@ namespace herald {
 namespace exposure {
 
 struct Agent {
-  std::size_t id = 0;
+  UUID id = UUID::unknown();
 };
 
 }

@@ -39,6 +39,21 @@ public:
     return uuid; // returns copy
   }
 
+  /**
+   * /brief Returns an 'empty' UUID that is V4 compliant. All zeros in other bit positions. 
+   * /note This is useful to represent 'unknown' UUID values. E.g. in the Risk API.
+   * /since v2.1
+   */
+  static UUID unknown() noexcept {
+    std::array<value_type, 16> data{ {0} };
+    constexpr value_type M = 0x40; // 7th byte = 0100 in binary for MSB 0000 for LSB - v4 UUID
+    constexpr value_type N = 0x80; // 9th byte = 1000 in binary for MSB 0000 for LSB - variant 1
+    data[6] = (0x0f & data[6]) | M; // blanks out first 4 bits
+    data[8] = (0x3f & data[8]) | N; // blanks out first 2 bits
+    UUID uuid(data,false);
+    return uuid; // returns copy
+  }
+
   UUID(const char* from) noexcept;
   UUID(UUID&& from) noexcept;
   UUID(const UUID& from) noexcept;

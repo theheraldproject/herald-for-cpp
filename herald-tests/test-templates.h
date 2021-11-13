@@ -145,10 +145,10 @@ struct DummyRSSISource {
       // Only push data that hasn't been pushed yet, otherwise we get an ever increasing sample list
       if ((!hasRan || sampleTime > lastAddedAt) && (sampleTime <= timeTo)) {
         ++lastRunAdded;
-        runner.template newSample<RSSI>(key,v);
+        runner.template newSample<herald::datatype::RSSI>(key,v);
       }
     }
-    runner.run(Date(timeTo));
+    runner.run(herald::datatype::Date(timeTo));
     lastAddedAt = timeTo;
     hasRan = true;
   }

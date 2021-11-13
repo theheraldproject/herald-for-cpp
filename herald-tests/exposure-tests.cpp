@@ -1,4 +1,4 @@
-//  Copyright 2020-2021 Herald Project Contributors
+//  Copyright 2021 Herald Project Contributors
 //  SPDX-License-Identifier: Apache-2.0
 //
 
@@ -6,176 +6,203 @@
 
 #include "herald/herald.h"
 
-#include "test-templates.h"
-
 using namespace herald::analysis::sampling;
 using namespace herald::datatype;
 
-herald::exposure::Agent dummyAgent{.id = 666};
+//   [Who] As a sensor device user
+//  [What] I need to track aggregated risk exposures to different agents
+// [Value] In order to inform direct exposure decisions, or downstream risk analyses
 
-struct DummyExposureCallbackHandler {
-  void riskLevelChanged(const herald::exposure::Agent& notifyAgent,std::size_t notifyLevelId,double notifyCurrentExposureValue) noexcept {
-    called = true;
-    agent = notifyAgent;
-    levelId = notifyLevelId;
-    currentExposureValue = notifyCurrentExposureValue;
-  }
+//   [Who] As an exposure application developer
+//  [What] I need to link exposure to the agent, sensor type, and local sensor instance
+// [Value] In order to inform decisions on storing and managing exposure aggregate data
 
-  herald::exposure::Agent agent = dummyAgent;
-  std::size_t levelId = 0;
-  double currentExposureValue = 0;
-  bool called = false;
-};
+//   [Who] As an exposure application developer
+//  [What] I need to record the period (start and end date time) for exposures
+// [Value] In order to make decisions about further aggregation, and track when I have exposure data for
 
-TEST_CASE("exposure-empty", "[exposure][empty]") {
-  SECTION("exposure-empty") {
-    // Create exposure manager with no diseases(agents)
-    DummyExposureCallbackHandler dh;
-    herald::exposure::ExposureManager<DummyExposureCallbackHandler,8> em(dh);
+//   [Who] As an exposure application developer
+//  [What] I need to support multiple devices providing exposure data for the same agent
+// [Value] In order to allow aggregation of exposure from multiple wearable, carryable, and environment (IoT) sensor sources
 
-    // check static max size
-    REQUIRE(herald::exposure::ExposureManager<DummyExposureCallbackHandler,8>::MaxSize == 8);
-    // Check configuration is correct
-    REQUIRE(em.agentCount() == 0);
-    // Ensure it is not running by default
-    REQUIRE(!em.isRunning());
+//   [Who] As an exposure application developer
+//  [What] I need to quantify exposure as a double precision continuous variable
+// [Value] In order to allow accurate recording and addition for exposure aggregation
+
+//   [Who] As an exposure application developer
+//  [What] I need to store the confidence (accuracy/probability) of the reading from the sensor instance source
+// [Value] In order to allow downstream decisions on total exposure and risk scoring confidence
+
+// TODO decide if the above is better expressed as a percentage +/- 
+//      accuracy / probability, or as a CI 95% value with different +/- values
+
+// TODO decide if agentId, sensorClassId, and sensorInstanceId should be in a separate
+//      struct attached to the exposure (sample) list, rather than within the exposure itself
+
+TEST_CASE("exposure-default", "[exposure][default]") {
+  SECTION("exposure-default") {
+    // Test default exposure class is valid
+    Date now;
+    Exposure exp;
+    UUID unk = UUID::unknown();
+    REQUIRE(unk == exp.agentId);
+    REQUIRE(unk == exp.sensorClassId);
+    REQUIRE(unk == exp.sensorInstanceId);
+    REQUIRE(now <= exp.periodStart);
+    REQUIRE(now <= exp.periodEnd);
+    REQUIRE(exp.periodEnd >= exp.periodStart);
+    REQUIRE(0.0 == exp.value);
+    REQUIRE(1.0 == exp.confidence);
   }
 }
 
+TEST_CASE("exposure-filled", "[exposure][filled]") {
+  SECTION("exposure-filled") {
+    // Test filled exposure class is valid
+    UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
+    UUID sensorClass = UUID::fromString("21111111-1111-4011-8011-111111111111");
+    UUID sensorInstance = UUID::fromString("31111111-1111-4011-8011-111111111111");
+    Exposure exp{
+      .agentId = UUID::fromString("11111111-1111-4011-8011-111111111111"),
+      .sensorClassId = UUID::fromString("21111111-1111-4011-8011-111111111111"),
+      .sensorInstanceId = UUID::fromString("31111111-1111-4011-8011-111111111111"),
+      .periodStart = Date{4000},
+      .periodEnd = Date{5000},
+      .value = 5.6,
+      .confidence = 0.68 // As this is a probability this should be bounded
+    };
+    // Test our test variables first
+    UUID unk = UUID::unknown();
+    REQUIRE(unk != exp.agentId);
+    REQUIRE(unk != exp.sensorClassId);
+    REQUIRE(unk != exp.sensorInstanceId);
+    REQUIRE(exp.agentId != exp.sensorClassId);
+    REQUIRE(exp.sensorClassId != exp.sensorInstanceId);
+    REQUIRE(exp.sensorInstanceId != exp.agentId);
 
-TEST_CASE("exposure-simple-disease", "[exposure][simple][disease") {
-  SECTION("exposure-simple-disease") {
-    // Create EM so we can reference its delegate
-    // Create exposure manager
-    DummyExposureCallbackHandler dh;
-    herald::exposure::ExposureManager<DummyExposureCallbackHandler,8> em(dh);
+    // Now test their use
+    REQUIRE(agent == exp.agentId);
+    REQUIRE(sensorClass == exp.sensorClassId);
+    REQUIRE(sensorInstance == exp.sensorInstanceId);
+    REQUIRE(Date(4000) == exp.periodStart);
+    REQUIRE(Date(5000) == exp.periodEnd);
+    REQUIRE(exp.periodEnd > exp.periodStart);
+    REQUIRE(5.6 == exp.value);
+    REQUIRE(0.68 == exp.confidence);
+  }
+}
 
-    // Create underlying AnalysisRunner first
-    SampleList<Sample<RSSI>,25> srcData;
-    srcData.push(30,-55);
-    srcData.push(60,-55); // one minute (45 rssi-minutes)
-    srcData.push(90,-55);
-    srcData.push(120,-55); // 90
-    srcData.push(150,-55); // 112.5 - OVER THRESHOLD
-    srcData.push(180,-55);
-    srcData.push(210,-55);
-    srcData.push(240,-55);
-    srcData.push(270,-55);
-    srcData.push(300,-55);
-    DummyRSSISource src(1234,std::move(srcData));
+TEST_CASE("exposure-copyctor", "[exposure][copyctor]") {
+  SECTION("exposure-copyctor") {
+    UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
+    UUID sensorClass = UUID::fromString("21111111-1111-4011-8011-111111111111");
+    UUID sensorInstance = UUID::fromString("31111111-1111-4011-8011-111111111111");
+    const Exposure exp{
+      .agentId = UUID::fromString("11111111-1111-4011-8011-111111111111"),
+      .sensorClassId = UUID::fromString("21111111-1111-4011-8011-111111111111"),
+      .sensorInstanceId = UUID::fromString("31111111-1111-4011-8011-111111111111"),
+      .periodStart = Date{4000},
+      .periodEnd = Date{5000},
+      .value = 5.6,
+      .confidence = 0.68 // As this is a probability this should be bounded
+    };
 
-    herald::analysis::algorithms::RSSIMinutesAnalyser riskAnalyser;
-
-    auto analysisDelegate = em.template analysisDelegate<herald::datatype::RSSIMinute>(); // full object (not just reference)
-
-    // Note: The delegate manager supports multiple analysis delegates, so you can have one per risk model type (set at compile time)
-    herald::analysis::AnalysisDelegateManager adm(std::move(analysisDelegate)); // NOTE: analysisDelegate MOVED FROM and no longer accessible
-    herald::analysis::AnalysisProviderManager apm(std::move(riskAnalyser)); // NOTE: riskAnalyser MOVED FROM and no longer accessible
-
-    herald::analysis::AnalysisRunner<
-      herald::analysis::AnalysisDelegateManager<
-        herald::exposure::ExposureManagerDelegate<
-          herald::datatype::RSSIMinute,
-          herald::exposure::ExposureManager<DummyExposureCallbackHandler,8>
-        >
-      >,
-      herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::RSSIMinutesAnalyser>,
-      RSSI,RSSIMinute
-    > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<RSSIMinute>)
-
-
-
-    // Some level constants for convenient. These are app-level and variable, and thus not hardcoded as code constants and compiled in
-    constexpr std::size_t noAction = 255;
-    constexpr std::size_t selfIsolate = 254;
-
-
-    // Add a single disease(agent)
-    herald::exposure::Agent adamitis{.id=5}; // Prolonged exposure to the agent 'Adam' 8o)
-    bool addSuccess1 = em.addAgent(adamitis);
-    REQUIRE(addSuccess1);
-    REQUIRE(em.agentCount() == 1);
-    // Link an rssi-minutes aggregation risk routine to this disease
-    bool setEM1 = em.template setAgentExposureModel<herald::analysis::algorithms::RSSIMinutesAnalyser>(adamitis);
-    REQUIRE(setEM1);
-    // Add a no action threshold, and a self-isolate threshold
-    bool addEL1 = em.addExposureLevel(adamitis,0,100,noAction); // Using a level ID of 255 for now (no reason) -> no-action
-    REQUIRE(addEL1);
-    REQUIRE(em.getExposureLevelCount(adamitis) == 1);
-    bool addEL2 = em.addExposureLevel(adamitis,100,65535,selfIsolate); // self-isolate level
-    REQUIRE(addEL2);
-    REQUIRE(em.getExposureLevelCount(adamitis) == 2);
-
-    // Initialise risk states
-    bool setED1 = em.setExposureDefaults(adamitis,1,noAction); // not every risk starts at 0
-    REQUIRE(setED1);
-    auto ed1 = em.getExposureDefaultLevelId(adamitis);
-    REQUIRE(ed1 == noAction);
-    auto iel1 = em.getExposureInitialValue(adamitis);
-    REQUIRE(iel1 == 1.0);
-    REQUIRE(em.getExposureLevelCount(adamitis) == 2);
-
-    // Ensure the initial state is no action
-    auto cev1 = em.getExposureCurrentValue(adamitis);
-    REQUIRE(cev1 == 1.0);
-    auto cel1 = em.getExposureCurrentLevelId(adamitis);
-    REQUIRE(noAction == cel1);
-
-    // Start running
-    em.setRunning(true);
-
-    // Ensure the initial state is still no action
-    auto cev1s = em.getExposureCurrentValue(adamitis);
-    REQUIRE(cev1s == 1.0);
-    auto cel1s = em.getExposureCurrentLevelId(adamitis);
-    REQUIRE(noAction == cel1s);
-    // Add some risk (below threshold) - via analysis runner
-    for (int time = 30;time <=120;time += 30) {
-      // ensure we're calculating at a realistic runtime rate (~5s in real life)
-      src.run(time,runner);
-    }
-    // Ensure the initial state is still no action
-    cel1s = em.getExposureCurrentLevelId(adamitis);
-    REQUIRE(noAction == cel1s);
-    // Ensure the risk value is as expected (90 + 1 RSSI Minutes)
-    cev1 = em.getExposureCurrentValue(adamitis);
-    REQUIRE(cev1 == 91.0);
-    // Add some risk (above threshold)
-    src.run(150,runner);
-
+    // Copy construction operation
+    Exposure exp2 = exp; // copy constructor (const copy ctor forced)
     
-    // Ensure our risk state changed callback has not yet been called
-    REQUIRE(!dh.called);
+    REQUIRE(exp.agentId == exp2.agentId);
+    REQUIRE(exp.sensorClassId == exp2.sensorClassId);
+    REQUIRE(exp.sensorInstanceId == exp2.sensorInstanceId);
+    REQUIRE(exp.periodStart == exp2.periodStart);
+    REQUIRE(exp.periodEnd == exp2.periodEnd);
+    REQUIRE(exp.value == exp2.value);
+    REQUIRE(exp.confidence == exp2.confidence);
 
-    // Now re-evaluate levels
-    em.evaluateLevels();
-    // Ensure our risk state changed callback has been called
-    REQUIRE(dh.called);
-    REQUIRE(dh.agent.id == adamitis.id);
-    REQUIRE(dh.levelId == selfIsolate);
-    REQUIRE(dh.currentExposureValue == 113.5);
-
-    // Ensure state is now self-isolate
-    cel1s = em.getExposureCurrentLevelId(adamitis);
-    REQUIRE(selfIsolate == cel1s);
-    // Ensure drop back time is set appropriately (112.5 + 1 RSSI Minutes)
-    cev1 = em.getExposureCurrentValue(adamitis);
-    REQUIRE(cev1 == 113.5);
-
-    // Re-evaluate state, ensuring it is still self-isolate
-    dh.called = false; // reset call flag
-    em.evaluateLevels();
-    cel1s = em.getExposureCurrentLevelId(adamitis);
-    REQUIRE(selfIsolate == cel1s);
-    cev1 = em.getExposureCurrentValue(adamitis);
-    REQUIRE(cev1 == 113.5);
-    // Ensure our risk state changed callback has not been called again
-    REQUIRE(!dh.called);
-
-    // Now remove agent and associated info (including levels)
-    em.removeAgent(adamitis);
-    REQUIRE(em.agentCount() == 0);
-    REQUIRE(em.getExposureLevelCount(adamitis) == 0);
+    // Now test full equality operator
+    REQUIRE(exp == exp2);
   }
 }
 
+TEST_CASE("exposure-movector", "[exposure][movector]") {
+  SECTION("exposure-movector") {
+    // Test filled exposure class is valid
+    UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
+    UUID sensorClass = UUID::fromString("21111111-1111-4011-8011-111111111111");
+    UUID sensorInstance = UUID::fromString("31111111-1111-4011-8011-111111111111");
+    Exposure expMovedFrom{
+      .agentId = UUID::fromString("11111111-1111-4011-8011-111111111111"),
+      .sensorClassId = UUID::fromString("21111111-1111-4011-8011-111111111111"),
+      .sensorInstanceId = UUID::fromString("31111111-1111-4011-8011-111111111111"),
+      .periodStart = Date{4000},
+      .periodEnd = Date{5000},
+      .value = 5.6,
+      .confidence = 0.68 // As this is a probability this should be bounded
+    };
+
+    // move constructor operation
+    Exposure exp(std::move(expMovedFrom)); // force move ctor
+
+    // Test our test variables first
+    UUID unk = UUID::unknown();
+    REQUIRE(unk != exp.agentId);
+    REQUIRE(unk != exp.sensorClassId);
+    REQUIRE(unk != exp.sensorInstanceId);
+    REQUIRE(exp.agentId != exp.sensorClassId);
+    REQUIRE(exp.sensorClassId != exp.sensorInstanceId);
+    REQUIRE(exp.sensorInstanceId != exp.agentId);
+
+    // Now test their use
+    REQUIRE(agent == exp.agentId);
+    REQUIRE(sensorClass == exp.sensorClassId);
+    REQUIRE(sensorInstance == exp.sensorInstanceId);
+    REQUIRE(Date(4000) == exp.periodStart);
+    REQUIRE(Date(5000) == exp.periodEnd);
+    REQUIRE(exp.periodEnd > exp.periodStart);
+    REQUIRE(5.6 == exp.value);
+    REQUIRE(0.68 == exp.confidence);
+
+    // Test validity but difference of moved from object
+    // WARNING do not do this - expMovedFrom MAY be the same
+    // REQUIRE(expMovedFrom != exp);
+  }
+}
+
+TEST_CASE("exposure-addition", "[exposure][addition]") {
+  SECTION("exposure-addition") {
+    // Test filled exposure class is valid
+    UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
+    UUID sensorClass = UUID::fromString("21111111-1111-4011-8011-111111111111");
+    UUID sensorInstance = UUID::fromString("31111111-1111-4011-8011-111111111111");
+    Exposure exp1{
+      .agentId = UUID::fromString("11111111-1111-4011-8011-111111111111"),
+      .sensorClassId = UUID::fromString("21111111-1111-4011-8011-111111111111"),
+      .sensorInstanceId = UUID::fromString("31111111-1111-4011-8011-111111111111"),
+      .periodStart = Date{4000},
+      .periodEnd = Date{5000},
+      .value = 5.6,
+      .confidence = 0.68 // As this is a probability this should be bounded
+    };
+    Exposure exp2{
+      .agentId = UUID::fromString("11111111-1111-4011-8011-111111111111"),
+      .sensorClassId = UUID::fromString("21111111-1111-4011-8011-111111111111"),
+      .sensorInstanceId = UUID::fromString("31111111-1111-4011-8011-111111111111"),
+      .periodStart = Date{5500},
+      .periodEnd = Date{6500},
+      .value = 3.5,
+      .confidence = 0.7 // As this is a probability this should be bounded
+    };
+
+    // addition operation
+    Exposure added = exp1 + exp2;
+
+    REQUIRE(agent == added.agentId);
+    REQUIRE(sensorClass == added.sensorClassId);
+    REQUIRE(sensorInstance == added.sensorInstanceId);
+    REQUIRE(Date(4000) == added.periodStart);
+    REQUIRE(Date(6500) == added.periodEnd);
+    REQUIRE(added.periodEnd > added.periodStart);
+    REQUIRE(9.1 == added.value);
+    // TODO decide what to do about confidence score addition (pick lowest for now)
+    REQUIRE(0.68 == added.confidence);
+  }
+}

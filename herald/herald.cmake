@@ -15,7 +15,6 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/analysis/distance_conversion.h
   ${HERALD_BASE}/include/herald/analysis/logging_analysis_delegate.h
   ${HERALD_BASE}/include/herald/analysis/ranges.h
-  ${HERALD_BASE}/include/herald/analysis/risk.h
   ${HERALD_BASE}/include/herald/analysis/runner.h
   ${HERALD_BASE}/include/herald/analysis/sampling.h
   ${HERALD_BASE}/include/herald/analysis/sample_algorithms.h
@@ -130,6 +129,7 @@ set(HERALD_SOURCES
   ${HERALD_BASE}/src/datatype/distance.cpp
   ${HERALD_BASE}/src/datatype/distribution.cpp
   ${HERALD_BASE}/src/datatype/encounter.cpp
+  ${HERALD_BASE}/src/datatype/exposure.cpp
   ${HERALD_BASE}/src/datatype/immediate_send_data.cpp
   ${HERALD_BASE}/src/datatype/location.cpp
   ${HERALD_BASE}/src/datatype/payload_data.cpp
@@ -162,6 +162,9 @@ set(HERALD_SOURCES_MBEDTLS
 )
 set(HERALD_SOURCES_TINYCRYPT
   ${HERALD_BASE}/src/datatype/tinycrypt/sha256.cpp
+)
+set(HERALD_SOURCES_OPENSSL
+  ${HERALD_BASE}/src/datatype/openssl/sha256.cpp
 )
 set(HERALD_SOURCES_WINDOWS
   ${HERALD_BASE}/src/datatype/windows/sha256.cpp
