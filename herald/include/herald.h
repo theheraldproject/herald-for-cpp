@@ -46,7 +46,7 @@
 #include "herald/datatype/distribution.h"
 #include "herald/datatype/encounter.h"
 #include "herald/datatype/error_code.h"
-#include "herald/datatype/exposure.h"
+#include "herald/datatype/exposure_risk.h"
 #include "herald/datatype/immediate_send_data.h"
 #include "herald/datatype/location_reference.h"
 #include "herald/datatype/location.h"

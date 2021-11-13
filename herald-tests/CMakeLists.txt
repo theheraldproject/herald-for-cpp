@@ -54,7 +54,7 @@ add_executable(herald-tests
 	nordicuart-tests.cpp
 
 	# Usage level
-	exposure-tests.cpp
+	exposure-risk-tests.cpp
 
 	# main test file
 	main.cpp

@@ -50,6 +50,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/distance.h
   ${HERALD_BASE}/include/herald/datatype/distribution.h
   ${HERALD_BASE}/include/herald/datatype/encounter.h
+  ${HERALD_BASE}/include/herald/datatype/exposure_risk.h
   ${HERALD_BASE}/include/herald/datatype/error_code.h
   ${HERALD_BASE}/include/herald/datatype/immediate_send_data.h
   ${HERALD_BASE}/include/herald/datatype/location_reference.h
@@ -72,8 +73,8 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/wgs84.h
   ${HERALD_BASE}/include/herald/engine/activities.h
   ${HERALD_BASE}/include/herald/engine/coordinator.h
-  ${HERALD_BASE}/include/herald/exposure/agent.h
-  ${HERALD_BASE}/include/herald/exposure/exposure_manager.h
+  # ${HERALD_BASE}/include/herald/exposure/agent.h
+  # ${HERALD_BASE}/include/herald/exposure/exposure_manager.h
   ${HERALD_BASE}/include/herald/payload/payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/beacon/beacon_payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/fixed/fixed_payload_data_supplier.h
@@ -129,7 +130,7 @@ set(HERALD_SOURCES
   ${HERALD_BASE}/src/datatype/distance.cpp
   ${HERALD_BASE}/src/datatype/distribution.cpp
   ${HERALD_BASE}/src/datatype/encounter.cpp
-  ${HERALD_BASE}/src/datatype/exposure.cpp
+  ${HERALD_BASE}/src/datatype/exposure_risk.cpp
   ${HERALD_BASE}/src/datatype/immediate_send_data.cpp
   ${HERALD_BASE}/src/datatype/location.cpp
   ${HERALD_BASE}/src/datatype/payload_data.cpp

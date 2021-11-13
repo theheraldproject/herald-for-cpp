@@ -178,7 +178,8 @@ private:
     while (idx < max_size) {
       if (m_allocated.test(idx)) {
         // EqualT must be either the same as ValT or something ValT has an explicit conversion function for
-        if (equiv == (EqualT)m_members[idx]) {
+        if (m_members[idx] == equiv) { // assumes value_type has operator==(EqualT)
+        // if (equiv == (EqualT)m_members[idx]) {
           return idx;
         }
       }
@@ -344,6 +345,85 @@ typename AllocatableArrayIterator<T>::difference_type distance(AllocatableArrayI
   return last - first;
 }
 
+
+
+/**
+ * /brief An AllocatableArray where each value is linked to a metadata Tag instance
+ */
+template <typename TagT, typename ValT, 
+          std::size_t Size=8, bool UniqueMembers=false,
+          typename AAT=AllocatableArray<ValT,Size,UniqueMembers>
+         >
+struct TaggedArray {
+  using value_type = typename AAT::value_type;
+  static constexpr std::size_t max_size = AAT::max_size;
+
+  TaggedArray() noexcept
+   : tag(),
+     aa()
+  {
+    ;
+  }
+
+  TaggedArray(const TagT& arrayTag) noexcept
+   : tag(arrayTag),
+     aa()
+  {
+    ;
+  }
+
+  ~TaggedArray() noexcept = default;
+
+  const TagT& getTag() const noexcept
+  {
+    return tag;
+  }
+
+  void setTag(const TagT& newValue) noexcept
+  {
+    tag = newValue;
+  }
+
+  const bool operator==(const TaggedArray& other) const noexcept
+  {
+    return tag == other.tag;
+  }
+
+  const bool operator!=(const TaggedArray& other) const noexcept
+  {
+    return tag != other.tag;
+  }
+
+  const bool operator==(const TagT& other) const noexcept
+  {
+    return tag == other;
+  }
+
+  const bool operator!=(const TagT& other) const noexcept
+  {
+    return tag != other;
+  }
+
+  AAT& contents() noexcept
+  {
+    return aa;
+  }
+
+private:
+  TagT tag;
+  AAT aa;
+};
+
+
+
+template <typename TagT, typename ValT,
+          std::size_t TaggedArraySize=8, bool TaggedArrayUniqueMembers=false,
+          std::size_t SetSize=8, bool SetUniqueMembers=true
+         >
+using TaggedArraySet = AllocatableArray<
+  TaggedArray<TagT,ValT,TaggedArraySize,TaggedArrayUniqueMembers>,
+  SetSize,SetUniqueMembers
+>;
 
 }
 }
