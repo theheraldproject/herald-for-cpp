@@ -66,7 +66,7 @@ include_directories(${herald_SOURCE_DIR})
 # find_package(Threads REQUIRED)
 
 target_link_libraries(herald-tests PRIVATE herald) # Threads::Threads
-target_code_coverage(herald-tests AUTO EXTERNAL EXCLUDE herald-tests/*) # EXCLUDE DOES NOT WORK YET!!!
+target_code_coverage(herald-tests AUTO EXTERNAL EXCLUDE *-tests.cpp *atch.hpp *est-templates.h *est-util.cpp /usr/include/**/*) # EXCLUDE ONLY WORKS WITH PATTERNS
 
 
 if (WIN32)
