@@ -120,6 +120,7 @@ TEST_CASE("score-copyctor", "[exposure][copyctor]") {
 
     // Now test full equality operator
     REQUIRE(exp == exp2);
+    REQUIRE(!(exp != exp2));
   }
 }
 
@@ -192,6 +193,9 @@ TEST_CASE("score-addition", "[exposure][addition]") {
       .confidence = 0.7 // As this is a probability this should be bounded
     };
 
+    REQUIRE(exp1 != exp2);
+    REQUIRE(!(exp1 == exp2));
+
     // addition operation
     Score added = exp1 + exp2;
 
@@ -252,6 +256,7 @@ TEST_CASE("exposure-array-set-default", "[exposure][array][set][allocatable-arra
 
     REQUIRE(es.size() == 1);
     REQUIRE(es[0].getTag() == em);
+    REQUIRE(!(es[0].getTag() != em));
     REQUIRE(es[0].contents().size() == 0); // inner tagged array size
   }
 }
@@ -272,5 +277,29 @@ TEST_CASE("risk-score-array-default", "[risk-score][array][allocatable-array][de
     REQUIRE(scores.getTag().algorithmId == algorithm);
     REQUIRE(RiskScoreArray<8>::max_size == 8);
     REQUIRE(scores.contents().size() == 0);
+    REQUIRE(scores.getTag() == rsm);
+    REQUIRE(!(scores.getTag() != rsm));
+  }
+}
+
+TEST_CASE("risk-score-array-set-default", "[risk-score][array][set][allocatable-array][default") {
+  SECTION("risk-score-array-set-default") {
+    UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
+    UUID algorithm = UUID::fromString("51111111-1111-4011-8011-111111111111");
+    RiskScoreMetadata rsm{
+      .agentId = agent,
+      .algorithmId = algorithm
+    };
+    RiskScoreSet<8,16> rss;
+
+    REQUIRE(rss.size() == 0);
+    REQUIRE(RiskScoreSet<8,16>::max_size == 16); // outer set size
+
+    rss.add(RiskScoreArray<8>(rsm));
+
+    REQUIRE(rss.size() == 1);
+    REQUIRE(rss[0].getTag() == rsm);
+    REQUIRE(!(rss[0].getTag() != rsm));
+    REQUIRE(rss[0].contents().size() == 0); // inner tagged array size
   }
 }

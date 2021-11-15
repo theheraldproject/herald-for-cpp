@@ -5,6 +5,9 @@ add_executable(herald-tests
 	test-templates.h
 	test-util.h 
 
+	# Catch all to ensure all files in Herald are included in code coverage reports
+	codecoverage-tests.cpp
+
   # base data types
 	allocatablearray-tests.cpp
 	bytearrayprinter-tests.cpp
@@ -66,8 +69,7 @@ include_directories(${herald_SOURCE_DIR})
 # find_package(Threads REQUIRED)
 
 target_link_libraries(herald-tests PRIVATE herald) # Threads::Threads
-target_code_coverage(herald-tests AUTO EXTERNAL EXCLUDE *-tests.cpp *atch.hpp *est-templates.h *est-util.cpp /usr/include/**/*) # EXCLUDE ONLY WORKS WITH PATTERNS
-
+target_code_coverage(herald-tests AUTO EXTERNAL EXCLUDE *-tests.cpp test-*.h *ain.cpp *est-util.cpp *est-templates.h *atch.hpp /usr/include/**/*) # EXCLUDE ONLY WORKS WITH PATTERNS
 
 if (WIN32)
   #add_compile_options(-Wl,--stack,100000000)
@@ -75,5 +77,8 @@ if (WIN32)
   #set_target_properties(herald-tests PROPERTIES LINK_FLAGS /STACK:10000000)
   add_compile_options(/STACK:1000000000000)
   set_target_properties(herald-tests PROPERTIES LINK_FLAGS /STACK:1000000000000)
+else()
+	# GCov flags for template classes
+	add_compile_options(--coverage -fno-inline -fno-inline-small-functions -fno-default-inline)
 endif ()
 target_compile_features(herald-tests PRIVATE cxx_std_17)

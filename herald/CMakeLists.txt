@@ -15,6 +15,9 @@ if (WIN32)
     ${HERALD_SOURCES_WINDOWS}
   )
 else()
+	# GCov flags for template classes
+	add_compile_options(--coverage -fno-inline -fno-inline-small-functions -fno-default-inline)
+
   if(HERALD_TARGET STREQUAL zephyr)
     set(PLATFORM_SOURCES
       ${HERALD_SOURCES_ZEPHYR}
