@@ -213,7 +213,7 @@ public:
   BLEDevice& device(const TargetIdentifier& targetIdentifier) noexcept override {
     // HTDBG("device(TargetIdentifier)");
     // HTDBG((std::string)targetIdentifier);
-    auto results = matches([this,&targetIdentifier](const BLEDevice& d) {
+    auto results = matches([/*this,*/&targetIdentifier](const BLEDevice& d) {
       // HTDBG("device(TargetIdentifier) matches callback");
       // HTDBG(" Testing existing target identifier {} against new target identifier {}",(std::string)d.identifier(),(std::string)targetIdentifier);
       return d.identifier() == targetIdentifier;

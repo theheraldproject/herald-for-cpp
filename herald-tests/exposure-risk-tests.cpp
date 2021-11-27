@@ -212,6 +212,34 @@ TEST_CASE("score-addition", "[exposure][addition]") {
 }
 
 
+/// MARK: Exposure Metadata Tests
+
+TEST_CASE("exposure-metadata-default", "[exposure][metadata][default") {
+  SECTION("exposure-metadata-default") {
+    UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
+    UUID sensorClass = UUID::fromString("21111111-1111-4011-8011-111111111111");
+    UUID sensorInstance = UUID::fromString("31111111-1111-4011-8011-111111111111");
+    ExposureMetadata em1{
+      .agentId = agent,
+      .sensorClassId = sensorClass,
+      .sensorInstanceId = sensorInstance
+    };
+    ExposureMetadata em2{
+      .agentId = agent,
+      .sensorClassId = sensorClass,
+      .sensorInstanceId = sensorInstance
+    };
+    REQUIRE(em1.agentId == agent);
+    REQUIRE(em1.sensorClassId == sensorClass);
+    REQUIRE(em1.sensorInstanceId == sensorInstance);
+    REQUIRE(em2.agentId == agent);
+    REQUIRE(em2.sensorClassId == sensorClass);
+    REQUIRE(em2.sensorInstanceId == sensorInstance);
+    REQUIRE(em1 == em2);
+    REQUIRE(!(em1 != em2));
+  }
+}
+
 
 
 /// MARK: Exposure Array Tests
@@ -261,6 +289,29 @@ TEST_CASE("exposure-array-set-default", "[exposure][array][set][allocatable-arra
   }
 }
 
+/// MARK: Risk Score Metadata Tests
+
+TEST_CASE("risk-score-metadata-default", "[risk-score][metadata][default") {
+  SECTION("risk-score-metadata-default") {
+    UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
+    UUID algorithm = UUID::fromString("51111111-1111-4011-8011-111111111111");
+    RiskScoreMetadata rsm1{
+      .agentId = agent,
+      .algorithmId = algorithm
+    };
+    RiskScoreMetadata rsm2{
+      .agentId = agent,
+      .algorithmId = algorithm
+    };
+    REQUIRE(rsm1.agentId == agent);
+    REQUIRE(rsm1.algorithmId == algorithm);
+    REQUIRE(rsm2.agentId == agent);
+    REQUIRE(rsm2.algorithmId == algorithm);
+    REQUIRE(rsm1 == rsm2);
+    REQUIRE(!(rsm1 != rsm2));
+  }
+}
+
 /// MARK: Risk Score Array Tests
 
 TEST_CASE("risk-score-array-default", "[risk-score][array][allocatable-array][default") {
@@ -298,6 +349,8 @@ TEST_CASE("risk-score-array-set-default", "[risk-score][array][set][allocatable-
     rss.add(RiskScoreArray<8>(rsm));
 
     REQUIRE(rss.size() == 1);
+    REQUIRE(rss[0].getTag().agentId == agent);
+    REQUIRE(rss[0].getTag().algorithmId == algorithm);
     REQUIRE(rss[0].getTag() == rsm);
     REQUIRE(!(rss[0].getTag() != rsm));
     REQUIRE(rss[0].contents().size() == 0); // inner tagged array size

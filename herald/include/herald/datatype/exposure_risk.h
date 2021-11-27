@@ -98,7 +98,7 @@ struct Score {
 
   const bool operator==(const Score& other) const noexcept;
   const bool operator!=(const Score& other) const noexcept;
-  Score operator+(const Score& other) const noexcept;
+  Score operator+(const Score& other) noexcept;
 };
 
 /**

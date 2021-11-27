@@ -12,6 +12,8 @@
 #include "runner.h"
 #include "sampling.h"
 #include "../datatype/rssi_minute.h"
+#include "../datatype/rssi.h"
+#include "../datatype/time_interval.h"
 
 // Debug only
 // #include <iostream>

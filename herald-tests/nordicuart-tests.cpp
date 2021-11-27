@@ -20,7 +20,7 @@ TEST_CASE("nordicuart-callbacks-basics", "[nordicuart][callbacks][basics]") {
     char buffer[128] = {'\0'};
 
     auto nusd = herald::ble::nordic_uart::NordicUartSensorDelegate(ctx,[&buffer](void* v,const char* data,std::size_t len) {
-      std::strncpy(buffer,data,len);
+      strncpy_s(buffer,data,len);
     });
     herald::datatype::Data d{std::byte('a'),6};
     herald::datatype::TargetIdentifier t1(d);
@@ -75,7 +75,7 @@ TEST_CASE("nordicuart-callbacks-bounds", "[nordicuart][callbacks][bounds]") {
     char buffer[128] = {'\0'};
 
     auto nusd = herald::ble::nordic_uart::NordicUartSensorDelegate(ctx,[&buffer](void* v,const char* data,std::size_t len) {
-      std::strncpy(buffer,data,len);
+      strncpy_s(buffer,data,len);
     });
     herald::datatype::Data d{std::byte('a'),6};
     herald::datatype::TargetIdentifier t1(d);
