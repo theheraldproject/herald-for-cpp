@@ -62,15 +62,15 @@ public:
 /// /brief Agent common UUIDs for cross-compatibility (may not be a comprehensive list)
 namespace agent {
   /*** /brief Human proximity agent class **/
-  static constexpr Agent humanProximity = 1;
+  static constexpr Agent humanProximity{1};
   /** /brief Single channel visible light luminosity **/
-  static constexpr Agent lightBrightness = 2;
+  static constexpr Agent lightBrightness{2};
   /** /brief Four channel visible light plus Infra Red luminosity **/
-  static constexpr Agent lightRGBIR = 3;
+  static constexpr Agent lightRGBIR{3};
   /** /brief Radiation exposure **/
-  static constexpr Agent radiation = 4;
+  static constexpr Agent radiation{4};
   /** /brief Sound volume exposure **/
-  static constexpr Agent sound = 5;
+  static constexpr Agent sound{5};
 }
 
 /**

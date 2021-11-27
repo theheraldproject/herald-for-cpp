@@ -97,12 +97,13 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler") {
 
 
     // Add a single disease(agent)
-    // herald::datatype::UUID proxInstanceId{555};
-    // bool addSuccess1 = em.addSource(
-    //   herald::exposure::agents::humanProximity, 
-    //   sensorClass::bluetoothProximityHerald, proxInstanceId);
-    // REQUIRE(addSuccess1);
-    // REQUIRE(em.sourceCount() == 1);
+    herald::datatype::UUID proxInstanceId = 
+      herald::datatype::UUID::fromString("99999999-1111-4011-8011-111111111111");
+    bool addSuccess1 = em.addSource(
+      herald::datatype::agent::humanProximity, 
+      sensorClass::bluetoothProximityHerald, proxInstanceId);
+    REQUIRE(addSuccess1);
+    REQUIRE(em.sourceCount() == 1);
 
 
 

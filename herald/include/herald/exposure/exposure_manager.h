@@ -36,6 +36,7 @@ template <typename CallbackHandlerT,
 class ExposureManager;
 // FWD Declare
 
+// 'Hidden' internal default struct definitions
 namespace {
   struct DefaultDevNullExposureStore {
   };
@@ -50,6 +51,12 @@ namespace {
 }
 using DefaultExposureManager = ExposureManager<DefaultNullExposureCallbackHandler,8,DefaultDevNullExposureStore>;
 
+/**
+ * @brief Acts as a delegate to be informed when a raw Analysis API value has changed
+ * 
+ * @tparam ModelT The type of data that has changed (E.g. RssiMinute)
+ * @tparam EMT The (internally generated) Exposure Manager type (back reference)
+ */
 template <typename ModelT, typename EMT>
 class ExposureManagerDelegate {
 public:
@@ -92,7 +99,16 @@ public:
     return *this;
   }
 
-  // Analysis Delegate Manager callback method
+  /**
+   * @brief Analysis API delegate callback function.
+   * 
+   * This method links the Exposure API to the Analysis API in Herald.
+   * 
+   * To link a custom exposure source to the Exposure API, use the ExposureManager.applyAdditionalExposure method, as used here.
+   * 
+   * @param sampled The Unique Identifier of the 'Sampled' object. Could be a remote person (E.g. Bluetooth Exposure), or temperature source, etc.
+   * @param sample The new value to add to the list
+   */
   void newSample(herald::analysis::SampledID sampled, herald::analysis::Sample<ModelT> sample) noexcept {
     // Check if we're adding risk exposure currently on this device
     if (!manager.has_value() || !manager.value().get().isRunning()) {
@@ -127,15 +143,29 @@ public:
   ~ExposureManager() noexcept = default;
 
   /// MARK: Manager configuration methods
+  /**
+   * @brief Returns the number of active sources.
+   * Always less than or equal to max_size
+   * @return The current active size
+   */
   const std::size_t sourceCount() const noexcept {
     return count;
   }
 
+  /**
+   * @brief Adds a new Agent source type, with appropriate SensorClass and Instance UUIDs.
+   * 
+   * @param agent The agent of exposure this source represents. E.g. radiation, sunlight, proximity
+   * @param sensorClass The class of sensor. E.g. Gamma radition, single or quad channel light, or bluetooth/UWB proximity
+   * @param instance The instance ID of a sensor (a device may have one or more sensors for each agent and sensorClass)
+   * @return true If adding succeeded
+   * @return false If adding failed (i.e. max_size has already been reached)
+   */
   bool addSource(const Agent& agent, const SensorClass& sensorClass, const UUID& instance) noexcept {
     if (count >= max_size) {
       return false;
     }
-    exposures[count] = ExposureArray{
+    exposures[count] = ExposureArray<max_size>{
       ExposureMetadata{
         .agentId = agent, 
         .sensorClassId = sensorClass,
@@ -146,6 +176,13 @@ public:
     return true;
   }
 
+  /**
+   * @brief Removes a source from the active list
+   * 
+   * @param instanceId The instance ID to remove
+   * @return true If the instanceId is found and removed
+   * @return false If the instanceId has already been removed
+   */
   bool removeSource(const UUID& instanceId) noexcept {
     std::size_t pos = findMeta(instanceId);
     if (pos >= max_size) {
@@ -164,7 +201,9 @@ public:
   }
 
   /// MARK: Event driven methods
-
+  /**
+   * @brief Generates an ExposureManagerDelegate appropriate to the given ExposureScoreT and ExposureManager instance
+   */
   template <typename ExposureScoreT>
   ExposureManagerDelegate<ExposureScoreT,ExposureManager<CallbackHandlerT, max_size, ExposureStoreT>>
   analysisDelegate() noexcept {

@@ -73,8 +73,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/wgs84.h
   ${HERALD_BASE}/include/herald/engine/activities.h
   ${HERALD_BASE}/include/herald/engine/coordinator.h
-  # ${HERALD_BASE}/include/herald/exposure/agent.h
-  # ${HERALD_BASE}/include/herald/exposure/exposure_manager.h
+  ${HERALD_BASE}/include/herald/exposure/exposure_manager.h
   ${HERALD_BASE}/include/herald/payload/payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/beacon/beacon_payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/fixed/fixed_payload_data_supplier.h
