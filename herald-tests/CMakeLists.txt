@@ -58,6 +58,7 @@ add_executable(herald-tests
 
 	# Usage level
 	exposure-risk-tests.cpp
+	exposure-manager-tests-new.cpp
 
 	# main test file
 	main.cpp

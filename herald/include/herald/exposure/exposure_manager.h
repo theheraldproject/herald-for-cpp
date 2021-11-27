@@ -5,25 +5,50 @@
 #ifndef HERALD_EXPOSURE_MANAGER_H
 #define HERALD_EXPOSURE_MANAGER_H
 
-#include "agent.h"
+#include "../datatype/exposure.h"
 
-#include <array>
 #include <functional>
+#include <optional>
 
 namespace herald {
 namespace exposure {
-
-// FWD Declare
-template <typename CallbackHandlerT, std::size_t MaxAgents>
+  
+/**
+ * /brief Uses the Analysis API in Herald to observe sensor readings and turn them into
+ * aggregated exposure scores.
+ *
+ * This class also responds to external modifications to exposure confidence. E.g.
+ * turning a general proximity exposure score into a "confirmed" COVID-19 exposure score.
+ *
+ * As an example, as I walk about I may have 0.9 (near full confidence) in a proximity score
+ * but I do not convert that to a COVID-19 exposure until someone becomes symptomatic or is tested.
+ * Should this occur, I could use the exposure scores from proximity to generate COVID-19 exposure
+ * by aggregating sets of scores from different people with different levels of confidence.
+ * If someone is symptomatic I may set COVID-19 (NOT raw proximity) confidence to 0.2, when they
+ * have a positive lateral flow test perhaps 0.67 (approx the true positive rate of LFTs) and when a PCR
+ * test is positive, to 0.98. This class manages the complex exposure scoring behind this.
+ * 
+ * This allows the related Risk Score algorithms to deal with all exposures in the same manner - 
+ * that is, summary scores of exposure to 'Agents' over specific periods of time.
+ */
+template <typename CallbackHandlerT, 
+  std::size_t MaxInMemoryExposureSummaries, typename ExposureStoreT>
 class ExposureManager;
+// FWD Declare
 
 namespace {
+  struct DefaultDevNullExposureStore {
+  };
+
   struct DefaultNullExposureCallbackHandler {
-    void riskLevelChanged(const Agent& notifyAgent,std::size_t notifyLevelId,double notifyCurrentExposureValue) noexcept {
+    void exposureChanged(const ExposureMetadata& meta,
+      const Exposure& changed) noexcept
+    {
+      ;
     }
   };
 }
-using DefaultExposureManager = ExposureManager<DefaultNullExposureCallbackHandler,8>;
+using DefaultExposureManager = ExposureManager<DefaultNullExposureCallbackHandler,8,DefaultDevNullExposureStore>;
 
 template <typename ModelT, typename EMT>
 class ExposureManagerDelegate {
@@ -55,6 +80,8 @@ public:
     ;
   }
 
+  ~ExposureManagerDelegate() noexcept = default;
+
   ExposureManagerDelegate& operator=(ExposureManagerDelegate& toMove) noexcept {
     manager = toMove.manager;
     return *this;
@@ -64,9 +91,6 @@ public:
     manager = toCopy.manager;
     return *this;
   }
-
-
-  ~ExposureManagerDelegate() noexcept = default;
 
   // Analysis Delegate Manager callback method
   void newSample(herald::analysis::SampledID sampled, herald::analysis::Sample<ModelT> sample) noexcept {
@@ -82,240 +106,100 @@ private:
   std::optional<std::reference_wrapper<EMT>> manager;
 };
 
-#ifndef HERALD_MAX_EXPOSURE_LEVELS_PER_AGENT
-#define HERALD_MAX_EXPOSURE_LEVELS_PER_AGENT 8
-#endif
-
-// Hidden internal class
-namespace {
-  struct ExposureLevel {
-    double greaterOrEqual = 0.0;
-    double lessThan = 100.0;
-    std::size_t id = 0;
-  };
-
-  struct AgentInfo {
-    // Static values
-    static constexpr std::size_t MaxLevelsPerAgent = HERALD_MAX_EXPOSURE_LEVELS_PER_AGENT;
-    
-    // config time values
-    Agent agent;
-    std::size_t exposureModelClassId = 0;
-    std::array<ExposureLevel,HERALD_MAX_EXPOSURE_LEVELS_PER_AGENT> levels;
-    std::size_t levelsInUse = 0;
-    std::size_t defaultLevelId = 0;
-    double initialExposureValue = 0.0;
-
-    // Runtime values
-    double currentExposureValue = 0.0;
-    std::size_t currentExposureLevelId = 0;
-    std::size_t priorCheckExposureLevelId = 0; // used to flag changes to listeners, once
-  };
-} // end anonymous namespace
 
 
-template <typename CallbackHandlerT, std::size_t MaxAgents>
+// Now the full declaration (was fwd decl earlier)
+template <typename CallbackHandlerT, 
+  std::size_t MaxInMemoryExposureSummaries, typename ExposureStoreT>
 class ExposureManager {
 public:
-  static constexpr std::size_t MaxSize = MaxAgents;
-  // using delegate_type = std::remove_cv_t<
-  //   ExposureManagerDelegate<ExposureManager<CallbackHandlerT,MaxAgents>>
-  // >;
+  static constexpr std::size_t max_size = MaxInMemoryExposureSummaries;
 
-  ExposureManager(CallbackHandlerT& callbackHandler) noexcept
-   : agents(),
-     count(0),
-     handler(callbackHandler),
-     running(false)
+  ExposureManager(CallbackHandlerT& initialHandler, ExposureStoreT& initialExposureStore) noexcept
+    : handler(initialHandler),
+      store(initialExposureStore),
+      exposures(),
+      count()
   {
     ;
   }
 
   ~ExposureManager() noexcept = default;
 
-  const bool isRunning() const noexcept {
-    return running;
-  }
-
-  void setRunning(bool newStatus) noexcept {
-    running = newStatus;
-  }
-
-  const std::size_t agentCount() const noexcept {
+  /// MARK: Manager configuration methods
+  const std::size_t sourceCount() const noexcept {
     return count;
   }
 
-  bool addAgent(const Agent& toCopy) noexcept {
-    if (count >= MaxSize) {
+  bool addSource(const Agent& agent, const SensorClass& sensorClass, const UUID& instance) noexcept {
+    if (count >= max_size) {
       return false;
     }
-    agents[count] = AgentInfo{.agent=toCopy};
+    exposures[count] = ExposureArray{
+      ExposureMetadata{
+        .agentId = agent, 
+        .sensorClassId = sensorClass,
+        .sensorInstanceId = instance
+      }
+    };
     ++count;
     return true;
   }
 
-  bool removeAgent(const Agent& toRemove) noexcept {
-    std::size_t pos = findAgent(toRemove);
-    if (pos >= MaxAgents) {
+  bool removeSource(const UUID& instanceId) noexcept {
+    std::size_t pos = findMeta(instanceId);
+    if (pos >= max_size) {
       // agent not found - return false
       return false;
     }
     for (std::size_t mp = pos;mp < count - 1;++mp) {
-      agents[mp] = agents[mp + 1];
+      exposures[mp] = exposures[mp + 1];
     }
     --count;
     return true;
   }
 
+  const bool isRunning() const noexcept {
+    return false;
+  }
+
+  /// MARK: Event driven methods
+
   template <typename ExposureScoreT>
-  ExposureManagerDelegate<ExposureScoreT,ExposureManager<CallbackHandlerT,MaxAgents>>
+  ExposureManagerDelegate<ExposureScoreT,ExposureManager<CallbackHandlerT, max_size, ExposureStoreT>>
   analysisDelegate() noexcept {
-    return ExposureManagerDelegate<ExposureScoreT,ExposureManager<CallbackHandlerT,MaxAgents>>(
+    return ExposureManagerDelegate<ExposureScoreT,ExposureManager<CallbackHandlerT, max_size, ExposureStoreT>>(
       *this
     );
   }
 
-  template <typename ModelT>
-  bool setAgentExposureModel(const Agent& agent) noexcept {
-    std::size_t pos = findAgent(agent);
-    if (pos >= MaxAgents) {
-      // agent not found - return false
-      return false;
-    }
-    agents[pos].exposureModelClassId = ModelT::output_value_type::classId;
-    return true;
-  }
 
-  bool addExposureLevel(const Agent& agent,double greaterOrEqual,double lessThan, std::size_t levelId) noexcept {
-    std::size_t pos = findAgent(agent);
-    if (pos >= MaxAgents) {
-      // agent not found - return false
-      return false;
-    }
-    AgentInfo& ai = agents[pos];
-    if (ai.levelsInUse >= AgentInfo::MaxLevelsPerAgent) {
-      return false;
-    }
-    ai.levels[ai.levelsInUse] = ExposureLevel{
-      .greaterOrEqual = greaterOrEqual,
-      .lessThan = lessThan,
-      .id = levelId
-    };
-    ++ai.levelsInUse;
-    return true;
-  }
-
-  std::size_t getExposureLevelCount(const Agent& agent) const noexcept {
-    std::size_t pos = findAgent(agent);
-    if (pos >= MaxAgents) {
-      // agent not found - return false
-      return 0;
-    }
-    return agents[pos].levelsInUse;
-  }
-
-  bool setExposureDefaults(const Agent& agent,double initialValue,std::size_t levelId) noexcept {
-    std::size_t pos = findAgent(agent);
-    if (pos >= MaxAgents) {
-      // agent not found - return false
-      return false;
-    }
-    AgentInfo& ai = agents[pos];
-    ai.initialExposureValue = initialValue;
-    ai.currentExposureValue = initialValue;
-    ai.defaultLevelId = levelId;
-    ai.currentExposureLevelId = levelId;
-    return true;
-  }
-
-  std::size_t getExposureDefaultLevelId(const Agent& agent) const noexcept {
-    std::size_t pos = findAgent(agent);
-    if (pos >= MaxAgents) {
-      // agent not found - return false
-      return 0;
-    }
-    return agents[pos].defaultLevelId;
-  }
-
-  double getExposureInitialValue(const Agent& agent) const noexcept {
-    std::size_t pos = findAgent(agent);
-    if (pos >= MaxAgents) {
-      // agent not found - return false
-      return 0;
-    }
-    return agents[pos].initialExposureValue;
-  }
-
-  double getExposureCurrentValue(const Agent& agent) const noexcept {
-    std::size_t pos = findAgent(agent);
-    if (pos >= MaxAgents) {
-      // agent not found - return false
-      return 0;
-    }
-    return agents[pos].currentExposureValue;
-  }
-
-  std::size_t getExposureCurrentLevelId(const Agent& agent) const noexcept {
-    std::size_t pos = findAgent(agent);
-    if (pos >= MaxAgents) {
-      // agent not found - return false
-      return 0;
-    }
-    return agents[pos].currentExposureLevelId;
-  }
-
-  template <typename ValT>
-  bool applyAdditionalExposure(herald::analysis::SampledID sampled,herald::analysis::Sample<ValT> sample) noexcept {
-    // Assume any Risk value type in Herald has classId and doubleValue() members
-    // TODO add template warning message about unviable types to aid custom type developers
-    // Note: We ignore the source (SampleID) because we aggregated exposure no matter the source by default
-    std::size_t sampleClassId = ValT::classId;
-    double incrementalValue = (double)sample;
-    bool found = false;
-    for (std::size_t pos = 0;pos < count;++pos) {
-      if (agents[pos].exposureModelClassId == sampleClassId) {
-        agents[pos].currentExposureValue += incrementalValue;
-        found = true;
-      }
-    }
-    return found;
-  }
-
-  void evaluateLevels() noexcept {
-    // for all agents
-    for (std::size_t pos = 0;pos < count;++pos) {
-      AgentInfo& ai = agents[pos];
-      // evaluate all levels' bounds against current exposure score
-      for (std::size_t levelIdx = 0; levelIdx < ai.levelsInUse;++levelIdx) {
-        // set new level to appropriate one
-        if (ai.currentExposureValue >= ai.levels[levelIdx].greaterOrEqual &&
-            ai.currentExposureValue < ai.levels[levelIdx].lessThan)
-        {
-          ai.currentExposureLevelId = ai.levels[levelIdx].id;
-        }
-      }
-      // if prior level is not same as new level, raise an event to the handler
-      if (ai.priorCheckExposureLevelId != ai.currentExposureLevelId) {
-        handler.riskLevelChanged(ai.agent,ai.currentExposureLevelId,ai.currentExposureValue);
-        // set new level as prior level (so we don't call the handler again)
-        ai.priorCheckExposureLevelId = ai.currentExposureLevelId;
-      }
-    }
-  }
+  /// MARK: Methods invoked by external risk state classes (E.g. Exposure Notification frameworks)
 
 private:
-  std::array<AgentInfo,MaxAgents> agents;
-  std::size_t count;
   CallbackHandlerT& handler;
-  bool running;
+  ExposureStoreT& store;
 
-  std::size_t findAgent(const Agent& agent) const noexcept {
+  /// /brief In memory ephemeral cached exposures
+  ExposureSet<max_size> exposures;
+  std::size_t count;
+
+  std::size_t findMeta(const ExposureMetadata& meta) const noexcept {
     for (std::size_t pos = 0;pos < count;++pos) {
-      if (agents[pos].agent.id == agent.id) {
+      if (exposures[pos].getTag() == meta) {
         return pos;
       }
     }
-    return MaxAgents;
+    return max_size;
+  }
+
+  std::size_t findMeta(const UUID& sensorInstanceId) const noexcept {
+    for (std::size_t pos = 0;pos < count;++pos) {
+      if (exposures[pos].getTag().sensorInstanceId == sensorInstanceId) {
+        return pos;
+      }
+    }
+    return max_size;
   }
 };
 

@@ -12,6 +12,81 @@
 namespace herald {
 namespace datatype {
 
+/** /brief Specific strongly typed override of UUID for Agents **/
+struct Agent : public UUID {
+public:
+  constexpr Agent(UUID::value_type shortCode) noexcept
+   : UUID(std::array<value_type, max_size>{0})
+  {
+    // Copy short code to first position
+    mData[0] = shortCode;
+    // Copy agent flags into last position
+    // Copy V4 valid UUID into other positions
+    constexpr value_type M = 0x40; // 7th byte = 0100 in binary for MSB 0000 for LSB - v4 UUID
+    constexpr value_type N = 0x80; // 9th byte = 1000 in binary for MSB 0000 for LSB - variant 1
+    mData[6] = (0x0f & mData[6]) | M; // blanks out first 4 bits
+    mData[8] = (0x3f & mData[8]) | N; // blanks out first 2 bits
+
+    mData[max_size - 1] = value_type{1}; // explicit construction
+
+    mValid = true;
+  }
+
+  // constexpr Agent& operator=(const UUID::value_type shortCode) noexcept;
+  ~Agent() noexcept = default;
+};
+
+/** /brief Specific strongly types override of UUID for Sensor Calsses **/
+struct SensorClass : public UUID {
+public:
+  constexpr SensorClass(UUID::value_type shortCode) noexcept
+   : UUID(std::array<value_type, max_size>{0})
+  {
+    // Copy short code to first position
+    mData[0] = shortCode;
+    // Copy agent flags into last position
+    // Copy V4 valid UUID into other positions
+    constexpr value_type M = 0x40; // 7th byte = 0100 in binary for MSB 0000 for LSB - v4 UUID
+    constexpr value_type N = 0x80; // 9th byte = 1000 in binary for MSB 0000 for LSB - variant 1
+    mData[6] = (0x0f & mData[6]) | M; // blanks out first 4 bits
+    mData[8] = (0x3f & mData[8]) | N; // blanks out first 2 bits
+
+    mData[max_size - 1] = value_type{2}; // explicit construction
+
+    mValid = true;
+  }
+
+  ~SensorClass() noexcept = default;
+};
+
+/// /brief Agent common UUIDs for cross-compatibility (may not be a comprehensive list)
+namespace agent {
+  /*** /brief Human proximity agent class **/
+  static constexpr Agent humanProximity = 1;
+  /** /brief Single channel visible light luminosity **/
+  static constexpr Agent lightBrightness = 2;
+  /** /brief Four channel visible light plus Infra Red luminosity **/
+  static constexpr Agent lightRGBIR = 3;
+  /** /brief Radiation exposure **/
+  static constexpr Agent radiation = 4;
+  /** /brief Sound volume exposure **/
+  static constexpr Agent sound = 5;
+}
+
+/**
+ * /brief Classes of sensors. Multiple sensor types may provide data on the same agent
+ */
+namespace sensorClass {
+  /** /brief Herald Bluetooth proximity sensor **/
+  static constexpr SensorClass bluetoothProximityHerald{1};
+  /** /brief Legacy OpenTrace (V1 ONLY) Bluetooth proximity sensor **/
+  static constexpr SensorClass bluetoothProximityOpenTrace{2};
+  /** /brief Legacy Gooigle Apple Exposure Notification (GAEN) sensor **/
+  static constexpr SensorClass bluetoothProximityGaen{3};
+}
+
+
+
 /**
  * /brief Represents the common data items between Exposure and Rirk Scores
  */

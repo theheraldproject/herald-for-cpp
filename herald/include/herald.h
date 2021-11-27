@@ -117,7 +117,7 @@
 
 // exposure namespace
 //#include "herald/exposure/agent.h"
-//#include "herald/exposure/exposure_manager.h"
+#include "herald/exposure/exposure_manager.h"
 
 // risk namespace
 //#include "herald/risk/risk_manager.h"
