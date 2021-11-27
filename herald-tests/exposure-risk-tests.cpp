@@ -45,9 +45,6 @@ TEST_CASE("score-default", "[exposure][default]") {
     Date now;
     Score exp;
     UUID unk = UUID::unknown();
-    // REQUIRE(unk == exp.agentId);
-    // REQUIRE(unk == exp.sensorClassId);
-    // REQUIRE(unk == exp.sensorInstanceId);
     REQUIRE(now <= exp.periodStart);
     REQUIRE(now <= exp.periodEnd);
     REQUIRE(exp.periodEnd >= exp.periodStart);
@@ -59,13 +56,7 @@ TEST_CASE("score-default", "[exposure][default]") {
 TEST_CASE("score-filled", "[exposure][filled]") {
   SECTION("score-filled") {
     // Test filled exposure class is valid
-    // UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
-    // UUID sensorClass = UUID::fromString("21111111-1111-4011-8011-111111111111");
-    // UUID sensorInstance = UUID::fromString("31111111-1111-4011-8011-111111111111");
     Score exp{
-      // .agentId = UUID::fromString("11111111-1111-4011-8011-111111111111"),
-      // .sensorClassId = UUID::fromString("21111111-1111-4011-8011-111111111111"),
-      // .sensorInstanceId = UUID::fromString("31111111-1111-4011-8011-111111111111"),
       .periodStart = Date{4000},
       .periodEnd = Date{5000},
       .value = 5.6,
@@ -73,17 +64,8 @@ TEST_CASE("score-filled", "[exposure][filled]") {
     };
     // Test our test variables first
     UUID unk = UUID::unknown();
-    // REQUIRE(unk != exp.agentId);
-    // REQUIRE(unk != exp.sensorClassId);
-    // REQUIRE(unk != exp.sensorInstanceId);
-    // REQUIRE(exp.agentId != exp.sensorClassId);
-    // REQUIRE(exp.sensorClassId != exp.sensorInstanceId);
-    // REQUIRE(exp.sensorInstanceId != exp.agentId);
 
     // Now test their use
-    // REQUIRE(agent == exp.agentId);
-    // REQUIRE(sensorClass == exp.sensorClassId);
-    // REQUIRE(sensorInstance == exp.sensorInstanceId);
     REQUIRE(Date(4000) == exp.periodStart);
     REQUIRE(Date(5000) == exp.periodEnd);
     REQUIRE(exp.periodEnd > exp.periodStart);
@@ -94,13 +76,7 @@ TEST_CASE("score-filled", "[exposure][filled]") {
 
 TEST_CASE("score-copyctor", "[exposure][copyctor]") {
   SECTION("score-copyctor") {
-    // UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
-    // UUID sensorClass = UUID::fromString("21111111-1111-4011-8011-111111111111");
-    // UUID sensorInstance = UUID::fromString("31111111-1111-4011-8011-111111111111");
     const Score exp{
-      // .agentId = UUID::fromString("11111111-1111-4011-8011-111111111111"),
-      // .sensorClassId = UUID::fromString("21111111-1111-4011-8011-111111111111"),
-      // .sensorInstanceId = UUID::fromString("31111111-1111-4011-8011-111111111111"),
       .periodStart = Date{4000},
       .periodEnd = Date{5000},
       .value = 5.6,
@@ -110,9 +86,6 @@ TEST_CASE("score-copyctor", "[exposure][copyctor]") {
     // Copy construction operation
     Score exp2 = exp; // copy constructor (const copy ctor forced)
     
-    // REQUIRE(exp.agentId == exp2.agentId);
-    // REQUIRE(exp.sensorClassId == exp2.sensorClassId);
-    // REQUIRE(exp.sensorInstanceId == exp2.sensorInstanceId);
     REQUIRE(exp.periodStart == exp2.periodStart);
     REQUIRE(exp.periodEnd == exp2.periodEnd);
     REQUIRE(exp.value == exp2.value);
@@ -127,13 +100,7 @@ TEST_CASE("score-copyctor", "[exposure][copyctor]") {
 TEST_CASE("score-movector", "[exposure][movector]") {
   SECTION("score-movector") {
     // Test filled exposure class is valid
-    // UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
-    // UUID sensorClass = UUID::fromString("21111111-1111-4011-8011-111111111111");
-    // UUID sensorInstance = UUID::fromString("31111111-1111-4011-8011-111111111111");
     Score expMovedFrom{
-      // .agentId = UUID::fromString("11111111-1111-4011-8011-111111111111"),
-      // .sensorClassId = UUID::fromString("21111111-1111-4011-8011-111111111111"),
-      // .sensorInstanceId = UUID::fromString("31111111-1111-4011-8011-111111111111"),
       .periodStart = Date{4000},
       .periodEnd = Date{5000},
       .value = 5.6,
@@ -145,17 +112,8 @@ TEST_CASE("score-movector", "[exposure][movector]") {
 
     // Test our test variables first
     UUID unk = UUID::unknown();
-    // REQUIRE(unk != exp.agentId);
-    // REQUIRE(unk != exp.sensorClassId);
-    // REQUIRE(unk != exp.sensorInstanceId);
-    // REQUIRE(exp.agentId != exp.sensorClassId);
-    // REQUIRE(exp.sensorClassId != exp.sensorInstanceId);
-    // REQUIRE(exp.sensorInstanceId != exp.agentId);
 
     // Now test their use
-    // REQUIRE(agent == exp.agentId);
-    // REQUIRE(sensorClass == exp.sensorClassId);
-    // REQUIRE(sensorInstance == exp.sensorInstanceId);
     REQUIRE(Date(4000) == exp.periodStart);
     REQUIRE(Date(5000) == exp.periodEnd);
     REQUIRE(exp.periodEnd > exp.periodStart);
@@ -171,22 +129,13 @@ TEST_CASE("score-movector", "[exposure][movector]") {
 TEST_CASE("score-addition", "[exposure][addition]") {
   SECTION("score-addition") {
     // Test filled exposure class is valid
-    // UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
-    // UUID sensorClass = UUID::fromString("21111111-1111-4011-8011-111111111111");
-    // UUID sensorInstance = UUID::fromString("31111111-1111-4011-8011-111111111111");
     Score exp1{
-      // .agentId = UUID::fromString("11111111-1111-4011-8011-111111111111"),
-      // .sensorClassId = UUID::fromString("21111111-1111-4011-8011-111111111111"),
-      // .sensorInstanceId = UUID::fromString("31111111-1111-4011-8011-111111111111"),
       .periodStart = Date{4000},
       .periodEnd = Date{5000},
       .value = 5.6,
       .confidence = 0.68 // As this is a probability this should be bounded
     };
     Score exp2{
-      // .agentId = UUID::fromString("11111111-1111-4011-8011-111111111111"),
-      // .sensorClassId = UUID::fromString("21111111-1111-4011-8011-111111111111"),
-      // .sensorInstanceId = UUID::fromString("31111111-1111-4011-8011-111111111111"),
       .periodStart = Date{5500},
       .periodEnd = Date{6500},
       .value = 3.5,
@@ -199,9 +148,6 @@ TEST_CASE("score-addition", "[exposure][addition]") {
     // addition operation
     Score added = exp1 + exp2;
 
-    // REQUIRE(agent == added.agentId);
-    // REQUIRE(sensorClass == added.sensorClassId);
-    // REQUIRE(sensorInstance == added.sensorInstanceId);
     REQUIRE(Date(4000) == added.periodStart);
     REQUIRE(Date(6500) == added.periodEnd);
     REQUIRE(added.periodEnd > added.periodStart);

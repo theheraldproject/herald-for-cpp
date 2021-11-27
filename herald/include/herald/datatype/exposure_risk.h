@@ -110,6 +110,9 @@ struct Score {
  */
 using Exposure = Score;
 
+/**
+ * @brief Reppresents the metadata associated with a set of Exposure reading values.
+ */
 struct ExposureMetadata {
   UUID agentId = UUID::unknown();
   UUID sensorClassId = UUID::unknown();
@@ -119,6 +122,11 @@ struct ExposureMetadata {
   const bool operator!=(const ExposureMetadata& other) const noexcept;
 };
 
+/**
+ * @brief Represents an array of exposures, with the 'Tag' being ExposureMetadata
+ * 
+ * @tparam ArraySize The maximum number of values to store against each ExposureMetadata instance. Defaulted to one (i.e. the current 'live' reading).
+ */
 template <std::size_t ArraySize=1>
 using ExposureArray = TaggedArray<
   ExposureMetadata,Exposure,ArraySize,false
@@ -152,6 +160,10 @@ using ExposureSet = TaggedArraySet<
  */
 using RiskScore = Score;
 
+/**
+ * @brief Represents the metdata associated with a set of Risk Score calculation values.
+ * 
+ */
 struct RiskScoreMetadata {
   UUID agentId = UUID::unknown();
   UUID algorithmId = UUID::unknown();
@@ -160,7 +172,11 @@ struct RiskScoreMetadata {
   const bool operator!=(const RiskScoreMetadata& other) const noexcept;
 };
 
-
+/**
+ * @brief An array of Risk Scores associated to the same RiskScoreMetadata instance
+ * 
+ * @tparam ArraySize Maximum size of values against this RiskScoreMetadata instance. Defaults to one (i.e. the last ran analysis)
+ */
 template <std::size_t ArraySize=1>
 using RiskScoreArray = TaggedArray<
   RiskScoreMetadata,RiskScore,ArraySize,false
