@@ -46,6 +46,70 @@ private:
   int run;
 };
 
+struct Minimum {
+  static constexpr int runs = 1;
+
+  Minimum() : min(std::numeric_limits<int>::max()) {}
+  ~Minimum() = default;
+
+  void beginRun(int thisRun) { // 1 indexed
+    run = thisRun;
+  }
+
+  template <typename ValT>
+  void map(ValT value) {
+    if (run > 1) return; // performance enhancement
+
+    if (value < min) {
+      min = value;
+    }
+  }
+
+  double reduce() {
+    return min;
+  }
+
+  void reset() {
+    min = std::numeric_limits<int>::max();
+  }
+
+private:
+  int min;
+  int run;
+};
+
+struct Maximum {
+  static constexpr int runs = 1;
+
+  Maximum() : max(std::numeric_limits<int>::min()) {}
+  ~Maximum() = default;
+
+  void beginRun(int thisRun) { // 1 indexed
+    run = thisRun;
+  }
+
+  template <typename ValT>
+  void map(ValT value) {
+    if (run > 1) return; // performance enhancement
+
+    if (value > max) {
+      max = value;
+    }
+  }
+
+  double reduce() {
+    return max;
+  }
+
+  void reset() {
+    max = std::numeric_limits<int>::min();
+  }
+
+private:
+  int max;
+  int run;
+};
+
 struct Mean {
   static constexpr int runs = 1;
 

@@ -18,13 +18,19 @@ struct DummyExposureStore {
 };
 
 struct DummyExposureCallbackHandler {
+  template <typename IterT>
   void exposureLevelChanged(
     const herald::datatype::ExposureMetadata& meta,
-    const herald::datatype::Exposure& exposure) noexcept {
+    IterT& iter,
+    IterT& end) noexcept {
+    // const herald::datatype::Exposure& exposure) noexcept {
     called = true;
     ++timesCalled;
     agent = meta.agentId;
-    currentExposureValue = exposure.value;
+    while (iter != end) {
+      currentExposureValue += iter->value;
+      ++iter;
+    }
   }
 
   herald::datatype::UUID agent = dummyAgent;
@@ -73,7 +79,7 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler") {
     srcData.push(300,-55);
     DummyRSSISource src(1234,std::move(srcData));
 
-    herald::analysis::algorithms::RSSIMinutesAnalyser riskAnalyser;
+    herald::analysis::algorithms::RSSIMinutesAnalyser riskAnalyser{60}; // One RSSIMinute every 60 seconds of input
 
     auto analysisDelegate = em.template analysisDelegate<herald::datatype::RSSIMinute>(); // full object (not just reference)
 
@@ -129,9 +135,88 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler") {
 // [What]  I need to sum exposure of particular types by a particular time period length in each given day
 // [Value] In order to summarise exposure correctly for that agent and source
 
-// [Who]   
-// [What]  
-// [Value] 
+TEST_CASE("exposure-time-periods", "[exposure][periods][window") {
+  SECTION("exposure-time-periods") {
+    // Create EM so we can reference its delegate
+    // Create exposure manager
+    DummyExposureCallbackHandler dh;
+    DummyExposureStore des;
+    herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore> em(dh,des);
+
+    bool setGlobal = em.setGlobalPeriodInterval(0,120); // 120 second windows starting at DateTime==0
+    REQUIRE(setGlobal);
+    REQUIRE(em.getGlobalPeriodAnchor().secondsSinceUnixEpoch() == 0);
+    REQUIRE(em.getGlobalPeriodInterval().seconds() == 120);
+
+    // Create underlying AnalysisRunner first
+    SampleList<Sample<RSSI>,25> srcData;
+    // Missing data items for the first minute
+    srcData.push(60,-55); // one minute
+    srcData.push(90,-55);
+    srcData.push(120,-55); // 45
+    srcData.push(150,-55);
+    srcData.push(180,-55); // 90
+    srcData.push(210,-55);
+    srcData.push(240,-55); // 135
+    srcData.push(270,-55);
+    srcData.push(300,-55); // 180 (i.e. 45 * 4)
+    DummyRSSISource src(1234,std::move(srcData));
+
+    herald::analysis::algorithms::RSSIMinutesAnalyser riskAnalyser{60}; // One RSSIMinute every 60 seconds of input
+
+    auto analysisDelegate = em.template analysisDelegate<herald::datatype::RSSIMinute>(); // full object (not just reference)
+
+    // Note: The delegate manager supports multiple analysis delegates, so you can have one per risk model type (set at compile time)
+    herald::analysis::AnalysisDelegateManager adm(std::move(analysisDelegate)); // NOTE: analysisDelegate MOVED FROM and no longer accessible
+    herald::analysis::AnalysisProviderManager apm(std::move(riskAnalyser)); // NOTE: riskAnalyser MOVED FROM and no longer accessible
+
+    herald::analysis::AnalysisRunner<
+      herald::analysis::AnalysisDelegateManager<
+        herald::exposure::ExposureManagerDelegate<
+          herald::datatype::RSSIMinute,
+          herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore>
+        >
+      >,
+      herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::RSSIMinutesAnalyser>,
+      RSSI,RSSIMinute
+    > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<RSSIMinute>)
+
+
+
+    // Some level constants for convenience. These are app-level and variable, and thus not hardcoded as code constants and compiled in
+    constexpr std::size_t noAction = 255;
+    constexpr std::size_t selfIsolate = 254;
+
+
+    // Add a single disease(agent)
+    herald::datatype::UUID proxInstanceId = 
+      herald::datatype::UUID::fromString("99999999-1111-4011-8011-111111111111");
+    bool addSuccess1 = em.addSource<RSSIMinute>(
+      herald::datatype::agent::humanProximity, 
+      sensorClass::bluetoothProximityHerald, proxInstanceId);
+    // Note: We've linked the above to a particular Model Type (RSSIMinute), and by default are using instanceID derived from the SampledId
+    REQUIRE(addSuccess1);
+    REQUIRE(em.sourceCount() == 1);
+
+    // Now run the values through
+    em.enableRunning(); // required, else no changes will be recorded
+    src.run(301, runner);
+    // Now fire off any exposure changes
+    bool result = em.notifyOfChanges();
+
+    // Now confirm callback values are the same with a different window
+    REQUIRE(result); // A notification occured
+    INFO("Agent from callback: " << dh.agent.string() << ", but expected: " << herald::datatype::agent::humanProximity.string());
+    REQUIRE(dh.agent == herald::datatype::agent::humanProximity);
+    REQUIRE(dh.called);
+    REQUIRE(1 == dh.called);
+    // NOTE: Currently only being fired for the FIRST exposure value in the change list
+    REQUIRE(dh.currentExposureValue == (45 * 4)); // -55 (so 45) RSSI for 4 minutes (RSSIMinutes) (Started at 1 minute, but 5 minutes elapsed, so 4 windows only)
+
+    // Now confirm we have the correct number of samples for this agent (120 second windows, starting at 60 seconds, 300 second period in total - so 2 periods)
+    REQUIRE(2 == em.getCountByInstanceId(proxInstanceId));
+  }
+}
 
 // [Who]   
 // [What]  
@@ -141,7 +226,12 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler") {
 // [What]  
 // [Value] 
 
+// [Who]   
+// [What]  
+// [Value] 
 
+
+// NOTE THE FOLLOWING ARE FOR A FUTURE RISK SCORE MANAGER - REFACTORING FROM OLD EXPOSURE MANAGER CLASS
 
 //     // Link an rssi-minutes aggregation risk routine to this disease
 //     bool setEM1 = em.template setAgentExposureModel<herald::analysis::algorithms::RSSIMinutesAnalyser>(adamitis);

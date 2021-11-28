@@ -7,6 +7,17 @@
 namespace herald {
 namespace datatype {
 
+
+Score&
+Score::operator=(const Score& other) noexcept
+{
+  value = other.value;
+  periodStart = other.periodStart;
+  periodEnd = other.periodEnd;
+  confidence = other.confidence;
+  return *this;
+}
+
 const bool
 Score::operator==(const Score& other) const noexcept
 {

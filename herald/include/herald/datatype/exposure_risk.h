@@ -96,6 +96,7 @@ struct Score {
   double value = 0.0;
   double confidence = 1.0;
 
+  Score& operator=(const Score& other) noexcept;
   const bool operator==(const Score& other) const noexcept;
   const bool operator!=(const Score& other) const noexcept;
   Score operator+(const Score& other) noexcept;

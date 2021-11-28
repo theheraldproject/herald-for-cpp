@@ -18,6 +18,7 @@ namespace datatype {
 
 class TimeInterval {
 public:
+  static TimeInterval hours(long hours);
   static TimeInterval minutes(long minutes);
   static TimeInterval seconds(long seconds);
   static TimeInterval never();

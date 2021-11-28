@@ -103,6 +103,11 @@ public:
     }
   }
 
+  /// \brief Empties the container (lazy emptying)
+  void clear() noexcept {
+    m_allocated.reset();
+  }
+
   /// \brief Returns the current assigned size of this array
   std::size_t size() const noexcept {
     return m_allocated.count();
@@ -285,6 +290,26 @@ struct AllocatableArrayIterator {
     return *this;
   }
 
+
+  /// \brief Allows this iterator to be moved forward
+  AllocatableArrayIterator<AllocatableArrayT>& operator+=(std::size_t by) noexcept {
+    pos += by;
+    if (pos > m_aa.size()) {
+      pos = m_aa.size();
+    }
+    return *this;
+  }
+
+  /// \brief Allows this iterator to be moved backward
+  AllocatableArrayIterator<AllocatableArrayT>& operator-=(std::size_t by) noexcept {
+    if (by > pos) {
+      pos = 0;
+    } else {
+      pos -= by;
+    }
+    return *this;
+  }
+
   /// \brief Minus operator to allow std::distance to work
   difference_type operator-(const AllocatableArrayIterator<AllocatableArrayT>& other) const noexcept {
     return pos - other.pos;
@@ -403,6 +428,11 @@ struct TaggedArray {
   const bool operator!=(const TagT& other) const noexcept
   {
     return tag != other;
+  }
+
+  const AAT& contents() const noexcept
+  {
+    return aa;
   }
 
   AAT& contents() noexcept

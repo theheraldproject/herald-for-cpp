@@ -62,6 +62,10 @@ struct MeanValidRSSI {
     count = 0;
   }
 
+  int getCount() const noexcept {
+    return count;
+  }
+
 private:
   int run;
   double value;
@@ -74,8 +78,8 @@ struct RSSIMinutesAnalyser {
   // static constexpr std::size_t classId = RSSIMinute::classId;
 
   /// default constructor required for array instantiation in manager AnalysisProviderManager
-  RSSIMinutesAnalyser() : interval(5), calculator(), lastRan(0) {}
-  RSSIMinutesAnalyser(long interval) : interval(interval), calculator(), lastRan(0) {}
+  RSSIMinutesAnalyser() : interval(5), calculator(), lastRan(0), hasRan(false) {}
+  RSSIMinutesAnalyser(long interval) : interval(interval), calculator(), lastRan(0), hasRan(false) {}
   ~RSSIMinutesAnalyser() = default;
 
   // Generic
@@ -88,36 +92,65 @@ struct RSSIMinutesAnalyser {
   // Specialisation
   template <std::size_t SrcSz,std::size_t DstSz, typename CallableForNewSample>
   bool analyse(Date timeNow, SampledID sampled, SampleList<Sample<RSSI>,SrcSz>& src, SampleList<Sample<RSSIMinute>,DstSz>& dst, CallableForNewSample& callable) {
-    if (lastRan + interval >= timeNow) return false; // interval guard
+    if (lastRan + interval >= timeNow) {
+      return false; // interval guard.
+    }
     // std::cout << "RUNNING FOWLER BASIC ANALYSIS at " << timeNow.secondsSinceUnixEpoch() << std::endl;
 
-    herald::analysis::views::in_range valid(-99,-10);
+    // split into windows of data based on interval time
+    Date startInterval = lastRan;
+    while (startInterval <= timeNow) {
+      // limit also to before startInterval + interval
+      herald::analysis::views::beforeOrEqual beforeEndOfThisInterval(startInterval + interval);
 
-    // Check that there has been any new data since the last run
-    herald::analysis::views::since sinceLastRun(lastRan);
-    auto newData = src
-                 | herald::analysis::views::filter(valid) 
-                 | herald::analysis::views::filter(sinceLastRun)
-                 | herald::analysis::views::to_view();
+      herald::analysis::views::in_range valid(-99,-10);
 
-    calculator.reset();
+      // Check that there has been any new data since the last run
+      herald::analysis::views::since sinceLastRun(lastRan);
+      auto newData = src
+                  | herald::analysis::views::filter(valid) 
+                  | herald::analysis::views::filter(beforeEndOfThisInterval)
+                  | herald::analysis::views::filter(sinceLastRun)
+                  | herald::analysis::views::to_view();
 
-    auto values = src 
-                | herald::analysis::views::filter(valid) 
-                | herald::analysis::views::filter(sinceLastRun)
-                | aggregate(calculator); // type is MeanValidRSSI
-    
-    auto agg = values.template get<MeanValidRSSI>();
-    auto d = agg.reduce();
+      calculator.reset();
 
-    Date latestTime = src.latest();
-    TimeInterval timeDelta = latestTime - lastRan;
-    lastRan = latestTime; // TODO move this logic to the caller not the analysis provider
-    // std::cout << "Latest value at time: " << latestTime.secondsSinceUnixEpoch() << std::endl;
+      auto values = src 
+                  | herald::analysis::views::filter(valid) 
+                  | herald::analysis::views::filter(beforeEndOfThisInterval)
+                  | herald::analysis::views::filter(sinceLastRun)
+                  | aggregate(calculator); // type is MeanValidRSSI
+      
+      auto agg = values.template get<MeanValidRSSI>();
+      if (!hasRan) {
+        // use first time in sequence as lastRan for this purpose
+        Date firstTime = src.earliest();
+        startInterval = firstTime;
+        hasRan = true;
+      }
+      if (agg.getCount() > 0) { // only output a sample if we have data in this check window
+        auto d = agg.reduce();
 
-    Sample<RSSIMinute> newSample((Date)latestTime,RSSIMinute(d * timeDelta / (1000 * 60.0))); // timeDelta is millis!
-    dst.push(newSample);
-    callable(sampled,newSample);
+        Date latestTime = startInterval + interval;
+        // latest WITHIN our interval query
+        if (latestTime > src.latest()) {
+          latestTime = src.latest();
+        }
+        TimeInterval timeDelta = latestTime - startInterval;
+        // startInterval = latestTime;
+        // std::cout << "Latest value at time: " << latestTime.secondsSinceUnixEpoch() << std::endl;
+
+        Sample<RSSIMinute> newSample((Date)latestTime,RSSIMinute(d * timeDelta / (1000 * 60.0))); // timeDelta is millis!
+        dst.push(newSample);
+
+        // fire event
+        callable(sampled,newSample);
+      }
+      // Now move our time window forward
+      startInterval += interval;
+      lastRan = startInterval; // TODO move this logic to the caller not the analysis provider
+    }
+    lastRan = timeNow;
     return true;
   }
 
@@ -125,6 +158,7 @@ private:
   TimeInterval interval;
   MeanValidRSSI calculator;
   Date lastRan;
+  bool hasRan;
 };
 
 }

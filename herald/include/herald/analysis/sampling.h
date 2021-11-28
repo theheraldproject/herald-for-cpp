@@ -192,6 +192,10 @@ struct SampleList {
   Date latest() noexcept {
     return data[newestPosition].taken;
   }
+  
+  Date earliest() noexcept {
+    return data[oldestPosition].taken;
+  }
 
   SampleIterator<SampleList<SampleT,MaxSize>> begin() {
     return SampleIterator<SampleList<SampleT,MaxSize>>(*this);
