@@ -5,6 +5,8 @@
 #ifndef HERALD_RSSI_MINUTE_H
 #define HERALD_RSSI_MINUTE_H
 
+#include "model.h"
+
 #include <string>
 
 namespace herald {
@@ -12,7 +14,7 @@ namespace datatype {
 
 class RSSIMinute {
 public:
-  static constexpr std::size_t classId = 42;
+  static constexpr ModelClass modelClassId{42};
   
   RSSIMinute(); // default ctor (evaluates to 0)
   RSSIMinute(double value); // double

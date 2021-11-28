@@ -39,13 +39,13 @@ template <typename ValT, std::size_t Size = 8, bool UniqueMembers = true, typena
 class AllocatableArray {
 public:
   /// \brief Reference to the value type within this container
-  using value_type = ValT;
+  using value_type = ValBaseT; // must be non-const
   /// \brief The difference type for positions in this container
   using difference_type = std::size_t;
   /// \brief The iterator type for this container
-  using iterator = AllocatableArrayIterator<AllocatableArray<ValT,Size,UniqueMembers>>;
+  using iterator = AllocatableArrayIterator<AllocatableArray<ValBaseT,Size,UniqueMembers>>;
   /// \brief Constant iterator type
-  using const_iterator = AllocatableArrayIterator<const AllocatableArray<ValT,Size,UniqueMembers>>;;
+  using const_iterator = AllocatableArrayIterator<const AllocatableArray<ValBaseT,Size,UniqueMembers>>;;
   /// \brief Reference to the size type of this container
   using size_type = std::size_t;
   // using pointer = value_type*;
@@ -61,7 +61,7 @@ public:
   /// \brief Copy constructor (relies on std::array copy constructor)
   AllocatableArray(const AllocatableArray& from) noexcept : m_allocated(from.m_allocated), m_members(from.m_members) {};
   /// \brief Single value constructor for convenience
-  AllocatableArray(ValT&& first) noexcept : m_allocated(), m_members() {
+  AllocatableArray(ValBaseT&& first) noexcept : m_allocated(), m_members() {
     add(first);
   };
   /// \brief Default noexcept destructor
@@ -71,7 +71,7 @@ public:
   /// If UniqueMembers is true, checks to see if an equivalent item 
   /// already exists, and applies the assignment operator to it.
   /// Returns false if full, rather than throwing an exception.
-  bool add(ValT toAdd) noexcept {
+  bool add(ValBaseT toAdd) noexcept {
     if constexpr (UniqueMembers) {
       const std::size_t equalIdx = findEqual(toAdd);
       if (max_size != equalIdx) {
@@ -114,9 +114,9 @@ public:
   }
 
   /// \brief Returns the idx'th set value within the AllocatableArray as const
-  // constexpr const value_type& operator[](std::size_t idx) const noexcept {
-  //   return m_members[realIndex(idx)];
-  // }
+  constexpr const value_type& operator[](std::size_t idx) const noexcept {
+    return m_members[realIndex(idx)];
+  }
 
   /// \brief Support for const iterator begin
   constexpr const_iterator cbegin() const noexcept {
@@ -352,7 +352,8 @@ typename AllocatableArrayIterator<T>::difference_type distance(AllocatableArrayI
  */
 template <typename TagT, typename ValT, 
           std::size_t Size=8, bool UniqueMembers=false,
-          typename AAT=AllocatableArray<ValT,Size,UniqueMembers>
+          typename ValBaseT = typename std::remove_cv<ValT>::type,
+          typename AAT=AllocatableArray<ValBaseT,Size,UniqueMembers>
          >
 struct TaggedArray {
   using value_type = typename AAT::value_type;
@@ -418,10 +419,11 @@ private:
 
 template <typename TagT, typename ValT,
           std::size_t TaggedArraySize=8, bool TaggedArrayUniqueMembers=false,
-          std::size_t SetSize=8, bool SetUniqueMembers=true
+          std::size_t SetSize=8, bool SetUniqueMembers=true,
+          typename ValBaseT = typename std::remove_cv<ValT>::type
          >
 using TaggedArraySet = AllocatableArray<
-  TaggedArray<TagT,ValT,TaggedArraySize,TaggedArrayUniqueMembers>,
+  TaggedArray<TagT,ValBaseT,TaggedArraySize,TaggedArrayUniqueMembers>,
   SetSize,SetUniqueMembers
 >;
 

@@ -22,6 +22,7 @@ struct DummyExposureCallbackHandler {
     const herald::datatype::ExposureMetadata& meta,
     const herald::datatype::Exposure& exposure) noexcept {
     called = true;
+    ++timesCalled;
     agent = meta.agentId;
     currentExposureValue = exposure.value;
   }
@@ -29,6 +30,7 @@ struct DummyExposureCallbackHandler {
   herald::datatype::UUID agent = dummyAgent;
   double currentExposureValue = 0;
   bool called = false;
+  std::size_t timesCalled = 0;
 };
 
 TEST_CASE("exposure-empty", "[exposure][empty]") {
@@ -58,6 +60,7 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler") {
 
     // Create underlying AnalysisRunner first
     SampleList<Sample<RSSI>,25> srcData;
+    srcData.push(0,-55);
     srcData.push(30,-55);
     srcData.push(60,-55); // one minute (45 rssi-minutes)
     srcData.push(90,-55);
@@ -91,7 +94,7 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler") {
 
 
 
-    // Some level constants for convenient. These are app-level and variable, and thus not hardcoded as code constants and compiled in
+    // Some level constants for convenience. These are app-level and variable, and thus not hardcoded as code constants and compiled in
     constexpr std::size_t noAction = 255;
     constexpr std::size_t selfIsolate = 254;
 
@@ -99,19 +102,44 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler") {
     // Add a single disease(agent)
     herald::datatype::UUID proxInstanceId = 
       herald::datatype::UUID::fromString("99999999-1111-4011-8011-111111111111");
-    bool addSuccess1 = em.addSource(
+    bool addSuccess1 = em.addSource<RSSIMinute>(
       herald::datatype::agent::humanProximity, 
       sensorClass::bluetoothProximityHerald, proxInstanceId);
+    // Note: We've linked the above to a particular Model Type (RSSIMinute), and by default are using instanceID derived from the SampledId
     REQUIRE(addSuccess1);
     REQUIRE(em.sourceCount() == 1);
 
+    // Now run the values through
+    em.enableRunning(); // required, else no changes will be recorded
+    src.run(301, runner);
+    // Now fire off any exposure changes
+    bool result = em.notifyOfChanges();
 
-
-
-
-
+    // Now confirm callback values
+    REQUIRE(result); // A notification occured
+    INFO("Agent from callback: " << dh.agent.string() << ", but expected: " << herald::datatype::agent::humanProximity.string());
+    REQUIRE(dh.agent == herald::datatype::agent::humanProximity);
+    REQUIRE(dh.called);
+    REQUIRE(1 == dh.called);
+    REQUIRE(dh.currentExposureValue == (45 * 5)); // -55 (so 45) RSSI for 5 minutes (RSSIMinutes) (5 minutes elapsed)
   }
 }
+
+// [Who]   As an exposure calculator
+// [What]  I need to sum exposure of particular types by a particular time period length in each given day
+// [Value] In order to summarise exposure correctly for that agent and source
+
+// [Who]   
+// [What]  
+// [Value] 
+
+// [Who]   
+// [What]  
+// [Value] 
+
+// [Who]   
+// [What]  
+// [Value] 
 
 
 

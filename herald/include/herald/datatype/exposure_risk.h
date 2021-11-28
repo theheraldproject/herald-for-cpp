@@ -99,6 +99,7 @@ struct Score {
   const bool operator==(const Score& other) const noexcept;
   const bool operator!=(const Score& other) const noexcept;
   Score operator+(const Score& other) noexcept;
+  Score& operator+=(const Score& other) noexcept;
 };
 
 /**
@@ -117,6 +118,7 @@ struct ExposureMetadata {
   UUID agentId = UUID::unknown();
   UUID sensorClassId = UUID::unknown();
   UUID sensorInstanceId = UUID::unknown();
+  UUID modelClassId = UUID::unknown();
 
   const bool operator==(const ExposureMetadata& other) const noexcept;
   const bool operator!=(const ExposureMetadata& other) const noexcept;

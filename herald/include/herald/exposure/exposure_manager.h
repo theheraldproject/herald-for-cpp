@@ -48,6 +48,16 @@ namespace {
       ;
     }
   };
+
+  /**
+   * @brief Represents an INTERNAL reference to a change that has occured. 
+   * 
+   * Used to efficiently cache change references until a notify action can be called.
+   * 
+   */
+  struct ExposureChangeReference {
+    UUID sensorInstanceId = UUID::unknown();
+  };
 }
 using DefaultExposureManager = ExposureManager<DefaultNullExposureCallbackHandler,8,DefaultDevNullExposureStore>;
 
@@ -135,7 +145,10 @@ public:
     : handler(initialHandler),
       store(initialExposureStore),
       exposures(),
-      count()
+      count(0),
+      changes(),
+      changeCount(0),
+      running(false)
   {
     ;
   }
@@ -161,6 +174,7 @@ public:
    * @return true If adding succeeded
    * @return false If adding failed (i.e. max_size has already been reached)
    */
+  template <typename ModelT>
   bool addSource(const Agent& agent, const SensorClass& sensorClass, const UUID& instance) noexcept {
     if (count >= max_size) {
       return false;
@@ -169,7 +183,8 @@ public:
       ExposureMetadata{
         .agentId = agent, 
         .sensorClassId = sensorClass,
-        .sensorInstanceId = instance
+        .sensorInstanceId = instance,
+        .modelClassId = ModelT::modelClassId
       }
     };
     ++count;
@@ -184,7 +199,7 @@ public:
    * @return false If the instanceId has already been removed
    */
   bool removeSource(const UUID& instanceId) noexcept {
-    std::size_t pos = findMeta(instanceId);
+    std::size_t pos = findMetaByInstanceId(instanceId);
     if (pos >= max_size) {
       // agent not found - return false
       return false;
@@ -197,7 +212,15 @@ public:
   }
 
   const bool isRunning() const noexcept {
-    return false;
+    return running;
+  }
+
+  void enableRunning() noexcept {
+    running = true;
+  }
+
+  void disableRunning() noexcept {
+    running = false;
   }
 
   /// MARK: Event driven methods
@@ -212,6 +235,65 @@ public:
     );
   }
 
+  /**
+   * @brief Callback from multiple potential Analysis API callback handlers, passing the new value through.
+   * 
+   * @param sampled The identifier of the data type (E.g. temperature), or datatype-source (E.g. proximity-bluetoothId)
+   * @param sample 
+   */
+  template <typename ModelT>
+  void applyAdditionalExposure(const analysis::SampledID sampled, const analysis::Sample<ModelT> sample) noexcept {
+    // Link to relevant Exposure by ModelT
+    std::size_t pos = findMetaByModelClassId(ModelT::modelClassId);
+    if (pos >= max_size) {
+      return;
+    }
+    // Use SampledID as the instanceId for now (might not always be the case depending on source/model)
+    auto& exposureArray = exposures[pos].contents();
+    if (0 == exposureArray.size()) {
+      exposureArray[0] = Exposure{
+        .periodStart = sample.taken,
+        .periodEnd = sample.taken,
+        .value = (double)sample.value, // explicit conversion
+        .confidence = 1.0 // TODO pass through analysis API confidence, if supported (compilation option?)
+      };
+      // Record change for later notification
+      recordChange(exposures[pos].getTag().sensorInstanceId, sample.taken, sample.taken);
+    } else {
+      // TODO Ensure split period is observed, rather than always using the first value
+      // Append value to time period
+      exposureArray[0] += Exposure{
+        .periodStart = sample.taken,
+        .periodEnd = sample.taken,
+        .value = (double)sample.value, // explicit conversion
+        .confidence = 1.0 // TODO pass through analysis API confidence, if supported (compilation option?)
+      };
+      // Record change for later notification
+      recordChange(exposures[pos].getTag().sensorInstanceId, exposureArray[0].periodStart, exposureArray[0].periodEnd);
+    }
+  }
+
+  /**
+   * @brief Notifies delegates of any changes that have occurred since the last time this method was called.
+   * 
+   * @return true If any notifications of changes occured
+   * @return false If no notifications of changes occured
+   */
+  bool notifyOfChanges() noexcept {
+    if (0 == changeCount) {
+      return false;
+    }
+    bool anyNotified = false;
+    for (std::size_t changeIndex = 0; changeIndex < changeCount; ++changeIndex) {
+      std::size_t instancePos = findMetaBySensorInstanceId(changes[changeIndex].sensorInstanceId);
+      if (instancePos < max_size) {
+        anyNotified = true;
+        handler.exposureLevelChanged(exposures[instancePos].getTag(), exposures[instancePos].contents()[0]); // TODO replace this with a safety check
+      }
+    }
+    return anyNotified;
+  }
+
 
   /// MARK: Methods invoked by external risk state classes (E.g. Exposure Notification frameworks)
 
@@ -223,6 +305,11 @@ private:
   ExposureSet<max_size> exposures;
   std::size_t count;
 
+  std::array<ExposureChangeReference,max_size> changes;
+  std::size_t changeCount;
+
+  bool running;
+
   std::size_t findMeta(const ExposureMetadata& meta) const noexcept {
     for (std::size_t pos = 0;pos < count;++pos) {
       if (exposures[pos].getTag() == meta) {
@@ -232,13 +319,34 @@ private:
     return max_size;
   }
 
-  std::size_t findMeta(const UUID& sensorInstanceId) const noexcept {
+  std::size_t findMetaBySensorInstanceId(const UUID& sensorInstanceId) const noexcept {
     for (std::size_t pos = 0;pos < count;++pos) {
       if (exposures[pos].getTag().sensorInstanceId == sensorInstanceId) {
         return pos;
       }
     }
     return max_size;
+  }
+
+  std::size_t findMetaByModelClassId(const UUID& modelClassId) const noexcept {
+    for (std::size_t pos = 0;pos < count;++pos) {
+      if (exposures[pos].getTag().modelClassId == modelClassId) {
+        return pos;
+      }
+    }
+    return max_size;
+  }
+
+  void recordChange(const UUID& instanceId, const Date& periodStart, const Date& periodEnd) noexcept {
+    if (!running) {
+      return;
+    }
+    // TODO don't do this naively! Danger here!!!
+    // TODO include start and end dates for efficiency
+    changes[changeCount] = ExposureChangeReference{
+      .sensorInstanceId = instanceId
+    };
+    ++changeCount;
   }
 };
 
