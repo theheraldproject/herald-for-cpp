@@ -14,6 +14,7 @@
 #include "../datatype/rssi_minute.h"
 #include "../datatype/rssi.h"
 #include "../datatype/time_interval.h"
+#include "../datatype/derived.h"
 
 // Debug only
 // #include <iostream>
@@ -159,6 +160,120 @@ private:
   MeanValidRSSI calculator;
   Date lastRan;
   bool hasRan;
+};
+
+/**
+ * @brief Calculates a running mean over an arbitrary number of samples, but only over the MaxRecentValues number of most recent values.
+ * 
+ * @tparam ValT The type to calculate the running mean over
+ * @tparam MaxRecentValues The number of most recent values (max - could be less) 
+ */
+template <typename ValT, std::size_t MaxRecentValues>
+struct RunningMeanAggregate {
+  static constexpr int runs = 1;
+
+  RunningMeanAggregate() : run(1), values() {}
+  RunningMeanAggregate(const RunningMeanAggregate<ValT,MaxRecentValues>& other) : run(other.run), values() {
+    // for (const auto& v: other.values) {
+    //   values.add(v);
+    // }
+  }
+  RunningMeanAggregate(RunningMeanAggregate<ValT,MaxRecentValues>&& other) : run(other.run), values() {
+  //   for (auto& v: other.values) {
+  //     values.add(v);
+  //   }
+  }
+  ~RunningMeanAggregate() = default;
+
+  // Copy assign and move assign operators
+  RunningMeanAggregate& operator=(const RunningMeanAggregate& other) noexcept {
+    run = other.run;
+    return *this;
+  }
+  RunningMeanAggregate& operator=(RunningMeanAggregate&& other) noexcept {
+    run = other.run;
+    return *this;
+  }
+
+  void beginRun(int thisRun) { // 1 indexed
+    run = thisRun;
+  }
+
+  template <typename MapValT>
+  void map(MapValT newValue) {
+    values.push(newValue);
+  }
+
+  double reduce() {
+    if (0 == values.size()) {
+      return 0;
+    }
+    double running = 0;
+    for (auto& v : values) {
+      running += (double)v;
+    }
+    return running / values.size();
+  }
+
+  void reset() {
+    run = 1;
+    values.clear();
+  }
+
+  int getCount() const noexcept {
+    return values.size();
+  }
+
+private:
+  int run;
+  SampleList<Sample<ValT>,MaxRecentValues> values;
+};
+
+
+
+template <typename ValT, std::size_t MaxRecentValues>
+struct RunningMeanAnalyser {
+  using input_value_type = ValT;
+  using output_value_type = RunningMean<ValT>;
+
+  static constexpr std::size_t max_size = MaxRecentValues;
+
+  /// default constructor required for array instantiation in manager AnalysisProviderManager
+  RunningMeanAnalyser() = default;
+  ~RunningMeanAnalyser() = default;
+
+  // Generic
+  // TODO consider removing this annoyance somehow...
+  template <typename SrcT, std::size_t SrcSz,typename DstT, std::size_t DstSz, typename CallableForNewSample>
+  bool analyse(Date timeNow, SampledID sampled, SampleList<Sample<SrcT>,SrcSz>& src, SampleList<Sample<DstT>,DstSz>& dst, CallableForNewSample& callable) {
+    return false; // no op - compiled out
+  }
+
+  // Specialisation
+  template <std::size_t SrcSz,std::size_t DstSz, typename CallableForNewSample>
+  bool analyse(Date timeNow, SampledID sampled, SampleList<Sample<ValT>,SrcSz>& src, SampleList<Sample<RunningMean<ValT>>,DstSz>& dst, CallableForNewSample& callable) {
+
+      recentMean.reset();
+
+      auto values = src 
+                  | aggregate(recentMean); // type is RunningMean<ValT>
+      
+      auto agg = values.template get<RunningMeanAggregate<ValT,MaxRecentValues>>();
+      if (agg.getCount() > 0) { // only output a sample if we have data
+        auto d = agg.reduce();
+
+        Sample<RunningMean<ValT>> newSample((Date)src.latest(),RunningMean<ValT>(d));
+        dst.push(newSample);
+
+        // fire event
+        callable(sampled,newSample);
+        return true;
+      }
+    return false;
+  }
+
+private:
+  RunningMeanAggregate<ValT, MaxRecentValues> recentMean;
 };
 
 }

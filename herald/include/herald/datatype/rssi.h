@@ -5,6 +5,8 @@
 #ifndef HERALD_RSSI_H
 #define HERALD_RSSI_H
 
+#include "model.h"
+
 #include <string>
 #include <memory>
 
@@ -13,7 +15,7 @@ namespace datatype {
 
 class RSSI {
 public:
-  static constexpr std::size_t classId = 1;
+  static constexpr ModelClass modelClassId{1};
 
   RSSI(); // default ctor (evaluates to 0)
   RSSI(int value); // int

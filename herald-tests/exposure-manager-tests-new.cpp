@@ -56,7 +56,7 @@ TEST_CASE("exposure-empty", "[exposure][empty]") {
 }
 
 
-TEST_CASE("exposure-callback-handler", "[exposure][callback][handler") {
+TEST_CASE("exposure-callback-handler", "[exposure][callback][handler]") {
   SECTION("exposure-callback-handler") {
     // Create EM so we can reference its delegate
     // Create exposure manager
@@ -135,7 +135,7 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler") {
 // [What]  I need to sum exposure of particular types by a particular time period length in each given day
 // [Value] In order to summarise exposure correctly for that agent and source
 
-TEST_CASE("exposure-time-periods", "[exposure][periods][window") {
+TEST_CASE("exposure-time-periods", "[exposure][periods][window]") {
   SECTION("exposure-time-periods") {
     // Create EM so we can reference its delegate
     // Create exposure manager
@@ -218,9 +218,130 @@ TEST_CASE("exposure-time-periods", "[exposure][periods][window") {
   }
 }
 
-// [Who]   
-// [What]  
-// [Value] 
+// [Who]   As an epidemiologist
+// [What]  I need to run a risk analysis for all source variables over a given time period (E.g. hourly)
+// [Value] To calculate risk values for each target period during that time (E.g. a day), to accurately estimate a variety of risks (E.g. for a screening application)
+
+// [Who]   As a risk application developer
+// [What]  I need to run risk analyses live, responding to just the source exposure data that has changed
+// [Value] In order to use minimum power, memory, and data storage on the application device
+
+
+TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate]") {
+  SECTION("risk-multi-variate") {
+    // Create EM so we can reference its delegate
+    // Create exposure manager
+    DummyExposureCallbackHandler dh;
+    DummyExposureStore des;
+    herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore> em(dh,des);
+
+    bool setGlobal = em.setGlobalPeriodInterval(0,120); // 120 second windows starting at DateTime==0
+    REQUIRE(setGlobal);
+    REQUIRE(em.getGlobalPeriodAnchor().secondsSinceUnixEpoch() == 0);
+    REQUIRE(em.getGlobalPeriodInterval().seconds() == 120);
+
+    // Create underlying AnalysisRunner first
+    SampleList<Sample<RSSI>,25> srcData;
+    // Missing data items for the first minute
+    srcData.push(60,-55); // one minute
+    srcData.push(90,-55);
+    srcData.push(120,-55); // 45
+    srcData.push(150,-55);
+    srcData.push(180,-55); // 90
+    srcData.push(210,-55);
+    srcData.push(240,-55); // 135
+    srcData.push(270,-55);
+    srcData.push(300,-55); // 180 (i.e. 45 * 4)
+    DummyRSSISource srcRssi(1234,std::move(srcData));
+
+    // Now add dummy light level source
+    SampleList<Sample<Luminosity>,25> srcLightData;
+    srcLightData.push(0,5);
+    srcLightData.push(30,5);
+    srcLightData.push(60,5);
+    srcLightData.push(90,5);
+    srcLightData.push(120,5);
+    srcLightData.push(150,5);
+    srcLightData.push(180,5);
+    srcLightData.push(210,5);
+    srcLightData.push(240,5);
+    srcLightData.push(270,5);
+    srcLightData.push(300,5);
+    DummyLightSource srcLight(1234,std::move(srcLightData));
+
+
+    herald::analysis::algorithms::RSSIMinutesAnalyser riskAnalyser{60}; // One RSSIMinute every 60 seconds of input
+    herald::analysis::algorithms::RunningMeanAnalyser<herald::datatype::Luminosity, 3> lumAnalyser; // Latest (max) 3 readings only
+    // Note: Allowing raw light readings to pass through unaltered
+
+    auto analysisDelegateRssi = em.template analysisDelegate<herald::datatype::RSSIMinute>(); // full object (not just reference)
+    auto analysisDelegateLum = em.template analysisDelegate<herald::datatype::RunningMean<herald::datatype::Luminosity>>(); // full object (not just reference)
+
+    // Note: The delegate manager supports multiple analysis delegates, so you can have one per risk model type (set at compile time)
+    herald::analysis::AnalysisDelegateManager adm(std::move(analysisDelegateRssi),std::move(analysisDelegateLum)); // NOTE: analysisDelegate MOVED FROM and no longer accessible
+    herald::analysis::AnalysisProviderManager apm(std::move(riskAnalyser), std::move(lumAnalyser)); // NOTE: risk/lumAnalysers MOVED FROM and no longer accessible
+
+    herald::analysis::AnalysisRunner<
+      herald::analysis::AnalysisDelegateManager<
+        herald::exposure::ExposureManagerDelegate<
+          herald::datatype::RSSIMinute,
+          herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore>
+        >,
+        herald::exposure::ExposureManagerDelegate<
+          herald::datatype::RunningMean<herald::datatype::Luminosity>,
+          herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore>
+        >
+      >,
+      herald::analysis::AnalysisProviderManager<
+        herald::analysis::algorithms::RSSIMinutesAnalyser,
+        herald::analysis::algorithms::RunningMeanAnalyser<Luminosity,3>
+      >,
+      RSSI,RSSIMinute,Luminosity,RunningMean<Luminosity>
+    > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<RSSIMinute>)
+
+
+
+    // Some level constants for convenience. These are app-level and variable, and thus not hardcoded as code constants and compiled in
+    constexpr std::size_t noAction = 255;
+    constexpr std::size_t selfIsolate = 254;
+
+
+    // Add a single disease(agent)
+    herald::datatype::UUID proxInstanceId = 
+      herald::datatype::UUID::fromString("99999999-1111-4011-8011-111111111111");
+    bool addSuccess1 = em.addSource<RSSIMinute>(
+      herald::datatype::agent::humanProximity, 
+      sensorClass::bluetoothProximityHerald, proxInstanceId);
+    // Now add luminosity
+    herald::datatype::UUID lumInstanceId = 
+      herald::datatype::UUID::fromString("88888888-1111-4011-8011-111111111111");
+    bool addSuccess2 = em.addSource<RunningMean<Luminosity>>(
+      herald::datatype::agent::lightBrightness, 
+      sensorClass::luninositySingleChannelLums, lumInstanceId);
+    // Note: We've linked the above to a particular Model Type (RSSIMinute), and by default are using instanceID derived from the SampledId
+    REQUIRE(addSuccess1);
+    REQUIRE(addSuccess2);
+    REQUIRE(em.sourceCount() == 2);
+
+    // Now run the values through
+    em.enableRunning(); // required, else no changes will be recorded
+    // WARNING: Unlike in real life, these data add operations occur in series, not in parallel
+    srcRssi.run(301, runner);
+    srcLight.run(301, runner);
+    // Now fire off any exposure changes
+    bool result = em.notifyOfChanges(); // TODO debug why this now produces no changes
+
+    // Now confirm callback values are the same with a different window
+    REQUIRE(result); // A notification occured
+    // Note: Not introspecting callbacks as multiple variables which are valid to arrive in any order
+
+    // Now confirm we have the correct number of samples for each agent
+    // RSSI: 120 second windows, starting at 60 seconds, 300 second period in total - so 2 periods
+    // Luminosity: 120 second windows, starting at 0 seconds, 300 second period in total - so 3 periods
+    REQUIRE(2 == em.getCountByInstanceId(proxInstanceId));
+    REQUIRE(3 == em.getCountByInstanceId(lumInstanceId));
+  }
+}
 
 // [Who]   
 // [What]  
@@ -229,6 +350,14 @@ TEST_CASE("exposure-time-periods", "[exposure][periods][window") {
 // [Who]   
 // [What]  
 // [Value] 
+
+// [Who]   As a risk application user
+// [What]  I need to record static (E.g. genetic sex) and variable (E.g. weight) biographic data over a long time period
+// [Value] To ensure risk algorithms I'm relying on can take these factors in to account
+
+// [Who]   As a risk application provider
+// [What]  I need to track the finite states of a user from values in a risk model over time
+// [Value] In order to provide timely and useful health advice based on risk analyses
 
 
 // NOTE THE FOLLOWING ARE FOR A FUTURE RISK SCORE MANAGER - REFACTORING FROM OLD EXPOSURE MANAGER CLASS

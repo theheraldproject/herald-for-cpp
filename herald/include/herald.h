@@ -50,6 +50,7 @@
 #include "herald/datatype/immediate_send_data.h"
 #include "herald/datatype/location_reference.h"
 #include "herald/datatype/location.h"
+#include "herald/datatype/luminosity.h"
 #include "herald/datatype/memory_arena.h"
 #include "herald/datatype/model.h"
 #include "herald/datatype/payload_data.h"

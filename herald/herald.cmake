@@ -55,6 +55,7 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/immediate_send_data.h
   ${HERALD_BASE}/include/herald/datatype/location_reference.h
   ${HERALD_BASE}/include/herald/datatype/location.h
+  ${HERALD_BASE}/include/herald/datatype/luminosity.h
   ${HERALD_BASE}/include/herald/datatype/memory_arena.h
   ${HERALD_BASE}/include/herald/datatype/model.h
   ${HERALD_BASE}/include/herald/datatype/payload_data.h
@@ -133,6 +134,7 @@ set(HERALD_SOURCES
   ${HERALD_BASE}/src/datatype/exposure_risk.cpp
   ${HERALD_BASE}/src/datatype/immediate_send_data.cpp
   ${HERALD_BASE}/src/datatype/location.cpp
+  ${HERALD_BASE}/src/datatype/luminosity.cpp
   ${HERALD_BASE}/src/datatype/payload_data.cpp
   ${HERALD_BASE}/src/datatype/rssi.cpp
   ${HERALD_BASE}/src/datatype/rssi_minute.cpp

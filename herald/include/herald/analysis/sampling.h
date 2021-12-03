@@ -189,19 +189,19 @@ struct SampleList {
   // SampleT latest() {
   //   return data[newestPosition];
   // }
-  Date latest() noexcept {
+  Date latest() const noexcept {
     return data[newestPosition].taken;
   }
   
-  Date earliest() noexcept {
+  Date earliest() const noexcept {
     return data[oldestPosition].taken;
   }
 
-  SampleIterator<SampleList<SampleT,MaxSize>> begin() {
+  SampleIterator<SampleList<SampleT,MaxSize>> begin() noexcept {
     return SampleIterator<SampleList<SampleT,MaxSize>>(*this);
   }
 
-  SampleIterator<SampleList<SampleT,MaxSize>> end() {
+  SampleIterator<SampleList<SampleT,MaxSize>> end() noexcept {
     if (size() == 0) return SampleIterator<SampleList<SampleT,MaxSize>>(*this);
     return SampleIterator<SampleList<SampleT,MaxSize>>(*this,size()); // calls this object's size() function, not the array!
   }

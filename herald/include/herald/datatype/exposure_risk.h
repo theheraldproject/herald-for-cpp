@@ -83,6 +83,8 @@ namespace sensorClass {
   static constexpr SensorClass bluetoothProximityOpenTrace{2};
   /** /brief Legacy Gooigle Apple Exposure Notification (GAEN) sensor **/
   static constexpr SensorClass bluetoothProximityGaen{3};
+  /** /brief Lums measure of luminosity **/
+  static constexpr SensorClass luninositySingleChannelLums{10};
 }
 
 
