@@ -418,7 +418,9 @@ private:
       changes[cpos].periodEnd = periodEnd > changes[cpos].periodEnd ? periodEnd : changes[cpos].periodEnd;
     } else {
       changes[changeCount] = ExposureChangeReference{
-        .sensorInstanceId = instanceId
+        .sensorInstanceId = instanceId,
+        .periodStart = periodStart,
+        .periodEnd = periodEnd
       };
       ++changeCount;
     }

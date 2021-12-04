@@ -11,33 +11,6 @@
 using namespace herald::analysis::sampling;
 using namespace herald::datatype;
 
-herald::datatype::UUID dummyAgent = UUID::unknown();
-
-struct DummyExposureStore {
-
-};
-
-struct DummyExposureCallbackHandler {
-  template <typename IterT>
-  void exposureLevelChanged(
-    const herald::datatype::ExposureMetadata& meta,
-    IterT& iter,
-    IterT& end) noexcept {
-    // const herald::datatype::Exposure& exposure) noexcept {
-    called = true;
-    ++timesCalled;
-    agent = meta.agentId;
-    while (iter != end) {
-      currentExposureValue += iter->value;
-      ++iter;
-    }
-  }
-
-  herald::datatype::UUID agent = dummyAgent;
-  double currentExposureValue = 0;
-  bool called = false;
-  std::size_t timesCalled = 0;
-};
 
 TEST_CASE("exposure-empty", "[exposure][empty]") {
   SECTION("exposure-empty") {
@@ -77,7 +50,7 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler]") {
     srcData.push(240,-55);
     srcData.push(270,-55);
     srcData.push(300,-55);
-    DummyRSSISource src(1234,std::move(srcData));
+    DummySampleSource src(1234,std::move(srcData));
 
     herald::analysis::algorithms::RSSIMinutesAnalyser riskAnalyser{60}; // One RSSIMinute every 60 seconds of input
 
@@ -160,7 +133,7 @@ TEST_CASE("exposure-time-periods", "[exposure][periods][window]") {
     srcData.push(240,-55); // 135
     srcData.push(270,-55);
     srcData.push(300,-55); // 180 (i.e. 45 * 4)
-    DummyRSSISource src(1234,std::move(srcData));
+    DummySampleSource src(1234,std::move(srcData));
 
     herald::analysis::algorithms::RSSIMinutesAnalyser riskAnalyser{60}; // One RSSIMinute every 60 seconds of input
 
@@ -252,7 +225,7 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     srcData.push(240,-55); // 135
     srcData.push(270,-55);
     srcData.push(300,-55); // 180 (i.e. 45 * 4)
-    DummyRSSISource srcRssi(1234,std::move(srcData));
+    DummySampleSource srcRssi(1234,std::move(srcData));
 
     // Now add dummy light level source
     SampleList<Sample<Luminosity>,25> srcLightData;
@@ -261,13 +234,13 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     srcLightData.push(60,5);
     srcLightData.push(90,5);
     srcLightData.push(120,5);
-    srcLightData.push(150,5);
-    srcLightData.push(180,5);
-    srcLightData.push(210,5);
-    srcLightData.push(240,5);
-    srcLightData.push(270,5);
-    srcLightData.push(300,5);
-    DummyLightSource srcLight(1234,std::move(srcLightData));
+    srcLightData.push(150,50);
+    srcLightData.push(180,50);
+    srcLightData.push(210,50);
+    srcLightData.push(240,50);
+    srcLightData.push(270,50);
+    srcLightData.push(300,50);
+    DummySampleSource srcLight(1234,std::move(srcLightData)); // Type derived from Sample List Sample's type
 
 
     herald::analysis::algorithms::RSSIMinutesAnalyser riskAnalyser{60}; // One RSSIMinute every 60 seconds of input
@@ -322,12 +295,16 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     REQUIRE(addSuccess1);
     REQUIRE(addSuccess2);
     REQUIRE(em.sourceCount() == 2);
+    
+    // TODO Now Configure a Risk Manager, with a single algorithm taking into account indoor vs outdoor and RssiMinute values
+    // Note: Simply, this uses a luminosity mean value to determine indoors vs outdoors and multiplies the risk score by the given amount
+    // WARNING: THIS IS AN API SAMPLE ONLY AND IS NOT BASED ON EPIDEMIOLOGICAL STUDIES
 
     // Now run the values through
     em.enableRunning(); // required, else no changes will be recorded
     // WARNING: Unlike in real life, these data add operations occur in series, not in parallel
-    srcRssi.run(301, runner);
-    srcLight.run(301, runner);
+    srcRssi.run(301, runner); // NB correctly increments changeCount (to 1, which is modified throughout)
+    srcLight.run(301, runner); // Incorrectly never calls applyExposure in ExposureManager
     // Now fire off any exposure changes
     bool result = em.notifyOfChanges(); // TODO debug why this now produces no changes
 
@@ -340,6 +317,13 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     // Luminosity: 120 second windows, starting at 0 seconds, 300 second period in total - so 3 periods
     REQUIRE(2 == em.getCountByInstanceId(proxInstanceId));
     REQUIRE(3 == em.getCountByInstanceId(lumInstanceId));
+
+    // TODO Also determine that there are two risk values for the same time period (risk times are set to 120 seconds)
+    // Risk score should be:-
+    // - for first 60 seconds, 30 (our base level, at indoor lighting)
+    // - for next 60 seconds, 45 (actual RSSI, at indoor lighting)
+    // - then for remaining time, 45 * 2 (actual RSSI, at outdoor lighting) (note: our mean outside level of 10 is below 5 + 5 + 50 / 3, our first 'outside' lum values, so immediately becomes outdoors)
+    // - today's total therefore (30 + 45 + 90 + 90) = 255
   }
 }
 

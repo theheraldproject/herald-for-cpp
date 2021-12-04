@@ -122,7 +122,7 @@ TEST_CASE("variantset-listmanager", "[variantset][listmanager]") {
 TEST_CASE("analysisrunner-nodata", "[analysisrunner][nodata]") {
   SECTION("analysisrunner-nodata") {
     SampleList<Sample<RSSI>,25> srcData;
-    DummyRSSISource src(1234,std::move(srcData));
+    DummySampleSource src(1234,std::move(srcData));
 
     herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
 
@@ -152,7 +152,7 @@ TEST_CASE("analysisrunner-singledataitem", "[analysisrunner][singledataitem]") {
   SECTION("analysisrunner-singledataitem") {
     SampleList<Sample<RSSI>,25> srcData;
     srcData.push(50,-55);
-    DummyRSSISource src(1234,std::move(srcData));
+    DummySampleSource src(1234,std::move(srcData));
 
     herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
 
@@ -197,7 +197,7 @@ TEST_CASE("analysisrunner-basic", "[analysisrunner][basic]") {
     srcData.push(80,-55);
     srcData.push(90,-55);
     srcData.push(100,-55);
-    DummyRSSISource src(1234,std::move(srcData));
+    DummySampleSource src(1234,std::move(srcData));
 
     herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
 
@@ -259,7 +259,7 @@ TEST_CASE("analysisrunner-nonewdata", "[analysisrunner][nonewdata]") {
     srcData.push(80,-55);
     srcData.push(90,-55);
     srcData.push(100,-55);
-    DummyRSSISource src(1234,std::move(srcData));
+    DummySampleSource src(1234,std::move(srcData));
 
     herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
 

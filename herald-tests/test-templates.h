@@ -126,53 +126,56 @@ public:
   std::optional<herald::ble::BLEDeviceAttribute> attr;
 };
 
-template <std::size_t Sz>
-struct DummyRSSISource {
-  using value_type = herald::analysis::Sample<herald::datatype::RSSI>; // allows AnalysisRunner to introspect this class at compile time
 
-  DummyRSSISource(const std::size_t srcDeviceKey, 
-    herald::analysis::SampleList<herald::analysis::Sample<herald::datatype::RSSI>,Sz>&& data)
-    : key(srcDeviceKey), data(std::move(data)), lastAddedAt(0), lastRunAdded(0), hasRan(false) {};
-  ~DummyRSSISource() = default;
 
-  template <typename RunnerT>
-  void run(std::uint64_t timeTo, RunnerT& runner) {
-    // push through data at default rate
-    lastRunAdded = 0;
-    for (auto& v: data) {
-      // devList.push(v.taken,v.value); // copy data over (It's unusual taking a SampleList and sending to a SampleList)
-      auto sampleTime = v.taken.secondsSinceUnixEpoch();
-      // Only push data that hasn't been pushed yet, otherwise we get an ever increasing sample list
-      if ((!hasRan || sampleTime > lastAddedAt) && (sampleTime <= timeTo)) {
-        ++lastRunAdded;
-        runner.template newSample<herald::datatype::RSSI>(key,v);
-      }
-    }
-    runner.run(herald::datatype::Date(timeTo));
-    lastAddedAt = timeTo;
-    hasRan = true;
-  }
 
-  std::uint64_t getLastRunAdded() {
-    return lastRunAdded;
-  }
+struct DummyExposureStore {
 
-private:
-  std::size_t key;
-  herald::analysis::SampleList<herald::analysis::Sample<herald::datatype::RSSI>,Sz> data;
-  std::uint64_t lastAddedAt;
-  std::uint64_t lastRunAdded;
-  bool hasRan;
 };
 
-template <std::size_t Sz>
-struct DummyLightSource {
-  using value_type = herald::analysis::Sample<herald::datatype::Luminosity>; // allows AnalysisRunner to introspect this class at compile time
+struct DummyExposureCallbackHandler {
+  static herald::datatype::UUID dummyAgent;
 
-  DummyLightSource(const std::size_t srcDeviceKey, 
-    herald::analysis::SampleList<herald::analysis::Sample<herald::datatype::Luminosity>,Sz>&& data)
+  template <typename IterT>
+  void exposureLevelChanged(
+    const herald::datatype::ExposureMetadata& meta,
+    IterT& iter,
+    IterT& end) noexcept {
+    // const herald::datatype::Exposure& exposure) noexcept {
+    called = true;
+    ++timesCalled;
+    agent = meta.agentId;
+    while (iter != end) {
+      currentExposureValue += iter->value;
+      ++iter;
+    }
+  }
+
+  herald::datatype::UUID agent = dummyAgent;
+  double currentExposureValue = 0;
+  bool called = false;
+  std::size_t timesCalled = 0;
+};
+
+
+
+
+/**
+ * @brief Dummy source for any basic datatype that can be created from a double value.
+ * 
+ * Type of sample derived from use of the constructor
+ * 
+ * @tparam SampleT The sample type. E.g. RSSI or Luminosity
+ * @tparam Sz The maximum number of samples to store
+ */
+template <typename SampleT, std::size_t Sz>
+struct DummySampleSource {
+  using value_type = herald::analysis::Sample<SampleT>; // allows AnalysisRunner to introspect this class at compile time
+
+  DummySampleSource(const std::size_t srcDeviceKey, 
+    herald::analysis::SampleList<herald::analysis::Sample<SampleT>,Sz>&& data)
     : key(srcDeviceKey), data(std::move(data)), lastAddedAt(0), lastRunAdded(0), hasRan(false) {};
-  ~DummyLightSource() = default;
+  ~DummySampleSource() = default;
 
   template <typename RunnerT>
   void run(std::uint64_t timeTo, RunnerT& runner) {
@@ -184,7 +187,7 @@ struct DummyLightSource {
       // Only push data that hasn't been pushed yet, otherwise we get an ever increasing sample list
       if ((!hasRan || sampleTime > lastAddedAt) && (sampleTime <= timeTo)) {
         ++lastRunAdded;
-        runner.template newSample<herald::datatype::Luminosity>(key,v);
+        runner.template newSample<SampleT>(key,v);
       }
     }
     runner.run(herald::datatype::Date(timeTo));
@@ -198,7 +201,7 @@ struct DummyLightSource {
 
 private:
   std::size_t key;
-  herald::analysis::SampleList<herald::analysis::Sample<herald::datatype::Luminosity>,Sz> data;
+  herald::analysis::SampleList<herald::analysis::Sample<SampleT>,Sz> data;
   std::uint64_t lastAddedAt;
   std::uint64_t lastRunAdded;
   bool hasRan;
