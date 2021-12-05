@@ -3,33 +3,29 @@
         {
             "name": "Win64",
             "includePath": [
-                "${default}",
-                "${workspaceFolder}/herald/include"
+                "${workspaceFolder}"
+                // "${workspaceFolder}/herald/include",
+                // "${workspaceFolder}/herald-tests"
             ],
-            "defines": [
-                "_DEBUG",
-                "UNICODE",
-                "_UNICODE"
-            ],
-            "windowsSdkVersion": "10.0.19041.0",
-            "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.27.29110/bin/Hostx64/x64/cl.exe",
+            // "defines": [
+            //     "_DEBUG",
+            //     "UNICODE",
+            //     "_UNICODE"
+            // ],
+            // "windowsSdkVersion": "10.0.19041.0",
+            // "compilerPath": "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Tools/MSVC/14.27.29110/bin/Hostx64/x64/cl.exe",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "msvc-x64",
-            "configurationProvider": "ms-vscode.cmake-tools",
-            "browse": {
-                "path": [
-                    "${workspaceFolder}",
-                    "${workspaceFolder}/herald/include"
-                ],
-                "limitSymbolsToIncludedHeaders": true
-            }
+            // "intelliSenseMode": "msvc-x64",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "configurationProvider": "ms-vscode.cmake-tools"
         },
         {
             "name": "zephyr",
             "includePath": [
                 "${default}",
                 "${workspaceFolder}/herald/include",
+                "${workspaceFolder}/herald-tests",
                 "${ZEPHYR_BASE}/include",
                 "${ZEPHYR_BASE}/../nrf/include"
             ],
@@ -49,6 +45,8 @@
                 "path": [
                     "${workspaceFolder}",
                     "${workspaceFolder}/herald/include",
+                    "${workspaceFolder}/herald/src",
+                    "${workspaceFolder}/herald-tests",
                     "${ZEPHYR_BASE}/include",
                     "${ZEPHYR_BASE}/../nrf/include"
                 ],

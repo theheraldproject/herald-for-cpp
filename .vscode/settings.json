@@ -109,5 +109,9 @@
     "board": "nrf52840dk_nrf52840",
     "arch": "arm",
     "dir": "${ZEPHYR_BASE}/boards/arm/nrf52840dk_nrf52840"
+  },
+  "C_Cpp.intelliSenseMemoryLimit": 16384,
+  "editor.quickSuggestions": {
+    "other": true
   }
 }

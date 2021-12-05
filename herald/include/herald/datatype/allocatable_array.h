@@ -204,13 +204,14 @@ private:
     std::size_t count = 0;
     while (idx < max_size) {
       if (m_allocated.test(idx)) {
-        lastMatchedIndex = idx;
+        // Increment count
+        ++count;
+        // Now check if we're at the virtualIndex'th allocated element
         if (virtualIndex == count - 1) {
           // return this index
           return idx;
         }
-        // Else just increment count
-        ++count;
+        lastMatchedIndex = idx;
       }
       ++idx;
     }

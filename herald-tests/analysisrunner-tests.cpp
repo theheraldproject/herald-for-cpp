@@ -54,6 +54,45 @@ private:
 };
 
 
+struct DummyBrightnessDelegate {
+  using value_type = RunningMean<Luminosity>;
+
+  DummyBrightnessDelegate() : lastSampledID(0), brightness() {};
+  DummyBrightnessDelegate(const DummyBrightnessDelegate&) = delete; // copy ctor deleted
+  DummyBrightnessDelegate(DummyBrightnessDelegate&& other) noexcept : lastSampledID(other.lastSampledID), brightness(std::move(other.brightness)) {} // move ctor
+  ~DummyBrightnessDelegate() {};
+
+  DummyBrightnessDelegate& operator=(DummyBrightnessDelegate&& other) noexcept {
+    lastSampledID = other.lastSampledID;
+    std::swap(brightness,other.brightness);
+    return *this;
+  }
+
+  // specific override of template
+  void newSample(SampledID sampled, Sample<RunningMean<Luminosity>> sample) {
+    lastSampledID = sampled;
+    brightness.push(sample);
+  }
+
+  void reset() {
+    brightness.clear();
+    lastSampledID = 0;
+  }
+
+  // Test only methods
+  SampledID lastSampled() {
+    return lastSampledID;
+  }
+
+  const SampleList<Sample<RunningMean<Luminosity>>,25>& samples() {
+    return brightness;
+  }
+
+private:
+  SampledID lastSampledID;
+  SampleList<Sample<RunningMean<Luminosity>>,25> brightness;
+};
+
 TEST_CASE("variantset-basic", "[variantset][basic]") {
   SECTION("variantset-basic") {
     herald::analysis::VariantSet<int,double> vs;
@@ -174,6 +213,60 @@ TEST_CASE("analysisrunner-singledataitem", "[analysisrunner][singledataitem]") {
 
     auto& samples = delegateRef.samples();
     REQUIRE(samples.size() == 1); // 1 as single data item
+  }
+}
+
+
+/// Single data item use case with 1 data item, no failures, correct summary output
+TEST_CASE("analysisrunner-singledataitem-twoanalyses", "[analysisrunner][singledataitem][twoanalyses][multivariate]") {
+  SECTION("analysisrunner-singledataitem-twoanalyses") {
+    SampleList<Sample<RSSI>,25> srcData;
+    srcData.push(50,-55);
+    DummySampleSource src(1234,std::move(srcData));
+    
+    SampleList<Sample<Luminosity>,15> srcLightData;
+    srcLightData.push(40,12);
+    srcLightData.push(50,12);
+    srcLightData.push(60,12);
+    DummySampleSource srcLight(5678,std::move(srcLightData));
+
+    herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
+    herald::analysis::algorithms::RunningMeanAnalyser<herald::datatype::Luminosity,2> meanLight;
+
+    DummyDistanceDelegate myDelegate;
+    DummyBrightnessDelegate myBrightnessDelegate;
+    herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate),std::move(myBrightnessDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
+    herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser), std::move(meanLight)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
+
+    herald::analysis::AnalysisRunner<
+      herald::analysis::AnalysisDelegateManager<
+        DummyDistanceDelegate,
+        DummyBrightnessDelegate
+      >,
+      herald::analysis::AnalysisProviderManager<
+        herald::analysis::algorithms::distance::FowlerBasicAnalyser,
+        herald::analysis::algorithms::RunningMeanAnalyser<herald::datatype::Luminosity,2>
+      >,
+      RSSI,Distance,Luminosity,RunningMean<Luminosity>
+    > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
+
+    src.run(140,runner);
+    srcLight.run(160,runner);
+    REQUIRE(src.getLastRunAdded() == 1); // Single data item
+    REQUIRE(srcLight.getLastRunAdded() == 3); // Three data items
+
+    auto& delegateRef = adm.get<DummyDistanceDelegate>();
+    REQUIRE(delegateRef.lastSampled() == 1234); // ran once, past 50, for SampleID=1234
+
+    auto& samples = delegateRef.samples();
+    REQUIRE(samples.size() == 1); // 1 as single data item (for THIS delegate)
+    
+
+    auto& delegateBRef = adm.get<DummyBrightnessDelegate>();
+    REQUIRE(delegateBRef.lastSampled() == 5678); // ran once, past 50, for SampleID=1234
+
+    auto& samplesB = delegateBRef.samples();
+    REQUIRE(samplesB.size() == 1); // 1 as only one mean generated (one run) for this variable
   }
 }
 

@@ -61,6 +61,13 @@ namespace {
     UUID sensorInstanceId = UUID::unknown();
     Date periodStart = Date{0};
     Date periodEnd = Date{0};
+
+    bool operator==(const ExposureChangeReference& other) const noexcept {
+      return sensorInstanceId == other.sensorInstanceId;
+    }
+    bool operator!=(const ExposureChangeReference& other) const noexcept {
+      return sensorInstanceId != other.sensorInstanceId;
+    }
   };
 }
 using DefaultExposureManager = ExposureManager<DefaultNullExposureCallbackHandler,8,DefaultDevNullExposureStore>;
@@ -103,7 +110,7 @@ public:
 
   ~ExposureManagerDelegate() noexcept = default;
 
-  ExposureManagerDelegate& operator=(ExposureManagerDelegate& toMove) noexcept {
+  ExposureManagerDelegate& operator=(ExposureManagerDelegate&& toMove) noexcept {
     manager = toMove.manager;
     return *this;
   }
@@ -150,13 +157,17 @@ public:
       store(initialExposureStore),
       exposures(),
       changes(),
-      changeCount(0),
+      // changeCount(0),
       anchor(Date{}), // Default to instantiation DateTime
       period(TimeInterval::hours(24)), // Default to one day interval
       running(false)
   {
     ;
   }
+
+  // Once created, we must always be referenced - never copied
+  ExposureManager(const ExposureManager&) = delete;
+  ExposureManager(ExposureManager&&) = delete;
 
   ~ExposureManager() noexcept = default;
 
@@ -201,6 +212,7 @@ public:
     if (exposures.size() >= max_size) {
       return false;
     }
+    // TODO check if we've already entered this source
     exposures.add(ExposureArray<max_size>{
       ExposureMetadata{
         .agentId = agent, 
@@ -229,7 +241,6 @@ public:
     for (std::size_t mp = pos;mp < count - 1;++mp) {
       exposures[mp] = exposures[mp + 1];
     }
-    --count;
     return true;
   }
 
@@ -266,51 +277,7 @@ public:
   template <typename ModelT>
   void applyAdditionalExposure(const analysis::SampledID sampled, const analysis::Sample<ModelT> sample) noexcept {
     // Link to relevant Exposure by ModelT
-    std::size_t pos = findMetaByModelClassId(ModelT::modelClassId);
-    if (pos >= max_size) {
-      return;
-    }
-    // Use SampledID as the instanceId for now (might not always be the case depending on source/model)
-    auto& exposureArray = exposures[pos].contents();
-    if (0 == exposureArray.size()) {
-      exposureArray.add(Exposure{
-        .periodStart = sample.taken,
-        .periodEnd = sample.taken,
-        .value = (double)sample.value, // explicit conversion
-        .confidence = 1.0 // TODO pass through analysis API confidence, if supported (compilation option?)
-      });
-      // Record change for later notification
-      recordChange(exposures[pos].getTag().sensorInstanceId, sample.taken, sample.taken);
-    } else {
-      // Ensure split by period is observed
-      // TODO take into account of anchor time, rather than always rely upon startTime of previous element (which may not align exactly with anchor time + n*period)
-      // get last exposure
-      auto& last = exposureArray[exposureArray.size() - 1];
-      // determine if last start time plus this time is greater than window size
-      if (last.periodStart + period <= sample.taken) {
-        // if so, set endTime to window size, and create new element
-        last.periodEnd = last.periodStart + period;
-        exposureArray.add(Exposure{
-          .periodStart = (last.periodStart + period) >= sample.taken ? (last.periodStart + period) : sample.taken, // set to end time of previous period, to be sure, unless we've skipped 1 or more windows
-          .periodEnd = sample.taken,
-          .value = (double)sample.value, // explicit conversion
-          .confidence = 1.0 // TODO pass through analysis API confidence, if supported (compilation option?)
-        });
-        // Record change for later notification
-        recordChange(exposures[pos].getTag().sensorInstanceId, last.periodStart, sample.taken);
-      } else {
-        // if not, append
-        // Append value to time period
-        exposureArray[exposureArray.size() - 1] += Exposure{
-          .periodStart = sample.taken,
-          .periodEnd = sample.taken,
-          .value = (double)sample.value, // explicit conversion
-          .confidence = 1.0 // TODO pass through analysis API confidence, if supported (compilation option?)
-        };
-        // Record change for later notification
-        recordChange(exposures[pos].getTag().sensorInstanceId, exposureArray[0].periodStart, exposureArray[0].periodEnd);
-      }
-    }
+    applyAdditionalExposure(ModelT::modelClassId,sampled,sample.taken,(double)sample.value);
   }
 
   /**
@@ -320,11 +287,11 @@ public:
    * @return false If no notifications of changes occured
    */
   bool notifyOfChanges() noexcept {
-    if (0 == changeCount) {
+    if (0 == changes.size()) {
       return false;
     }
     bool anyNotified = false;
-    for (std::size_t changeIndex = 0; changeIndex < changeCount; ++changeIndex) {
+    for (std::size_t changeIndex = 0; changeIndex < changes.size(); ++changeIndex) {
       std::size_t instancePos = findMetaBySensorInstanceId(changes[changeIndex].sensorInstanceId);
       if (instancePos < max_size) {
         anyNotified = true;
@@ -336,7 +303,8 @@ public:
       }
     }
     // reset changes for the next run
-    changeCount = 0;
+    // changeCount = 0;
+    changes.clear();
     return anyNotified;
   }
 
@@ -355,19 +323,19 @@ public:
       // not found - return false
       return 0;
     }
-    return exposures[pos].contents().size();
+    auto sz = exposures[pos].contents().size();
+    return sz;
   }
 
 private:
   CallbackHandlerT& handler;
   ExposureStoreT& store;
 
-  /// /brief In memory ephemeral cached exposures
+  /// \brief In memory ephemeral cached exposures
   ExposureSet<max_size> exposures;
-  // std::size_t count;
 
-  std::array<ExposureChangeReference,max_size> changes;
-  std::size_t changeCount;
+  AllocatableArray<ExposureChangeReference,max_size> changes;
+  // std::size_t changeCount;
 
   Date anchor;
   TimeInterval period;
@@ -385,7 +353,10 @@ private:
 
   std::size_t findMetaBySensorInstanceId(const UUID& sensorInstanceId) const noexcept {
     for (std::size_t pos = 0;pos < exposures.size();++pos) {
-      if (exposures[pos].getTag().sensorInstanceId == sensorInstanceId) {
+      auto& exp = exposures[pos];
+      auto& t = exp.getTag();
+      auto& siid = t.sensorInstanceId;
+      if (siid == sensorInstanceId) {
         return pos;
       }
     }
@@ -394,11 +365,60 @@ private:
 
   std::size_t findMetaByModelClassId(const UUID& modelClassId) const noexcept {
     for (std::size_t pos = 0;pos < exposures.size();++pos) {
-      if (exposures[pos].getTag().modelClassId == modelClassId) {
+      auto& mcid = exposures[pos].getTag().modelClassId;
+      if (mcid == modelClassId) {
         return pos;
       }
     }
     return max_size;
+  }
+  
+  void applyAdditionalExposure(const UUID& modelId, const analysis::SampledID sampled, const Date& sampleTaken, const double sampleValue) noexcept {
+    std::size_t pos = findMetaByModelClassId(modelId);
+    if (pos >= max_size) {
+      return;
+    }
+    // Use SampledID as the instanceId for now (might not always be the case depending on source/model)
+    auto& exposureArray = exposures[pos].contents();
+    if (0 == exposureArray.size()) {
+      exposureArray.add(Exposure{
+        .periodStart = sampleTaken,
+        .periodEnd = sampleTaken,
+        .value = sampleValue, // explicit conversion
+        .confidence = 1.0 // TODO pass through analysis API confidence, if supported (compilation option?)
+      });
+      // Record change for later notification
+      recordChange(exposures[pos].getTag().sensorInstanceId, sampleTaken, sampleTaken);
+    } else {
+      // Ensure split by period is observed
+      // TODO take into account of anchor time, rather than always rely upon startTime of previous element (which may not align exactly with anchor time + n*period)
+      // get last exposure
+      auto& last = exposureArray[exposureArray.size() - 1];
+      // determine if last start time plus this time is greater than window size
+      if (last.periodStart + period <= sampleTaken) {
+        // if so, set endTime to window size, and create new element
+        last.periodEnd = last.periodStart + period;
+        exposureArray.add(Exposure{
+          .periodStart = (last.periodStart + period) >= sampleTaken ? (last.periodStart + period) : sampleTaken, // set to end time of previous period, to be sure, unless we've skipped 1 or more windows
+          .periodEnd = sampleTaken,
+          .value = sampleValue, // explicit conversion
+          .confidence = 1.0 // TODO pass through analysis API confidence, if supported (compilation option?)
+        });
+        // Record change for later notification
+        recordChange(exposures[pos].getTag().sensorInstanceId, last.periodStart, sampleTaken);
+      } else {
+        // if not, append
+        // Append value to time period
+        exposureArray[exposureArray.size() - 1] += Exposure{
+          .periodStart = sampleTaken,
+          .periodEnd = sampleTaken,
+          .value = sampleValue, // explicit conversion
+          .confidence = 1.0 // TODO pass through analysis API confidence, if supported (compilation option?)
+        };
+        // Record change for later notification
+        recordChange(exposures[pos].getTag().sensorInstanceId, exposureArray[0].periodStart, exposureArray[0].periodEnd);
+      }
+    }
   }
 
   void recordChange(const UUID& instanceId, const Date& periodStart, const Date& periodEnd) noexcept {
@@ -408,7 +428,7 @@ private:
     // Note including start and end dates for efficiency
     // Check for an existing change for this instanceId, and modify its start and end times
     std::size_t cpos = max_size;
-    for (std::size_t i = 0;i < changeCount;++i) {
+    for (std::size_t i = 0;i < changes.size();++i) {
       if (changes[i].sensorInstanceId == instanceId) {
         cpos = i;
       }
@@ -417,12 +437,12 @@ private:
       changes[cpos].periodStart = periodStart < changes[cpos].periodStart ? periodStart : changes[cpos].periodStart;
       changes[cpos].periodEnd = periodEnd > changes[cpos].periodEnd ? periodEnd : changes[cpos].periodEnd;
     } else {
-      changes[changeCount] = ExposureChangeReference{
+      changes.add(ExposureChangeReference{
         .sensorInstanceId = instanceId,
         .periodStart = periodStart,
         .periodEnd = periodEnd
-      };
-      ++changeCount;
+      });
+      // ++changeCount;
     }
   }
 };

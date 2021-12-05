@@ -240,7 +240,8 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     srcLightData.push(240,50);
     srcLightData.push(270,50);
     srcLightData.push(300,50);
-    DummySampleSource srcLight(1234,std::move(srcLightData)); // Type derived from Sample List Sample's type
+    // NOTE instance ID (5678) MUST be different from RSSI's as source sensors are different
+    DummySampleSource srcLight(5678,std::move(srcLightData)); // Type derived from Sample List Sample's type
 
 
     herald::analysis::algorithms::RSSIMinutesAnalyser riskAnalyser{60}; // One RSSIMinute every 60 seconds of input
@@ -259,7 +260,8 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
         herald::exposure::ExposureManagerDelegate<
           herald::datatype::RSSIMinute,
           herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore>
-        >,
+        >
+        ,
         herald::exposure::ExposureManagerDelegate<
           herald::datatype::RunningMean<herald::datatype::Luminosity>,
           herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore>
@@ -287,7 +289,8 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
       sensorClass::bluetoothProximityHerald, proxInstanceId);
     // Now add luminosity
     herald::datatype::UUID lumInstanceId = 
-      herald::datatype::UUID::fromString("88888888-1111-4011-8011-111111111111");
+      herald::datatype::UUID::fromString("88888888-1111-4011-8011-122221111111");
+    // TODO determine why the following line causes changeCount to be set to 0 instead of a value
     bool addSuccess2 = em.addSource<RunningMean<Luminosity>>(
       herald::datatype::agent::lightBrightness, 
       sensorClass::luninositySingleChannelLums, lumInstanceId);
@@ -304,9 +307,9 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     em.enableRunning(); // required, else no changes will be recorded
     // WARNING: Unlike in real life, these data add operations occur in series, not in parallel
     srcRssi.run(301, runner); // NB correctly increments changeCount (to 1, which is modified throughout)
-    srcLight.run(301, runner); // Incorrectly never calls applyExposure in ExposureManager
+    srcLight.run(301, runner);
     // Now fire off any exposure changes
-    bool result = em.notifyOfChanges(); // TODO debug why this now produces no changes
+    bool result = em.notifyOfChanges(); // Note: Was failing because of substitution failure in analysis API due to SampleList iterator not supporting const
 
     // Now confirm callback values are the same with a different window
     REQUIRE(result); // A notification occured
@@ -314,9 +317,11 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
 
     // Now confirm we have the correct number of samples for each agent
     // RSSI: 120 second windows, starting at 60 seconds, 300 second period in total - so 2 periods
-    // Luminosity: 120 second windows, starting at 0 seconds, 300 second period in total - so 3 periods
-    REQUIRE(2 == em.getCountByInstanceId(proxInstanceId));
-    REQUIRE(3 == em.getCountByInstanceId(lumInstanceId));
+    // Luminosity: 120 second windows, starting at 0 seconds, 300 second period in total, but only ran once so average gives 1 result only
+    REQUIRE(1 == em.getCountByInstanceId(lumInstanceId));
+    // Check luminosity hasn't overwritten rssi prox values
+    auto cnt = em.getCountByInstanceId(proxInstanceId);
+    REQUIRE(2 == cnt);
 
     // TODO Also determine that there are two risk values for the same time period (risk times are set to 120 seconds)
     // Risk score should be:-

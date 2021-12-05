@@ -174,9 +174,10 @@ struct RunningMeanAggregate {
 
   RunningMeanAggregate() : run(1), values() {}
   RunningMeanAggregate(const RunningMeanAggregate<ValT,MaxRecentValues>& other) : run(other.run), values() {
-    // for (const auto& v: other.values) {
-    //   values.add(v);
-    // }
+    auto iter = other.values.begin();
+    for (;iter != other.values.end();++iter) {
+      values.push(*iter);
+    }
   }
   RunningMeanAggregate(RunningMeanAggregate<ValT,MaxRecentValues>&& other) : run(other.run), values() {
   //   for (auto& v: other.values) {
