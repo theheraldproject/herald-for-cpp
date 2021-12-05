@@ -70,12 +70,16 @@ set(HERALD_HEADERS
   ${HERALD_BASE}/include/herald/datatype/sensor_type.h
   ${HERALD_BASE}/include/herald/datatype/sha256.h
   ${HERALD_BASE}/include/herald/datatype/signal_characteristic_data.h
+  ${HERALD_BASE}/include/herald/datatype/subject_parameters.h
   ${HERALD_BASE}/include/herald/datatype/target_identifier.h
   ${HERALD_BASE}/include/herald/datatype/time_interval.h
   ${HERALD_BASE}/include/herald/datatype/wgs84.h
   ${HERALD_BASE}/include/herald/engine/activities.h
   ${HERALD_BASE}/include/herald/engine/coordinator.h
   ${HERALD_BASE}/include/herald/exposure/exposure_manager.h
+  ${HERALD_BASE}/include/herald/exposure/model.h
+  ${HERALD_BASE}/include/herald/exposure/parameters.h
+  ${HERALD_BASE}/include/herald/exposure/risk_manager.h
   ${HERALD_BASE}/include/herald/payload/payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/beacon/beacon_payload_data_supplier.h
   ${HERALD_BASE}/include/herald/payload/fixed/fixed_payload_data_supplier.h

@@ -71,7 +71,7 @@ class SensorDelegateSet {
 public:
   static constexpr std::size_t Size = sizeof...(SensorDelegateTs);
 
-  SensorDelegateSet(SensorDelegateTs&... dels) : 
+  SensorDelegateSet(SensorDelegateTs&... dels) noexcept : 
     //delegates({std::variant<std::reference_wrapper<SensorDelegateTs&...>>(std::reference_wrapper<SensorDelegateTs&...>(dels...))}) {
     // delegates(std::experimental::make_array({std::reference_wrapper<SensorDelegateTs&...>(dels...)})) {
     delegates(std::array<
@@ -80,6 +80,7 @@ public:
     >({std::variant<std::reference_wrapper<SensorDelegateTs>...>(dels)...})) {
     // addDelegates(0,dels...);
   }
+  ~SensorDelegateSet() noexcept = default;
 
   // auto begin() -> decltype(std::declval<std::array<
   //     std::variant<std::reference_wrapper<SensorDelegateTs>...>
@@ -96,7 +97,7 @@ public:
   // }
 
   /// \brief Detection of a target with an ephemeral identifier, e.g. BLE central detecting a BLE peripheral.
-  void sensor(SensorType sensor, const TargetIdentifier& didDetect) {
+  void sensor(SensorType sensor, const TargetIdentifier& didDetect) noexcept {
         for (auto& delegateV : delegates) {
       std::visit([sensor,didDetect](auto&& arg) {
         // ONLY INVOKE IF WE KNOW THIS FUNCTION EXISTS
@@ -108,7 +109,7 @@ public:
   }
 
   /// \brief Read payload data from target, e.g. encrypted device identifier from BLE peripheral after successful connection.
-  void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) {
+  void sensor(SensorType sensor, const PayloadData& didRead, const TargetIdentifier& fromTarget) noexcept {
     for (auto& delegateV : delegates) {
       std::visit([sensor,didRead,fromTarget](auto&& arg) {
         // ONLY INVOKE IF WE KNOW THIS FUNCTION EXISTS
@@ -120,7 +121,7 @@ public:
   }
 
   /// \brief Receive written immediate send data from target, e.g. important timing signal.
-  void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) {
+  void sensor(SensorType sensor, const ImmediateSendData& didReceive, const TargetIdentifier& fromTarget) noexcept {
     for (auto& delegateV : delegates) {
       std::visit([sensor,didReceive,fromTarget](auto&& arg) {
         // ONLY INVOKE IF WE KNOW THIS FUNCTION EXISTS
@@ -132,7 +133,7 @@ public:
   }
 
   /// \brief Read payload data of other targets recently acquired by a target, e.g. Android peripheral sharing payload data acquired from nearby iOS peripherals.
-  void sensor(SensorType sensor, const DataSections<8>& didShare, const TargetIdentifier& fromTarget) {
+  void sensor(SensorType sensor, const DataSections<8>& didShare, const TargetIdentifier& fromTarget) noexcept {
     for (auto& delegateV : delegates) {
       std::visit([sensor,didShare,fromTarget](auto&& arg) {
         // ONLY INVOKE IF WE KNOW THIS FUNCTION EXISTS
@@ -144,7 +145,7 @@ public:
   }
 
   /// \brief Measure proximity to target, e.g. a sample of RSSI values from BLE peripheral.
-  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) {
+  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget) noexcept {
     for (auto& delegateV : delegates) {
       std::visit([sensor,didMeasure,fromTarget](auto&& arg) {
         // ONLY INVOKE IF WE KNOW THIS FUNCTION EXISTS
@@ -157,7 +158,7 @@ public:
 
   /// \brief Detection of time spent at location, e.g. at specific restaurant between 02/06/2020 19:00 and 02/06/2020 21:00
   template <typename LocationT>
-  void sensor(SensorType sensor, const Location<LocationT>& didVisit) {
+  void sensor(SensorType sensor, const Location<LocationT>& didVisit) noexcept {
     for (auto& delegateV : delegates) {
       std::visit([sensor,didVisit](auto&& arg) {
         // ONLY INVOKE IF WE KNOW THIS FUNCTION EXISTS
@@ -169,7 +170,7 @@ public:
   }
 
   /// \brief Measure proximity to target with payload data. Combines didMeasure and didRead into a single convenient delegate method
-  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) {
+  void sensor(SensorType sensor, const Proximity& didMeasure, const TargetIdentifier& fromTarget, const PayloadData& withPayload) noexcept {
     for (auto& delegateV : delegates) {
       std::visit([sensor,didMeasure,fromTarget,withPayload](auto&& arg) {
         // ONLY INVOKE IF WE KNOW THIS FUNCTION EXISTS
@@ -181,7 +182,7 @@ public:
   }
 
   /// \brief Sensor state update
-  void sensor(SensorType sensor, const SensorState& didUpdateState) {
+  void sensor(SensorType sensor, const SensorState& didUpdateState) noexcept {
     for (auto& delegateV : delegates) {
       std::visit([sensor,didUpdateState](auto&& arg) {
         // ONLY INVOKE IF WE KNOW THIS FUNCTION EXISTS

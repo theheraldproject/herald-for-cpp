@@ -5,9 +5,9 @@
 #ifndef HERALD_AGGREGATES_H
 #define HERALD_AGGREGATES_H
 
-#include <map>
-#include <variant>
-#include <vector>
+#include <map> // Used in Mode
+#include <variant> // Used in aggregate::operator|()
+#include <vector> // Used in aggregate::operator|()
 // #include <iostream>
 
 #include "ranges.h"
@@ -44,6 +44,36 @@ struct Count {
 private:
   int count;
   int run;
+};
+
+struct Sum {
+  static constexpr int runs = 1;
+
+  Sum() : run(1), sum(0.0) {}
+  ~Sum() = default;
+
+  void beginRun(int thisRun) { // 1 indexed
+    run = thisRun;
+  }
+
+  template <typename ValT>
+  void map(ValT value) {
+    if (run > 1) return; // performance enhancement
+
+    sum += (double)value;
+  }
+
+  double reduce() {
+    return sum;
+  }
+
+  void reset() {
+    sum = 0.0;
+  }
+
+private:
+  int run;
+  double sum;
 };
 
 struct Minimum {
@@ -520,8 +550,10 @@ struct aggregate {
   }
 
 private:
+  // TODO replace vector in aggregate with std::array (as size is known at compile time)
   std::vector<std::variant<Aggs...>> aggregates;
 
+  // TODO refactor these functions as we've done for the Exposure API to add these in the constructor not via a method
   template <typename Last>
   void addAggregate(Last last) {
     aggregates.emplace_back(std::move(last));

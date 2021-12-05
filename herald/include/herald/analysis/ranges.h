@@ -13,9 +13,6 @@
 /// yet present in gcc-arm.
 
 #include <array>
-#include <map>
-#include <variant>
-#include <vector>
 #include <cstdint>
 #include <type_traits>
 

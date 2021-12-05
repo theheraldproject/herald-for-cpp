@@ -302,6 +302,25 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     // TODO Now Configure a Risk Manager, with a single algorithm taking into account indoor vs outdoor and RssiMinute values
     // Note: Simply, this uses a luminosity mean value to determine indoors vs outdoors and multiplies the risk score by the given amount
     // WARNING: THIS IS AN API SAMPLE ONLY AND IS NOT BASED ON EPIDEMIOLOGICAL STUDIES
+    herald::exposure::model::SampleDiseaseScreeningRiskModel sampleRM;
+    herald::exposure::RiskModels models{sampleRM};
+    herald::exposure::RiskParameters<8> myStats; // decays all values to double when set
+    myStats.set(herald::exposure::parameter::weight, 90.0); // I know, I know. It's referred to as weight in clinical literature.
+    // See BMJ Advice on clinical medicine definition of sex (NOT gender): https://www.bmj.com/content/372/bmj.n735/rr-0
+    // Also NHS Data Dictionary here: https://datadictionary.nhs.uk/classes/person_phenotypic_sex.html
+    // Note that phenotypic sex is not the same as chromosonal sex either. Clinical medicine uses Phenotypic sex generally.
+    myStats.set(herald::exposure::parameter::phenotypic_sex, (double)herald::datatype::phenotypic_sex::male); // male, female, indeterminate
+    myStats.set(herald::exposure::parameter::age, 21.0); // Honest...
+    herald::exposure::RiskManager rm{std::move(models), std::move(myStats)}; // All potential risk model classes linked at compile time (they are treated as singletons)
+    rm.setGlobalPeriodInterval(Date{0}, TimeInterval::seconds(240)); // Interval every 4 minutes, just so its different to other intervals used
+    // Note myStats may change over time, but are static/fixed from the point of view of a constantly running risk algorithm
+    
+    // We can have multiple risk model instances with different config for the same variables
+    herald::datatype::UUID sampleRMID = 
+      herald::datatype::UUID::fromString("7777777-1111-4011-8011-134341111111");
+    bool addedRM = rm.addRiskModel(sampleRMID, sampleRM, {}); // empty configuration to pass to it
+    REQUIRE(addedRM);
+    rm.addExposureSource(em);
 
     // Now run the values through
     em.enableRunning(); // required, else no changes will be recorded

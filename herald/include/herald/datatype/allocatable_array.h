@@ -88,6 +88,19 @@ public:
     return true;
   }
 
+  // /**
+  //  * @brief Helper to pass an initlist to the base value type
+  //  * 
+  //  * @tparam  
+  //  * @param args The initialiser list arguments
+  //  * @return true If the element is added
+  //  * @return false If the element cannot be added (i.e. the array is full)
+  //  */
+  // template <typename... InitListArgsTs>
+  // bool add(InitListArgsTs&... args) noexcept {
+  //   return add(ValBaseT{args...});
+  // }
+
   /// \brief Removes (all instances of, if UniqueMembers is false) an item from this array
   /// \note This applies the equality operator of the passed in 
   ///       value to each allocated object.
@@ -457,6 +470,94 @@ using TaggedArraySet = AllocatableArray<
   TaggedArray<TagT,ValBaseT,TaggedArraySize,TaggedArrayUniqueMembers>,
   SetSize,SetUniqueMembers
 >;
+
+
+/**
+ * @brief Represents a value within an ArrayMap
+ * 
+ * @tparam TagT The Tag type (same for all elements of the parent ArrayMap)
+ * @tparam ValT The value type (same for all elements of the parent ArrayMap)
+ * @tparam std::remove_cv<ValT>::type The base type without const or volatile
+ */
+template <typename TagT, typename ValT, typename ValBaseT = typename std::remove_cv<ValT>::type>
+struct ArrayMapPair {
+  TagT key;
+  ValBaseT value;
+
+  bool operator==(const ArrayMapPair& other) const noexcept {
+    return key == other.key;
+  }
+  
+  bool operator!=(const ArrayMapPair& other) const noexcept {
+    return key != other.key;
+  }
+};
+
+
+/**
+ * /brief An AllocatableArray where each value is linked to a metadata Tag instance
+ */
+template <typename TagT, typename ValT, 
+          std::size_t Size=8, bool UniqueMembers=true,
+          typename ValBaseT = typename std::remove_cv<ValT>::type,
+          typename AAT=AllocatableArray<ArrayMapPair<TagT,ValBaseT>,Size,UniqueMembers>
+         >
+struct ArrayMap {
+  using value_type = ValBaseT;
+  static constexpr std::size_t max_size = AAT::max_size;
+
+  ArrayMap() noexcept
+   : aa()
+  {
+    ;
+  }
+
+  ~ArrayMap() noexcept = default;
+
+  ValBaseT& get(const TagT& tag) const noexcept {
+    std::size_t pos = tagPosition(tag);
+    if (AAT::max_size == pos) {
+      return ValBaseT{};
+    }
+    return aa[pos].value;
+  }
+
+  bool set(const TagT& tag, const ValT& value) noexcept {
+    std::size_t pos = tagPosition(tag);
+    if (AAT::max_size == pos) {
+      if (aa.size() == AAT::max_size) {
+        return false;
+      }
+      // TODO determine if we even need to do this logic, given UniqueMemebers = true
+      aa.add(ArrayMapPair<TagT,ValBaseT>{.key = tag, .value = value});
+    } else {
+      aa[pos].value = value;
+    }
+    return true;
+  }
+
+  std::size_t size() const noexcept {
+    return aa.size();
+  }
+
+  bool hasTag(const TagT& tag) const noexcept {
+    return AAT::max_size != tagPosition(tag);
+  }
+
+private:
+  AAT aa;
+
+  std::size_t tagPosition(const TagT& tag) const noexcept {
+    for (std::size_t pos = 0;pos < aa.size();++pos) {
+      if (aa[pos].key == tag) {
+        return pos;
+      }
+    }
+    return AAT::max_size;
+  }
+};
+
+
 
 }
 }
