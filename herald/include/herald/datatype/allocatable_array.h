@@ -514,12 +514,13 @@ struct ArrayMap {
 
   ~ArrayMap() noexcept = default;
 
-  ValBaseT& get(const TagT& tag) const noexcept {
+  bool get(const TagT& tag, ValBaseT& toSet) const noexcept {
     std::size_t pos = tagPosition(tag);
     if (AAT::max_size == pos) {
-      return ValBaseT{};
+      return false;
     }
-    return aa[pos].value;
+    toSet = aa[pos].value;
+    return true;
   }
 
   bool set(const TagT& tag, const ValT& value) noexcept {

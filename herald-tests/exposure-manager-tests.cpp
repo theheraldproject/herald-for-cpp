@@ -8,6 +8,8 @@
 
 #include "test-templates.h"
 
+#include <optional>
+
 using namespace herald::analysis::sampling;
 using namespace herald::datatype;
 

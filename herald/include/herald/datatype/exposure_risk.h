@@ -15,6 +15,11 @@ namespace datatype {
 /** /brief Specific strongly typed override of UUID for Agents **/
 struct Agent : public UUID {
 public:
+  constexpr Agent(const UUID& copyFrom) noexcept : UUID(copyFrom)
+  {
+    ;
+  }
+
   constexpr Agent(UUID::value_type shortCode) noexcept
    : UUID(std::array<value_type, max_size>{0})
   {

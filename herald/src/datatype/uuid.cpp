@@ -78,12 +78,6 @@ UUID::UUID(UUID&& from) noexcept
   ;
 }
 
-UUID::UUID(const UUID& from) noexcept
- : mData(from.mData),mValid(from.mValid)
-{
-  ;
-}
-
 // private ctor
 UUID::UUID(std::array<value_type, 16> data, bool isValid) noexcept
  : mData(data),mValid(isValid)

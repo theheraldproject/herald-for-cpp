@@ -19,6 +19,7 @@ class UUID {
 public:
   using value_type = uint8_t;
   static constexpr std::size_t max_size = 16;
+  using data_type = std::array<value_type,max_size>;
 
   static UUID fromString(const std::string& from) noexcept;
   // static UUID fromString(const char* from) noexcept;
@@ -58,11 +59,19 @@ public:
   constexpr UUID(const std::array<value_type, max_size>& from) noexcept
    : mData(from), mValid(false)
   {
-    ;
+    constexpr value_type M = 0x40; // 7th byte = 0100 in binary for MSB 0000 for LSB - v4 UUID
+    constexpr value_type N = 0x80; // 9th byte = 1000 in binary for MSB 0000 for LSB - variant 1
+    mData[6] = (0x0f & mData[6]) | M; // blanks out first 4 bits
+    mData[8] = (0x3f & mData[8]) | N; // blanks out first 2 bits
+    mValid = true;
   }
   UUID(const char* from) noexcept;
   UUID(UUID&& from) noexcept;
-  UUID(const UUID& from) noexcept;
+  constexpr UUID(const UUID& from) noexcept
+   : mData(from.mData),mValid(from.mValid)
+  {
+    ;
+  }
   ~UUID() noexcept = default;
 
   UUID& operator=(const UUID& other) noexcept; // copy assign

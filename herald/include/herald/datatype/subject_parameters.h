@@ -15,7 +15,7 @@ namespace datatype {
  * 
  * \note I'll risk exceeding 255 years.
  */
-using Age = std::uint8_t;
+using Age = std::uint8_t; // TODO need to conver this to struct to allow assign operator from different types, and setting via a read-write parameter to a function call
 
 /**
  * @brief Mass in KG.

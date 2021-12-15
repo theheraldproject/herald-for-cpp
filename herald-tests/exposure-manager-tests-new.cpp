@@ -15,12 +15,13 @@ using namespace herald::datatype;
 TEST_CASE("exposure-empty", "[exposure][empty]") {
   SECTION("exposure-empty") {
     // Create exposure manager with no diseases(agents)
-    DummyExposureCallbackHandler dh;
+    NoOptPassthrough nopt;
+    DummyExposureCallbackHandlerNoOpt dh{nopt};
     DummyExposureStore des;
-    herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore> em(dh,des);
+    herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore> em(dh,des);
 
     // check static max size
-    REQUIRE(herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore>::max_size == 8);
+    REQUIRE(herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore>::max_size == 8);
     // Check configuration is correct
     REQUIRE(em.sourceCount() == 0);
     // Ensure it is not running by default
@@ -33,9 +34,10 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler]") {
   SECTION("exposure-callback-handler") {
     // Create EM so we can reference its delegate
     // Create exposure manager
-    DummyExposureCallbackHandler dh;
+    NoOptPassthrough nopt;
+    DummyExposureCallbackHandlerNoOpt dh{nopt};
     DummyExposureStore des;
-    herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore> em(dh,des);
+    herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore> em(dh,des);
 
     // Create underlying AnalysisRunner first
     SampleList<Sample<RSSI>,25> srcData;
@@ -64,7 +66,7 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler]") {
       herald::analysis::AnalysisDelegateManager<
         herald::exposure::ExposureManagerDelegate<
           herald::datatype::RSSIMinute,
-          herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore>
+          herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore>
         >
       >,
       herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::RSSIMinutesAnalyser>,
@@ -112,9 +114,10 @@ TEST_CASE("exposure-time-periods", "[exposure][periods][window]") {
   SECTION("exposure-time-periods") {
     // Create EM so we can reference its delegate
     // Create exposure manager
-    DummyExposureCallbackHandler dh;
+    NoOptPassthrough nopt;
+    DummyExposureCallbackHandlerNoOpt dh{nopt};
     DummyExposureStore des;
-    herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore> em(dh,des);
+    herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore> em(dh,des);
 
     bool setGlobal = em.setGlobalPeriodInterval(0,120); // 120 second windows starting at DateTime==0
     REQUIRE(setGlobal);
@@ -147,7 +150,7 @@ TEST_CASE("exposure-time-periods", "[exposure][periods][window]") {
       herald::analysis::AnalysisDelegateManager<
         herald::exposure::ExposureManagerDelegate<
           herald::datatype::RSSIMinute,
-          herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore>
+          herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore>
         >
       >,
       herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::RSSIMinutesAnalyser>,
@@ -202,11 +205,44 @@ TEST_CASE("exposure-time-periods", "[exposure][periods][window]") {
 
 TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate]") {
   SECTION("risk-multi-variate") {
+    
+    // TODO Now Configure a Risk Manager, with a single algorithm taking into account indoor vs outdoor and RssiMinute values
+    // Note: Simply, this uses a luminosity mean value to determine indoors vs outdoors and multiplies the risk score by the given amount
+    // WARNING: THIS IS AN API SAMPLE ONLY AND IS NOT BASED ON EPIDEMIOLOGICAL STUDIES
+    herald::exposure::model::SampleDiseaseScreeningRiskModel sampleRM;
+    herald::exposure::RiskModels models{sampleRM};
+    herald::exposure::RiskParameters<8> myStats; // decays all values to double when set
+    myStats.set(herald::exposure::parameter::weight, 90.0); // I know, I know. It's referred to as weight in clinical literature.
+    // See BMJ Advice on clinical medicine definition of sex (NOT gender): https://www.bmj.com/content/372/bmj.n735/rr-0
+    // Also NHS Data Dictionary here: https://datadictionary.nhs.uk/classes/person_phenotypic_sex.html
+    // Note that phenotypic sex is not the same as chromosonal sex either. Clinical medicine uses Phenotypic sex generally.
+    myStats.set(herald::exposure::parameter::phenotypic_sex, (double)herald::datatype::phenotypic_sex::male); // male, female, indeterminate
+    myStats.set(herald::exposure::parameter::age, 21.0); // Honest...
+    DummyRiskScoreStore dummyRiskScoreStore;
+    herald::exposure::RiskManager<
+      herald::exposure::RiskModels<herald::exposure::model::SampleDiseaseScreeningRiskModel>, 
+      herald::exposure::RiskParameters<8>, 
+      8,
+      DummyRiskScoreStore
+    > rm{
+      std::move(models), std::move(myStats), dummyRiskScoreStore
+    }; // All potential risk model classes linked at compile time (they are treated as singletons)
+    rm.setGlobalPeriodInterval(Date{0}, TimeInterval::seconds(240)); // Interval every 4 minutes, just so its different to other intervals used
+    // Note myStats may change over time, but are static/fixed from the point of view of a constantly running risk algorithm
+
+    using RMECA = herald::exposure::RiskManagerExposureCallbackAdapter<herald::exposure::RiskManager<
+      herald::exposure::RiskModels<herald::exposure::model::SampleDiseaseScreeningRiskModel>, 
+      herald::exposure::RiskParameters<8>, 
+      8,
+      DummyRiskScoreStore
+    >>;
+    RMECA riskExposureCallbackAdapter{rm};
+
     // Create EM so we can reference its delegate
     // Create exposure manager
-    DummyExposureCallbackHandler dh;
+    DummyExposureCallbackHandler dh{riskExposureCallbackAdapter};
     DummyExposureStore des;
-    herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore> em(dh,des);
+    herald::exposure::ExposureManager<DummyExposureCallbackHandler<RMECA>,8, DummyExposureStore> em(dh,des);
 
     bool setGlobal = em.setGlobalPeriodInterval(0,120); // 120 second windows starting at DateTime==0
     REQUIRE(setGlobal);
@@ -259,12 +295,12 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
       herald::analysis::AnalysisDelegateManager<
         herald::exposure::ExposureManagerDelegate<
           herald::datatype::RSSIMinute,
-          herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore>
+          herald::exposure::ExposureManager<DummyExposureCallbackHandler<RMECA>, 8, DummyExposureStore>
         >
         ,
         herald::exposure::ExposureManagerDelegate<
           herald::datatype::RunningMean<herald::datatype::Luminosity>,
-          herald::exposure::ExposureManager<DummyExposureCallbackHandler,8, DummyExposureStore>
+          herald::exposure::ExposureManager<DummyExposureCallbackHandler<RMECA>, 8, DummyExposureStore>
         >
       >,
       herald::analysis::AnalysisProviderManager<
@@ -299,28 +335,14 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     REQUIRE(addSuccess2);
     REQUIRE(em.sourceCount() == 2);
     
-    // TODO Now Configure a Risk Manager, with a single algorithm taking into account indoor vs outdoor and RssiMinute values
-    // Note: Simply, this uses a luminosity mean value to determine indoors vs outdoors and multiplies the risk score by the given amount
-    // WARNING: THIS IS AN API SAMPLE ONLY AND IS NOT BASED ON EPIDEMIOLOGICAL STUDIES
-    herald::exposure::model::SampleDiseaseScreeningRiskModel sampleRM;
-    herald::exposure::RiskModels models{sampleRM};
-    herald::exposure::RiskParameters<8> myStats; // decays all values to double when set
-    myStats.set(herald::exposure::parameter::weight, 90.0); // I know, I know. It's referred to as weight in clinical literature.
-    // See BMJ Advice on clinical medicine definition of sex (NOT gender): https://www.bmj.com/content/372/bmj.n735/rr-0
-    // Also NHS Data Dictionary here: https://datadictionary.nhs.uk/classes/person_phenotypic_sex.html
-    // Note that phenotypic sex is not the same as chromosonal sex either. Clinical medicine uses Phenotypic sex generally.
-    myStats.set(herald::exposure::parameter::phenotypic_sex, (double)herald::datatype::phenotypic_sex::male); // male, female, indeterminate
-    myStats.set(herald::exposure::parameter::age, 21.0); // Honest...
-    herald::exposure::RiskManager rm{std::move(models), std::move(myStats)}; // All potential risk model classes linked at compile time (they are treated as singletons)
-    rm.setGlobalPeriodInterval(Date{0}, TimeInterval::seconds(240)); // Interval every 4 minutes, just so its different to other intervals used
-    // Note myStats may change over time, but are static/fixed from the point of view of a constantly running risk algorithm
     
     // We can have multiple risk model instances with different config for the same variables
     herald::datatype::UUID sampleRMID = 
-      herald::datatype::UUID::fromString("7777777-1111-4011-8011-134341111111");
-    bool addedRM = rm.addRiskModel(sampleRMID, sampleRM, {}); // empty configuration to pass to it
+      herald::datatype::UUID::fromString("77777777-1111-4011-8011-134341111111");
+    herald::datatype::Agent riskModelOutputAgent{55}; // some nominal output agent ID
+    bool addedRM = rm.addRiskModel(sampleRMID, riskModelOutputAgent, sampleRM); // empty configuration to pass to it
     REQUIRE(addedRM);
-    rm.addExposureSource(em);
+    // rm.addExposureSource(em);
 
     // Now run the values through
     em.enableRunning(); // required, else no changes will be recorded
@@ -329,6 +351,7 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     srcLight.run(301, runner);
     // Now fire off any exposure changes
     bool result = em.notifyOfChanges(); // Note: Was failing because of substitution failure in analysis API due to SampleList iterator not supporting const
+    // The above should update the Risk Manager (rm) once too
 
     // Now confirm callback values are the same with a different window
     REQUIRE(result); // A notification occured
@@ -342,12 +365,36 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     auto cnt = em.getCountByInstanceId(proxInstanceId);
     REQUIRE(2 == cnt);
 
-    // TODO Also determine that there are two risk values for the same time period (risk times are set to 120 seconds)
+    // Also determine that there are two risk values for the same time period (risk times are set to 120 seconds)
     // Risk score should be:-
     // - for first 60 seconds, 30 (our base level, at indoor lighting)
     // - for next 60 seconds, 45 (actual RSSI, at indoor lighting)
     // - then for remaining time, 45 * 2 (actual RSSI, at outdoor lighting) (note: our mean outside level of 10 is below 5 + 5 + 50 / 3, our first 'outside' lum values, so immediately becomes outdoors)
     // - today's total therefore (30 + 45 + 90 + 90) = 255
+    herald::datatype::Date riskAnchorDate{0};
+    herald::datatype::TimeInterval riskInterval = TimeInterval::seconds(240);
+    REQUIRE(rm.getGlobalPeriodAnchor() == riskAnchorDate);
+    REQUIRE(rm.getGlobalPeriodInterval() == riskInterval);
+    REQUIRE(4 == rm.getRiskScoreCount(sampleRMID));
+
+    RiskScore total;
+    std::size_t callCount = 0;
+    bool setTotal = false;
+    bool rmCallableResult = rm.forEachRiskScore(sampleRMID, [&total,&setTotal,&callCount] (const UUID& riskModelId, const RiskScore& score) -> bool {
+      if (!setTotal) {
+        total = score;
+        setTotal = true; // TODO consider if calling += on an uninitialised RiskScore should set the risk metadata as well as the score itself
+      } else {
+        total += score;
+      }
+      ++callCount;
+
+      // continue to return results
+      return true;
+    });
+    REQUIRE(rmCallableResult);
+    REQUIRE(4 == callCount);
+    REQUIRE(255 == total.value); // TODO consider approximate bounds for double value
   }
 }
 
@@ -360,7 +407,7 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
 // [Value] 
 
 // [Who]   As a risk application user
-// [What]  I need to record static (E.g. genetic sex) and variable (E.g. weight) biographic data over a long time period
+// [What]  I need to record static (E.g. phylogenic sex) and variable (E.g. weight) biographic data over a long time period
 // [Value] To ensure risk algorithms I'm relying on can take these factors in to account
 
 // [Who]   As a risk application provider

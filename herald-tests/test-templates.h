@@ -133,7 +133,27 @@ struct DummyExposureStore {
 
 };
 
+
+struct DummyRiskScoreStore {
+
+};
+
+struct NoOptPassthrough {
+  template <typename IterT>
+  void exposureLevelChanged(
+    const herald::datatype::ExposureMetadata& meta,
+    IterT& iter,
+    IterT& end) noexcept
+  {
+    ;
+  }
+};
+
+template <typename PassthroughT = NoOptPassthrough>
 struct DummyExposureCallbackHandler {
+  DummyExposureCallbackHandler(PassthroughT& ptt) : passThrough(ptt)
+  {}
+
   static herald::datatype::UUID dummyAgent;
 
   template <typename IterT>
@@ -141,6 +161,7 @@ struct DummyExposureCallbackHandler {
     const herald::datatype::ExposureMetadata& meta,
     IterT& iter,
     IterT& end) noexcept {
+    auto iterCopy = iter;
     // const herald::datatype::Exposure& exposure) noexcept {
     called = true;
     ++timesCalled;
@@ -149,15 +170,24 @@ struct DummyExposureCallbackHandler {
       currentExposureValue += iter->value;
       ++iter;
     }
+
+    passThrough.exposureLevelChanged(meta,iterCopy,end);
   }
 
   herald::datatype::UUID agent = dummyAgent;
   double currentExposureValue = 0;
   bool called = false;
   std::size_t timesCalled = 0;
+
+  PassthroughT& passThrough;
 };
 
+using DummyExposureCallbackHandlerNoOpt = DummyExposureCallbackHandler<NoOptPassthrough>;
 
+
+template <typename PassthroughT>
+herald::datatype::UUID
+DummyExposureCallbackHandler<PassthroughT>::dummyAgent = herald::datatype::UUID::unknown();
 
 
 /**

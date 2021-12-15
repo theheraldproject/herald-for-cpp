@@ -3,6 +3,3 @@
 //
 
 #include "test-templates.h"
-
-herald::datatype::UUID
-DummyExposureCallbackHandler::dummyAgent = herald::datatype::UUID::unknown();

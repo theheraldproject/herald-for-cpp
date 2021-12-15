@@ -153,14 +153,13 @@ public:
   static constexpr std::size_t max_size = MaxInMemoryExposureSummaries;
 
   ExposureManager(CallbackHandlerT& initialHandler, ExposureStoreT& initialExposureStore) noexcept
-    : handler(initialHandler),
-      store(initialExposureStore),
-      exposures(),
-      changes(),
-      // changeCount(0),
-      anchor(Date{}), // Default to instantiation DateTime
-      period(TimeInterval::hours(24)), // Default to one day interval
-      running(false)
+   : handler(initialHandler),
+     store(initialExposureStore),
+     exposures(),
+     changes(),
+     anchor(Date{}), // Default to instantiation DateTime
+     period(TimeInterval::hours(24)), // Default to one day interval
+     running(false)
   {
     ;
   }
@@ -303,9 +302,29 @@ public:
       }
     }
     // reset changes for the next run
-    // changeCount = 0;
     changes.clear();
     return anyNotified;
+  }
+
+
+  /// MARK: Methods used by querying external classes (E.g. Risk Scoring algorithms)
+
+  /**
+   * @brief Recursively calls the given callable for each Exposure with the requisite Agent within the given time bounds.
+   * 
+   * @tparam AggT The aggregate type to apply (E.g. an Analysis API or custom aggregation)
+   * @tparam CallableT The callable (E.g. Lambda) to call for each aggregated result
+   * @param agent The agent of interest
+   * @param periodStart Earliest time we're interested in (inclusive of overlaps)
+   * @param periodEnd Most recent time we're interested in (inclusove of overlaps)
+   * @param agg The aggregate to apply to the matching Exposures (from Analysis API, or custom)
+   * @param c The callable to call - once or multiple times depending on the output of the aggregate
+   */
+  template <typename AggT, typename CallableT>
+  void aggregate(const Agent& agent, const Date& periodStart, const Date& periodEnd, 
+    AggT&& agg, CallableT c) {
+      //call [&aggLight] (Exposure cbValue) {
+    // TODO fill out this method
   }
 
 
@@ -335,7 +354,6 @@ private:
   ExposureSet<max_size> exposures;
 
   AllocatableArray<ExposureChangeReference,max_size> changes;
-  // std::size_t changeCount;
 
   Date anchor;
   TimeInterval period;
