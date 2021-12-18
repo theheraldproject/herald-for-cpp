@@ -25,11 +25,11 @@ template <typename RiskModelsT, typename RiskParametersT,
           std::size_t MaxInMemoryRiskScoreSummaries, typename RiskScoreStoreT>
 class RiskManager;
 
-template <typename RiskManagerT>
+template <typename RiskManagerT, typename ExposureStoreT>
 class RiskManagerExposureCallbackAdapter {
 public:
-  RiskManagerExposureCallbackAdapter(RiskManagerT& managerRef) noexcept
-   : riskManager(managerRef)
+  explicit RiskManagerExposureCallbackAdapter(RiskManagerT& managerRef, ExposureStoreT& exposureStoreRef) noexcept
+   : riskManager(managerRef), exposureStore(exposureStoreRef)
   {
     ;
   }
@@ -42,11 +42,12 @@ public:
     IterT& iter,
     IterT& end) noexcept
   {
-    riskManager.injectExposureChanges(riskManager,meta,iter,end);
+    riskManager.injectExposureChanges(exposureStore,meta,iter,end);
   }
 
 private:
   RiskManagerT& riskManager;
+  ExposureStoreT& exposureStore;
 };
 
 namespace {
@@ -183,7 +184,7 @@ public:
         startTime, endTime
       );
       // TODO consider adding an if for startTime != endTime to guard the below if there's no data (minor perf enhancement)
-      models.forMatchingAlgorithm([this, &src, &instanceMetadataValue, &startTime, &endTime, &ok] (auto&& algo) {
+      models.forMatchingAlgorithm([this, &src, &startTime, &endTime, &ok] (auto&& algo) {
         ok = ok & algo.produce(
           parameters,
           src, // TODO add aggregate call to ExposureManager

@@ -14,6 +14,190 @@
 
 namespace herald {
 namespace exposure {
+
+/**
+ * @brief A basic in-memory store of Exposure information
+ * 
+ * This class is intended to be used standalone, and does not contain memory cache logic.
+ * 
+ * @tparam MaxInMemoryExposureSummaries The maximum number of Exposure Source arrays to maintain in RAM.
+ */
+template <std::size_t MaxInMemoryExposureSummaries>
+class FixedMemoryExposureStore {
+public:
+  /**
+   * @brief The maximum number of exposure sources this exposure store supports
+   * 
+   */
+  static constexpr std::size_t max_size = MaxInMemoryExposureSummaries;
+
+  /**
+   * @brief Construct a new Fixed Memory Exposure Store object.
+   * Default constructor
+   */
+  FixedMemoryExposureStore()
+   : exposures()
+  {
+    ;
+  }
+
+  /// MARK: Exposure array and elements access and size methods
+
+  /**
+   * @brief Provisions space, if available, for the given ExposureMetadata
+   * 
+   * @param meta The ExposureMetadata to provision storage for
+   * @return true If the metadata already has storage provisioned, or if provisioning of new storage succeeded
+   * @return false If storage could not be provisioned for this exposure metadata
+   */
+  bool add(ExposureMetadata meta) noexcept {
+    // TODO check if we already have provisioned storage for this metadata description
+    if (exposures.size() >= max_size) {
+      return false;
+    }
+    return exposures.add(
+      ExposureArray<max_size>{
+      meta
+    });
+  }
+
+  // TODO add methods for adding/removing individual exposure values to the array created in add(), above
+
+  /**
+   * @brief Removes the whole set of exposure information for the given ExposureMetadata::instanceId value
+   * 
+   * @param instanceId The Instance ID (UUID) of the ExposureMetadata to remove from storage.
+   * @return true If the instanceId was found (and thus removed)
+   * @return false If the instanceId was not found
+   */
+  bool remove(const UUID& instanceId) noexcept {
+    std::size_t pos = findMetaBySensorInstanceId(instanceId);
+    if (pos >= max_size) {
+      // agent not found - return false
+      return false;
+    }
+    auto count = exposures.size();
+    for (std::size_t mp = pos;mp < count - 1;++mp) {
+      exposures[mp] = exposures[mp + 1];
+    }
+    return true;
+  }
+
+  /**
+   * @brief Returns the number of currently allocated ExposureMetadata arrays
+   * 
+   * @return const std::size_t The number of arrays currently used. Always <= max_size.
+   */
+  const std::size_t size() const noexcept {
+    return exposures.size();
+  }
+
+  /**
+   * @brief Get the Contents for the given exposure position
+   * 
+   * WARNING: does not validate the pos value passed to it yet.
+   * 
+   * @param pos Position of the allocated exposure metadata to return the ExposureArray for
+   * @return auto& The contents Array (ExposureArray instance)
+   */
+  auto& getContents(std::size_t pos) noexcept {
+    return exposures[pos].contents();
+  }
+
+  /**
+   * @brief Get the Tag object for the ExposureMetadata instance at the given pos position
+   * 
+   * WARNING: does not validate the pos value passed to it yet.
+   * 
+   * @param pos Position of the allocated exposure metadata to return the tag for
+   * @return auto& The Tag (ExposureMetadata instance) at the given position
+   */
+  auto& getTag(std::size_t pos) noexcept {
+    return exposures[pos].getTag();
+  }
+
+  /// MARK: Methods used by querying external classes (E.g. Risk Scoring algorithms)
+
+  /**
+   * @brief Recursively calls the given callable for each Exposure with the requisite Agent within the given time bounds.
+   * 
+   * @tparam AggT The aggregate type to apply (E.g. an Analysis API or custom aggregation)
+   * @tparam CallableT The callable (E.g. Lambda) to call for each aggregated result
+   * @param agent The agent of interest
+   * @param periodStart Earliest time we're interested in (inclusive of overlaps)
+   * @param periodEnd Most recent time we're interested in (inclusove of overlaps)
+   * @param agg The aggregate to apply to the matching Exposures (from Analysis API, or custom)
+   * @param c The callable to call - once or multiple times depending on the output of the aggregate
+   */
+  template <typename AggT, typename CallableT>
+  void aggregate(const Agent& agent, const Date& periodStart, const Date& periodEnd, 
+    AggT&& agg, CallableT c) const noexcept {
+      //call [&aggLight] (Exposure cbValue) {
+    // TODO fill out this method
+    // TODO validate why we need to be const as a method (not always reasonable if data has to be shunted to/from memory)
+  }
+
+
+  /// MARK: Search methods
+
+  /**
+   * @brief Returns the position of the given ExposureMetadata (by getTag()::operator==() )
+   * 
+   * @param meta The ExposureMetadata to search for
+   * @return std::size_t The position of the ExposureMetadata, or max_size if not found
+   */
+  std::size_t findMeta(const ExposureMetadata& meta) const noexcept {
+    for (std::size_t pos = 0;pos < exposures.size();++pos) {
+      if (exposures[pos].getTag() == meta) {
+        return pos;
+      }
+    }
+    return max_size;
+  }
+
+  /**
+   * @brief Returns the position of the given ExposureMetadata (by sensorInstanceId )
+   * 
+   * @param sensorInstanceId The ExposureMetadata::sensorInstanceId (UUID) to search for
+   * @return std::size_t The position of the ExposureMetadata, or max_size if not found
+   */
+  std::size_t findMetaBySensorInstanceId(const UUID& sensorInstanceId) const noexcept {
+    for (std::size_t pos = 0;pos < exposures.size();++pos) {
+      auto& exp = exposures[pos];
+      auto& t = exp.getTag();
+      auto& siid = t.sensorInstanceId;
+      if (siid == sensorInstanceId) {
+        return pos;
+      }
+    }
+    return max_size;
+  }
+
+  /**
+   * @brief Returns the position of the given ExposureMetadata (by modelClassId )
+   * 
+   * @param modelClassId The ExposureMetadata::modelClassId (UUID) to search for
+   * @return std::size_t The position of the ExposureMetadata, or max_size if not found
+   */
+  std::size_t findMetaByModelClassId(const UUID& modelClassId) const noexcept {
+    for (std::size_t pos = 0;pos < exposures.size();++pos) {
+      auto& mcid = exposures[pos].getTag().modelClassId;
+      if (mcid == modelClassId) {
+        return pos;
+      }
+    }
+    return max_size;
+  }
+
+private:
+  /// \brief In memory ephemeral cached exposures
+  ExposureSet<max_size> exposures;
+};
+
+
+
+
+
   
 /**
  * /brief Uses the Analysis API in Herald to observe sensor readings and turn them into
@@ -33,8 +217,8 @@ namespace exposure {
  * This allows the related Risk Score algorithms to deal with all exposures in the same manner - 
  * that is, summary scores of exposure to 'Agents' over specific periods of time.
  */
-template <typename CallbackHandlerT, 
-  std::size_t MaxInMemoryExposureSummaries, typename ExposureStoreT>
+template <typename CallbackHandlerT,
+  typename ExposureStoreT>
 class ExposureManager;
 // FWD Declare
 
@@ -55,7 +239,6 @@ namespace {
    * @brief Represents an INTERNAL reference to a change that has occured. 
    * 
    * Used to efficiently cache change references until a notify action can be called.
-   * 
    */
   struct ExposureChangeReference {
     UUID sensorInstanceId = UUID::unknown();
@@ -70,7 +253,7 @@ namespace {
     }
   };
 }
-using DefaultExposureManager = ExposureManager<DefaultNullExposureCallbackHandler,8,DefaultDevNullExposureStore>;
+using DefaultExposureManager = ExposureManager<DefaultNullExposureCallbackHandler,DefaultDevNullExposureStore>;
 
 /**
  * @brief Acts as a delegate to be informed when a raw Analysis API value has changed
@@ -147,15 +330,12 @@ private:
 
 // Now the full declaration (was fwd decl earlier)
 template <typename CallbackHandlerT, 
-  std::size_t MaxInMemoryExposureSummaries, typename ExposureStoreT>
+  typename ExposureStoreT>
 class ExposureManager {
 public:
-  static constexpr std::size_t max_size = MaxInMemoryExposureSummaries;
-
   ExposureManager(CallbackHandlerT& initialHandler, ExposureStoreT& initialExposureStore) noexcept
    : handler(initialHandler),
      store(initialExposureStore),
-     exposures(),
      changes(),
      anchor(Date{}), // Default to instantiation DateTime
      period(TimeInterval::hours(24)), // Default to one day interval
@@ -177,7 +357,7 @@ public:
    * @return The current active size
    */
   const std::size_t sourceCount() const noexcept {
-    return exposures.size();
+    return store.size();
   }
 
   bool setGlobalPeriodInterval(const Date recentAnchor, const TimeInterval periodSize) noexcept {
@@ -208,18 +388,15 @@ public:
    */
   template <typename ModelT>
   bool addSource(const Agent& agent, const SensorClass& sensorClass, const UUID& instance) noexcept {
-    if (exposures.size() >= max_size) {
-      return false;
-    }
     // TODO check if we've already entered this source
-    exposures.add(ExposureArray<max_size>{
+    store.add(
       ExposureMetadata{
         .agentId = agent, 
         .sensorClassId = sensorClass,
         .sensorInstanceId = instance,
         .modelClassId = ModelT::modelClassId
       }
-    });
+    );
     return true;
   }
 
@@ -231,16 +408,7 @@ public:
    * @return false If the instanceId has already been removed
    */
   bool removeSource(const UUID& instanceId) noexcept {
-    std::size_t pos = findMetaBySensorInstanceId(instanceId);
-    if (pos >= max_size) {
-      // agent not found - return false
-      return false;
-    }
-    auto count = exposures.size();
-    for (std::size_t mp = pos;mp < count - 1;++mp) {
-      exposures[mp] = exposures[mp + 1];
-    }
-    return true;
+    return store.remove(instanceId);
   }
 
   const bool isRunning() const noexcept {
@@ -260,9 +428,9 @@ public:
    * @brief Generates an ExposureManagerDelegate appropriate to the given ExposureScoreT and ExposureManager instance
    */
   template <typename ExposureScoreT>
-  ExposureManagerDelegate<ExposureScoreT,ExposureManager<CallbackHandlerT, max_size, ExposureStoreT>>
+  ExposureManagerDelegate<ExposureScoreT,ExposureManager<CallbackHandlerT, ExposureStoreT>>
   analysisDelegate() noexcept {
-    return ExposureManagerDelegate<ExposureScoreT,ExposureManager<CallbackHandlerT, max_size, ExposureStoreT>>(
+    return ExposureManagerDelegate<ExposureScoreT,ExposureManager<CallbackHandlerT, ExposureStoreT>>(
       *this
     );
   }
@@ -291,13 +459,14 @@ public:
     }
     bool anyNotified = false;
     for (std::size_t changeIndex = 0; changeIndex < changes.size(); ++changeIndex) {
-      std::size_t instancePos = findMetaBySensorInstanceId(changes[changeIndex].sensorInstanceId);
-      if (instancePos < max_size) {
+      std::size_t instancePos = store.findMetaBySensorInstanceId(changes[changeIndex].sensorInstanceId);
+      if (instancePos < ExposureStoreT::max_size) {
         anyNotified = true;
-        auto exposureIter = exposures[instancePos].contents().begin();
+        auto& contents = store.getContents(instancePos);
+        auto exposureIter = contents.begin();
         exposureIter += instancePos; // advance to the position of interest to the receiver
-        auto exposureEnd = exposures[instancePos].contents().end();
-        handler.exposureLevelChanged(exposures[instancePos].getTag(), exposureIter, exposureEnd); //exposures[instancePos].contents()[0]); // TODO replace this with a safety check
+        auto exposureEnd = contents.end();
+        handler.exposureLevelChanged(store.getTag(instancePos), exposureIter, exposureEnd); //exposures[instancePos].contents()[0]); // TODO replace this with a safety check
         // TODO fire the above for only those items that have changed, not the whole array or first element, using periodStart and periodEnd in the change metadata
       }
     }
@@ -305,28 +474,6 @@ public:
     changes.clear();
     return anyNotified;
   }
-
-
-  /// MARK: Methods used by querying external classes (E.g. Risk Scoring algorithms)
-
-  /**
-   * @brief Recursively calls the given callable for each Exposure with the requisite Agent within the given time bounds.
-   * 
-   * @tparam AggT The aggregate type to apply (E.g. an Analysis API or custom aggregation)
-   * @tparam CallableT The callable (E.g. Lambda) to call for each aggregated result
-   * @param agent The agent of interest
-   * @param periodStart Earliest time we're interested in (inclusive of overlaps)
-   * @param periodEnd Most recent time we're interested in (inclusove of overlaps)
-   * @param agg The aggregate to apply to the matching Exposures (from Analysis API, or custom)
-   * @param c The callable to call - once or multiple times depending on the output of the aggregate
-   */
-  template <typename AggT, typename CallableT>
-  void aggregate(const Agent& agent, const Date& periodStart, const Date& periodEnd, 
-    AggT&& agg, CallableT c) {
-      //call [&aggLight] (Exposure cbValue) {
-    // TODO fill out this method
-  }
-
 
   /// MARK: Methods invoked by external risk state classes (E.g. Exposure Notification frameworks)
 
@@ -337,68 +484,38 @@ public:
    * @return std::size_t The number of current, in memory, exposure period values stored
    */
   std::size_t getCountByInstanceId(const UUID& sensorInstanceId) const noexcept {
-    std::size_t pos = findMetaBySensorInstanceId(sensorInstanceId);
-    if (pos >= max_size) {
+    std::size_t pos = store.findMetaBySensorInstanceId(sensorInstanceId);
+    if (pos >= ExposureStoreT::max_size) {
       // not found - return false
       return 0;
     }
-    auto sz = exposures[pos].contents().size();
+    auto sz = store.getContents(pos).size();
     return sz;
   }
+
+  // TODO convert exposures call, with conditional lambda 
+  //      (E.g. to convert particular humanProx exposures to covid19prox exposures)
 
 private:
   CallbackHandlerT& handler;
   ExposureStoreT& store;
 
-  /// \brief In memory ephemeral cached exposures
-  ExposureSet<max_size> exposures;
-
-  AllocatableArray<ExposureChangeReference,max_size> changes;
+  AllocatableArray<ExposureChangeReference,ExposureStoreT::max_size> changes;
 
   Date anchor;
   TimeInterval period;
 
   bool running;
-
-  std::size_t findMeta(const ExposureMetadata& meta) const noexcept {
-    for (std::size_t pos = 0;pos < exposures.size();++pos) {
-      if (exposures[pos].getTag() == meta) {
-        return pos;
-      }
-    }
-    return max_size;
-  }
-
-  std::size_t findMetaBySensorInstanceId(const UUID& sensorInstanceId) const noexcept {
-    for (std::size_t pos = 0;pos < exposures.size();++pos) {
-      auto& exp = exposures[pos];
-      auto& t = exp.getTag();
-      auto& siid = t.sensorInstanceId;
-      if (siid == sensorInstanceId) {
-        return pos;
-      }
-    }
-    return max_size;
-  }
-
-  std::size_t findMetaByModelClassId(const UUID& modelClassId) const noexcept {
-    for (std::size_t pos = 0;pos < exposures.size();++pos) {
-      auto& mcid = exposures[pos].getTag().modelClassId;
-      if (mcid == modelClassId) {
-        return pos;
-      }
-    }
-    return max_size;
-  }
   
   void applyAdditionalExposure(const UUID& modelId, const analysis::SampledID sampled, const Date& sampleTaken, const double sampleValue) noexcept {
-    std::size_t pos = findMetaByModelClassId(modelId);
-    if (pos >= max_size) {
+    std::size_t pos = store.findMetaByModelClassId(modelId);
+    if (pos >= ExposureStoreT::max_size) {
       return;
     }
     // Use SampledID as the instanceId for now (might not always be the case depending on source/model)
-    auto& exposureArray = exposures[pos].contents();
+    auto& exposureArray = store.getContents(pos);
     if (0 == exposureArray.size()) {
+      // TODO externalise the API for this into the store class
       exposureArray.add(Exposure{
         .periodStart = sampleTaken,
         .periodEnd = sampleTaken,
@@ -406,7 +523,7 @@ private:
         .confidence = 1.0 // TODO pass through analysis API confidence, if supported (compilation option?)
       });
       // Record change for later notification
-      recordChange(exposures[pos].getTag().sensorInstanceId, sampleTaken, sampleTaken);
+      recordChange(store.getTag(pos).sensorInstanceId, sampleTaken, sampleTaken);
     } else {
       // Ensure split by period is observed
       // TODO take into account of anchor time, rather than always rely upon startTime of previous element (which may not align exactly with anchor time + n*period)
@@ -423,7 +540,7 @@ private:
           .confidence = 1.0 // TODO pass through analysis API confidence, if supported (compilation option?)
         });
         // Record change for later notification
-        recordChange(exposures[pos].getTag().sensorInstanceId, last.periodStart, sampleTaken);
+        recordChange(store.getTag(pos).sensorInstanceId, last.periodStart, sampleTaken);
       } else {
         // if not, append
         // Append value to time period
@@ -434,7 +551,7 @@ private:
           .confidence = 1.0 // TODO pass through analysis API confidence, if supported (compilation option?)
         };
         // Record change for later notification
-        recordChange(exposures[pos].getTag().sensorInstanceId, exposureArray[0].periodStart, exposureArray[0].periodEnd);
+        recordChange(store.getTag(pos).sensorInstanceId, exposureArray[0].periodStart, exposureArray[0].periodEnd);
       }
     }
   }
@@ -445,13 +562,13 @@ private:
     }
     // Note including start and end dates for efficiency
     // Check for an existing change for this instanceId, and modify its start and end times
-    std::size_t cpos = max_size;
+    std::size_t cpos = ExposureStoreT::max_size;
     for (std::size_t i = 0;i < changes.size();++i) {
       if (changes[i].sensorInstanceId == instanceId) {
         cpos = i;
       }
     }
-    if (max_size != cpos) {
+    if (ExposureStoreT::max_size != cpos) {
       changes[cpos].periodStart = periodStart < changes[cpos].periodStart ? periodStart : changes[cpos].periodStart;
       changes[cpos].periodEnd = periodEnd > changes[cpos].periodEnd ? periodEnd : changes[cpos].periodEnd;
     } else {

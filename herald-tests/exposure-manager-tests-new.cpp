@@ -17,11 +17,11 @@ TEST_CASE("exposure-empty", "[exposure][empty]") {
     // Create exposure manager with no diseases(agents)
     NoOptPassthrough nopt;
     DummyExposureCallbackHandlerNoOpt dh{nopt};
-    DummyExposureStore des;
-    herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore> em(dh,des);
+    herald::exposure::FixedMemoryExposureStore<8> des;
+    herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt, herald::exposure::FixedMemoryExposureStore<8>> em(dh,des);
 
     // check static max size
-    REQUIRE(herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore>::max_size == 8);
+    REQUIRE(herald::exposure::FixedMemoryExposureStore<8>::max_size == 8);
     // Check configuration is correct
     REQUIRE(em.sourceCount() == 0);
     // Ensure it is not running by default
@@ -36,8 +36,8 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler]") {
     // Create exposure manager
     NoOptPassthrough nopt;
     DummyExposureCallbackHandlerNoOpt dh{nopt};
-    DummyExposureStore des;
-    herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore> em(dh,des);
+    herald::exposure::FixedMemoryExposureStore<8> des;
+    herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt, herald::exposure::FixedMemoryExposureStore<8>> em(dh,des);
 
     // Create underlying AnalysisRunner first
     SampleList<Sample<RSSI>,25> srcData;
@@ -66,7 +66,7 @@ TEST_CASE("exposure-callback-handler", "[exposure][callback][handler]") {
       herald::analysis::AnalysisDelegateManager<
         herald::exposure::ExposureManagerDelegate<
           herald::datatype::RSSIMinute,
-          herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore>
+          herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt, herald::exposure::FixedMemoryExposureStore<8>>
         >
       >,
       herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::RSSIMinutesAnalyser>,
@@ -116,8 +116,8 @@ TEST_CASE("exposure-time-periods", "[exposure][periods][window]") {
     // Create exposure manager
     NoOptPassthrough nopt;
     DummyExposureCallbackHandlerNoOpt dh{nopt};
-    DummyExposureStore des;
-    herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore> em(dh,des);
+    herald::exposure::FixedMemoryExposureStore<8> des;
+    herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt, herald::exposure::FixedMemoryExposureStore<8>> em(dh,des);
 
     bool setGlobal = em.setGlobalPeriodInterval(0,120); // 120 second windows starting at DateTime==0
     REQUIRE(setGlobal);
@@ -150,7 +150,7 @@ TEST_CASE("exposure-time-periods", "[exposure][periods][window]") {
       herald::analysis::AnalysisDelegateManager<
         herald::exposure::ExposureManagerDelegate<
           herald::datatype::RSSIMinute,
-          herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt,8, DummyExposureStore>
+          herald::exposure::ExposureManager<DummyExposureCallbackHandlerNoOpt, herald::exposure::FixedMemoryExposureStore<8>>
         >
       >,
       herald::analysis::AnalysisProviderManager<herald::analysis::algorithms::RSSIMinutesAnalyser>,
@@ -219,10 +219,12 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     myStats.set(herald::exposure::parameter::phenotypic_sex, (double)herald::datatype::phenotypic_sex::male); // male, female, indeterminate
     myStats.set(herald::exposure::parameter::age, 21.0); // Honest...
     DummyRiskScoreStore dummyRiskScoreStore;
+    // Note: Below is a test of the deduction guide
     herald::exposure::RiskManager<
       herald::exposure::RiskModels<herald::exposure::model::SampleDiseaseScreeningRiskModel>, 
       herald::exposure::RiskParameters<8>, 
-      8,
+      8
+      ,
       DummyRiskScoreStore
     > rm{
       std::move(models), std::move(myStats), dummyRiskScoreStore
@@ -230,19 +232,23 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     rm.setGlobalPeriodInterval(Date{0}, TimeInterval::seconds(240)); // Interval every 4 minutes, just so its different to other intervals used
     // Note myStats may change over time, but are static/fixed from the point of view of a constantly running risk algorithm
 
+    // Set the exposure store now, used by both exposure manager and risk manager
+    herald::exposure::FixedMemoryExposureStore<8> des;
+
     using RMECA = herald::exposure::RiskManagerExposureCallbackAdapter<herald::exposure::RiskManager<
       herald::exposure::RiskModels<herald::exposure::model::SampleDiseaseScreeningRiskModel>, 
       herald::exposure::RiskParameters<8>, 
       8,
       DummyRiskScoreStore
-    >>;
-    RMECA riskExposureCallbackAdapter{rm};
+    >, herald::exposure::FixedMemoryExposureStore<8>>;
+    RMECA riskExposureCallbackAdapter{rm, des};
+    // herald::exposure::RiskManagerExposureCallbackAdapter riskExposureCallbackAdapter{rm}; // Note: Uses single call parameter deduction (explicit)
+    // using RMECA = decltype(riskExposureCallbackAdapter);
 
     // Create EM so we can reference its delegate
     // Create exposure manager
     DummyExposureCallbackHandler dh{riskExposureCallbackAdapter};
-    DummyExposureStore des;
-    herald::exposure::ExposureManager<DummyExposureCallbackHandler<RMECA>,8, DummyExposureStore> em(dh,des);
+    herald::exposure::ExposureManager<DummyExposureCallbackHandler<RMECA>,  herald::exposure::FixedMemoryExposureStore<8>> em(dh,des); // TODO deduction guide, THEN try 8 as first parameter to see if that silences typename warning
 
     bool setGlobal = em.setGlobalPeriodInterval(0,120); // 120 second windows starting at DateTime==0
     REQUIRE(setGlobal);
@@ -295,12 +301,12 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
       herald::analysis::AnalysisDelegateManager<
         herald::exposure::ExposureManagerDelegate<
           herald::datatype::RSSIMinute,
-          herald::exposure::ExposureManager<DummyExposureCallbackHandler<RMECA>, 8, DummyExposureStore>
+          herald::exposure::ExposureManager<DummyExposureCallbackHandler<RMECA>, herald::exposure::FixedMemoryExposureStore<8>>
         >
         ,
         herald::exposure::ExposureManagerDelegate<
           herald::datatype::RunningMean<herald::datatype::Luminosity>,
-          herald::exposure::ExposureManager<DummyExposureCallbackHandler<RMECA>, 8, DummyExposureStore>
+          herald::exposure::ExposureManager<DummyExposureCallbackHandler<RMECA>, herald::exposure::FixedMemoryExposureStore<8>>
         >
       >,
       herald::analysis::AnalysisProviderManager<

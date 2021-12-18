@@ -93,6 +93,7 @@ struct SampleDiseaseScreeningRiskModel {
     Exposure aggProx;
     Exposure aggLight;
     Age age;
+    double rawAge;
     for (Date periodStart = startTime; periodStart < endTime;periodStart += periodicity) {
       Date periodEnd = periodStart + periodicity;
 
@@ -107,10 +108,12 @@ struct SampleDiseaseScreeningRiskModel {
       double confidence = 1.0;
 
       // Also fetch 'static' parameters, if available
-      bool fetchedAgeOk = riskParameters.get(herald::exposure::parameter::age, age);
+      bool fetchedAgeOk = riskParameters.get(herald::exposure::parameter::age, rawAge);
       if (!fetchedAgeOk) {
         age = 35; // Sensible default. E.g. population median age
         confidence -= 0.25;
+      } else {
+        age = (std::uint8_t)rawAge;
       }
 
       // Now perform our calculation
@@ -126,6 +129,7 @@ struct SampleDiseaseScreeningRiskModel {
       }
 
       // Note the Sink reference has our internal IDs referenced within it, so no need for this struct to 'know' what instance it is
+      // TODO add identification for target agent, algorithmID, and algorithmInstanceID
       sink.score(RiskScore{
         .periodStart = periodStart,
         .periodEnd = periodEnd,

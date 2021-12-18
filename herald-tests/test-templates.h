@@ -129,13 +129,19 @@ public:
 
 
 
-struct DummyExposureStore {
-
-};
+// struct DummyExposureStore {
+//   template <typename AggregateT, typename ExposureCallbackT>
+//   void aggregate(herald::datatype::Agent agent, herald::datatype::Date periodStart, herald::datatype::Date periodEnd, AggregateT agg, ExposureCallbackT callback) const noexcept {
+//     // TODO fill this out with actual stored values
+//   }
+// };
 
 
 struct DummyRiskScoreStore {
-
+  // TODO add identification for target agent, algorithmID, and algorithmInstanceID
+  void score(herald::datatype::RiskScore&& toStore) noexcept {
+    // TODO log this for later exaluation
+  }
 };
 
 struct NoOptPassthrough {
