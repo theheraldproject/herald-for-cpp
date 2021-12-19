@@ -37,6 +37,19 @@ private:
   herald::datatype::Date from;
 };
 
+struct sinceOrEqual {
+  sinceOrEqual(herald::datatype::Date afterInclusive) : from(afterInclusive) {}
+  ~sinceOrEqual() = default;
+
+  template <typename ValT>
+  bool operator()(const herald::analysis::sampling::Sample<ValT>& s) const {
+    return s.taken >= from;
+  }
+
+private:
+  herald::datatype::Date from;
+};
+
 struct beforeOrEqual {
   beforeOrEqual(herald::datatype::Date timeToInclusive) : to(timeToInclusive) {}
   ~beforeOrEqual() = default;
@@ -266,7 +279,8 @@ struct view {
   }
 
   Date earliest() {
-    return (*(source.begin())).taken;
+    IterProxyT srcCopy{source};
+    return (*(srcCopy)).taken;
   }
 
   template <typename IterT>

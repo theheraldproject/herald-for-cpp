@@ -231,7 +231,7 @@ TEST_CASE("analysisrunner-singledataitem-twoanalyses", "[analysisrunner][singled
     DummySampleSource srcLight(5678,std::move(srcLightData));
 
     herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
-    herald::analysis::algorithms::RunningMeanAnalyser<herald::datatype::Luminosity,2> meanLight;
+    herald::analysis::algorithms::RunningMeanAnalyser<herald::datatype::Luminosity,2> meanLight{60};
 
     DummyDistanceDelegate myDelegate;
     DummyBrightnessDelegate myBrightnessDelegate;
@@ -266,7 +266,7 @@ TEST_CASE("analysisrunner-singledataitem-twoanalyses", "[analysisrunner][singled
     REQUIRE(delegateBRef.lastSampled() == 5678); // ran once, past 50, for SampleID=1234
 
     auto& samplesB = delegateBRef.samples();
-    REQUIRE(samplesB.size() == 1); // 1 as only one mean generated (one run) for this variable
+    REQUIRE(samplesB.size() == 2); // 2 as we now correctly separate by time interval (0-60, 60-120)
   }
 }
 

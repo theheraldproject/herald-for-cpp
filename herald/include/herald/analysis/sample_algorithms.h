@@ -107,7 +107,11 @@ struct RSSIMinutesAnalyser {
       herald::analysis::views::in_range valid(-99,-10);
 
       // Check that there has been any new data since the last run
-      herald::analysis::views::since sinceLastRun(lastRan);
+      herald::analysis::views::sinceOrEqual sinceLastRun(lastRan);
+      // auto inRangeData =  src
+      //             | herald::analysis::views::filter(valid) 
+      //             | herald::analysis::views::filter(beforeEndOfThisInterval)
+      //             | herald::analysis::views::filter(sinceLastRun);
       auto newData = src
                   | herald::analysis::views::filter(valid) 
                   | herald::analysis::views::filter(beforeEndOfThisInterval)
@@ -116,7 +120,7 @@ struct RSSIMinutesAnalyser {
 
       calculator.reset();
 
-      auto values = src 
+      auto values = src
                   | herald::analysis::views::filter(valid) 
                   | herald::analysis::views::filter(beforeEndOfThisInterval)
                   | herald::analysis::views::filter(sinceLastRun)
@@ -125,7 +129,7 @@ struct RSSIMinutesAnalyser {
       auto agg = values.template get<MeanValidRSSI>();
       if (!hasRan) {
         // use first time in sequence as lastRan for this purpose
-        Date firstTime = src.earliest();
+        Date firstTime = newData.earliest();
         startInterval = firstTime;
         hasRan = true;
       }
@@ -134,18 +138,20 @@ struct RSSIMinutesAnalyser {
 
         Date latestTime = startInterval + interval;
         // latest WITHIN our interval query
-        if (latestTime > src.latest()) {
-          latestTime = src.latest();
+        if (latestTime > newData.latest()) {
+          latestTime = newData.latest();
         }
         TimeInterval timeDelta = latestTime - startInterval;
         // startInterval = latestTime;
         // std::cout << "Latest value at time: " << latestTime.secondsSinceUnixEpoch() << std::endl;
 
-        Sample<RSSIMinute> newSample((Date)latestTime,RSSIMinute(d * timeDelta / (1000 * 60.0))); // timeDelta is millis!
-        dst.push(newSample);
+        if (timeDelta.millis() > 0) { // incase first value is exactly on a time interval
+          Sample<RSSIMinute> newSample((Date)latestTime,RSSIMinute(d * timeDelta / (1000 * 60.0))); // timeDelta is millis!
+          dst.push(newSample);
 
-        // fire event
-        callable(sampled,newSample);
+          // fire event
+          callable(sampled,newSample);
+        }
       }
       // Now move our time window forward
       startInterval += interval;
@@ -240,7 +246,16 @@ struct RunningMeanAnalyser {
   static constexpr std::size_t max_size = MaxRecentValues;
 
   /// default constructor required for array instantiation in manager AnalysisProviderManager
-  RunningMeanAnalyser() = default;
+  RunningMeanAnalyser()
+   : interval(5), lastRan(0), recentMean()
+  {
+    ;
+  }
+  RunningMeanAnalyser(long timeInterval)
+   : interval(timeInterval), lastRan(0), recentMean()
+  {
+    ;
+  }
   ~RunningMeanAnalyser() = default;
 
   // Generic
@@ -253,27 +268,55 @@ struct RunningMeanAnalyser {
   // Specialisation
   template <std::size_t SrcSz,std::size_t DstSz, typename CallableForNewSample>
   bool analyse(Date timeNow, SampledID sampled, SampleList<Sample<ValT>,SrcSz>& src, SampleList<Sample<RunningMean<ValT>>,DstSz>& dst, CallableForNewSample& callable) {
+    if (lastRan + interval >= timeNow) {
+      return false; // interval guard.
+    }
+    // std::cout << "RUNNING FOWLER BASIC ANALYSIS at " << timeNow.secondsSinceUnixEpoch() << std::endl;
+
+    // split into windows of data based on interval time
+    Date startInterval = lastRan;
+    bool hasGeneratedValues = false;
+    while (startInterval <= timeNow) {
+      // limit also to before startInterval + interval
+      herald::analysis::views::beforeOrEqual beforeEndOfThisInterval(startInterval + interval);
+
+
+      // Check that there has been any new data since the last run
+      herald::analysis::views::sinceOrEqual sinceLastRun(lastRan);
+      auto newData = src
+                  | herald::analysis::views::filter(beforeEndOfThisInterval)
+                  | herald::analysis::views::filter(sinceLastRun)
+                  | herald::analysis::views::to_view();
 
       recentMean.reset();
 
       auto values = src 
+                  | herald::analysis::views::filter(beforeEndOfThisInterval)
+                  | herald::analysis::views::filter(sinceLastRun)
                   | aggregate(recentMean); // type is RunningMean<ValT>
       
       auto agg = values.template get<RunningMeanAggregate<ValT,MaxRecentValues>>();
       if (agg.getCount() > 0) { // only output a sample if we have data
         auto d = agg.reduce();
 
-        Sample<RunningMean<ValT>> newSample((Date)src.latest(),RunningMean<ValT>(d));
+        Sample<RunningMean<ValT>> newSample((Date)newData.latest(),RunningMean<ValT>(d));
         dst.push(newSample);
 
         // fire event
         callable(sampled,newSample);
-        return true;
+        hasGeneratedValues = true;
       }
-    return false;
+      // Now move our time window forward
+      startInterval += interval;
+      lastRan = startInterval; // TODO move this logic to the caller not the analysis provider
+    }
+    lastRan = timeNow;
+    return hasGeneratedValues;
   }
 
 private:
+  TimeInterval interval;
+  Date lastRan;
   RunningMeanAggregate<ValT, MaxRecentValues> recentMean;
 };
 

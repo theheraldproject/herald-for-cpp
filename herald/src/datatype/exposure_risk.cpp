@@ -103,7 +103,8 @@ RiskScoreMetadata::operator==(const RiskScoreMetadata& other) const noexcept
 {
   return (
     agentId == other.agentId &&
-    algorithmId == other.algorithmId
+    algorithmId == other.algorithmId &&
+    instanceId == other.instanceId
   );
 }
 
@@ -112,7 +113,8 @@ RiskScoreMetadata::operator!=(const RiskScoreMetadata& other) const noexcept
 {
   return (
     agentId != other.agentId ||
-    algorithmId != other.algorithmId
+    algorithmId != other.algorithmId ||
+    instanceId != other.instanceId
   );
 }
 

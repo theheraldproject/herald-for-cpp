@@ -137,12 +137,12 @@ public:
 // };
 
 
-struct DummyRiskScoreStore {
-  // TODO add identification for target agent, algorithmID, and algorithmInstanceID
-  void score(herald::datatype::RiskScore&& toStore) noexcept {
-    // TODO log this for later exaluation
-  }
-};
+// struct DummyRiskScoreStore {
+//   // TODO add identification for target agent, algorithmID, and algorithmInstanceID
+//   void score(herald::datatype::RiskScore&& toStore) noexcept {
+//     // TODO log this for later exaluation
+//   }
+// };
 
 struct NoOptPassthrough {
   template <typename IterT>
@@ -167,8 +167,7 @@ struct DummyExposureCallbackHandler {
     const herald::datatype::ExposureMetadata& meta,
     IterT& iter,
     IterT& end) noexcept {
-    auto iterCopy = iter;
-    // const herald::datatype::Exposure& exposure) noexcept {
+    auto iterCopy = iter; // so passthrough works as expected
     called = true;
     ++timesCalled;
     agent = meta.agentId;

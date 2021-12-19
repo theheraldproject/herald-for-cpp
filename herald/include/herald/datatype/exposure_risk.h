@@ -12,7 +12,7 @@
 namespace herald {
 namespace datatype {
 
-/** /brief Specific strongly typed override of UUID for Agents **/
+/** \brief Specific strongly typed override of UUID for Agents **/
 struct Agent : public UUID {
 public:
   constexpr Agent(const UUID& copyFrom) noexcept : UUID(copyFrom)
@@ -41,7 +41,7 @@ public:
   ~Agent() noexcept = default;
 };
 
-/** /brief Specific strongly types override of UUID for Sensor Calsses **/
+/** \brief Specific strongly types override of UUID for Sensor Calsses **/
 struct SensorClass : public UUID {
 public:
   constexpr SensorClass(UUID::value_type shortCode) noexcept
@@ -64,38 +64,79 @@ public:
   ~SensorClass() noexcept = default;
 };
 
-/// /brief Agent common UUIDs for cross-compatibility (may not be a comprehensive list)
+/// \brief Agent common UUIDs for cross-compatibility (may not be a comprehensive list)
 namespace agent {
-  /*** /brief Human proximity agent class **/
+  /*** \brief Human proximity agent class **/
   static constexpr Agent humanProximity{1};
-  /** /brief Single channel visible light luminosity **/
+  /** \brief Single channel visible light luminosity **/
   static constexpr Agent lightBrightness{2};
-  /** /brief Four channel visible light plus Infra Red luminosity **/
+  /** \brief Four channel visible light plus Infra Red luminosity **/
   static constexpr Agent lightRGBIR{3};
-  /** /brief Radiation exposure **/
+  /** \brief Radiation exposure **/
   static constexpr Agent radiation{4};
-  /** /brief Sound volume exposure **/
+  /** \brief Sound volume exposure **/
   static constexpr Agent sound{5};
 }
 
 /**
- * /brief Classes of sensors. Multiple sensor types may provide data on the same agent
+ * \brief Classes of sensors. Multiple sensor types may provide data on the same agent
  */
 namespace sensorClass {
-  /** /brief Herald Bluetooth proximity sensor **/
+  /** \brief Herald Bluetooth proximity sensor **/
   static constexpr SensorClass bluetoothProximityHerald{1};
-  /** /brief Legacy OpenTrace (V1 ONLY) Bluetooth proximity sensor **/
+  /** \brief Legacy OpenTrace (V1 ONLY) Bluetooth proximity sensor **/
   static constexpr SensorClass bluetoothProximityOpenTrace{2};
-  /** /brief Legacy Gooigle Apple Exposure Notification (GAEN) sensor **/
+  /** \brief Legacy Gooigle Apple Exposure Notification (GAEN) sensor **/
   static constexpr SensorClass bluetoothProximityGaen{3};
-  /** /brief Lums measure of luminosity **/
+  /** \brief Lums measure of luminosity **/
   static constexpr SensorClass luninositySingleChannelLums{10};
 }
 
 
+/** \brief Specific strongly types override of UUID for Risk Analysis Algorithms **/
+struct AlgorithmId : public UUID {
+public:
+  /**
+   * @brief Allows conversion from UUID (E.g. UUID::unknown()) to AlgorithmId
+   * Maintains correct structure / required data values for AlgorithmId (last byte value is 3).
+   * \note Use of explicit keyword prevents accidental conversion from similar types inside applications
+   */
+  constexpr explicit AlgorithmId(const UUID& from) noexcept
+   : UUID(from)
+  {
+    constexpr value_type M = 0x40; // 7th byte = 0100 in binary for MSB 0000 for LSB - v4 UUID
+    constexpr value_type N = 0x80; // 9th byte = 1000 in binary for MSB 0000 for LSB - variant 1
+    mData[6] = (0x0f & mData[6]) | M; // blanks out first 4 bits
+    mData[8] = (0x3f & mData[8]) | N; // blanks out first 2 bits
+
+    mData[max_size - 1] = value_type{3}; // explicit construction
+
+    mValid = true;
+  }
+
+  constexpr AlgorithmId(UUID::value_type shortCode) noexcept
+   : UUID(std::array<value_type, max_size>{0})
+  {
+    // Copy short code to first position
+    mData[0] = shortCode;
+    // Copy agent flags into last position
+    // Copy V4 valid UUID into other positions
+    constexpr value_type M = 0x40; // 7th byte = 0100 in binary for MSB 0000 for LSB - v4 UUID
+    constexpr value_type N = 0x80; // 9th byte = 1000 in binary for MSB 0000 for LSB - variant 1
+    mData[6] = (0x0f & mData[6]) | M; // blanks out first 4 bits
+    mData[8] = (0x3f & mData[8]) | N; // blanks out first 2 bits
+
+    mData[max_size - 1] = value_type{3}; // explicit construction
+
+    mValid = true;
+  }
+
+  ~AlgorithmId() noexcept = default;
+};
+
 
 /**
- * /brief Represents the common data items between Exposure and Rirk Scores
+ * \brief Represents the common data items between Exposure and Rirk Scores
  */
 struct Score {
   Date periodStart; // defaults to "now"
@@ -111,7 +152,7 @@ struct Score {
 };
 
 /**
- * /brief Represents a measurable exposure to an agent from an individual sensor.
+ * \brief Represents a measurable exposure to an agent from an individual sensor.
  *
  * This is different from a raw sample as it represents an aggregated value over a period
  * of time. As an example, a set of proximity sensor readings may aggregate into a
@@ -123,7 +164,7 @@ using Exposure = Score;
  * @brief Reppresents the metadata associated with a set of Exposure reading values.
  */
 struct ExposureMetadata {
-  UUID agentId = UUID::unknown();
+  Agent agentId = Agent::unknown();
   UUID sensorClassId = UUID::unknown();
   UUID sensorInstanceId = UUID::unknown();
   UUID modelClassId = UUID::unknown();
@@ -143,7 +184,7 @@ using ExposureArray = TaggedArray<
 >;
 
 /**
- * /brief A set of arrays linking a single exposure source to exposure readings
+ * \brief A set of arrays linking a single exposure source to exposure readings
  * 
  * Defaults to exposure size of 1 as the assumption is we're adding to the exposure live
  */
@@ -158,7 +199,7 @@ using ExposureSet = TaggedArraySet<
 
 
 /**
- * /brief Represents an estimated Risk score through calculation, typically from a mix of factors
+ * \brief Represents an estimated Risk score through calculation, typically from a mix of factors
  *        including data about an individual, and exposures from the environment measured on device.
  *
  * This is different from an exposure in that it uses exposure data which may be supplied continuously
@@ -175,8 +216,9 @@ using RiskScore = Score;
  * 
  */
 struct RiskScoreMetadata {
-  UUID agentId = UUID::unknown();
-  UUID algorithmId = UUID::unknown();
+  Agent agentId = Agent{Agent::unknown()}; // forces explicit constructor
+  AlgorithmId algorithmId = AlgorithmId{AlgorithmId::unknown()}; // forces explicit constructor
+  UUID instanceId = UUID::unknown(); // Which instance of the algorithm this score came from
 
   const bool operator==(const RiskScoreMetadata& other) const noexcept;
   const bool operator!=(const RiskScoreMetadata& other) const noexcept;
@@ -193,7 +235,7 @@ using RiskScoreArray = TaggedArray<
 >;
 
 /**
- * /brief A set of arrays linking a single risk algorithm for an agent to its results
+ * \brief A set of arrays linking a single risk algorithm for an agent to its results
  * 
  * Defaults to risk score size of 1 as the assumption is we're modifying the risk score live
  */

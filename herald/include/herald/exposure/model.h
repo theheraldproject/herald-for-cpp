@@ -32,12 +32,13 @@ public:
   /// MARK: Callable convenience methods (hides variant implementation)
 
   template <typename AlgoCallbackT>
-  void forMatchingAlgorithm(AlgoCallbackT callback, UUID algorithmId) noexcept {
+  void forMatchingAlgorithm(AlgoCallbackT callback, AlgorithmId algorithmId) noexcept {
     // Loop over model types and find one with the same algorithmId
     bool found = false;
     for (auto& modelVarRef: models) {
       std::visit([&algorithmId,&callback,&found] (auto&& algo) {
-        if (((decltype(algo))algo).algorithmId == algorithmId) {
+        auto aid = ((decltype(algo))algo).algorithmId;
+        if (aid == algorithmId) {
           found = true;
           callback((decltype(algo))algo);
         }
@@ -67,7 +68,7 @@ using namespace herald::exposure::parameter;
  */
 struct SampleDiseaseScreeningRiskModel {
   // ID to enable dynamic linking at runtime to static compiled risk model
-  static constexpr Agent algorithmId{1};
+  static constexpr AlgorithmId algorithmId{1};
     
   //   UUID::data_type{
   //   { // passes the data as an initialiser list to std::array
@@ -98,10 +99,10 @@ struct SampleDiseaseScreeningRiskModel {
       Date periodEnd = periodStart + periodicity;
 
       // Now query the exposure manager for the variables we are interested in - aggregated as appropriate so we don't have to do it ourselves
-      exposures.aggregate(herald::datatype::agent::humanProximity, periodStart, periodEnd, herald::analysis::aggregates::Sum{}, [&aggProx] (Exposure cbValue) {
+      exposures.aggregate(herald::datatype::agent::humanProximity, periodStart, periodEnd, herald::analysis::aggregates::Sum{}, [&aggProx] (const Exposure& cbValue) {
         aggProx = cbValue; // single value only
       });
-      exposures.aggregate(herald::datatype::agent::lightBrightness, periodStart, periodEnd, herald::analysis::aggregates::Maximum{}, [&aggLight] (Exposure cbValue) {
+      exposures.aggregate(herald::datatype::agent::lightBrightness, periodStart, periodEnd, herald::analysis::aggregates::Maximum{}, [&aggLight] (const Exposure& cbValue) {
         aggLight = cbValue; // single value only
       });
 
@@ -111,7 +112,7 @@ struct SampleDiseaseScreeningRiskModel {
       bool fetchedAgeOk = riskParameters.get(herald::exposure::parameter::age, rawAge);
       if (!fetchedAgeOk) {
         age = 35; // Sensible default. E.g. population median age
-        confidence -= 0.25;
+        confidence -= 0.25; // To represent the approximate effect on Standard Error
       } else {
         age = (std::uint8_t)rawAge;
       }

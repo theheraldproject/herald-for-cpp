@@ -127,14 +127,39 @@ public:
    * @param periodStart Earliest time we're interested in (inclusive of overlaps)
    * @param periodEnd Most recent time we're interested in (inclusove of overlaps)
    * @param agg The aggregate to apply to the matching Exposures (from Analysis API, or custom)
-   * @param c The callable to call - once or multiple times depending on the output of the aggregate
+   * @param c The callable to call - once or multiple times depending on the output of the aggregate with signature  (const Exposure& cbValue) -> void
    */
   template <typename AggT, typename CallableT>
   void aggregate(const Agent& agent, const Date& periodStart, const Date& periodEnd, 
-    AggT&& agg, CallableT c) const noexcept {
-      //call [&aggLight] (Exposure cbValue) {
-    // TODO fill out this method
+    AggT&& agg, CallableT callable) const noexcept {
     // TODO validate why we need to be const as a method (not always reasonable if data has to be shunted to/from memory)
+
+    // Find our exposure scores for this agent
+    // Reset aggregator (just to be safe)
+    agg.reset();
+    agg.beginRun(1); // TODO support multi-pass aggregations
+    
+    // Loop through until we find a score that overlaps (i.e. is not entirely within the exact time period) with that requested
+    // TODO handle the situation where multiple sensor instances produce the same agent (Note: We may already aggregate this in the manager... Check...)
+    auto pos = findMetaByAgentId(agent);
+    if (max_size != pos) {
+      // Pass the value(s) to the aggregator
+      auto iter = exposures[pos].ccontents().cbegin();
+      auto end = exposures[pos].ccontents().cend();
+      for (; iter != end;++iter) {
+        const auto& score = *iter;
+        agg.map(score.value);
+      }
+      // TODO support aggregators that produce more than one value
+      
+      // For each (likely single) output, call the callable
+      callable(Exposure{
+        .periodStart = periodStart,
+        .periodEnd = periodEnd,
+        .value = agg.reduce(),
+        .confidence = 1.0 // TODO get this from the aggregator itself
+      });
+    }
   }
 
 
@@ -174,6 +199,24 @@ public:
   }
 
   /**
+   * @brief Returns the position of the given ExposureMetadata (by agentId )
+   * 
+   * @param agent The ExposureMetadata::agentId (Agent aka UUID) to search for
+   * @return std::size_t The position of the ExposureMetadata, or max_size if not found
+   */
+  std::size_t findMetaByAgentId(const Agent& agent) const noexcept {
+    for (std::size_t pos = 0;pos < exposures.size();++pos) {
+      auto& exp = exposures[pos];
+      auto& t = exp.getTag();
+      auto& siid = t.agentId;
+      if (siid == agent) {
+        return pos;
+      }
+    }
+    return max_size;
+  }
+
+  /**
    * @brief Returns the position of the given ExposureMetadata (by modelClassId )
    * 
    * @param modelClassId The ExposureMetadata::modelClassId (UUID) to search for
@@ -181,12 +224,22 @@ public:
    */
   std::size_t findMetaByModelClassId(const UUID& modelClassId) const noexcept {
     for (std::size_t pos = 0;pos < exposures.size();++pos) {
-      auto& mcid = exposures[pos].getTag().modelClassId;
+      const auto& mcid = exposures[pos].getTag().modelClassId;
       if (mcid == modelClassId) {
         return pos;
       }
     }
     return max_size;
+  }
+
+  template <typename CallableT>
+  void over(std::size_t pos, CallableT callable) noexcept {
+    auto iter = exposures[pos].ccontents().cbegin();
+    auto end = exposures[pos].ccontents().cend();
+    for (;iter != end;++iter) {
+      const auto& exposure = *iter;
+      callable(exposure);
+    }
   }
 
 private:
@@ -491,6 +544,22 @@ public:
     }
     auto sz = store.getContents(pos).size();
     return sz;
+  }
+
+  template <typename ExposureCallableT>
+  bool forEachExposure(const UUID& sensorInstanceId, ExposureCallableT callable) const noexcept {
+    bool found = false;
+    for (std::size_t pos = 0;pos < store.size();++pos) {
+      auto& tag = store.getTag(pos);
+      auto& siid = tag.sensorInstanceId;
+      if (siid == sensorInstanceId) {
+        found = true;
+        store.over(pos,[&callable, &tag] (const Exposure& score) -> void {
+          callable(tag,score);
+        });
+      }
+    }
+    return found;
   }
 
   // TODO convert exposures call, with conditional lambda 

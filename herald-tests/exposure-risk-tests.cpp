@@ -239,20 +239,25 @@ TEST_CASE("exposure-array-set-default", "[exposure][array][set][allocatable-arra
 
 TEST_CASE("risk-score-metadata-default", "[risk-score][metadata][default") {
   SECTION("risk-score-metadata-default") {
-    UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
-    UUID algorithm = UUID::fromString("51111111-1111-4011-8011-111111111111");
+    Agent agent = Agent{UUID::fromString("11111111-1111-4011-8011-111111111111")};
+    AlgorithmId algorithm = AlgorithmId{UUID::fromString("51111111-1111-4011-8011-111111111111")};
+    UUID instanceId = UUID::fromString("66666666-6666-4011-8011-666666666666");
     RiskScoreMetadata rsm1{
       .agentId = agent,
-      .algorithmId = algorithm
+      .algorithmId = algorithm,
+      .instanceId = instanceId
     };
     RiskScoreMetadata rsm2{
       .agentId = agent,
-      .algorithmId = algorithm
+      .algorithmId = algorithm,
+      .instanceId = instanceId
     };
     REQUIRE(rsm1.agentId == agent);
     REQUIRE(rsm1.algorithmId == algorithm);
+    REQUIRE(rsm1.instanceId == instanceId);
     REQUIRE(rsm2.agentId == agent);
     REQUIRE(rsm2.algorithmId == algorithm);
+    REQUIRE(rsm2.instanceId == instanceId);
     REQUIRE(rsm1 == rsm2);
     REQUIRE(!(rsm1 != rsm2));
   }
@@ -262,16 +267,19 @@ TEST_CASE("risk-score-metadata-default", "[risk-score][metadata][default") {
 
 TEST_CASE("risk-score-array-default", "[risk-score][array][allocatable-array][default") {
   SECTION("risk-score-array-default") {
-    UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
-    UUID algorithm = UUID::fromString("51111111-1111-4011-8011-111111111111");
+    Agent agent = Agent{UUID::fromString("11111111-1111-4011-8011-111111111111")};
+    AlgorithmId algorithm = AlgorithmId{UUID::fromString("51111111-1111-4011-8011-111111111111")};
+    UUID instanceId = UUID::fromString("66666666-6666-4011-8011-666666666666");
     RiskScoreMetadata rsm{
       .agentId = agent,
-      .algorithmId = algorithm
+      .algorithmId = algorithm,
+      .instanceId = instanceId
     };
     RiskScoreArray<8> scores(rsm);
 
     REQUIRE(scores.getTag().agentId == agent);
     REQUIRE(scores.getTag().algorithmId == algorithm);
+    REQUIRE(scores.getTag().instanceId == instanceId);
     REQUIRE(RiskScoreArray<8>::max_size == 8);
     REQUIRE(scores.contents().size() == 0);
     REQUIRE(scores.getTag() == rsm);
@@ -281,11 +289,13 @@ TEST_CASE("risk-score-array-default", "[risk-score][array][allocatable-array][de
 
 TEST_CASE("risk-score-array-set-default", "[risk-score][array][set][allocatable-array][default") {
   SECTION("risk-score-array-set-default") {
-    UUID agent = UUID::fromString("11111111-1111-4011-8011-111111111111");
-    UUID algorithm = UUID::fromString("51111111-1111-4011-8011-111111111111");
+    Agent agent = Agent{UUID::fromString("11111111-1111-4011-8011-111111111111")};
+    AlgorithmId algorithm = AlgorithmId{UUID::fromString("51111111-1111-4011-8011-111111111111")};
+    UUID instanceId = UUID::fromString("66666666-6666-4011-8011-666666666666");
     RiskScoreMetadata rsm{
       .agentId = agent,
-      .algorithmId = algorithm
+      .algorithmId = algorithm,
+      .instanceId = instanceId
     };
     RiskScoreSet<8,16> rss;
 
@@ -297,6 +307,7 @@ TEST_CASE("risk-score-array-set-default", "[risk-score][array][set][allocatable-
     REQUIRE(rss.size() == 1);
     REQUIRE(rss[0].getTag().agentId == agent);
     REQUIRE(rss[0].getTag().algorithmId == algorithm);
+    REQUIRE(rss[0].getTag().instanceId == instanceId);
     REQUIRE(rss[0].getTag() == rsm);
     REQUIRE(!(rss[0].getTag() != rsm));
     REQUIRE(rss[0].contents().size() == 0); // inner tagged array size

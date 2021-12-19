@@ -18,8 +18,15 @@ namespace datatype {
 
 /// FWD DECLARATION
 template <typename AllocatableArrayT,
-          typename ValT = typename AllocatableArrayT::value_type>
+          typename ValT = typename AllocatableArrayT::value_type, 
+          typename ValBaseT = typename std::remove_cv<ValT>::type
+         >
 struct AllocatableArrayIterator;
+template <typename AllocatableArrayT,
+          typename ValT = typename AllocatableArrayT::value_type, 
+          typename ValBaseT = typename std::remove_cv<ValT>::type
+         >
+struct ConstAllocatableArrayIterator;
 
 /// \brief An array with a max size at compile time, but a tracked max size at runtime.
 /// \since v2.1.0
@@ -45,7 +52,7 @@ public:
   /// \brief The iterator type for this container
   using iterator = AllocatableArrayIterator<AllocatableArray<ValBaseT,Size,UniqueMembers>>;
   /// \brief Constant iterator type
-  using const_iterator = AllocatableArrayIterator<const AllocatableArray<ValBaseT,Size,UniqueMembers>>;;
+  using const_iterator = ConstAllocatableArrayIterator<AllocatableArray<ValBaseT,Size,UniqueMembers>>;;
   /// \brief Reference to the size type of this container
   using size_type = std::size_t;
   // using pointer = value_type*;
@@ -127,7 +134,7 @@ public:
   }
 
   /// \brief Returns the idx'th set value within the AllocatableArray
-  constexpr value_type& operator[](std::size_t idx) noexcept {
+  value_type& operator[](std::size_t idx) noexcept {
     return m_members[realIndex(idx)];
   }
 
@@ -137,26 +144,26 @@ public:
   }
 
   /// \brief Support for const iterator begin
-  constexpr const_iterator cbegin() const noexcept {
+  const_iterator cbegin() const noexcept {
     return const_iterator(*this);
   }
 
   /// \brief Support for const iterator end
-  constexpr const_iterator cend() const noexcept {
+  const_iterator cend() const noexcept {
     if (size() == 0) return const_iterator(*this);
     return const_iterator(*this, size());
   }
 
-  /// \brief Support for const iterator begin
-  constexpr const_iterator begin() const noexcept {
-    return const_iterator(*this);
-  }
+  // /// \brief Support for const iterator begin
+  // constexpr const_iterator begin() const noexcept {
+  //   return const_iterator(*this);
+  // }
 
-  /// \brief Support for const iterator end
-  constexpr const_iterator end() const noexcept {
-    if (size() == 0) return const_iterator(*this);
-    return const_iterator(*this, size());
-  }
+  // /// \brief Support for const iterator end
+  // constexpr const_iterator end() const noexcept {
+  //   if (size() == 0) return const_iterator(*this);
+  //   return const_iterator(*this, size());
+  // }
 
   /// \brief Support for iterator begin
   iterator begin() noexcept {
@@ -243,15 +250,16 @@ using ReferenceArray = AllocatableArray<std::optional<std::reference_wrapper<T>>
 /// \brief Provides a forward and reverse iterator for an AllocatableArray
 /// \brief Implements noexcept guarantees
 template <typename AllocatableArrayT,
-          typename ValT>
+          typename ValT, typename ValBaseT>
 struct AllocatableArrayIterator {
   using difference_type = std::size_t;
-  using value_type = ValT;
+  using value_type = ValBaseT;
+  /// \brief Iterator Category expected by C++ stdlib
   using iterator_category = std::forward_iterator_tag;
   using pointer = value_type*;
-  using const_pointer = const value_type*;
+  // using const_pointer = const value_type*;
   using reference = value_type&;
-  using const_reference = const value_type&;
+  // using const_reference = const value_type&;
 
   /// \brief Iterator constructor starting at virtual index 0
   AllocatableArrayIterator(AllocatableArrayT& aa) noexcept : m_aa(aa), pos(0) {}
@@ -276,9 +284,9 @@ struct AllocatableArrayIterator {
     return m_aa[pos];
   }
 
-  constexpr const_reference operator*() const noexcept {
-    return m_aa[pos];
-  }
+  // constexpr const_reference operator*() const noexcept {
+  //   return m_aa[pos];
+  // }
 
   pointer operator->() noexcept {
     return &m_aa[pos];
@@ -386,6 +394,169 @@ typename AllocatableArrayIterator<T>::difference_type distance(AllocatableArrayI
 
 
 
+
+
+
+
+
+
+
+
+
+
+/// \brief Provides a forward and reverse iterator for an AllocatableArray
+/// \brief Implements noexcept guarantees
+template <typename AllocatableArrayT,
+          typename ValT, typename ValBaseT>
+struct ConstAllocatableArrayIterator {
+  using difference_type = std::size_t;
+  using value_type = const ValBaseT;
+  /// \brief Iterator Category expected by C++ stdlib
+  using iterator_category = std::forward_iterator_tag;
+  using pointer = const value_type*;
+  // using const_pointer = const value_type*;
+  using reference = const value_type&;
+  // using const_reference = const value_type&;
+
+  /// \brief Iterator constructor starting at virtual index 0
+  ConstAllocatableArrayIterator(const AllocatableArrayT& aa) noexcept : m_aa(aa), pos(0) {}
+  /// \brief Iterator constructor starting at virtual index from
+  ConstAllocatableArrayIterator(const AllocatableArrayT& aa, std::size_t from) noexcept : m_aa(aa), pos(from) {}
+  /// \brief Copy constructor
+  ConstAllocatableArrayIterator(const ConstAllocatableArrayIterator& other) noexcept : m_aa(other.m_aa), pos(other.pos) {}
+  /// \brief Move constructor
+  ConstAllocatableArrayIterator(ConstAllocatableArrayIterator&& other) noexcept : m_aa(other.m_aa), pos(other.pos) {}
+  /// \brief Default destructor
+  ~ConstAllocatableArrayIterator() noexcept = default;
+
+  ConstAllocatableArrayIterator& operator=(const ConstAllocatableArrayIterator& other) noexcept {
+    m_aa = other.m_aa;
+    pos = other.pos;
+    return *this;
+  }
+
+  /// \brief Dereference operator to return the value behind this iterator
+  // template <typename Ref = reference, typename = std::enable_if_t<!std::is_same_v<reference,const_reference>> >
+  reference operator*() const noexcept {
+    return m_aa[pos];
+  }
+
+  pointer operator->() const noexcept {
+    return &m_aa[pos];
+  }
+
+  /// \brief Allows this iterator to be moved forward
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator+(std::size_t by) noexcept {
+    pos += by;
+    if (pos > m_aa.size()) {
+      pos = m_aa.size();
+    }
+    return *this;
+  }
+
+  /// \brief Allows this iterator to be moved backward
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator-(std::size_t by) noexcept {
+    if (by > pos) {
+      pos = 0;
+    } else {
+      pos -= by;
+    }
+    return *this;
+  }
+
+
+  /// \brief Allows this iterator to be moved forward
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator+=(std::size_t by) noexcept {
+    pos += by;
+    if (pos > m_aa.size()) {
+      pos = m_aa.size();
+    }
+    return *this;
+  }
+
+  /// \brief Allows this iterator to be moved backward
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator-=(std::size_t by) noexcept {
+    if (by > pos) {
+      pos = 0;
+    } else {
+      pos -= by;
+    }
+    return *this;
+  }
+
+  /// \brief Minus operator to allow std::distance to work
+  difference_type operator-(const ConstAllocatableArrayIterator<AllocatableArrayT>& other) const noexcept {
+    return pos - other.pos;
+  }
+
+  bool operator<(const ConstAllocatableArrayIterator<AllocatableArrayT>& other) const noexcept {
+    return pos < other.pos;
+  }
+
+  bool operator>(const ConstAllocatableArrayIterator<AllocatableArrayT>& other) const noexcept {
+    return pos > other.pos;
+  }
+
+  /// \brief Prefix increment operator
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator++() noexcept {
+    ++pos;
+    return *this;
+  }
+
+  /// \brief Postfix increment operator
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator++(int) noexcept {
+    ConstAllocatableArrayIterator<AllocatableArrayT> cp = *this;
+    ++pos;
+    return cp;
+  }
+
+  /// \brief Prefix decrement operator
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator--() noexcept {
+    --pos;
+    return *this;
+  }
+
+  /// \brief Postfix decrement operator
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator--(int) noexcept {
+    AllocatableArrayIterator<AllocatableArrayT> cp = *this;
+    --pos;
+    return cp;
+  }
+
+  /// \brief Equality operator. Compares position.
+  bool operator==(const ConstAllocatableArrayIterator<AllocatableArrayT>& otherIter) const noexcept {
+    return pos == otherIter.pos;
+  }
+
+  /// \brief Inequality operator. Compares position.
+  bool operator!=(const ConstAllocatableArrayIterator<AllocatableArrayT>& otherIter) const noexcept {
+    return pos != otherIter.pos;
+  }
+
+private:
+  const AllocatableArrayT& m_aa;
+  std::size_t pos;
+};
+
+/// \brief Distance operator for std::distance
+template <typename T>
+typename ConstAllocatableArrayIterator<T>::difference_type distance(ConstAllocatableArrayIterator<T> first, ConstAllocatableArrayIterator<T> last) noexcept {
+  return last - first;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /**
  * /brief An AllocatableArray where each value is linked to a metadata Tag instance
  */
@@ -444,7 +615,7 @@ struct TaggedArray {
     return tag != other;
   }
 
-  const AAT& contents() const noexcept
+  const AAT& ccontents() const noexcept
   {
     return aa;
   }
