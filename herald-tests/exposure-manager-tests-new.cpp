@@ -246,7 +246,7 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     > rm{
       std::move(models), std::move(myStats), dummyRiskScoreStore
     }; // All potential risk model classes linked at compile time (they are treated as singletons)
-    rm.setGlobalPeriodInterval(Date{0}, TimeInterval::seconds(240)); // Interval every 4 minutes, just so its different to other intervals used
+    rm.setGlobalPeriodInterval(Date{0}, TimeInterval::seconds(120)); // Interval every 2 minutes
     // Note myStats may change over time, but are static/fixed from the point of view of a constantly running risk algorithm
 
     // Set the exposure store now, used by both exposure manager and risk manager
@@ -359,27 +359,12 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     REQUIRE(em.sourceCount() == 2);
 
     // Note that for this data, and 120 second Exposure periods, we should have:-
-    // RunningMean<Light>:-
-    // 0 (@120 secs) = 5 (last three were each 5)
-    // 1 (@240 secs) = 50 (last 3 were each 50)
-    // 2 (@360) seconds = 50 (Only two, both 50. Because we only have data for 60 seconds, but it's a MAX of last 1-3 algorithm)
     // lumExposure scores:-
-    // Not recorded (120-120) = 5
-    // 1 (120-240) = 50
-    // 2 (240-360) = 50
-
-
-
-
-
-
-    // TODO FIX THE ABOVE SO OUR data analysis interval is INDEPENDENT of our generation period interval
-
-
-
-
-
-
+    // 0 (120-240) = 5
+    // 1 (240-360) = 50
+    // 2 (360-360) = 50
+    // Note: Limit for dark multiplier (2) is 30
+    //
     // RSSIMinute:-
     // not given (60 secs) = 0 (timeDelta is 0)
     // 0 (120 secs) = 45
@@ -390,17 +375,16 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     // Not recorded (120-120 secs) = 0 (Because we have data from 120 seconds only, as RSSIMinute itself is from an aggregate, and we're not yet accounting for difference in periodEnd and periodStart)
     // 1 (120-240 secs) = 45 * 2 = 90 (2 minutes)
     // 2 (240-360 secs) = 90 (45 *2  /2 (DIVISION NOT APPLIED YET)) (Because we only have data for 60 seconds (240-300 secs), and we're not yet accounting for difference in periodEnd and periodStart)
-    
+    //
     // This should result in the following from the simple Risk Model we have with 240 second Risk periods:-
     // RiskScore = Sum (humanProx) * age (Parameter = 21) * multiplier (1 if max(light) > 100, 2 if 1 < max(light) < 100) 
-    // 0 (0-240 secs) = 67.5 * 21.0 * 2 (Max light(of last 3) = 50) = 2835
-    // 1 (240-480 secs) = 22.5 * 21.0 * 2 (Max light(of last 3) = 25) = 945
-    // Simple total (Calculated by simple external aggregation below - NOT the 'total risk score' as per the model) = 3780
+    // 0 (0-240 secs) = 90 * 21.0 * 2 (Max light(of last 3) = 20) = 3780 BECAUSE WERE NOT SCALING LUMINOSITY BEFORE START TIME
+    // 1 (240-480 secs) = 90 * 21.0 * 1 (Max light(of last 3) = 35) = 1890 BECAUSE WERE NOT SCALING RSSI PAST END TIME
+    // Simple total (Calculated by simple external aggregation below - NOT the 'total risk score' as per the model) = 5670
     // ACTUAL right now:-
-    // 0 = 180 * 21 * 2
-    // 1 = 100 * 21 * 2
-    // total = 11760
-    // reported total is 15120!!!
+    // 0 (0-240) = 45 * 21 * 2 * 2 = 3780
+    // 1 (120-360) = 45 * 21 * 2 * 1 = 1890
+    // total = 5670
     
     // We can have multiple risk model instances with different config for the same variables
     herald::datatype::UUID sampleRMID = 
@@ -419,14 +403,18 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     bool result = em.notifyOfChanges(); // Note: Was failing because of substitution failure in analysis API due to SampleList iterator not supporting const
     // The above should update the Risk Manager (rm) once too
 
+    // NOTE the above will fire injectExposureChanges twice, once for each source variable, so we separate out applying exposure changes:-
+
+    rm.refreshDirtyScores(des); // Fires each risk analysis once only
+
     // Now confirm callback values are the same with a different window
     REQUIRE(result); // A notification occured
     // Note: Not introspecting callbacks as multiple variables which are valid to arrive in any order
 
     // Now confirm we have the correct number of samples for each agent
     // RSSI: 120 second windows, starting at 60 seconds, 300 second period in total - so 2 periods
-    // Luminosity: 60 second windows, starting at 0 seconds, 300 second period in total, 300 second period in total - so
-    REQUIRE(2 == em.getCountByInstanceId(lumInstanceId));
+    // Luminosity: 60 second windows, starting at 0 seconds, 300 second period in total, 300 second period in total - so 3 max (3*120=360)
+    REQUIRE(3 == em.getCountByInstanceId(lumInstanceId));
     // Check luminosity hasn't overwritten rssi prox values
     auto cnt = em.getCountByInstanceId(proxInstanceId);
     REQUIRE(2 == cnt);
@@ -438,15 +426,15 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     em.forEachExposure(proxInstanceId,[&passed, &cnt] (const herald::datatype::ExposureMetadata& meta, const Exposure& score) -> void {
       if (0 == cnt) {
         // if (22.5 != score.value) {
-        if (90.0 != score.value) {
+        if (90.0 != score.value || 120 != score.periodStart.secondsSinceUnixEpoch() || 240 != score.periodEnd.secondsSinceUnixEpoch()) {
           passed = false;
-          std::cout << "Element 0 should be 90 but is actually " << score.value << std::endl;
+          std::cout << "Element 0 should be 90 but is actually " << score.value << " with start(120): " << score.periodStart.secondsSinceUnixEpoch() << " and end(240): " << score.periodEnd.secondsSinceUnixEpoch() << std::endl;
         }
       } else if (1 == cnt) {
         // if (45.0 != score.value) {
-        if (90.0 != score.value) {
+        if (90.0 != score.value || 240 != score.periodStart.secondsSinceUnixEpoch() || 300 != score.periodEnd.secondsSinceUnixEpoch()) {
           passed = false;
-          std::cout << "Element 1 should be 90 but is actually " << score.value << std::endl;
+          std::cout << "Element 1 should be 90 but is actually " << score.value << " with start (240): " << score.periodStart.secondsSinceUnixEpoch() << " and end(300): " << score.periodEnd.secondsSinceUnixEpoch() << std::endl;
         }
       // } else {
       //   if (22.5 != score.value) {
@@ -464,25 +452,24 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     passed = true;
     em.forEachExposure(lumInstanceId,[&passed, &cnt] (const herald::datatype::ExposureMetadata& meta, const Exposure& score) -> void {
       if (0 == cnt) {
-        if (5.0 != score.value) {
+        if (5.0 != score.value || 120 != score.periodStart.secondsSinceUnixEpoch() || 240 != score.periodEnd.secondsSinceUnixEpoch()) {
           passed = false;
-          std::cout << "Element 0 should be 5 but is actually " << score.value << std::endl;
+          std::cout << "Element 0 should be 5 but is actually " << score.value << " with start(120): " << score.periodStart.secondsSinceUnixEpoch() << " and end(240): " << score.periodEnd.secondsSinceUnixEpoch() << std::endl;
         }
-        // ONLY ONE BECAUSE WE RAN EXPOSURE MANAGER AND ANALYSIS API UP TO 301 SECONDS ONLY, NOT 360 AS REQUIRED
-        // CHANGED TO 361 AND THUS 2
       } else if (1 == cnt) {
-        if (50.0 != score.value) {
+        if (50.0 != score.value || 240 != score.periodStart.secondsSinceUnixEpoch() || 360 != score.periodEnd.secondsSinceUnixEpoch()) {
           passed = false;
-          std::cout << "Element 1 should be 50 but is actually " << score.value << std::endl;
+          std::cout << "Element 1 should be 50 but is actually " << score.value << " with start(240): " << score.periodStart.secondsSinceUnixEpoch() << " and end(360): " << score.periodEnd.secondsSinceUnixEpoch() << std::endl;
         }
-      // } else {
-      //   if (50.0 != score.value) {
-      //     passed = false;
-      //     std::cout << "Element 2 should be 50 but is actually " << score.value << std::endl;
-      //   }
+      } else {
+        if (50.0 != score.value || 360 != score.periodStart.secondsSinceUnixEpoch() || 360 != score.periodEnd.secondsSinceUnixEpoch()) {
+          passed = false;
+          std::cout << "Element 2 should be 50 but is actually " << score.value << " with start(360): " << score.periodStart.secondsSinceUnixEpoch() << " and end(360): " << score.periodEnd.secondsSinceUnixEpoch() << std::endl;
+        }
       }
       ++cnt;
     });
+    REQUIRE(3 == cnt);
     REQUIRE(passed);
 
     // Also determine that there are two risk values for the same time period (risk times are set to 120 seconds)
@@ -492,10 +479,10 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     // - then for remaining time, 45 * 2 (actual RSSI, at outdoor lighting) (note: our mean outside level of 10 is below 5 + 5 + 50 / 3, our first 'outside' lum values, so immediately becomes outdoors)
     // - today's total therefore (30 + 45 + 90 + 90) = 255
     herald::datatype::Date riskAnchorDate{0};
-    herald::datatype::TimeInterval riskInterval = TimeInterval::seconds(240);
+    herald::datatype::TimeInterval riskInterval = TimeInterval::seconds(120);
     REQUIRE(rm.getGlobalPeriodAnchor() == riskAnchorDate);
     REQUIRE(rm.getGlobalPeriodInterval() == riskInterval);
-    REQUIRE(2 == rm.getRiskScoreCount(sampleRMID)); // 0-300 seconds with 240 seconds interval, indexed at 0 seconds, means 2 output risk scores, not 4 (like in exposure metadata)
+    REQUIRE(2 == rm.getRiskScoreCount(sampleRMID));
 
     RiskScore total;
     std::size_t callCount = 0;
@@ -515,7 +502,7 @@ TEST_CASE("risk-multi-variate", "[exposure][periods][window][risk][multi-variate
     });
     REQUIRE(rmCallableResult);
     REQUIRE(2 == callCount);
-    REQUIRE(4500 == total.value); // TODO consider approximate bounds for double value
+    REQUIRE(5670 == total.value); // TODO consider approximate bounds for double value
   }
 }
 

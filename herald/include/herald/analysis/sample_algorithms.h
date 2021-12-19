@@ -271,18 +271,18 @@ struct RunningMeanAnalyser {
     if (lastRan + interval >= timeNow) {
       return false; // interval guard.
     }
-    // std::cout << "RUNNING FOWLER BASIC ANALYSIS at " << timeNow.secondsSinceUnixEpoch() << std::endl;
 
     // split into windows of data based on interval time
     Date startInterval = lastRan;
     bool hasGeneratedValues = false;
     while (startInterval <= timeNow) {
       // limit also to before startInterval + interval
-      herald::analysis::views::beforeOrEqual beforeEndOfThisInterval(startInterval + interval);
+      Date endInterval = startInterval + interval;
+      herald::analysis::views::beforeOrEqual beforeEndOfThisInterval(endInterval);
 
 
       // Check that there has been any new data since the last run
-      herald::analysis::views::sinceOrEqual sinceLastRun(lastRan);
+      herald::analysis::views::sinceOrEqual sinceLastRun(startInterval);
       auto newData = src
                   | herald::analysis::views::filter(beforeEndOfThisInterval)
                   | herald::analysis::views::filter(sinceLastRun)
@@ -299,7 +299,7 @@ struct RunningMeanAnalyser {
       if (agg.getCount() > 0) { // only output a sample if we have data
         auto d = agg.reduce();
 
-        Sample<RunningMean<ValT>> newSample((Date)newData.latest(),RunningMean<ValT>(d));
+        Sample<RunningMean<ValT>> newSample(endInterval,RunningMean<ValT>(d));
         dst.push(newSample);
 
         // fire event

@@ -146,19 +146,44 @@ public:
       // Pass the value(s) to the aggregator
       auto iter = exposures[pos].ccontents().cbegin();
       auto end = exposures[pos].ccontents().cend();
-      for (; iter != end;++iter) {
-        const auto& score = *iter;
-        agg.map(score.value);
-      }
-      // TODO support aggregators that produce more than one value
-      
-      // For each (likely single) output, call the callable
-      callable(Exposure{
-        .periodStart = periodStart,
-        .periodEnd = periodEnd,
-        .value = agg.reduce(),
-        .confidence = 1.0 // TODO get this from the aggregator itself
-      });
+      if (iter != end) {
+        // Modify the returned start/end times to reflect the data start/end times, allowing the caller to choose how to scale the result
+        auto last = end;
+        last -= 1;
+        auto iterCopy = iter;
+        Date iterStart = iterCopy->periodStart;
+        Date iterEnd = last->periodEnd;
+
+        for (; iter != end;++iter) {
+          const auto& score = *iter;
+          if (
+            // (score.periodStart >= periodStart && score.periodEnd <= periodEnd) // entirely within period of interest
+            // ||
+            // (score.periodStart < periodStart && score.periodEnd >= periodEnd) // score time period encapsulates time of interest
+            // ||
+            // (score.periodStart >= periodStart && score.periodStart <= periodEnd) // start overlaps
+            // ||
+            // (score.periodEnd >= periodStart && score.periodEnd <= periodEnd) // end overlaps
+            // put more simply:-
+            !(
+              (score.periodStart < periodStart && score.periodEnd <= periodStart) // score entirely before period of interest
+              ||
+              (score.periodStart >= periodEnd && score.periodEnd > periodEnd) // score entirely after period of interest
+            )
+          ) {
+            agg.map(score.value);
+          }
+        }
+        // TODO support aggregators that produce more than one value
+        
+        // For each (likely single) output, call the callable
+        callable(Exposure{
+          .periodStart = iterStart < periodStart ? iterStart : periodStart,
+          .periodEnd = iterEnd > periodEnd ? iterEnd : periodEnd,
+          .value = agg.reduce(),
+          .confidence = 1.0 // TODO get this from the aggregator itself
+        });
+      } // end if has data if (iter != end)
     }
   }
 

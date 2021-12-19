@@ -369,6 +369,10 @@ public:
         }, algorithmId);
       }
     }
+  }
+
+  template <typename ExposureSrcT>
+  void refreshDirtyScores(const ExposureSrcT& src) {
     // Now run through the relevant time period values, replacing the previous with the current values (or adding new ones)
     // Also Reset dirty flags
     for (std::size_t p = 0;p < store.size();++p) {
@@ -377,26 +381,28 @@ public:
       const AlgorithmId& algorithmId = riskScoreMeta.algorithmId;
       bool ok = true;
       auto& instanceMetadataValue = instanceMetadata[p];
-      Date startTime{0};
-      Date endTime{0};
-      calculateOverlappingTimePeriod(
-        instanceMetadataValue.periodStart, instanceMetadataValue.periodEnd,
-        store.getContents(p),
-        startTime, endTime
-      );
-      // TODO consider adding an if for startTime != endTime to guard the below if there's no data (minor perf enhancement)
-      WrappedRiskScoreStore rss{store,riskScoreMeta};
-      models.forMatchingAlgorithm([this, &src, &startTime, &endTime, &ok, &rss] (auto&& algo) {
-        ok = ok & algo.produce(
-          parameters,
-          src,
-          startTime,
-          endTime,
-          period, // TODO make this per risk score type, not global
-          rss // injects RiskScoreMetadata before invoking the underlying RiskStore
+      if (instanceMetadataValue.dirty) { // prevent double/triple counting if algorithm has multiple variables
+        Date startTime{0};
+        Date endTime{0};
+        calculateOverlappingTimePeriod(
+          instanceMetadataValue.periodStart, instanceMetadataValue.periodEnd,
+          store.getContents(p),
+          startTime, endTime
         );
-      }, algorithmId);
-      instanceMetadataValue.dirty = false;
+        // TODO consider adding an if for startTime != endTime to guard the below if there's no data (minor perf enhancement)
+        WrappedRiskScoreStore rss{store,riskScoreMeta};
+        models.forMatchingAlgorithm([this, &src, &startTime, &endTime, &ok, &rss] (auto&& algo) {
+          ok = ok & algo.produce(
+            parameters,
+            src,
+            startTime,
+            endTime,
+            period, // TODO make this per risk score type, not global
+            rss // injects RiskScoreMetadata before invoking the underlying RiskStore
+          );
+        }, algorithmId);
+        instanceMetadataValue.dirty = false;
+      }
     }
   }
 

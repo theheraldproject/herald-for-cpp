@@ -91,11 +91,22 @@ struct SampleDiseaseScreeningRiskModel {
   template <typename RiskParametersT, typename ExposureSourceT, typename RiskSinkT>
   bool produce(const RiskParametersT& riskParameters, const ExposureSourceT& exposures, const Date startTime, const Date endTime, const TimeInterval periodicity, RiskSinkT& sink) noexcept {
     // Create the start and end datetime values for each period of interest
-    Exposure aggProx;
-    Exposure aggLight;
     Age age;
     double rawAge;
+    double confidenceModifier;
+
+    // Also fetch 'static' parameters, if available
+    bool fetchedAgeOk = riskParameters.get(herald::exposure::parameter::age, rawAge);
+    if (!fetchedAgeOk) {
+      age = 35; // Sensible default. E.g. population median age
+      confidenceModifier = -0.25; // To represent the approximate effect on Standard Error
+    } else {
+      age = (std::uint8_t)rawAge;
+    }
+
     for (Date periodStart = startTime; periodStart < endTime;periodStart += periodicity) {
+      Exposure aggProx;
+      Exposure aggLight;
       Date periodEnd = periodStart + periodicity;
 
       // Now query the exposure manager for the variables we are interested in - aggregated as appropriate so we don't have to do it ourselves
@@ -106,25 +117,16 @@ struct SampleDiseaseScreeningRiskModel {
         aggLight = cbValue; // single value only
       });
 
-      double confidence = 1.0;
-
-      // Also fetch 'static' parameters, if available
-      bool fetchedAgeOk = riskParameters.get(herald::exposure::parameter::age, rawAge);
-      if (!fetchedAgeOk) {
-        age = 35; // Sensible default. E.g. population median age
-        confidence -= 0.25; // To represent the approximate effect on Standard Error
-      } else {
-        age = (std::uint8_t)rawAge;
-      }
+      double confidence = 1.0 + confidenceModifier;
 
       // Now perform our calculation
       // WARNING - THIS IS A SAMPLE ONLY AND SHOULD NOT BE USED IN PRODUCTION!!!
       int multiplier = 1;
-      if (aggLight.value > 0 && aggLight.value < 100) {
+      if (aggLight.value > 0.0 && aggLight.value < 30.0) {
         // Risk increases with being indoors (poorly lit - a rough approximation, but simple as an example)
         multiplier = 2;
       }
-      if (0 == aggLight.value) {
+      if (0.0 == aggLight.value) {
         // no light sample in this period
         confidence -= 0.25;
       }
