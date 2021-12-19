@@ -195,6 +195,25 @@ TEST_CASE("datatypes-data-ctor-fromhexstring", "[datatypes][data][ctor][fromhexs
   }
 }
 
+TEST_CASE("datatypes-data-ctor-fromhexstring-trimmed", "[datatypes][data][ctor][fromhexstring]") {
+  SECTION("datatypes-data-ctor-fromhexstring-trimmed") {
+    const std::string hex = "8010ff0ffcc";
+    herald::datatype::Data d = herald::datatype::Data::fromHexEncodedString(hex);
+    const std::string finalhex = d.hexEncodedString();
+    INFO("Data: fromHexEncodedString: from: " << hex << ", to: " << finalhex);
+
+    REQUIRE(d.size() == 6);
+    REQUIRE(d.at(0) == std::byte(8));
+    REQUIRE(d.at(1) == std::byte(1));
+    REQUIRE(std::size_t(std::uint8_t(0x0f)) == std::size_t(15));
+    // REQUIRE(std::uint8_t(0x0f) == std::uint8_t('f'));
+    REQUIRE(d.at(2) == std::byte(15));
+    REQUIRE(d.at(3) == std::byte(240));
+    REQUIRE(d.at(4) == std::byte(255));
+    REQUIRE(d.at(5) == std::byte(204));
+  }
+}
+
 // TODO uppercase fex encoding test
 // TODO mixedcase fex encoding test
 // TODO hex string with odd number of chars (leading 0 removed)
@@ -253,6 +272,15 @@ TEST_CASE("datatypes-data-append", "[datatypes][data][append]") {
     REQUIRE(d.at(14) == std::byte(0x42));
     REQUIRE(d.at(13) == std::byte(0x40));
     REQUIRE(r64 == u64);
+
+    bool r8notok = d.uint8(64,r8);
+    bool r16notok = d.uint16(63,r16);
+    bool r32notok = d.uint32(61,r32);
+    bool r64notok = d.uint64(57,r64);
+    REQUIRE(!r8notok);
+    REQUIRE(!r16notok);
+    REQUIRE(!r32notok);
+    REQUIRE(!r64notok);
   }
 }
 
@@ -266,6 +294,39 @@ TEST_CASE("datatypes-data-append-data", "[datatypes][data][append-data]") {
     REQUIRE(d.size() == 7);
     std::uint8_t b;
     bool ok = d.uint8(6, b);
+    REQUIRE(ok);
+    REQUIRE(std::uint8_t(8) == b);
+  }
+}
+
+TEST_CASE("datatypes-data-append-data-offset", "[datatypes][data][append-data][offset]") {
+  SECTION("datatypes-data-append-data-offset") {
+    herald::datatype::Data d{std::byte('a'),6}; // 6
+    herald::datatype::Data dFrom{std::byte(8),12}; // 12
+
+    d.append(dFrom,4,8);
+
+    REQUIRE(d.size() == 14);
+
+    REQUIRE(d.at(5) == std::byte('a'));
+    
+    std::uint8_t b;
+    bool ok = d.uint8(11, b);
+    REQUIRE(ok);
+    REQUIRE(std::uint8_t(8) == b);
+  }
+}
+
+TEST_CASE("datatypes-data-assign-data", "[datatypes][data][assign-data]") {
+  SECTION("datatypes-data-assign-data") {
+    herald::datatype::Data d{std::byte('a'),6}; // 6
+    herald::datatype::Data dFrom{std::byte(8),12}; // 12
+
+    d.assign(dFrom);
+
+    REQUIRE(d.size() == 12);
+    std::uint8_t b;
+    bool ok = d.uint8(11, b);
     REQUIRE(ok);
     REQUIRE(std::uint8_t(8) == b);
   }
@@ -576,6 +637,21 @@ TEST_CASE("datatypes-data-append-data-reversed-mthd-valid", "[datatypes][data][a
 }
 
 
+TEST_CASE("datatypes-data-append-data-reversed-offset-toolarge", "[datatypes][data][append][data][reversed][offset][toolarge]") {
+  SECTION("datatypes-data-append-data-reversed-offset-toolarge") {
+    uint8_t initial[] = {0,1,2,3,4,5,6,7};
+    herald::datatype::Data d(initial, 8);
+    uint8_t byteArray[] = {0,1,2,3,4,5,6,7};
+    herald::datatype::Data more(byteArray,8);
+
+    d.appendReversed(more,more.size(),1);
+    REQUIRE(d.size() == 8);
+    REQUIRE(d.at(0) == std::byte(0));
+    REQUIRE(d.at(7) == std::byte(7));
+  }
+}
+
+
 
 TEST_CASE("datatypes-data-equals", "[datatypes][data][equals]") {
   SECTION("datatypes-data-equals") {
@@ -586,6 +662,8 @@ TEST_CASE("datatypes-data-equals", "[datatypes][data][equals]") {
     herald::datatype::Data d2(byteArray,8);
     uint8_t byteArray2[] = {4,4,4,4,4,4,4,4};
     herald::datatype::Data d3(byteArray2,8);
+    uint8_t byteArray3[] = {4,4,4,4,4,4,4,4,5};
+    herald::datatype::Data d4(byteArray3,9);
 
     REQUIRE(d1.size() == d2.size());
     REQUIRE(d1.at(0) == d2.at(0));
@@ -600,5 +678,8 @@ TEST_CASE("datatypes-data-equals", "[datatypes][data][equals]") {
     REQUIRE(d2 != d3);
     REQUIRE(d3 != d1);
 
+    REQUIRE(d4 != d3);
+    REQUIRE(!(d4 == d3));
+    REQUIRE(((d4 > d3) & (d3 < d4)) | ((d3 > d4) & (d4 < d3)));
   }
 }

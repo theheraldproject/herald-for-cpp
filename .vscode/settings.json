@@ -91,7 +91,11 @@
     "backoff"
   ],
   "cmake.configureSettings": {
-    // "CODE_COVERAGE": "ON"
+    "CODE_COVERAGE": "ON",
+    "OPENSSL_ROOT_DIR": "/opt/openssl",
+    "OPENSSL_CRYPTO_LIBRARY": "/opt/openssl/lib64/libcrypto.a",
+    "OPENSSL_INCLUDE_DIR": "/opt/openssl/include",
+    "OPENSSL_USE_STATIC_LIBS": true
   },
   "kconfig.zephyr.west": "west",
   "kconfig.zephyr.base": "${ZEPHYR_BASE}",
@@ -105,5 +109,9 @@
     "board": "nrf52840dk_nrf52840",
     "arch": "arm",
     "dir": "${ZEPHYR_BASE}/boards/arm/nrf52840dk_nrf52840"
+  },
+  "C_Cpp.intelliSenseMemoryLimit": 16384,
+  "editor.quickSuggestions": {
+    "other": true
   }
 }

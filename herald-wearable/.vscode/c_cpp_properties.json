@@ -1,9 +1,10 @@
 {
     "configurations": [
         {
-            "name": "Win32",
+            "name": "Win64",
             "includePath": [
-                "${default}"
+                "${default}",
+                "${workspaceFolder}/herald/include"
             ],
             "defines": [
                 "_DEBUG",
@@ -21,7 +22,8 @@
             "name": "zephyr",
             "includePath": [
                 "${default}",
-                "${ZEPHYR_BASE}/include"
+                "${workspaceFolder}/herald/include",
+                "${env.ZEPHYR_BASE}/include"
             ],
             "defines": [
                 "_DEBUG",

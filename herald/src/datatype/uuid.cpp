@@ -78,12 +78,6 @@ UUID::UUID(UUID&& from) noexcept
   ;
 }
 
-UUID::UUID(const UUID& from) noexcept
- : mData(from.mData),mValid(from.mValid)
-{
-  ;
-}
-
 // private ctor
 UUID::UUID(std::array<value_type, 16> data, bool isValid) noexcept
  : mData(data),mValid(isValid)
@@ -107,11 +101,16 @@ UUID::valid() const noexcept {
 
 bool
 UUID::operator==(const UUID& other) const noexcept {
-  return mData == other.mData;
+  // return mData == other.mData;
+  bool eq = true;
+  for (std::size_t i = 0;eq && i < max_size;++i) {
+    eq = eq && (mData[i] == other.mData[i]);
+  }
+  return eq;
 }
 bool
 UUID::operator!=(const UUID& other) const noexcept {
-  return mData != other.mData;
+  return !(*this == other);
 }
 
 bool

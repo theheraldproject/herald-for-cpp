@@ -32,6 +32,8 @@
 #else
 #include "herald/ble/default/concrete_ble_receiver.h"
 #endif
+#include "herald/data/zephyr/flash_exposure_store.h"
+#include "herald/data/zephyr/flash_risk_store.h"
 #endif
 
 // Datatype namespace
@@ -44,21 +46,27 @@
 #include "herald/datatype/distribution.h"
 #include "herald/datatype/encounter.h"
 #include "herald/datatype/error_code.h"
+#include "herald/datatype/exposure_risk.h"
 #include "herald/datatype/immediate_send_data.h"
 #include "herald/datatype/location_reference.h"
 #include "herald/datatype/location.h"
+#include "herald/datatype/luminosity.h"
 #include "herald/datatype/memory_arena.h"
+#include "herald/datatype/model.h"
 #include "herald/datatype/payload_data.h"
 #include "herald/datatype/payload_sharing_data.h"
 #include "herald/datatype/payload_timestamp.h"
 #include "herald/datatype/placename_location_reference.h"
 #include "herald/datatype/proximity.h"
 #include "herald/datatype/randomness.h"
+//#include "herald/datatype/risk_score.h"
 #include "herald/datatype/rssi.h"
+#include "herald/datatype/rssi_minute.h"
 #include "herald/datatype/sha256.h"
 #include "herald/datatype/sensor_state.h"
 #include "herald/datatype/sensor_type.h"
 #include "herald/datatype/signal_characteristic_data.h"
+#include "herald/datatype/subject_parameters.h"
 #include "herald/datatype/target_identifier.h"
 #include "herald/datatype/time_interval.h"
 #include "herald/datatype/uuid.h"
@@ -105,10 +113,20 @@
 #include "herald/analysis/distance_conversion.h"
 #include "herald/analysis/logging_analysis_delegate.h"
 #include "herald/analysis/ranges.h"
-#include "herald/analysis/risk.h"
 #include "herald/analysis/runner.h"
 #include "herald/analysis/sampling.h"
+#include "herald/analysis/sample_algorithms.h"
 #include "herald/analysis/sensor_source.h"
+
+// exposure namespace
+//#include "herald/exposure/agent.h"
+#include "herald/exposure/exposure_manager.h"
+#include "herald/exposure/model.h"
+#include "herald/exposure/parameters.h"
+#include "herald/exposure/risk_manager.h"
+
+// risk namespace
+//#include "herald/risk/risk_manager.h"
 
 // payload namespace
 #include "herald/payload/payload_data_supplier.h"

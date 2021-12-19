@@ -6,49 +6,13 @@
 
 #include "herald/herald.h"
 
+#include "test-templates.h"
+
 #include <utility>
 #include <iostream>
 
 using namespace herald::analysis::sampling;
 using namespace herald::datatype;
-
-template <std::size_t Sz>
-struct DummyRSSISource {
-  using value_type = Sample<RSSI>; // allows AnalysisRunner to introspect this class at compile time
-
-  DummyRSSISource(const std::size_t srcDeviceKey, SampleList<Sample<RSSI>,Sz>&& data)
-    : key(srcDeviceKey), data(std::move(data)), lastAddedAt(0), lastRunAdded(0), hasRan(false) {};
-  ~DummyRSSISource() = default;
-
-  template <typename RunnerT>
-  void run(std::uint64_t timeTo, RunnerT& runner) {
-    // push through data at default rate
-    lastRunAdded = 0;
-    for (auto& v: data) {
-      // devList.push(v.taken,v.value); // copy data over (It's unusual taking a SampleList and sending to a SampleList)
-      auto sampleTime = v.taken.secondsSinceUnixEpoch();
-      // Only push data that hasn't been pushed yet, otherwise we get an ever increasing sample list
-      if ((!hasRan || sampleTime > lastAddedAt) && (sampleTime <= timeTo)) {
-        lastRunAdded++;
-        runner.template newSample<RSSI>(key,v);
-      }
-    }
-    runner.run(Date(timeTo));
-    lastAddedAt = timeTo;
-    hasRan = true;
-  }
-
-  std::uint64_t getLastRunAdded() {
-    return lastRunAdded;
-  }
-
-private:
-  std::size_t key;
-  SampleList<Sample<RSSI>,Sz> data;
-  std::uint64_t lastAddedAt;
-  std::uint64_t lastRunAdded;
-  bool hasRan;
-};
 
 struct DummyDistanceDelegate /* : herald::analysis::AnalysisDelegate */ {
   using value_type = Distance;
@@ -89,6 +53,45 @@ private:
   SampleList<Sample<Distance>,25> distances;
 };
 
+
+struct DummyBrightnessDelegate {
+  using value_type = RunningMean<Luminosity>;
+
+  DummyBrightnessDelegate() : lastSampledID(0), brightness() {};
+  DummyBrightnessDelegate(const DummyBrightnessDelegate&) = delete; // copy ctor deleted
+  DummyBrightnessDelegate(DummyBrightnessDelegate&& other) noexcept : lastSampledID(other.lastSampledID), brightness(std::move(other.brightness)) {} // move ctor
+  ~DummyBrightnessDelegate() {};
+
+  DummyBrightnessDelegate& operator=(DummyBrightnessDelegate&& other) noexcept {
+    lastSampledID = other.lastSampledID;
+    std::swap(brightness,other.brightness);
+    return *this;
+  }
+
+  // specific override of template
+  void newSample(SampledID sampled, Sample<RunningMean<Luminosity>> sample) {
+    lastSampledID = sampled;
+    brightness.push(sample);
+  }
+
+  void reset() {
+    brightness.clear();
+    lastSampledID = 0;
+  }
+
+  // Test only methods
+  SampledID lastSampled() {
+    return lastSampledID;
+  }
+
+  const SampleList<Sample<RunningMean<Luminosity>>,25>& samples() {
+    return brightness;
+  }
+
+private:
+  SampledID lastSampledID;
+  SampleList<Sample<RunningMean<Luminosity>>,25> brightness;
+};
 
 TEST_CASE("variantset-basic", "[variantset][basic]") {
   SECTION("variantset-basic") {
@@ -158,7 +161,7 @@ TEST_CASE("variantset-listmanager", "[variantset][listmanager]") {
 TEST_CASE("analysisrunner-nodata", "[analysisrunner][nodata]") {
   SECTION("analysisrunner-nodata") {
     SampleList<Sample<RSSI>,25> srcData;
-    DummyRSSISource src(1234,std::move(srcData));
+    DummySampleSource src(1234,std::move(srcData));
 
     herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
 
@@ -188,7 +191,7 @@ TEST_CASE("analysisrunner-singledataitem", "[analysisrunner][singledataitem]") {
   SECTION("analysisrunner-singledataitem") {
     SampleList<Sample<RSSI>,25> srcData;
     srcData.push(50,-55);
-    DummyRSSISource src(1234,std::move(srcData));
+    DummySampleSource src(1234,std::move(srcData));
 
     herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
 
@@ -213,6 +216,60 @@ TEST_CASE("analysisrunner-singledataitem", "[analysisrunner][singledataitem]") {
   }
 }
 
+
+/// Single data item use case with 1 data item, no failures, correct summary output
+TEST_CASE("analysisrunner-singledataitem-twoanalyses", "[analysisrunner][singledataitem][twoanalyses][multivariate]") {
+  SECTION("analysisrunner-singledataitem-twoanalyses") {
+    SampleList<Sample<RSSI>,25> srcData;
+    srcData.push(50,-55);
+    DummySampleSource src(1234,std::move(srcData));
+    
+    SampleList<Sample<Luminosity>,15> srcLightData;
+    srcLightData.push(40,12);
+    srcLightData.push(50,12);
+    srcLightData.push(60,12);
+    DummySampleSource srcLight(5678,std::move(srcLightData));
+
+    herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
+    herald::analysis::algorithms::RunningMeanAnalyser<herald::datatype::Luminosity,2> meanLight{60};
+
+    DummyDistanceDelegate myDelegate;
+    DummyBrightnessDelegate myBrightnessDelegate;
+    herald::analysis::AnalysisDelegateManager adm(std::move(myDelegate),std::move(myBrightnessDelegate)); // NOTE: myDelegate MOVED FROM and no longer accessible
+    herald::analysis::AnalysisProviderManager apm(std::move(distanceAnalyser), std::move(meanLight)); // NOTE: distanceAnalyser MOVED FROM and no longer accessible
+
+    herald::analysis::AnalysisRunner<
+      herald::analysis::AnalysisDelegateManager<
+        DummyDistanceDelegate,
+        DummyBrightnessDelegate
+      >,
+      herald::analysis::AnalysisProviderManager<
+        herald::analysis::algorithms::distance::FowlerBasicAnalyser,
+        herald::analysis::algorithms::RunningMeanAnalyser<herald::datatype::Luminosity,2>
+      >,
+      RSSI,Distance,Luminosity,RunningMean<Luminosity>
+    > runner(adm, apm); // just for Sample<RSSI> types, and their produced output (Sample<Distance>)
+
+    src.run(140,runner);
+    srcLight.run(160,runner);
+    REQUIRE(src.getLastRunAdded() == 1); // Single data item
+    REQUIRE(srcLight.getLastRunAdded() == 3); // Three data items
+
+    auto& delegateRef = adm.get<DummyDistanceDelegate>();
+    REQUIRE(delegateRef.lastSampled() == 1234); // ran once, past 50, for SampleID=1234
+
+    auto& samples = delegateRef.samples();
+    REQUIRE(samples.size() == 1); // 1 as single data item (for THIS delegate)
+    
+
+    auto& delegateBRef = adm.get<DummyBrightnessDelegate>();
+    REQUIRE(delegateBRef.lastSampled() == 5678); // ran once, past 50, for SampleID=1234
+
+    auto& samplesB = delegateBRef.samples();
+    REQUIRE(samplesB.size() == 2); // 2 as we now correctly separate by time interval (0-60, 60-120)
+  }
+}
+
 /// [Who]   As a DCT app developer
 /// [What]  I want to link my live application data to an analysis runner easily
 /// [Value] So I don't have to write plumbing code for Herald itself
@@ -233,7 +290,7 @@ TEST_CASE("analysisrunner-basic", "[analysisrunner][basic]") {
     srcData.push(80,-55);
     srcData.push(90,-55);
     srcData.push(100,-55);
-    DummyRSSISource src(1234,std::move(srcData));
+    DummySampleSource src(1234,std::move(srcData));
 
     herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
 
@@ -295,7 +352,7 @@ TEST_CASE("analysisrunner-nonewdata", "[analysisrunner][nonewdata]") {
     srcData.push(80,-55);
     srcData.push(90,-55);
     srcData.push(100,-55);
-    DummyRSSISource src(1234,std::move(srcData));
+    DummySampleSource src(1234,std::move(srcData));
 
     herald::analysis::algorithms::distance::FowlerBasicAnalyser distanceAnalyser(30, -50, -24);
 

@@ -126,4 +126,120 @@ public:
   std::optional<herald::ble::BLEDeviceAttribute> attr;
 };
 
+
+
+
+// struct DummyExposureStore {
+//   template <typename AggregateT, typename ExposureCallbackT>
+//   void aggregate(herald::datatype::Agent agent, herald::datatype::Date periodStart, herald::datatype::Date periodEnd, AggregateT agg, ExposureCallbackT callback) const noexcept {
+//     // TODO fill this out with actual stored values
+//   }
+// };
+
+
+// struct DummyRiskScoreStore {
+//   // TODO add identification for target agent, algorithmID, and algorithmInstanceID
+//   void score(herald::datatype::RiskScore&& toStore) noexcept {
+//     // TODO log this for later exaluation
+//   }
+// };
+
+struct NoOptPassthrough {
+  template <typename IterT>
+  void exposureLevelChanged(
+    const herald::datatype::ExposureMetadata& meta,
+    IterT& iter,
+    IterT& end) noexcept
+  {
+    ;
+  }
+};
+
+template <typename PassthroughT = NoOptPassthrough>
+struct DummyExposureCallbackHandler {
+  DummyExposureCallbackHandler(PassthroughT& ptt) : passThrough(ptt)
+  {}
+
+  static herald::datatype::UUID dummyAgent;
+
+  template <typename IterT>
+  void exposureLevelChanged(
+    const herald::datatype::ExposureMetadata& meta,
+    IterT& iter,
+    IterT& end) noexcept {
+    auto iterCopy = iter; // so passthrough works as expected
+    called = true;
+    ++timesCalled;
+    agent = meta.agentId;
+    while (iter != end) {
+      currentExposureValue += iter->value;
+      ++iter;
+    }
+
+    passThrough.exposureLevelChanged(meta,iterCopy,end);
+  }
+
+  herald::datatype::UUID agent = dummyAgent;
+  double currentExposureValue = 0;
+  bool called = false;
+  std::size_t timesCalled = 0;
+
+  PassthroughT& passThrough;
+};
+
+using DummyExposureCallbackHandlerNoOpt = DummyExposureCallbackHandler<NoOptPassthrough>;
+
+
+template <typename PassthroughT>
+herald::datatype::UUID
+DummyExposureCallbackHandler<PassthroughT>::dummyAgent = herald::datatype::UUID::unknown();
+
+
+/**
+ * @brief Dummy source for any basic datatype that can be created from a double value.
+ * 
+ * Type of sample derived from use of the constructor
+ * 
+ * @tparam SampleT The sample type. E.g. RSSI or Luminosity
+ * @tparam Sz The maximum number of samples to store
+ */
+template <typename SampleT, std::size_t Sz>
+struct DummySampleSource {
+  using value_type = herald::analysis::Sample<SampleT>; // allows AnalysisRunner to introspect this class at compile time
+
+  DummySampleSource(const std::size_t srcDeviceKey, 
+    herald::analysis::SampleList<herald::analysis::Sample<SampleT>,Sz>&& data)
+    : key(srcDeviceKey), data(std::move(data)), lastAddedAt(0), lastRunAdded(0), hasRan(false) {};
+  ~DummySampleSource() = default;
+
+  template <typename RunnerT>
+  void run(std::uint64_t timeTo, RunnerT& runner) {
+    // push through data at default rate
+    lastRunAdded = 0;
+    for (auto& v: data) {
+      // devList.push(v.taken,v.value); // copy data over (It's unusual taking a SampleList and sending to a SampleList)
+      auto sampleTime = v.taken.secondsSinceUnixEpoch();
+      // Only push data that hasn't been pushed yet, otherwise we get an ever increasing sample list
+      if ((!hasRan || sampleTime > lastAddedAt) && (sampleTime <= timeTo)) {
+        ++lastRunAdded;
+        runner.template newSample<SampleT>(key,v);
+      }
+    }
+    runner.run(herald::datatype::Date(timeTo));
+    lastAddedAt = timeTo;
+    hasRan = true;
+  }
+
+  std::uint64_t getLastRunAdded() {
+    return lastRunAdded;
+  }
+
+private:
+  std::size_t key;
+  herald::analysis::SampleList<herald::analysis::Sample<SampleT>,Sz> data;
+  std::uint64_t lastAddedAt;
+  std::uint64_t lastRunAdded;
+  bool hasRan;
+};
+
 #endif

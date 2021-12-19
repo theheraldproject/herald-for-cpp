@@ -61,7 +61,7 @@ TEST_CASE("sha256-single-zero", "[.][zephyronly][sha256][single-zero]") {
   }
 }
 
-TEST_CASE("sha256-2048-zeros", "[sha256][2048-zeros]") {
+TEST_CASE("sha256-2048-zeros", "[zephyronly][sha256][2048-zeros]") {
   SECTION("sha256-2048-zeros") {
     herald::datatype::SHA256 sha;
     herald::datatype::Data d(std::byte(0),2048); // initialised data
@@ -92,7 +92,7 @@ TEST_CASE("sha256-differs", "[sha256][differs]") {
 }
 
 #ifdef __ZEPHYR__
-TEST_CASE("sha256-same", "[sha256][same]") {
+TEST_CASE("sha256-same", "[zephyronly][sha256][same]") {
   SECTION("sha256-same") {
     herald::datatype::SHA256 sha1;
     herald::datatype::Data d1(std::byte(1),6);

@@ -189,15 +189,19 @@ struct SampleList {
   // SampleT latest() {
   //   return data[newestPosition];
   // }
-  Date latest() noexcept {
+  Date latest() const noexcept {
     return data[newestPosition].taken;
   }
+  
+  Date earliest() const noexcept {
+    return data[oldestPosition].taken;
+  }
 
-  SampleIterator<SampleList<SampleT,MaxSize>> begin() {
+  SampleIterator<SampleList<SampleT,MaxSize>> begin() const noexcept {
     return SampleIterator<SampleList<SampleT,MaxSize>>(*this);
   }
 
-  SampleIterator<SampleList<SampleT,MaxSize>> end() {
+  SampleIterator<SampleList<SampleT,MaxSize>> end() const noexcept {
     if (size() == 0) return SampleIterator<SampleList<SampleT,MaxSize>>(*this);
     return SampleIterator<SampleList<SampleT,MaxSize>>(*this,size()); // calls this object's size() function, not the array!
   }
@@ -255,8 +259,8 @@ struct SampleIterator {
   using pointer = value_type*;
   using reference = value_type&;
 
-  SampleIterator(SampleListT& sl) : list(sl), pos(0) {}
-  SampleIterator(SampleListT& sl, std::size_t from) : list(sl), pos(from) {} // used to get list.end() (size() + 1)
+  SampleIterator(const SampleListT& sl) : list(sl), pos(0) {}
+  SampleIterator(const SampleListT& sl, std::size_t from) : list(sl), pos(from) {} // used to get list.end() (size() + 1)
   SampleIterator(const SampleIterator<SampleListT>& other) : list(other.list), pos(other.pos) {} // copy ctor
   SampleIterator(SampleIterator<SampleListT>&& other) : list(other.list), pos(other.pos) {} // move ctor (cheaper to copy)
   ~SampleIterator() = default;
@@ -312,7 +316,7 @@ struct SampleIterator {
   }
 
 private:
-  SampleListT& list;
+  const SampleListT& list;
   std::size_t pos;
 };
 

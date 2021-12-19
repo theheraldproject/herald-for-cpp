@@ -235,7 +235,7 @@ public:
   /// \brief Appends the specified DataRef to this one, but in its reverse order
   void appendReversed(const DataRef& rawData, std::size_t offset, std::size_t length)
   {
-    if (offset > rawData.size()) {
+    if (offset >= rawData.size()) {
       return; // append nothing - out of range
     }
     std::size_t checkedLength = length;

@@ -18,8 +18,15 @@ namespace datatype {
 
 /// FWD DECLARATION
 template <typename AllocatableArrayT,
-          typename ValT = typename AllocatableArrayT::value_type>
+          typename ValT = typename AllocatableArrayT::value_type, 
+          typename ValBaseT = typename std::remove_cv<ValT>::type
+         >
 struct AllocatableArrayIterator;
+template <typename AllocatableArrayT,
+          typename ValT = typename AllocatableArrayT::value_type, 
+          typename ValBaseT = typename std::remove_cv<ValT>::type
+         >
+struct ConstAllocatableArrayIterator;
 
 /// \brief An array with a max size at compile time, but a tracked max size at runtime.
 /// \since v2.1.0
@@ -39,13 +46,13 @@ template <typename ValT, std::size_t Size = 8, bool UniqueMembers = true, typena
 class AllocatableArray {
 public:
   /// \brief Reference to the value type within this container
-  using value_type = ValT;
+  using value_type = ValBaseT; // must be non-const
   /// \brief The difference type for positions in this container
   using difference_type = std::size_t;
   /// \brief The iterator type for this container
-  using iterator = AllocatableArrayIterator<AllocatableArray<ValT,Size,UniqueMembers>>;
+  using iterator = AllocatableArrayIterator<AllocatableArray<ValBaseT,Size,UniqueMembers>>;
   /// \brief Constant iterator type
-  using const_iterator = AllocatableArrayIterator<const AllocatableArray<ValT,Size,UniqueMembers>>;;
+  using const_iterator = ConstAllocatableArrayIterator<AllocatableArray<ValBaseT,Size,UniqueMembers>>;;
   /// \brief Reference to the size type of this container
   using size_type = std::size_t;
   // using pointer = value_type*;
@@ -61,7 +68,7 @@ public:
   /// \brief Copy constructor (relies on std::array copy constructor)
   AllocatableArray(const AllocatableArray& from) noexcept : m_allocated(from.m_allocated), m_members(from.m_members) {};
   /// \brief Single value constructor for convenience
-  AllocatableArray(ValT&& first) noexcept : m_allocated(), m_members() {
+  AllocatableArray(ValBaseT&& first) noexcept : m_allocated(), m_members() {
     add(first);
   };
   /// \brief Default noexcept destructor
@@ -71,7 +78,7 @@ public:
   /// If UniqueMembers is true, checks to see if an equivalent item 
   /// already exists, and applies the assignment operator to it.
   /// Returns false if full, rather than throwing an exception.
-  bool add(ValT toAdd) noexcept {
+  bool add(ValBaseT toAdd) noexcept {
     if constexpr (UniqueMembers) {
       const std::size_t equalIdx = findEqual(toAdd);
       if (max_size != equalIdx) {
@@ -88,6 +95,19 @@ public:
     return true;
   }
 
+  // /**
+  //  * @brief Helper to pass an initlist to the base value type
+  //  * 
+  //  * @tparam  
+  //  * @param args The initialiser list arguments
+  //  * @return true If the element is added
+  //  * @return false If the element cannot be added (i.e. the array is full)
+  //  */
+  // template <typename... InitListArgsTs>
+  // bool add(InitListArgsTs&... args) noexcept {
+  //   return add(ValBaseT{args...});
+  // }
+
   /// \brief Removes (all instances of, if UniqueMembers is false) an item from this array
   /// \note This applies the equality operator of the passed in 
   ///       value to each allocated object.
@@ -103,42 +123,47 @@ public:
     }
   }
 
+  /// \brief Empties the container (lazy emptying)
+  void clear() noexcept {
+    m_allocated.reset();
+  }
+
   /// \brief Returns the current assigned size of this array
   std::size_t size() const noexcept {
     return m_allocated.count();
   }
 
   /// \brief Returns the idx'th set value within the AllocatableArray
-  constexpr value_type& operator[](std::size_t idx) noexcept {
+  value_type& operator[](std::size_t idx) noexcept {
     return m_members[realIndex(idx)];
   }
 
   /// \brief Returns the idx'th set value within the AllocatableArray as const
-  // constexpr const value_type& operator[](std::size_t idx) const noexcept {
-  //   return m_members[realIndex(idx)];
+  constexpr const value_type& operator[](std::size_t idx) const noexcept {
+    return m_members[realIndex(idx)];
+  }
+
+  /// \brief Support for const iterator begin
+  const_iterator cbegin() const noexcept {
+    return const_iterator(*this);
+  }
+
+  /// \brief Support for const iterator end
+  const_iterator cend() const noexcept {
+    if (size() == 0) return const_iterator(*this);
+    return const_iterator(*this, size());
+  }
+
+  // /// \brief Support for const iterator begin
+  // constexpr const_iterator begin() const noexcept {
+  //   return const_iterator(*this);
   // }
 
-  /// \brief Support for const iterator begin
-  constexpr const_iterator cbegin() const noexcept {
-    return const_iterator(*this);
-  }
-
-  /// \brief Support for const iterator end
-  constexpr const_iterator cend() const noexcept {
-    if (size() == 0) return const_iterator(*this);
-    return const_iterator(*this, size());
-  }
-
-  /// \brief Support for const iterator begin
-  constexpr const_iterator begin() const noexcept {
-    return const_iterator(*this);
-  }
-
-  /// \brief Support for const iterator end
-  constexpr const_iterator end() const noexcept {
-    if (size() == 0) return const_iterator(*this);
-    return const_iterator(*this, size());
-  }
+  // /// \brief Support for const iterator end
+  // constexpr const_iterator end() const noexcept {
+  //   if (size() == 0) return const_iterator(*this);
+  //   return const_iterator(*this, size());
+  // }
 
   /// \brief Support for iterator begin
   iterator begin() noexcept {
@@ -178,7 +203,8 @@ private:
     while (idx < max_size) {
       if (m_allocated.test(idx)) {
         // EqualT must be either the same as ValT or something ValT has an explicit conversion function for
-        if (equiv == (EqualT)m_members[idx]) {
+        if (m_members[idx] == equiv) { // assumes value_type has operator==(EqualT)
+        // if (equiv == (EqualT)m_members[idx]) {
           return idx;
         }
       }
@@ -198,13 +224,14 @@ private:
     std::size_t count = 0;
     while (idx < max_size) {
       if (m_allocated.test(idx)) {
-        lastMatchedIndex = idx;
+        // Increment count
+        ++count;
+        // Now check if we're at the virtualIndex'th allocated element
         if (virtualIndex == count - 1) {
           // return this index
           return idx;
         }
-        // Else just increment count
-        ++count;
+        lastMatchedIndex = idx;
       }
       ++idx;
     }
@@ -223,15 +250,16 @@ using ReferenceArray = AllocatableArray<std::optional<std::reference_wrapper<T>>
 /// \brief Provides a forward and reverse iterator for an AllocatableArray
 /// \brief Implements noexcept guarantees
 template <typename AllocatableArrayT,
-          typename ValT>
+          typename ValT, typename ValBaseT>
 struct AllocatableArrayIterator {
   using difference_type = std::size_t;
-  using value_type = ValT;
+  using value_type = ValBaseT;
+  /// \brief Iterator Category expected by C++ stdlib
   using iterator_category = std::forward_iterator_tag;
   using pointer = value_type*;
-  using const_pointer = const value_type*;
+  // using const_pointer = const value_type*;
   using reference = value_type&;
-  using const_reference = const value_type&;
+  // using const_reference = const value_type&;
 
   /// \brief Iterator constructor starting at virtual index 0
   AllocatableArrayIterator(AllocatableArrayT& aa) noexcept : m_aa(aa), pos(0) {}
@@ -256,9 +284,9 @@ struct AllocatableArrayIterator {
     return m_aa[pos];
   }
 
-  constexpr const_reference operator*() const noexcept {
-    return m_aa[pos];
-  }
+  // constexpr const_reference operator*() const noexcept {
+  //   return m_aa[pos];
+  // }
 
   pointer operator->() noexcept {
     return &m_aa[pos];
@@ -276,6 +304,26 @@ struct AllocatableArrayIterator {
 
   /// \brief Allows this iterator to be moved backward
   AllocatableArrayIterator<AllocatableArrayT>& operator-(std::size_t by) noexcept {
+    if (by > pos) {
+      pos = 0;
+    } else {
+      pos -= by;
+    }
+    return *this;
+  }
+
+
+  /// \brief Allows this iterator to be moved forward
+  AllocatableArrayIterator<AllocatableArrayT>& operator+=(std::size_t by) noexcept {
+    pos += by;
+    if (pos > m_aa.size()) {
+      pos = m_aa.size();
+    }
+    return *this;
+  }
+
+  /// \brief Allows this iterator to be moved backward
+  AllocatableArrayIterator<AllocatableArrayT>& operator-=(std::size_t by) noexcept {
     if (by > pos) {
       pos = 0;
     } else {
@@ -343,6 +391,344 @@ template <typename T>
 typename AllocatableArrayIterator<T>::difference_type distance(AllocatableArrayIterator<T> first, AllocatableArrayIterator<T> last) noexcept {
   return last - first;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+/// \brief Provides a forward and reverse iterator for an AllocatableArray
+/// \brief Implements noexcept guarantees
+template <typename AllocatableArrayT,
+          typename ValT, typename ValBaseT>
+struct ConstAllocatableArrayIterator {
+  using difference_type = std::size_t;
+  using value_type = const ValBaseT;
+  /// \brief Iterator Category expected by C++ stdlib
+  using iterator_category = std::forward_iterator_tag;
+  using pointer = const value_type*;
+  // using const_pointer = const value_type*;
+  using reference = const value_type&;
+  // using const_reference = const value_type&;
+
+  /// \brief Iterator constructor starting at virtual index 0
+  ConstAllocatableArrayIterator(const AllocatableArrayT& aa) noexcept : m_aa(aa), pos(0) {}
+  /// \brief Iterator constructor starting at virtual index from
+  ConstAllocatableArrayIterator(const AllocatableArrayT& aa, std::size_t from) noexcept : m_aa(aa), pos(from) {}
+  /// \brief Copy constructor
+  ConstAllocatableArrayIterator(const ConstAllocatableArrayIterator& other) noexcept : m_aa(other.m_aa), pos(other.pos) {}
+  /// \brief Move constructor
+  ConstAllocatableArrayIterator(ConstAllocatableArrayIterator&& other) noexcept : m_aa(other.m_aa), pos(other.pos) {}
+  /// \brief Default destructor
+  ~ConstAllocatableArrayIterator() noexcept = default;
+
+  ConstAllocatableArrayIterator& operator=(const ConstAllocatableArrayIterator& other) noexcept {
+    m_aa = other.m_aa;
+    pos = other.pos;
+    return *this;
+  }
+
+  /// \brief Dereference operator to return the value behind this iterator
+  // template <typename Ref = reference, typename = std::enable_if_t<!std::is_same_v<reference,const_reference>> >
+  reference operator*() const noexcept {
+    return m_aa[pos];
+  }
+
+  pointer operator->() const noexcept {
+    return &m_aa[pos];
+  }
+
+  /// \brief Allows this iterator to be moved forward
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator+(std::size_t by) noexcept {
+    pos += by;
+    if (pos > m_aa.size()) {
+      pos = m_aa.size();
+    }
+    return *this;
+  }
+
+  /// \brief Allows this iterator to be moved backward
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator-(std::size_t by) noexcept {
+    if (by > pos) {
+      pos = 0;
+    } else {
+      pos -= by;
+    }
+    return *this;
+  }
+
+
+  /// \brief Allows this iterator to be moved forward
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator+=(std::size_t by) noexcept {
+    pos += by;
+    if (pos > m_aa.size()) {
+      pos = m_aa.size();
+    }
+    return *this;
+  }
+
+  /// \brief Allows this iterator to be moved backward
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator-=(std::size_t by) noexcept {
+    if (by > pos) {
+      pos = 0;
+    } else {
+      pos -= by;
+    }
+    return *this;
+  }
+
+  /// \brief Minus operator to allow std::distance to work
+  difference_type operator-(const ConstAllocatableArrayIterator<AllocatableArrayT>& other) const noexcept {
+    return pos - other.pos;
+  }
+
+  bool operator<(const ConstAllocatableArrayIterator<AllocatableArrayT>& other) const noexcept {
+    return pos < other.pos;
+  }
+
+  bool operator>(const ConstAllocatableArrayIterator<AllocatableArrayT>& other) const noexcept {
+    return pos > other.pos;
+  }
+
+  /// \brief Prefix increment operator
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator++() noexcept {
+    ++pos;
+    return *this;
+  }
+
+  /// \brief Postfix increment operator
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator++(int) noexcept {
+    ConstAllocatableArrayIterator<AllocatableArrayT> cp = *this;
+    ++pos;
+    return cp;
+  }
+
+  /// \brief Prefix decrement operator
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator--() noexcept {
+    --pos;
+    return *this;
+  }
+
+  /// \brief Postfix decrement operator
+  ConstAllocatableArrayIterator<AllocatableArrayT>& operator--(int) noexcept {
+    AllocatableArrayIterator<AllocatableArrayT> cp = *this;
+    --pos;
+    return cp;
+  }
+
+  /// \brief Equality operator. Compares position.
+  bool operator==(const ConstAllocatableArrayIterator<AllocatableArrayT>& otherIter) const noexcept {
+    return pos == otherIter.pos;
+  }
+
+  /// \brief Inequality operator. Compares position.
+  bool operator!=(const ConstAllocatableArrayIterator<AllocatableArrayT>& otherIter) const noexcept {
+    return pos != otherIter.pos;
+  }
+
+private:
+  const AllocatableArrayT& m_aa;
+  std::size_t pos;
+};
+
+/// \brief Distance operator for std::distance
+template <typename T>
+typename ConstAllocatableArrayIterator<T>::difference_type distance(ConstAllocatableArrayIterator<T> first, ConstAllocatableArrayIterator<T> last) noexcept {
+  return last - first;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/**
+ * /brief An AllocatableArray where each value is linked to a metadata Tag instance
+ */
+template <typename TagT, typename ValT, 
+          std::size_t Size=8, bool UniqueMembers=false,
+          typename ValBaseT = typename std::remove_cv<ValT>::type,
+          typename AAT=AllocatableArray<ValBaseT,Size,UniqueMembers>
+         >
+struct TaggedArray {
+  using value_type = typename AAT::value_type;
+  static constexpr std::size_t max_size = AAT::max_size;
+
+  TaggedArray() noexcept
+   : tag(),
+     aa()
+  {
+    ;
+  }
+
+  TaggedArray(const TagT& arrayTag) noexcept
+   : tag(arrayTag),
+     aa()
+  {
+    ;
+  }
+
+  ~TaggedArray() noexcept = default;
+
+  const TagT& getTag() const noexcept
+  {
+    return tag;
+  }
+
+  void setTag(const TagT& newValue) noexcept
+  {
+    tag = newValue;
+  }
+
+  const bool operator==(const TaggedArray& other) const noexcept
+  {
+    return tag == other.tag;
+  }
+
+  const bool operator!=(const TaggedArray& other) const noexcept
+  {
+    return tag != other.tag;
+  }
+
+  const bool operator==(const TagT& other) const noexcept
+  {
+    return tag == other;
+  }
+
+  const bool operator!=(const TagT& other) const noexcept
+  {
+    return tag != other;
+  }
+
+  const AAT& ccontents() const noexcept
+  {
+    return aa;
+  }
+
+  AAT& contents() noexcept
+  {
+    return aa;
+  }
+
+private:
+  TagT tag;
+  AAT aa;
+};
+
+
+
+template <typename TagT, typename ValT,
+          std::size_t TaggedArraySize=8, bool TaggedArrayUniqueMembers=false,
+          std::size_t SetSize=8, bool SetUniqueMembers=true,
+          typename ValBaseT = typename std::remove_cv<ValT>::type
+         >
+using TaggedArraySet = AllocatableArray<
+  TaggedArray<TagT,ValBaseT,TaggedArraySize,TaggedArrayUniqueMembers>,
+  SetSize,SetUniqueMembers
+>;
+
+
+/**
+ * @brief Represents a value within an ArrayMap
+ * 
+ * @tparam TagT The Tag type (same for all elements of the parent ArrayMap)
+ * @tparam ValT The value type (same for all elements of the parent ArrayMap)
+ * @tparam std::remove_cv<ValT>::type The base type without const or volatile
+ */
+template <typename TagT, typename ValT, typename ValBaseT = typename std::remove_cv<ValT>::type>
+struct ArrayMapPair {
+  TagT key;
+  ValBaseT value;
+
+  bool operator==(const ArrayMapPair& other) const noexcept {
+    return key == other.key;
+  }
+  
+  bool operator!=(const ArrayMapPair& other) const noexcept {
+    return key != other.key;
+  }
+};
+
+
+/**
+ * /brief An AllocatableArray where each value is linked to a metadata Tag instance
+ */
+template <typename TagT, typename ValT, 
+          std::size_t Size=8, bool UniqueMembers=true,
+          typename ValBaseT = typename std::remove_cv<ValT>::type,
+          typename AAT=AllocatableArray<ArrayMapPair<TagT,ValBaseT>,Size,UniqueMembers>
+         >
+struct ArrayMap {
+  using value_type = ValBaseT;
+  static constexpr std::size_t max_size = AAT::max_size;
+
+  ArrayMap() noexcept
+   : aa()
+  {
+    ;
+  }
+
+  ~ArrayMap() noexcept = default;
+
+  bool get(const TagT& tag, ValBaseT& toSet) const noexcept {
+    std::size_t pos = tagPosition(tag);
+    if (AAT::max_size == pos) {
+      return false;
+    }
+    toSet = aa[pos].value;
+    return true;
+  }
+
+  bool set(const TagT& tag, const ValT& value) noexcept {
+    std::size_t pos = tagPosition(tag);
+    if (AAT::max_size == pos) {
+      if (aa.size() == AAT::max_size) {
+        return false;
+      }
+      // TODO determine if we even need to do this logic, given UniqueMemebers = true
+      aa.add(ArrayMapPair<TagT,ValBaseT>{.key = tag, .value = value});
+    } else {
+      aa[pos].value = value;
+    }
+    return true;
+  }
+
+  std::size_t size() const noexcept {
+    return aa.size();
+  }
+
+  bool hasTag(const TagT& tag) const noexcept {
+    return AAT::max_size != tagPosition(tag);
+  }
+
+private:
+  AAT aa;
+
+  std::size_t tagPosition(const TagT& tag) const noexcept {
+    for (std::size_t pos = 0;pos < aa.size();++pos) {
+      if (aa[pos].key == tag) {
+        return pos;
+      }
+    }
+    return AAT::max_size;
+  }
+};
+
 
 
 }

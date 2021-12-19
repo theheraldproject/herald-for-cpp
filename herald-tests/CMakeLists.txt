@@ -3,7 +3,11 @@ cmake_minimum_required(VERSION 3.12)
 add_executable(herald-tests
   # Test templates
 	test-templates.h
+	test-templates.cpp
 	test-util.h 
+
+	# Catch all to ensure all files in Herald are included in code coverage reports
+	codecoverage-tests.cpp
 
   # base data types
 	allocatablearray-tests.cpp
@@ -53,6 +57,10 @@ add_executable(herald-tests
 	# App level
 	nordicuart-tests.cpp
 
+	# Usage level
+	exposure-risk-tests.cpp
+	exposure-manager-tests-new.cpp
+
 	# main test file
 	main.cpp
 )
@@ -63,11 +71,16 @@ include_directories(${herald_SOURCE_DIR})
 # find_package(Threads REQUIRED)
 
 target_link_libraries(herald-tests PRIVATE herald) # Threads::Threads
-target_code_coverage(herald-tests AUTO EXTERNAL EXCLUDE herald-tests/*) # EXCLUDE DOES NOT WORK YET!!!
+target_code_coverage(herald-tests AUTO EXTERNAL EXCLUDE *-tests.cpp test-*.h *ain.cpp *est-util.cpp *est-templates.h *atch.hpp /usr/include/**/*) # EXCLUDE ONLY WORKS WITH PATTERNS
 
-#add_compile_options(-Wl,--stack,100000000)
-#set_target_properties(herald-tests PROPERTIES LINK_FLAGS -Wl,--stack,10000000)
-#set_target_properties(herald-tests PROPERTIES LINK_FLAGS /STACK:10000000)
-add_compile_options(/STACK:1000000000000)
-set_target_properties(herald-tests PROPERTIES LINK_FLAGS /STACK:1000000000000)
+if (WIN32)
+  #add_compile_options(-Wl,--stack,100000000)
+  #set_target_properties(herald-tests PROPERTIES LINK_FLAGS -Wl,--stack,10000000)
+  #set_target_properties(herald-tests PROPERTIES LINK_FLAGS /STACK:10000000)
+  add_compile_options(/STACK:1000000000000)
+  set_target_properties(herald-tests PROPERTIES LINK_FLAGS /STACK:1000000000000)
+else()
+	# GCov flags for template classes
+	add_compile_options(--coverage -fno-inline -fno-inline-small-functions -fno-default-inline)
+endif ()
 target_compile_features(herald-tests PRIVATE cxx_std_17)

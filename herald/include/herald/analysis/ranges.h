@@ -13,9 +13,6 @@
 /// yet present in gcc-arm.
 
 #include <array>
-#include <map>
-#include <variant>
-#include <vector>
 #include <cstdint>
 #include <type_traits>
 
@@ -38,6 +35,32 @@ struct since {
 
 private:
   herald::datatype::Date from;
+};
+
+struct sinceOrEqual {
+  sinceOrEqual(herald::datatype::Date afterInclusive) : from(afterInclusive) {}
+  ~sinceOrEqual() = default;
+
+  template <typename ValT>
+  bool operator()(const herald::analysis::sampling::Sample<ValT>& s) const {
+    return s.taken >= from;
+  }
+
+private:
+  herald::datatype::Date from;
+};
+
+struct beforeOrEqual {
+  beforeOrEqual(herald::datatype::Date timeToInclusive) : to(timeToInclusive) {}
+  ~beforeOrEqual() = default;
+
+  template <typename ValT>
+  bool operator()(const herald::analysis::sampling::Sample<ValT>& s) const {
+    return s.taken <= to;
+  }
+
+private:
+  herald::datatype::Date to;
 };
 
 // Note: The following are value filters, and work with Samples and any other type
@@ -145,6 +168,18 @@ struct iterator_proxy {
     return cp;
   }
 
+  // Increment operator
+  iterator_proxy<Coll>& operator+=(int by) {
+    iter += by;
+    return *this; // reference to instance
+  }
+
+  // Decrement operator
+  iterator_proxy<Coll>& operator-=(int by) {
+    iter -= by;
+    return *this; // reference to instance
+  }
+
   bool operator==(IterT otherIter) const {
     return iter == otherIter;
   }
@@ -231,12 +266,21 @@ struct view {
     return source.end();
   }
 
+  // bool hasData() noexcept {
+  //   return source != source.end();
+  // }
+
   // auto latest() -> BaseValT {
   //   //return source.latest();
   //   return *(source.end() - 1);
   // }
   Date latest() {
     return (*(source.end() - 1)).taken;
+  }
+
+  Date earliest() {
+    IterProxyT srcCopy{source};
+    return (*(srcCopy)).taken;
   }
 
   template <typename IterT>

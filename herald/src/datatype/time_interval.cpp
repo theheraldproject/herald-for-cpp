@@ -25,6 +25,11 @@ namespace datatype {
 
 
 TimeInterval
+TimeInterval::hours(long hours) {
+  return TimeInterval(60 * 60 * hours);
+}
+
+TimeInterval
 TimeInterval::minutes(long minutes) {
   return TimeInterval(60 * minutes);
 }
